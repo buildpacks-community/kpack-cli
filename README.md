@@ -1,2 +1,2 @@
-# build-service-cli
-Build Service CLI
+# Tanzu Build Service CLI
+
