@@ -15,6 +15,8 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
+const defaultNamespace = "test-namespace"
+
 func TestImageApplier(t *testing.T) {
 	spec.Run(t, "TestImageApplier", testImageApplier)
 }
@@ -24,10 +26,10 @@ func testImageApplier(t *testing.T, when spec.G, it spec.S) {
 		imageConfig = &v1alpha1.Image{
 			ObjectMeta: v1.ObjectMeta{
 				Name:      "test-image",
-				Namespace: "test-namespace",
+				Namespace: defaultNamespace,
 			},
 			Spec: v1alpha1.ImageSpec{
-				Tag:    "test-registry.io/test-tag",
+				Tag: "test-registry.io/test-tag",
 				Source: v1alpha1.SourceConfig{
 					Git: &v1alpha1.Git{
 						URL:      "test-git-url",
@@ -67,6 +69,20 @@ func testImageApplier(t *testing.T, when spec.G, it spec.S) {
 			}.test(t)
 		})
 	})
+
+	when("the namespace is not specified in the image config", func() {
+		it("uses the default namespace", func() {
+			configWithoutNS := imageConfig.DeepCopy()
+			configWithoutNS.Namespace = ""
+
+			ApplyTest{
+				ImageConfig: configWithoutNS,
+				ExpectCreates: []runtime.Object{
+					imageConfig,
+				},
+			}.test(t)
+		})
+	})
 }
 
 type ApplyTest struct {
@@ -81,7 +97,8 @@ func (a ApplyTest) test(t *testing.T) {
 	client := fake.NewSimpleClientset(a.Objects...)
 
 	applier := &image.Applier{
-		KpackClient: client,
+		DefaultNamespace: defaultNamespace,
+		KpackClient:      client,
 	}
 	err := applier.Apply(a.ImageConfig)
 	require.NoError(t, err)

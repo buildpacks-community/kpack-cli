@@ -13,13 +13,13 @@ import (
 )
 
 func NewKpackClient() (versioned.Interface, error) {
-	clusterConfig := clientcmd.NewInteractiveDeferredLoadingClientConfig(
+	clientConfig := clientcmd.NewInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),
 		&clientcmd.ConfigOverrides{},
 		os.Stdin,
 	)
 
-	restConfig, err := clusterConfig.ClientConfig()
+	restConfig, err := clientConfig.ClientConfig()
 	if err != nil {
 		return nil, err
 	}

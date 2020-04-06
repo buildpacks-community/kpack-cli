@@ -12,6 +12,12 @@ import (
 )
 
 func main() {
+	defaultNamespace, err := k8s.GetDefaultNamespace()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	kpackClient, err := k8s.NewKpackClient()
 	if err != nil {
 		fmt.Println(err)
@@ -19,7 +25,8 @@ func main() {
 	}
 
 	imageApplier := &image.Applier{
-		KpackClient: kpackClient,
+		DefaultNamespace: defaultNamespace,
+		KpackClient:      kpackClient,
 	}
 
 	imageRootCmd := &cobra.Command{
@@ -39,7 +46,6 @@ func main() {
 
 	err = rootCmd.Execute()
 	if err != nil {
-		fmt.Println(err)
 		os.Exit(1)
 	}
 }

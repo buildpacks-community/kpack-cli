@@ -14,7 +14,7 @@ import (
 
 func NewApplyCommand(out io.Writer, applier Applier) *cobra.Command {
 	var (
-		file string
+		path string
 	)
 
 	applyCmd := &ApplyCommand{
@@ -23,13 +23,17 @@ func NewApplyCommand(out io.Writer, applier Applier) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:   "apply",
-		Short: "Apply an image configuration",
+		Use:     "apply",
+		Short:   "Apply an image configuration",
+		Long:    "Apply an image configuration by filename. This image will be created if it doesn't exist yet.\nOnly YAML files are accepted.",
+		Example: "tbctl image apply -f ./image.yaml\ncat ./image.yaml | tbctl image apply -f -",
 		RunE: func(_ *cobra.Command, args []string) error {
-			return applyCmd.Execute(file, args...)
+			return applyCmd.Execute(path, args...)
 		},
+		SilenceUsage: true,
 	}
-	cmd.Flags().StringVarP(&file, "file", "f", "", "path to the image config")
+	cmd.Flags().StringVarP(&path, "file", "f", "", "path to the image configuration file")
+	_ = cmd.MarkFlagRequired("file")
 
 	return cmd
 }
@@ -44,9 +48,18 @@ type ApplyCommand struct {
 }
 
 func (a *ApplyCommand) Execute(path string, args ...string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
+	var (
+		file io.ReadCloser
+		err  error
+	)
+
+	if path == "-" {
+		file = os.Stdin
+	} else {
+		file, err = os.Open(path)
+		if err != nil {
+			return err
+		}
 	}
 	defer file.Close()
 

@@ -21,7 +21,14 @@ func TestUpdatesAndCreates(t *testing.T, clientset *fake.Clientset, expectUpdate
 			t.Errorf("Missing create: %#v", want)
 			continue
 		}
+
+		got := actions.Creates[i].GetObject()
+
+		if diff := cmp.Diff(want, got, cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("Unexpected create (-want, +got): %s", diff)
+		}
 	}
+
 	if got, want := len(actions.Creates), len(expectCreates); got > want {
 		for _, extra := range actions.Creates[want:] {
 			t.Errorf("Extra create: %#v", extra.GetObject())
@@ -41,6 +48,7 @@ func TestUpdatesAndCreates(t *testing.T, clientset *fake.Clientset, expectUpdate
 			t.Errorf("Unexpected update (-want, +got): %s", diff)
 		}
 	}
+
 	if got, want := len(actions.Updates), len(expectUpdates); got > want {
 		for _, extra := range actions.Updates[want:] {
 			t.Errorf("Extra update: %#v", extra.GetObject())
