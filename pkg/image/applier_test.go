@@ -42,7 +42,7 @@ func testImageApplier(t *testing.T, when spec.G, it spec.S) {
 
 	when("the image does not exist", func() {
 		it("the applier creates the image", func() {
-			ApplyTest{
+			ApplierTest{
 				ImageConfig: imageConfig,
 				ExpectCreates: []runtime.Object{
 					imageConfig,
@@ -56,7 +56,7 @@ func testImageApplier(t *testing.T, when spec.G, it spec.S) {
 			updatedImageConfig := imageConfig.DeepCopy()
 			updatedImageConfig.Spec.Source.Git.Revision = "new-git-revision"
 
-			ApplyTest{
+			ApplierTest{
 				Objects: []runtime.Object{
 					imageConfig,
 				},
@@ -75,7 +75,7 @@ func testImageApplier(t *testing.T, when spec.G, it spec.S) {
 			configWithoutNS := imageConfig.DeepCopy()
 			configWithoutNS.Namespace = ""
 
-			ApplyTest{
+			ApplierTest{
 				ImageConfig: configWithoutNS,
 				ExpectCreates: []runtime.Object{
 					imageConfig,
@@ -85,14 +85,14 @@ func testImageApplier(t *testing.T, when spec.G, it spec.S) {
 	})
 }
 
-type ApplyTest struct {
+type ApplierTest struct {
 	Objects       []runtime.Object
 	ImageConfig   *v1alpha1.Image
 	ExpectUpdates []clientgotesting.UpdateActionImpl
 	ExpectCreates []runtime.Object
 }
 
-func (a ApplyTest) test(t *testing.T) {
+func (a ApplierTest) test(t *testing.T) {
 	t.Helper()
 	client := fake.NewSimpleClientset(a.Objects...)
 
