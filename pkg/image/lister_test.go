@@ -19,8 +19,7 @@ func TestImageLister(t *testing.T) {
 func testImageLister(t *testing.T, when spec.G, it spec.S) {
 	var (
 		lister = &image.Lister{
-			DefaultNamespace: defaultNamespace,
-			KpackClient:      fake.NewSimpleClientset(),
+			KpackClient: fake.NewSimpleClientset(),
 		}
 	)
 
@@ -50,33 +49,6 @@ func testImageLister(t *testing.T, when spec.G, it spec.S) {
 			imageList, err := lister.List("empty-namespace")
 			require.NoError(t, err)
 			require.Len(t, imageList.Items, 0)
-		})
-	})
-
-	when("the provided namespace is empty", func() {
-		lister.KpackClient = fake.NewSimpleClientset(&v1alpha1.ImageList{
-			Items: []v1alpha1.Image{
-				{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "test-image",
-						Namespace: defaultNamespace,
-					},
-				},
-				{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "test-image-3",
-						Namespace: "bar",
-					},
-				},
-			},
-		})
-
-		it("uses the default namespace", func() {
-			imageList, err := lister.List("")
-			require.NoError(t, err)
-			require.Len(t, imageList.Items, 1)
-			require.Equal(t, "test-image", imageList.Items[0].Name)
-			require.Equal(t, defaultNamespace, imageList.Items[0].Namespace)
 		})
 	})
 }

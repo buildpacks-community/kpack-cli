@@ -25,13 +25,11 @@ func main() {
 	}
 
 	imageApplier := &image.Applier{
-		DefaultNamespace: defaultNamespace,
-		KpackClient:      kpackClient,
+		KpackClient: kpackClient,
 	}
 
 	imageLister := &image.Lister{
-		DefaultNamespace: defaultNamespace,
-		KpackClient:      kpackClient,
+		KpackClient: kpackClient,
 	}
 
 	imageRootCmd := &cobra.Command{
@@ -39,8 +37,8 @@ func main() {
 		Short: "Image commands",
 	}
 	imageRootCmd.AddCommand(
-		imgcmds.NewApplyCommand(os.Stdout, imageApplier),
-		imgcmds.NewListCommand(os.Stdout, imageLister),
+		imgcmds.NewApplyCommand(os.Stdout, defaultNamespace, imageApplier),
+		imgcmds.NewListCommand(os.Stdout, defaultNamespace, imageLister),
 	)
 
 	rootCmd := &cobra.Command{

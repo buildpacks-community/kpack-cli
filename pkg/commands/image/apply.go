@@ -12,14 +12,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewApplyCommand(out io.Writer, applier Applier) *cobra.Command {
+func NewApplyCommand(out io.Writer, defaultNamespace string, applier Applier) *cobra.Command {
 	var (
 		path string
 	)
 
 	applyCmd := &ApplyCommand{
-		Out:     out,
-		Applier: applier,
+		Out:              out,
+		Applier:          applier,
+		DefaultNamespace: defaultNamespace,
 	}
 
 	cmd := &cobra.Command{
@@ -43,8 +44,9 @@ type Applier interface {
 }
 
 type ApplyCommand struct {
-	Out     io.Writer
-	Applier Applier
+	Out              io.Writer
+	Applier          Applier
+	DefaultNamespace string
 }
 
 func (a *ApplyCommand) Execute(path string, args ...string) error {
@@ -72,6 +74,10 @@ func (a *ApplyCommand) Execute(path string, args ...string) error {
 	err = yaml.Unmarshal(buf, &imageConfig)
 	if err != nil {
 		return err
+	}
+
+	if imageConfig.Namespace == "" {
+		imageConfig.Namespace = a.DefaultNamespace
 	}
 
 	err = a.Applier.Apply(&imageConfig)

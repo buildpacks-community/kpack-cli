@@ -7,13 +7,9 @@ import (
 )
 
 type Lister struct {
-	DefaultNamespace string
-	KpackClient      versioned.Interface
+	KpackClient versioned.Interface
 }
 
 func (l *Lister) List(namespace string) (*v1alpha1.ImageList, error) {
-	if namespace == "" {
-		namespace = l.DefaultNamespace
-	}
 	return l.KpackClient.BuildV1alpha1().Images(namespace).List(metav1.ListOptions{})
 }

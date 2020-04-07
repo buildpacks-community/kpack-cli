@@ -6,17 +6,19 @@ import (
 	"text/tabwriter"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
-func NewListCommand(out io.Writer, lister Lister) *cobra.Command {
+func NewListCommand(out io.Writer, defaultNamespace string, lister Lister) *cobra.Command {
 	var (
 		namespace string
 	)
 
 	listCmd := &ListCommand{
-		Out:    out,
-		Lister: lister,
+		Out:              out,
+		Lister:           lister,
+		DefaultNamespace: defaultNamespace,
 	}
 
 	cmd := &cobra.Command{
@@ -39,11 +41,16 @@ type Lister interface {
 }
 
 type ListCommand struct {
-	Out    io.Writer
-	Lister Lister
+	Out              io.Writer
+	Lister           Lister
+	DefaultNamespace string
 }
 
 func (a *ListCommand) Execute(namespace string) error {
+	if namespace == "" {
+		namespace = a.DefaultNamespace
+	}
+
 	imageList, err := a.Lister.List(namespace)
 	if err != nil {
 		return err
@@ -54,18 +61,26 @@ func (a *ListCommand) Execute(namespace string) error {
 		return err
 	}
 
-	writer := tabwriter.NewWriter(a.Out, 0, 0, 0, ' ', 0)
-	_, err = fmt.Fprintln(writer, "Name\tReady\tLatest Image")
+	writer := tabwriter.NewWriter(a.Out, 0, 4, 4, ' ', 0)
+	_, err = fmt.Fprintln(writer, "Name\tReady\tLatest Image\n----\t-----\t------------")
 	if err != nil {
 		return err
 	}
 
 	for _, img := range imageList.Items {
-		_, err = fmt.Fprintf(writer, "%s\t%s\t%s\n", img.Name, "", img.Status.LatestImage)
+		_, err = fmt.Fprintf(writer, "%s\t%s\t%s\n", img.Name, getReadyText(img), img.Status.LatestImage)
 		if err != nil {
 			return err
 		}
 	}
 
 	return writer.Flush()
+}
+
+func getReadyText(img v1alpha1.Image) string {
+	cond := img.Status.GetCondition(corev1alpha1.ConditionReady)
+	if cond == nil {
+		return "Unknown"
+	}
+	return string(cond.Status)
 }

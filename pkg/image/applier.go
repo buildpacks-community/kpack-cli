@@ -8,15 +8,10 @@ import (
 )
 
 type Applier struct {
-	DefaultNamespace string
-	KpackClient      versioned.Interface
+	KpackClient versioned.Interface
 }
 
 func (a *Applier) Apply(image *v1alpha1.Image) error {
-	if image.Namespace == "" {
-		image.Namespace = a.DefaultNamespace
-	}
-
 	_, err := a.KpackClient.BuildV1alpha1().Images(image.Namespace).Get(image.Name, metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err

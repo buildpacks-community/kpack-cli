@@ -20,8 +20,9 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 		out          = &bytes.Buffer{}
 		imageApplier = &fakeImageApplier{}
 		applyCmd     = &image.ApplyCommand{
-			Out:     out,
-			Applier: imageApplier,
+			Out:              out,
+			Applier:          imageApplier,
+			DefaultNamespace: "default-namespace",
 		}
 	)
 
@@ -31,6 +32,18 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 			require.NoError(t, err)
 
 			require.Equal(t, "test-image created\n", out.String())
+			require.Len(t, imageApplier.images, 1)
+		})
+	})
+
+	when("a valid image config with no namespace exists", func() {
+		it("uses the default namespace", func() {
+			err := applyCmd.Execute("./testdata/image-without-namespace.yaml")
+			require.NoError(t, err)
+
+			require.Equal(t, "test-image created\n", out.String())
+			require.Len(t, imageApplier.images, 1)
+			require.Equal(t, "default-namespace", imageApplier.images[0].Namespace)
 		})
 	})
 
@@ -52,9 +65,14 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 }
 
 type fakeImageApplier struct {
-	err error
+	images []*v1alpha1.Image
+	err    error
 }
 
-func (f *fakeImageApplier) Apply(_ *v1alpha1.Image) error {
-	return f.err
+func (f *fakeImageApplier) Apply(img *v1alpha1.Image) error {
+	if f.err != nil {
+		return f.err
+	}
+	f.images = append(f.images, img)
+	return nil
 }

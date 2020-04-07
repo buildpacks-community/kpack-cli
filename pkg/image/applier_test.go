@@ -69,20 +69,6 @@ func testImageApplier(t *testing.T, when spec.G, it spec.S) {
 			}.test(t)
 		})
 	})
-
-	when("the namespace is not specified in the image config", func() {
-		it("uses the default namespace", func() {
-			configWithoutNS := imageConfig.DeepCopy()
-			configWithoutNS.Namespace = ""
-
-			ApplierTest{
-				ImageConfig: configWithoutNS,
-				ExpectCreates: []runtime.Object{
-					imageConfig,
-				},
-			}.test(t)
-		})
-	})
 }
 
 type ApplierTest struct {
@@ -97,8 +83,7 @@ func (a ApplierTest) test(t *testing.T) {
 	client := fake.NewSimpleClientset(a.Objects...)
 
 	applier := &image.Applier{
-		DefaultNamespace: defaultNamespace,
-		KpackClient:      client,
+		KpackClient: client,
 	}
 	err := applier.Apply(a.ImageConfig)
 	require.NoError(t, err)
