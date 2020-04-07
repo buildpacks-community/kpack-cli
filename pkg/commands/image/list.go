@@ -62,7 +62,7 @@ func (a *ListCommand) Execute(namespace string) error {
 	}
 
 	writer := tabwriter.NewWriter(a.Out, 0, 4, 4, ' ', 0)
-	_, err = fmt.Fprintln(writer, "Name\tReady\tLatest Image\n----\t-----\t------------")
+	_, err = fmt.Fprintln(writer, "NAME\tREADY\tLATEST IMAGE")
 	if err != nil {
 		return err
 	}
