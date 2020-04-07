@@ -32,6 +32,10 @@ func main() {
 		KpackClient: kpackClient,
 	}
 
+	imageDeleter := &image.Deleter{
+		KpackClient: kpackClient,
+	}
+
 	imageRootCmd := &cobra.Command{
 		Use:   "image",
 		Short: "Image commands",
@@ -39,6 +43,7 @@ func main() {
 	imageRootCmd.AddCommand(
 		imgcmds.NewApplyCommand(os.Stdout, defaultNamespace, imageApplier),
 		imgcmds.NewListCommand(os.Stdout, defaultNamespace, imageLister),
+		imgcmds.NewDeleteCommand(os.Stdout, defaultNamespace, imageDeleter),
 	)
 
 	rootCmd := &cobra.Command{
