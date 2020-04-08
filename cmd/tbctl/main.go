@@ -24,10 +24,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	imageApplier := &image.Applier{
-		KpackClient: kpackClient,
-	}
-
 	imageLister := &image.Lister{
 		KpackClient: kpackClient,
 	}
@@ -42,7 +38,7 @@ func main() {
 	}
 	imageRootCmd.AddCommand(
 		imgcmds.NewGetCommand(kpackClient, defaultNamespace),
-		imgcmds.NewApplyCommand(os.Stdout, defaultNamespace, imageApplier),
+		imgcmds.NewApplyCommand(kpackClient, defaultNamespace),
 		imgcmds.NewListCommand(os.Stdout, defaultNamespace, imageLister),
 		imgcmds.NewDeleteCommand(os.Stdout, defaultNamespace, imageDeleter),
 	)

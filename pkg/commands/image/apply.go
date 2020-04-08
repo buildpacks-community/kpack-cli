@@ -7,28 +7,31 @@ import (
 	"os"
 
 	"github.com/ghodss/yaml"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
+
+	"github.com/pivotal/build-service-cli/pkg/image"
 )
 
-func NewApplyCommand(out io.Writer, defaultNamespace string, applier Applier) *cobra.Command {
+func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
 	var (
 		path string
 	)
-
-	applyCmd := &ApplyCommand{
-		Out:              out,
-		Applier:          applier,
-		DefaultNamespace: defaultNamespace,
-	}
 
 	cmd := &cobra.Command{
 		Use:     "apply",
 		Short:   "Apply an image configuration",
 		Long:    "Apply an image configuration by filename. This image will be created if it doesn't exist yet.\nOnly YAML files are accepted.",
 		Example: "tbctl image apply -f ./image.yaml\ncat ./image.yaml | tbctl image apply -f -",
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			applyCmd := &ApplyCommand{
+				Out:              cmd.OutOrStdout(),
+				Applier:          &image.Applier{KpackClient: kpackClient},
+				DefaultNamespace: defaultNamespace,
+			}
+
 			return applyCmd.Execute(path, args...)
 		},
 		SilenceUsage: true,

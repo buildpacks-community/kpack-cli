@@ -1,14 +1,18 @@
 package image_test
 
 import (
-	"bytes"
-	"errors"
 	"testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/image"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
-	"github.com/stretchr/testify/require"
+	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/pivotal/build-service-cli/pkg/commands/image"
+	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
 func TestImageApplyCommand(t *testing.T) {
@@ -16,63 +20,66 @@ func TestImageApplyCommand(t *testing.T) {
 }
 
 func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
+
+	const defaultNamespace = "some-default-namespace"
+
 	var (
-		out          = &bytes.Buffer{}
-		imageApplier = &fakeImageApplier{}
-		applyCmd     = &image.ApplyCommand{
-			Out:              out,
-			Applier:          imageApplier,
-			DefaultNamespace: "default-namespace",
+		expectedImage = &v1alpha1.Image{
+			TypeMeta: v1.TypeMeta{
+				Kind:       "Image",
+				APIVersion: "build.pivotal.io/v1alpha1",
+			},
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "test-image",
+				Namespace: "test-namespace",
+			},
+			Spec: v1alpha1.ImageSpec{
+				Tag: "sample/image-from-git",
+				Builder: corev1.ObjectReference{
+					Kind: "ClusterBuilder",
+					Name: "cluster-sample-builder",
+				},
+				Source: v1alpha1.SourceConfig{
+					Git: &v1alpha1.Git{
+						URL:      "https://github.com/buildpack/sample-java-app.git",
+						Revision: "master",
+					},
+				},
+				ServiceAccount: "service-account",
+			},
 		}
 	)
 
+	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
+		return image.NewApplyCommand(clientSet, defaultNamespace)
+	}
+
 	when("a valid image config exists", func() {
 		it("returns a success message from the image applier", func() {
-			err := applyCmd.Execute("./testdata/image.yaml")
-			require.NoError(t, err)
 
-			require.Equal(t, "test-image created\n", out.String())
-			require.Len(t, imageApplier.images, 1)
+			testhelpers.CommandTest{
+				Args: []string{"-f", "./testdata/image.yaml"},
+				ExpectedOutput: `test-image created
+`,
+				ExpectCreates: []runtime.Object{
+					expectedImage,
+				},
+			}.Test(t, cmdFunc)
+		})
+
+		when("a valid image config with no namespace exists", func() {
+			it("uses the default namespace", func() {
+				expectedImage.Namespace = defaultNamespace
+
+				testhelpers.CommandTest{
+					Args: []string{"-f", "./testdata/image-without-namespace.yaml"},
+					ExpectedOutput: `test-image created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedImage,
+					},
+				}.Test(t, cmdFunc)
+			})
 		})
 	})
-
-	when("a valid image config with no namespace exists", func() {
-		it("uses the default namespace", func() {
-			err := applyCmd.Execute("./testdata/image-without-namespace.yaml")
-			require.NoError(t, err)
-
-			require.Equal(t, "test-image created\n", out.String())
-			require.Len(t, imageApplier.images, 1)
-			require.Equal(t, "default-namespace", imageApplier.images[0].Namespace)
-		})
-	})
-
-	when("the image config is invalid", func() {
-		imageApplier.err = errors.New("some applier error")
-
-		it("returns an error message from the image applier", func() {
-			err := applyCmd.Execute("./testdata/image.yaml")
-			require.Error(t, err, "some applier error")
-		})
-	})
-
-	when("a valid image config does not exist", func() {
-		it("returns an error message", func() {
-			err := applyCmd.Execute("does-not-exist")
-			require.Error(t, err, `the path "does-not-exist" does not exist`)
-		})
-	})
-}
-
-type fakeImageApplier struct {
-	images []*v1alpha1.Image
-	err    error
-}
-
-func (f *fakeImageApplier) Apply(img *v1alpha1.Image) error {
-	if f.err != nil {
-		return f.err
-	}
-	f.images = append(f.images, img)
-	return nil
 }
