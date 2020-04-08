@@ -30,7 +30,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 		it("deletes the image", func() {
 			err := deleteCmd.Execute("test-namespace", "test-image-1")
 			require.NoError(t, err)
-			require.Equal(t, out.String(), "test-image-1 deleted\n")
+			require.Equal(t, "test-image-1 deleted\n", out.String())
 			require.Contains(t, imageDeleter.deletedImages, "test-namespace")
 			require.Contains(t, imageDeleter.deletedImages["test-namespace"], "test-image-1")
 		})
@@ -40,7 +40,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 		it("deletes the image using the default namespace", func() {
 			err := deleteCmd.Execute("", "test-image-1")
 			require.NoError(t, err)
-			require.Equal(t, out.String(), "test-image-1 deleted\n")
+			require.Equal(t, "test-image-1 deleted\n", out.String())
 			require.Contains(t, imageDeleter.deletedImages, "default-namespace")
 			require.Contains(t, imageDeleter.deletedImages["default-namespace"], "test-image-1")
 		})

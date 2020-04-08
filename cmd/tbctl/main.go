@@ -41,6 +41,7 @@ func main() {
 		Short: "Image commands",
 	}
 	imageRootCmd.AddCommand(
+		imgcmds.NewGetCommand(kpackClient, defaultNamespace),
 		imgcmds.NewApplyCommand(os.Stdout, defaultNamespace, imageApplier),
 		imgcmds.NewListCommand(os.Stdout, defaultNamespace, imageLister),
 		imgcmds.NewDeleteCommand(os.Stdout, defaultNamespace, imageDeleter),
