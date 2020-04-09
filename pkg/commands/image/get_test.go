@@ -49,7 +49,7 @@ spec:
   tag: ""
 status: {}
 `,
-				}.Test(t, cmdFunc)
+				}.TestKpack(t, cmdFunc)
 			})
 		})
 	})
@@ -77,7 +77,7 @@ spec:
   tag: ""
 status: {}
 `,
-				}.Test(t, cmdFunc)
+				}.TestKpack(t, cmdFunc)
 			})
 		})
 
@@ -89,7 +89,7 @@ status: {}
 					ExpectedOutput: `Error: image "some-image" not found
 `,
 					ExpectErr: true,
-				}.Test(t, cmdFunc)
+				}.TestKpack(t, cmdFunc)
 			})
 		})
 	})

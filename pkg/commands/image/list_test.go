@@ -114,7 +114,7 @@ test-image-1    False      test-registry.io/test-image-1@sha256:abcdef123
 test-image-2    Unknown    test-registry.io/test-image-2@sha256:abcdef123
 test-image-3    True       test-registry.io/test-image-3@sha256:abcdef123
 `,
-				}.Test(t, cmdFunc)
+				}.TestKpack(t, cmdFunc)
 			})
 
 			when("the namespace has no images", func() {
@@ -123,7 +123,7 @@ test-image-3    True       test-registry.io/test-image-3@sha256:abcdef123
 						Args: []string{"-n", "test-namespace"},
 						ExpectedOutput: `no images found in test-namespace namespace
 `,
-					}.Test(t, cmdFunc)
+					}.TestKpack(t, cmdFunc)
 
 				})
 			})
@@ -218,7 +218,7 @@ test-image-1    False      test-registry.io/test-image-1@sha256:abcdef123
 test-image-2    Unknown    test-registry.io/test-image-2@sha256:abcdef123
 test-image-3    True       test-registry.io/test-image-3@sha256:abcdef123
 `,
-				}.Test(t, cmdFunc)
+				}.TestKpack(t, cmdFunc)
 			})
 
 			when("the namespace has no images", func() {
@@ -226,7 +226,7 @@ test-image-3    True       test-registry.io/test-image-3@sha256:abcdef123
 					testhelpers.CommandTest{
 						ExpectedOutput: `no images found in some-default-namespace namespace
 `,
-					}.Test(t, cmdFunc)
+					}.TestKpack(t, cmdFunc)
 
 				})
 			})
