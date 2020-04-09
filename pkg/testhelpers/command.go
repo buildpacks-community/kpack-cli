@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
+	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
+	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 )
 
@@ -23,9 +24,9 @@ type CommandTest struct {
 	ExpectDeletes  []string
 }
 
-func (c CommandTest) Test(t *testing.T, cmdFactory func(clientSet *fake.Clientset) *cobra.Command) {
+func (c CommandTest) TestKpack(t *testing.T, cmdFactory func(clientSet *kpackfakes.Clientset) *cobra.Command) {
 	t.Helper()
-	client := fake.NewSimpleClientset(c.Objects...)
+	client := kpackfakes.NewSimpleClientset(c.Objects...)
 
 	cmd := cmdFactory(client)
 	cmd.SetArgs(c.Args)
@@ -41,5 +42,26 @@ func (c CommandTest) Test(t *testing.T, cmdFactory func(clientSet *fake.Clientse
 	}
 
 	require.Equal(t, c.ExpectedOutput, out.String())
-	TestActions(t, client, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes)
+	TestKpackActions(t, client, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes)
+}
+
+func (c CommandTest) TestK8s(t *testing.T, cmdFactory func(clientSet *k8sfakes.Clientset) *cobra.Command) {
+	t.Helper()
+	client := k8sfakes.NewSimpleClientset(c.Objects...)
+
+	cmd := cmdFactory(client)
+	cmd.SetArgs(c.Args)
+
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+
+	err := cmd.Execute()
+	if !c.ExpectErr {
+		require.NoError(t, err)
+	} else {
+		require.Error(t, err)
+	}
+
+	require.Equal(t, c.ExpectedOutput, out.String())
+	TestK8sActions(t, client, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes)
 }
