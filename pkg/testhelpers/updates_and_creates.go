@@ -11,7 +11,7 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 )
 
-func TestUpdatesAndCreates(t *testing.T, clientset *fake.Clientset, expectUpdates []clientgotesting.UpdateActionImpl, expectCreates []runtime.Object) {
+func TestActions(t *testing.T, clientset *fake.Clientset, expectUpdates []clientgotesting.UpdateActionImpl, expectCreates []runtime.Object, expectDeletes []string) {
 	t.Helper()
 	actions, err := ActionRecorderList{clientset}.ActionsByVerb()
 	require.NoError(t, err)
@@ -29,9 +29,22 @@ func TestUpdatesAndCreates(t *testing.T, clientset *fake.Clientset, expectUpdate
 		}
 	}
 
-	if got, want := len(actions.Creates), len(expectCreates); got > want {
-		for _, extra := range actions.Creates[want:] {
-			t.Errorf("Extra create: %#v", extra.GetObject())
+	for i, want := range expectDeletes {
+		if i >= len(actions.Deletes) {
+			t.Errorf("Missing delete: %#v", want)
+			continue
+		}
+
+		got := actions.Deletes[i].GetName()
+
+		if diff := cmp.Diff(want, got, cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("Unexpected delete (-want, +got): %s", diff)
+		}
+	}
+
+	if got, want := len(actions.Deletes), len(expectDeletes); got > want {
+		for _, extra := range actions.Deletes[want:] {
+			t.Errorf("Extra delete: %#v", extra.GetName())
 		}
 	}
 
@@ -53,10 +66,6 @@ func TestUpdatesAndCreates(t *testing.T, clientset *fake.Clientset, expectUpdate
 		for _, extra := range actions.Updates[want:] {
 			t.Errorf("Extra update: %#v", extra.GetObject())
 		}
-	}
-
-	for _, extra := range actions.Deletes {
-		t.Errorf("Extra delete: %s/%s", extra.GetNamespace(), extra.GetName())
 	}
 
 	for _, extra := range actions.DeleteCollections {

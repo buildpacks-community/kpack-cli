@@ -14,9 +14,11 @@ func NewGetCommand(kpackClient versioned.Interface, defaultNamespace string) *co
 	)
 
 	cmd := &cobra.Command{
-		Use:   "get",
-		Short: "Get an image configuration",
-		Long:  "Get an image configuration by name",
+		Use:     "get <name>",
+		Short:   "Get an image configuration",
+		Long:    "Get an image configuration by name",
+		Example: "tbctl image get my-image",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			image, err := kpackClient.BuildV1alpha1().Images(namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {

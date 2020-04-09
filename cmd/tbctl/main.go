@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
-	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -24,10 +23,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	imageDeleter := &image.Deleter{
-		KpackClient: kpackClient,
-	}
-
 	imageRootCmd := &cobra.Command{
 		Use:   "image",
 		Short: "Image commands",
@@ -36,7 +31,7 @@ func main() {
 		imgcmds.NewGetCommand(kpackClient, defaultNamespace),
 		imgcmds.NewApplyCommand(kpackClient, defaultNamespace),
 		imgcmds.NewListCommand(kpackClient, defaultNamespace),
-		imgcmds.NewDeleteCommand(os.Stdout, defaultNamespace, imageDeleter),
+		imgcmds.NewDeleteCommand(kpackClient, defaultNamespace),
 	)
 
 	rootCmd := &cobra.Command{

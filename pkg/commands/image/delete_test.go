@@ -1,14 +1,17 @@
 package image_test
 
 import (
-	"bytes"
-	"errors"
 	"testing"
 
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
-	"github.com/stretchr/testify/require"
+	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/pivotal/build-service-cli/pkg/commands/image"
+	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
 func TestImageDeleteCommand(t *testing.T) {
@@ -16,67 +19,73 @@ func TestImageDeleteCommand(t *testing.T) {
 }
 
 func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
-	var (
-		out          = &bytes.Buffer{}
-		imageDeleter = newFakeImageDeleter()
-		deleteCmd    = &image.DeleteCommand{
-			Out:              out,
-			Deleter:          imageDeleter,
-			DefaultNamespace: "default-namespace",
-		}
-	)
+
+	const defaultNamespace = "some-default-namespace"
+
+	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
+		return image.NewDeleteCommand(clientSet, defaultNamespace)
+	}
 
 	when("a namespace is provided", func() {
-		it("deletes the image", func() {
-			err := deleteCmd.Execute("test-namespace", "test-image-1")
-			require.NoError(t, err)
-			require.Equal(t, "test-image-1 deleted\n", out.String())
-			require.Contains(t, imageDeleter.deletedImages, "test-namespace")
-			require.Contains(t, imageDeleter.deletedImages["test-namespace"], "test-image-1")
+		when("an image is available", func() {
+			it("deletes the image", func() {
+				image := &v1alpha1.Image{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "some-image",
+						Namespace: "some-namespace",
+					},
+				}
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						image,
+					},
+					Args: []string{"some-image", "-n", "some-namespace"},
+					ExpectDeletes: []string{
+						image.Name,
+					},
+					ExpectedOutput: `"some-image" deleted
+`,
+				}.Test(t, cmdFunc)
+			})
 		})
 	})
 
 	when("a namespace is not provided", func() {
-		it("deletes the image using the default namespace", func() {
-			err := deleteCmd.Execute("", "test-image-1")
-			require.NoError(t, err)
-			require.Equal(t, "test-image-1 deleted\n", out.String())
-			require.Contains(t, imageDeleter.deletedImages, "default-namespace")
-			require.Contains(t, imageDeleter.deletedImages["default-namespace"], "test-image-1")
+		when("an image is available", func() {
+			it("deletes the image", func() {
+				image := &v1alpha1.Image{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "some-image",
+						Namespace: defaultNamespace,
+					},
+				}
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						image,
+					},
+					ExpectDeletes: []string{
+						image.Name,
+					},
+					Args: []string{"some-image"},
+					ExpectedOutput: `"some-image" deleted
+`,
+				}.Test(t, cmdFunc)
+			})
+		})
+
+		when("an image is not available", func() {
+			it("returns an error", func() {
+				testhelpers.CommandTest{
+					Objects: nil,
+					Args:    []string{"some-image", "-n", "some-namespace"},
+					ExpectedOutput: `Error: image "some-image" not found
+`,
+					ExpectDeletes: []string{
+						"some-image",
+					},
+					ExpectErr: true,
+				}.Test(t, cmdFunc)
+			})
 		})
 	})
-
-	when("the deleter returns an error", func() {
-		imageDeleter.err = errors.New("some deleter error")
-
-		it("bubbles up the error", func() {
-			err := deleteCmd.Execute("test-namespace", "test-image-1")
-			require.Error(t, err, "some deleter error")
-		})
-	})
-}
-
-type fakeImageDeleter struct {
-	deletedImages map[string][]string
-	err           error
-}
-
-func newFakeImageDeleter() *fakeImageDeleter {
-	return &fakeImageDeleter{
-		deletedImages: map[string][]string{},
-	}
-}
-
-func (f *fakeImageDeleter) Delete(namespace, name string) error {
-	if f.err != nil {
-		return f.err
-	}
-
-	if names, ok := f.deletedImages[namespace]; ok {
-		f.deletedImages[namespace] = append(names, name)
-	} else {
-		f.deletedImages[namespace] = []string{name}
-	}
-
-	return nil
 }

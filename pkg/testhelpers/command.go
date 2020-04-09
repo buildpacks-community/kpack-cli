@@ -20,6 +20,7 @@ type CommandTest struct {
 	ExpectedOutput string
 	ExpectUpdates  []clientgotesting.UpdateActionImpl
 	ExpectCreates  []runtime.Object
+	ExpectDeletes  []string
 }
 
 func (c CommandTest) Test(t *testing.T, cmdFactory func(clientSet *fake.Clientset) *cobra.Command) {
@@ -40,5 +41,5 @@ func (c CommandTest) Test(t *testing.T, cmdFactory func(clientSet *fake.Clientse
 	}
 
 	require.Equal(t, c.ExpectedOutput, out.String())
-	TestUpdatesAndCreates(t, client, c.ExpectUpdates, c.ExpectCreates)
+	TestActions(t, client, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes)
 }

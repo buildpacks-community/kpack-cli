@@ -60,7 +60,7 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 
 			testhelpers.CommandTest{
 				Args: []string{"-f", "./testdata/image.yaml"},
-				ExpectedOutput: `test-image applied
+				ExpectedOutput: `"test-image" applied
 `,
 				ExpectCreates: []runtime.Object{
 					expectedImage,
@@ -74,7 +74,7 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 
 				testhelpers.CommandTest{
 					Args: []string{"-f", "./testdata/image-without-namespace.yaml"},
-					ExpectedOutput: `test-image applied
+					ExpectedOutput: `"test-image" applied
 `,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
@@ -93,7 +93,7 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						existingImage,
 					},
-					ExpectedOutput: `test-image applied
+					ExpectedOutput: `"test-image" applied
 `,
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{
