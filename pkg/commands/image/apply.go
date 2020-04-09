@@ -10,8 +10,8 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
-
-	"github.com/pivotal/build-service-cli/pkg/image"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
@@ -25,14 +25,29 @@ func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *
 		Long:    "Apply an image configuration by filename. This image will be created if it doesn't exist yet.\nOnly YAML files are accepted.",
 		Example: "tbctl image apply -f ./image.yaml\ncat ./image.yaml | tbctl image apply -f -",
 		RunE: func(cmd *cobra.Command, args []string) error {
-
-			applyCmd := &ApplyCommand{
-				Out:              cmd.OutOrStdout(),
-				Applier:          &image.Applier{KpackClient: kpackClient},
-				DefaultNamespace: defaultNamespace,
+			imageConfig, err := getImageConfig(path)
+			if err != nil {
+				return err
 			}
 
-			return applyCmd.Execute(path, args...)
+			if imageConfig.Namespace == "" {
+				imageConfig.Namespace = defaultNamespace
+			}
+
+			_, err = kpackClient.BuildV1alpha1().Images(imageConfig.Namespace).Get(imageConfig.Name, metav1.GetOptions{})
+			if err != nil && !k8serrors.IsNotFound(err) {
+				return err
+			} else if k8serrors.IsNotFound(err) {
+				_, err = kpackClient.BuildV1alpha1().Images(imageConfig.Namespace).Create(imageConfig)
+			} else {
+				_, err = kpackClient.BuildV1alpha1().Images(imageConfig.Namespace).Update(imageConfig)
+			}
+			if err != nil {
+				return err
+			}
+
+			_, err = cmd.OutOrStdout().Write([]byte(fmt.Sprintf("%s applied\n", imageConfig.Name)))
+			return err
 		},
 		SilenceUsage: true,
 	}
@@ -42,17 +57,7 @@ func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *
 	return cmd
 }
 
-type Applier interface {
-	Apply(image *v1alpha1.Image) error
-}
-
-type ApplyCommand struct {
-	Out              io.Writer
-	Applier          Applier
-	DefaultNamespace string
-}
-
-func (a *ApplyCommand) Execute(path string, args ...string) error {
+func getImageConfig(path string) (*v1alpha1.Image, error) {
 	var (
 		file io.ReadCloser
 		err  error
@@ -63,31 +68,20 @@ func (a *ApplyCommand) Execute(path string, args ...string) error {
 	} else {
 		file, err = os.Open(path)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	defer file.Close()
 
 	buf, err := ioutil.ReadAll(file)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var imageConfig v1alpha1.Image
 	err = yaml.Unmarshal(buf, &imageConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	if imageConfig.Namespace == "" {
-		imageConfig.Namespace = a.DefaultNamespace
-	}
-
-	err = a.Applier.Apply(&imageConfig)
-	if err != nil {
-		return err
-	}
-
-	_, err = fmt.Fprintf(a.Out, "%s created\n", imageConfig.Name)
-	return err
+	return &imageConfig, nil
 }
