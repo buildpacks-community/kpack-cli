@@ -130,7 +130,7 @@ test-image-3    True       test-registry.io/test-image-3@sha256:abcdef123
 		})
 	})
 
-	when("a namespace is provided", func() {
+	when("a namespace is not provided", func() {
 		when("the namespaces has images", func() {
 			it("returns a table of image details", func() {
 				image1 := &v1alpha1.Image{
