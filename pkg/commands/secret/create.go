@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 
 	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/errgo.v2/fmt/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "k8s.io/client-go/kubernetes"
@@ -79,16 +79,18 @@ func NewCreateCommand(k8sClient k8s.Interface, passwordReader PasswordReader, de
 	cmd.Flags().StringVarP(&credFactory.gcrServiceAccountFile, "gcr", "", "", "path to a file containing the GCR service account")
 	cmd.Flags().StringVarP(&credFactory.git, "git", "", "", "git url")
 	cmd.Flags().StringVarP(&credFactory.gitSshKeyFile, "git-ssh-key", "", "", "path to a file containing the Git SSH private key")
+	cmd.Flags().StringVarP(&credFactory.gitUser, "git-user", "", "", "git user")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "the namespace of the image")
 
 	return cmd
 }
 
-type secretKind int
+type secretKind string
 
 const (
-	registryKind secretKind = iota
-	gitSshKind
+	registryKind     secretKind = "registry"
+	gitSshKind                  = "git ssh"
+	gitBasicAuthKind            = "git basic auth"
 )
 
 type credential struct {
@@ -124,7 +126,7 @@ func (c credential) toSecret(name, namespace string) (*corev1.Secret, error) {
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 		}, nil
-	} else {
+	} else if c.kind == gitSshKind {
 		return &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -138,7 +140,24 @@ func (c credential) toSecret(name, namespace string) (*corev1.Secret, error) {
 			},
 			Type: corev1.SecretTypeSSHAuth,
 		}, nil
+	} else if c.kind == gitBasicAuthKind {
+		return &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+				Annotations: map[string]string{
+					GitAnnotation: c.resource,
+				},
+			},
+			Data: map[string][]byte{
+				corev1.BasicAuthUsernameKey: []byte(c.username),
+				corev1.BasicAuthPasswordKey: []byte(c.password),
+			},
+			Type: corev1.SecretTypeBasicAuth,
+		}, nil
 	}
+
+	return nil, errors.Errorf("credential with unknown kind: %s", c.kind)
 }
 
 type credentialFactory struct {
@@ -148,6 +167,7 @@ type credentialFactory struct {
 	gcrServiceAccountFile string
 	git                   string
 	gitSshKeyFile         string
+	gitUser               string
 }
 
 func (c credentialFactory) makeCredential(writer io.Writer, passwordReader PasswordReader) (credential, error) {
@@ -199,7 +219,19 @@ func (c credentialFactory) makeCredential(writer io.Writer, passwordReader Passw
 			username: "",
 			password: string(buf),
 		}, nil
+	} else if c.git != "" && c.gitUser != "" {
+		password, err := passwordReader.Read(writer, "git password: ", "GIT_PASSWORD")
+		if err != nil {
+			return credential{}, err
+		}
+
+		return credential{
+			kind:     gitBasicAuthKind,
+			resource: c.git,
+			username: c.gitUser,
+			password: string(password),
+		}, nil
 	}
 
-	return credential{}, errors.Newf("incorrect flags provided")
+	return credential{}, errors.Errorf("incorrect flags provided")
 }
