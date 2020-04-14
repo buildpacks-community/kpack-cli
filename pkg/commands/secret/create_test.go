@@ -2,7 +2,6 @@ package secret_test
 
 import (
 	"fmt"
-	"io"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -14,7 +13,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/secret"
+	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
+	"github.com/pivotal/build-service-cli/pkg/secret"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -27,12 +27,16 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		defaultNamespace = "some-default-namespace"
 	)
 
-	passwordReader := fakePasswordReader{
+	fetcher := &fakeCredentialFetcher{
 		passwords: map[string]string{},
 	}
 
+	factory := &secret.Factory{
+		CredentialFetcher: fetcher,
+	}
+
 	cmdFunc := func(k8sClient *fake.Clientset) *cobra.Command {
-		return secret.NewCreateCommand(k8sClient, passwordReader, defaultNamespace)
+		return secretcmds.NewCreateCommand(k8sClient, factory, defaultNamespace)
 	}
 
 	when("creating a dockerhub secret", func() {
@@ -43,7 +47,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			expectedDockerConfig = fmt.Sprintf("{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"%s\",\"password\":\"%s\"}}}", dockerhubId, dockerPassword)
 		)
 
-		passwordReader.passwords["DOCKER_PASSWORD"] = dockerPassword
+		fetcher.passwords["DOCKER_PASSWORD"] = dockerPassword
 
 		when("a namespace is not provided", func() {
 			it("creates a secret with the correct annotations for docker in the default namespace and updates the service account", func() {
@@ -102,13 +106,11 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		when("a namespace is provided", func() {
-
 			var (
 				namespace = "some-namespace"
 			)
 
 			it("creates a secret with the correct annotations for docker in the provided namespace and updates the service account", func() {
-
 				expectedDockerSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,
@@ -172,7 +174,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			expectedRegistryConfig = fmt.Sprintf("{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}}", registry, registryUser, registryPassword)
 		)
 
-		passwordReader.passwords["REGISTRY_PASSWORD"] = registryPassword
+		fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
 
 		when("a namespace is not provided", func() {
 			it("creates a secret with the correct annotations for the registry in the default namespace and updates the service account", func() {
@@ -298,6 +300,8 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"{\"some-key\":\"some-value\"}"}}}`, secret.GcrUrl, secret.GcrUser)
 		)
 
+		fetcher.passwords[gcrServiceAccountFile] = `{"some-key":"some-value"}`
+
 		when("a namespace is not provided", func() {
 			it("creates a secret with the correct annotations for gcr in the default namespace and updates the service account", func() {
 				expectedDockerSecret := &corev1.Secret{
@@ -422,6 +426,8 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			secretName = "my-git-ssh-cred"
 		)
 
+		fetcher.passwords[gitSshFile] = "some git ssh key"
+
 		when("a namespace is not provided", func() {
 			it("creates a secret with the correct annotations for git ssh in the default namespace and updates the service account", func() {
 				expectedGitSecret := &corev1.Secret{
@@ -433,7 +439,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 					Data: map[string][]byte{
-						corev1.SSHAuthPrivateKey: []byte("some git ssh data"),
+						corev1.SSHAuthPrivateKey: []byte("some git ssh key"),
 					},
 					Type: corev1.SecretTypeSSHAuth,
 				}
@@ -492,7 +498,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 					Data: map[string][]byte{
-						corev1.SSHAuthPrivateKey: []byte("some git ssh data"),
+						corev1.SSHAuthPrivateKey: []byte("some git ssh key"),
 					},
 					Type: corev1.SecretTypeSSHAuth,
 				}
@@ -545,7 +551,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			secretName  = "my-git-basic-cred"
 		)
 
-		passwordReader.passwords["GIT_PASSWORD"] = gitPassword
+		fetcher.passwords["GIT_PASSWORD"] = gitPassword
 
 		when("a namespace is not provided", func() {
 			it("creates a secret with the correct annotations for git basic auth in the default namespace and updates the service account", func() {
@@ -665,13 +671,20 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	})
 }
 
-type fakePasswordReader struct {
+type fakeCredentialFetcher struct {
 	passwords map[string]string
 }
 
-func (s fakePasswordReader) Read(_ io.Writer, _, envVar string) (string, error) {
-	if password, ok := s.passwords[envVar]; ok {
+func (f *fakeCredentialFetcher) FetchPassword(envVar, _ string) (string, error) {
+	if password, ok := f.passwords[envVar]; ok {
 		return password, nil
 	}
 	return "", errors.Errorf("secret for %s not found", envVar)
+}
+
+func (f *fakeCredentialFetcher) FetchFile(_, filename string) (string, error) {
+	if password, ok := f.passwords[filename]; ok {
+		return password, nil
+	}
+	return "", errors.Errorf("secret for %s not found", filename)
 }
