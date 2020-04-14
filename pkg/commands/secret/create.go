@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
+	"gopkg.in/errgo.v2/fmt/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "k8s.io/client-go/kubernetes"
@@ -14,6 +16,8 @@ import (
 
 const (
 	DockerhubUrl       = "https://index.docker.io/v1/"
+	GcrUrl             = "gcr.io"
+	GcrUser            = "_json_key"
 	RegistryAnnotation = "build.pivotal.io/docker"
 )
 
@@ -23,7 +27,7 @@ type PasswordReader interface {
 
 func NewCreateCommand(k8sClient k8s.Interface, passwordReader PasswordReader, defaultNamespace string) *cobra.Command {
 	var (
-		dockerhubId string
+		credFactory credentialFactory
 		namespace   string
 	)
 
@@ -35,15 +39,15 @@ func NewCreateCommand(k8sClient k8s.Interface, passwordReader PasswordReader, de
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			password, err := passwordReader.Read(cmd.OutOrStdout(), "dockerhub password: ", "DOCKER_PASSWORD")
+			cred, err := credFactory.makeCredential(cmd.OutOrStdout(), passwordReader)
 			if err != nil {
 				return err
 			}
 
 			configJson := dockerConfigJson{Auths: DockerCreds{
-				DockerhubUrl: authn.AuthConfig{
-					Username: dockerhubId,
-					Password: password,
+				cred.resource: authn.AuthConfig{
+					Username: cred.username,
+					Password: cred.password,
 				},
 			}}
 			dockerCfgJson, err := json.Marshal(configJson)
@@ -56,7 +60,7 @@ func NewCreateCommand(k8sClient k8s.Interface, passwordReader PasswordReader, de
 					Name:      args[0],
 					Namespace: namespace,
 					Annotations: map[string]string{
-						RegistryAnnotation: DockerhubUrl,
+						RegistryAnnotation: cred.resource,
 					},
 				},
 				Data: map[string][]byte{
@@ -83,13 +87,68 @@ func NewCreateCommand(k8sClient k8s.Interface, passwordReader PasswordReader, de
 				return err
 			}
 
-			_, err = cmd.OutOrStdout().Write([]byte(fmt.Sprintf("\"%s\" created\n", args[0])))
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s created\n", args[0])
 			return err
 		},
 	}
 
-	cmd.Flags().StringVarP(&dockerhubId, "dockerhub", "", "", "dockerhub id")
+	cmd.Flags().StringVarP(&credFactory.dockerhubId, "dockerhub", "", "", "dockerhub id")
+	cmd.Flags().StringVarP(&credFactory.registry, "registry", "", "", "registry")
+	cmd.Flags().StringVarP(&credFactory.registryUser, "registry-user", "", "", "registry user")
+	cmd.Flags().StringVarP(&credFactory.gcrServiceAccountFile, "gcr", "", "", "path to a file containing the GCR service account")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "the namespace of the image")
 
 	return cmd
+}
+
+type credential struct {
+	resource string
+	username string
+	password string
+}
+
+type credentialFactory struct {
+	dockerhubId           string
+	registry              string
+	registryUser          string
+	gcrServiceAccountFile string
+}
+
+func (c credentialFactory) makeCredential(writer io.Writer, passwordReader PasswordReader) (credential, error) {
+	if c.dockerhubId != "" {
+		password, err := passwordReader.Read(writer, "dockerhub password: ", "DOCKER_PASSWORD")
+		if err != nil {
+			return credential{}, err
+		}
+
+		return credential{
+			resource: DockerhubUrl,
+			username: c.dockerhubId,
+			password: password,
+		}, nil
+	} else if c.registry != "" && c.registryUser != "" {
+		password, err := passwordReader.Read(writer, "registry password: ", "REGISTRY_PASSWORD")
+		if err != nil {
+			return credential{}, err
+		}
+
+		return credential{
+			resource: c.registry,
+			username: c.registryUser,
+			password: password,
+		}, nil
+	} else if c.gcrServiceAccountFile != "" {
+		buf, err := ioutil.ReadFile(c.gcrServiceAccountFile)
+		if err != nil {
+			return credential{}, err
+		}
+
+		return credential{
+			resource: GcrUrl,
+			username: GcrUser,
+			password: string(buf),
+		}, nil
+	}
+
+	return credential{}, errors.Newf("incorrect flags provided")
 }

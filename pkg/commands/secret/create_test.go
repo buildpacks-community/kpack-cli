@@ -7,6 +7,7 @@ import (
 
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"gopkg.in/errgo.v2/fmt/errors"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,7 +28,9 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		defaultNamespace = "some-default-namespace"
 	)
 
-	passwordReader := stubPasswordReader{}
+	passwordReader := fakePasswordReader{
+		passwords: map[string]string{},
+	}
 
 	cmdFunc := func(k8sClient *fake.Clientset) *cobra.Command {
 		return secret.NewCreateCommand(k8sClient, passwordReader, defaultNamespace)
@@ -35,75 +38,394 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("creating a dockerhub secret", func() {
 
-		it("creates a secret with the correct annotations for docker in the default namespace and updates the service account", func() {
+		var (
+			dockerhubId          = "my-dockerhub-id"
+			dockerPassword       = "dummy-password"
+			secretName           = "my-docker-cred"
+			expectedDockerConfig = fmt.Sprintf("{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"%s\",\"password\":\"%s\"}}}", dockerhubId, dockerPassword)
+		)
+
+		passwordReader.passwords["DOCKER_PASSWORD"] = dockerPassword
+
+		when("a namespace is not provided", func() {
+
+			it("creates a secret with the correct annotations for docker in the default namespace and updates the service account", func() {
+
+				expectedDockerSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							secret.RegistryAnnotation: secret.DockerhubUrl,
+						},
+					},
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: []byte(expectedDockerConfig),
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+				}
+
+				defaultServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+					},
+				}
+
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{secretName, "--dockerhub", dockerhubId},
+					ExpectedOutput: `my-docker-cred created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedDockerSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+
+		when("a namespace is provided", func() {
 
 			var (
-				dockerhubId          = "my-dockerhub-id"
-				dockerPassword       = "dummy-password"
-				secretName           = "my-docker-cred"
-				expectedDockerConfig = fmt.Sprintf("{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"%s\",\"password\":\"%s\"}}}", dockerhubId, dockerPassword)
+				namespace = "some-namespace"
 			)
 
-			passwordReader.password = dockerPassword
+			it("creates a secret with the correct annotations for docker in the provided namespace and updates the service account", func() {
 
-			expectedDockerSecret := &corev1.Secret{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      secretName,
-					Namespace: defaultNamespace,
-					Annotations: map[string]string{
-						secret.RegistryAnnotation: secret.DockerhubUrl,
+				expectedDockerSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: namespace,
+						Annotations: map[string]string{
+							secret.RegistryAnnotation: secret.DockerhubUrl,
+						},
 					},
-				},
-				Data: map[string][]byte{
-					corev1.DockerConfigJsonKey: []byte(expectedDockerConfig),
-				},
-				Type: corev1.SecretTypeDockerConfigJson,
-			}
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: []byte(expectedDockerConfig),
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+				}
 
-			defaultServiceAccount := &corev1.ServiceAccount{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "default",
-					Namespace: defaultNamespace,
-				},
-			}
+				defaultServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+					},
+				}
 
-			expectedServiceAccount := &corev1.ServiceAccount{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "default",
-					Namespace: defaultNamespace,
-				},
-				ImagePullSecrets: []corev1.LocalObjectReference{
-					{Name: secretName},
-				},
-				Secrets: []corev1.ObjectReference{
-					{Name: secretName},
-				},
-			}
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
 
-			testhelpers.CommandTest{
-				Objects: []runtime.Object{
-					defaultServiceAccount,
-				},
-				Args: []string{"--dockerhub", dockerhubId, "my-docker-cred"},
-				ExpectedOutput: `"my-docker-cred" created
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{secretName, "--dockerhub", dockerhubId, "-n", namespace},
+					ExpectedOutput: `my-docker-cred created
 `,
-				ExpectCreates: []runtime.Object{
-					expectedDockerSecret,
-				},
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: expectedServiceAccount,
+					ExpectCreates: []runtime.Object{
+						expectedDockerSecret,
 					},
-				},
-			}.TestK8s(t, cmdFunc)
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+	})
+
+	when("creating a generic registry secret", func() {
+		var (
+			registry               = "my-registry.io/my-repo"
+			registryUser           = "my-registry-user"
+			registryPassword       = "dummy-password"
+			secretName             = "my-registry-cred"
+			expectedRegistryConfig = fmt.Sprintf("{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}}", registry, registryUser, registryPassword)
+		)
+
+		passwordReader.passwords["REGISTRY_PASSWORD"] = registryPassword
+
+		when("a namespace is not provided", func() {
+			it("creates a secret with the correct annotations for the registry in the default namespace and updates the service account", func() {
+				expectedDockerSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							secret.RegistryAnnotation: registry,
+						},
+					},
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+				}
+
+				defaultServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+					},
+				}
+
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{secretName, "--registry", registry, "--registry-user", registryUser},
+					ExpectedOutput: `my-registry-cred created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedDockerSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+
+		when("a namespace is provided", func() {
+
+			var (
+				namespace = "some-namespace"
+			)
+
+			it("creates a secret with the correct annotations for the registry in the provided namespace and updates the service account", func() {
+
+				expectedDockerSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: namespace,
+						Annotations: map[string]string{
+							secret.RegistryAnnotation: registry,
+						},
+					},
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+				}
+
+				defaultServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+					},
+				}
+
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{secretName, "--registry", registry, "--registry-user", registryUser, "-n", namespace},
+					ExpectedOutput: `my-registry-cred created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedDockerSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+	})
+
+	when("creating a gcr registry secret", func() {
+		var (
+			gcrServiceAccountFile  = "./testdata/gcr-service-account.json"
+			secretName             = "my-gcr-cred"
+			expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"{\"some-key\":\"some-value\"}"}}}`, secret.GcrUrl, secret.GcrUser)
+		)
+
+		when("a namespace is not provided", func() {
+			it("creates a secret with the correct annotations for gcr in the default namespace and updates the service account", func() {
+				expectedDockerSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							secret.RegistryAnnotation: secret.GcrUrl,
+						},
+					},
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+				}
+
+				defaultServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+					},
+				}
+
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{secretName, "--gcr", gcrServiceAccountFile},
+					ExpectedOutput: `my-gcr-cred created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedDockerSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+
+		when("a namespace is provided", func() {
+
+			var (
+				namespace = "some-namespace"
+			)
+
+			it("creates a secret with the correct annotations for the registry in the provided namespace and updates the service account", func() {
+
+				expectedDockerSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: namespace,
+						Annotations: map[string]string{
+							secret.RegistryAnnotation: secret.GcrUrl,
+						},
+					},
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+				}
+
+				defaultServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+					},
+				}
+
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{secretName, "--gcr", gcrServiceAccountFile, "-n", namespace},
+					ExpectedOutput: `my-gcr-cred created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedDockerSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
 		})
 	})
 }
 
-type stubPasswordReader struct {
-	password string
+type fakePasswordReader struct {
+	passwords map[string]string
 }
 
-func (s stubPasswordReader) Read(_ io.Writer, _, _ string) (string, error) {
-	return s.password, nil
+func (s fakePasswordReader) Read(_ io.Writer, _, envVar string) (string, error) {
+	if password, ok := s.passwords[envVar]; ok {
+		return password, nil
+	}
+	return "", errors.Newf("secret for %s not found", envVar)
 }
