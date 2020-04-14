@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
@@ -46,7 +47,7 @@ func main() {
 		Short: "Secret Commands",
 	}
 	secretRootCmd.AddCommand(
-		secretcmds.NewCreateCommand(k8sClient, defaultNamespace),
+		secretcmds.NewCreateCommand(k8sClient, commands.PasswordReader{}, defaultNamespace),
 	)
 
 	rootCmd := &cobra.Command{

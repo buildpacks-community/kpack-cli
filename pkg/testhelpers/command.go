@@ -13,10 +13,10 @@ import (
 )
 
 type CommandTest struct {
-	Objects     []runtime.Object
-	StringInput string
+	Objects []runtime.Object
 
-	Args []string
+	StdIn string
+	Args  []string
 
 	ExpectErr      bool
 	ExpectedOutput string
@@ -53,7 +53,7 @@ func (c CommandTest) TestK8s(t *testing.T, cmdFactory func(clientSet *k8sfakes.C
 	cmd := cmdFactory(client)
 	cmd.SetArgs(c.Args)
 
-	inputBuffer := bytes.NewBufferString(c.StringInput)
+	inputBuffer := bytes.NewBufferString(c.StdIn)
 	cmd.SetIn(inputBuffer)
 
 	out := &bytes.Buffer{}
