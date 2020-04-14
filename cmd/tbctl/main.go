@@ -10,6 +10,7 @@ import (
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/secret"
 )
 
 func main() {
@@ -42,12 +43,18 @@ func main() {
 		imgcmds.NewDeleteCommand(kpackClient, defaultNamespace),
 	)
 
+	credentialFetcher := &commands.CredentialFetcher{}
+
+	secretFactory := &secret.Factory{
+		CredentialFetcher: credentialFetcher,
+	}
+
 	secretRootCmd := &cobra.Command{
 		Use:   "secret",
 		Short: "Secret Commands",
 	}
 	secretRootCmd.AddCommand(
-		secretcmds.NewCreateCommand(k8sClient, commands.PasswordReader{}, defaultNamespace),
+		secretcmds.NewCreateCommand(k8sClient, secretFactory, defaultNamespace),
 	)
 
 	rootCmd := &cobra.Command{
