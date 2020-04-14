@@ -1,11 +1,9 @@
 package secret
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
+	"io"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
@@ -19,30 +17,27 @@ const (
 	RegistryAnnotation = "build.pivotal.io/docker"
 )
 
-func NewCreateCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.Command {
+type PasswordReader interface {
+	Read(out io.Writer, prompt, envVar string) (string, error)
+}
+
+func NewCreateCommand(k8sClient k8s.Interface, passwordReader PasswordReader, defaultNamespace string) *cobra.Command {
 	var (
 		dockerhubId string
 		namespace   string
 	)
 
 	cmd := &cobra.Command{
-		Use:          "create",
+		Use:          "create <name>",
 		Short:        "Create a secret configuration",
-		Long:         "Create a secret configuration by filename",
+		Long:         "Create a secret configuration using registry or github credentials.",
 		Example:      "tbctl secret create my-docker-hub-creds --dockerhub dockerhub-id",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-
-			password := os.Getenv("DOCKER_PASSWORD")
-			if password == "" {
-				cmd.OutOrStdout().Write([]byte("dockerhub password: "))
-				reader := bufio.NewReader(cmd.InOrStdin())
-				res, err := ioutil.ReadAll(reader)
-				if err != nil {
-					return err
-				}
-				password = string(res)
+			password, err := passwordReader.Read(cmd.OutOrStdout(), "dockerhub password: ", "DOCKER_PASSWORD")
+			if err != nil {
+				return err
 			}
 
 			configJson := dockerConfigJson{Auths: DockerCreds{
@@ -51,7 +46,6 @@ func NewCreateCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.C
 					Password: password,
 				},
 			}}
-
 			dockerCfgJson, err := json.Marshal(configJson)
 			if err != nil {
 				return err
@@ -98,10 +92,4 @@ func NewCreateCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.C
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "the namespace of the image")
 
 	return cmd
-}
-
-type DockerCreds map[string]authn.AuthConfig
-
-type dockerConfigJson struct {
-	Auths DockerCreds `json:"auths"`
 }

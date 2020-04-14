@@ -20,7 +20,7 @@ func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *
 	)
 
 	cmd := &cobra.Command{
-		Use:     "apply",
+		Use:     "apply <name>",
 		Short:   "Apply an image configuration",
 		Long:    "Apply an image configuration by filename. This image will be created if it doesn't exist yet.\nOnly YAML files are accepted.",
 		Example: "tbctl image apply -f ./image.yaml\ncat ./image.yaml | tbctl image apply -f -",
