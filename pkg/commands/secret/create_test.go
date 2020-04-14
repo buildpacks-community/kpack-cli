@@ -5,9 +5,9 @@ import (
 	"io"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
-	"gopkg.in/errgo.v2/fmt/errors"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,7 +23,6 @@ func TestSecretCreateCommand(t *testing.T) {
 }
 
 func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
-
 	const (
 		defaultNamespace = "some-default-namespace"
 	)
@@ -37,7 +36,6 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	when("creating a dockerhub secret", func() {
-
 		var (
 			dockerhubId          = "my-dockerhub-id"
 			dockerPassword       = "dummy-password"
@@ -538,6 +536,133 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 	})
+
+	when("creating a git basic auth secret", func() {
+		var (
+			gitRepo     = "https://github.com"
+			gitUser     = "my-git-user"
+			gitPassword = "my-git-password"
+			secretName  = "my-git-basic-cred"
+		)
+
+		passwordReader.passwords["GIT_PASSWORD"] = gitPassword
+
+		when("a namespace is not provided", func() {
+			it("creates a secret with the correct annotations for git basic auth in the default namespace and updates the service account", func() {
+				expectedGitSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							secret.GitAnnotation: gitRepo,
+						},
+					},
+					Data: map[string][]byte{
+						corev1.BasicAuthUsernameKey: []byte(gitUser),
+						corev1.BasicAuthPasswordKey: []byte(gitPassword),
+					},
+					Type: corev1.SecretTypeBasicAuth,
+				}
+
+				defaultServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+					},
+				}
+
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{secretName, "--git", gitRepo, "--git-user", gitUser},
+					ExpectedOutput: `my-git-basic-cred created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedGitSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+
+		when("a namespace is provided", func() {
+			var (
+				namespace = "some-namespace"
+			)
+
+			it("creates a secret with the correct annotations for git basic auth in the provided namespace and updates the service account", func() {
+				expectedGitSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: namespace,
+						Annotations: map[string]string{
+							secret.GitAnnotation: gitRepo,
+						},
+					},
+					Data: map[string][]byte{
+						corev1.BasicAuthUsernameKey: []byte(gitUser),
+						corev1.BasicAuthPasswordKey: []byte(gitPassword),
+					},
+					Type: corev1.SecretTypeBasicAuth,
+				}
+
+				defaultServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+					},
+				}
+
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{secretName, "--git", gitRepo, "--git-user", gitUser, "-n", namespace},
+					ExpectedOutput: `my-git-basic-cred created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedGitSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+	})
 }
 
 type fakePasswordReader struct {
@@ -548,5 +673,5 @@ func (s fakePasswordReader) Read(_ io.Writer, _, envVar string) (string, error) 
 	if password, ok := s.passwords[envVar]; ok {
 		return password, nil
 	}
-	return "", errors.Newf("secret for %s not found", envVar)
+	return "", errors.Errorf("secret for %s not found", envVar)
 }
