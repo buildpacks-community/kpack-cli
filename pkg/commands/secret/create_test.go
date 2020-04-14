@@ -48,7 +48,6 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		passwordReader.passwords["DOCKER_PASSWORD"] = dockerPassword
 
 		when("a namespace is not provided", func() {
-
 			it("creates a secret with the correct annotations for docker in the default namespace and updates the service account", func() {
 
 				expectedDockerSecret := &corev1.Secret{
@@ -407,6 +406,128 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 `,
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+	})
+
+	when("creating a git ssh secret", func() {
+		var (
+			gitRepo    = "git@github.com"
+			gitSshFile = "./testdata/git-ssh.pem"
+			secretName = "my-git-ssh-cred"
+		)
+
+		when("a namespace is not provided", func() {
+			it("creates a secret with the correct annotations for git ssh in the default namespace and updates the service account", func() {
+				expectedGitSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							secret.GitAnnotation: gitRepo,
+						},
+					},
+					Data: map[string][]byte{
+						corev1.SSHAuthPrivateKey: []byte("some git ssh data"),
+					},
+					Type: corev1.SecretTypeSSHAuth,
+				}
+
+				defaultServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+					},
+				}
+
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{secretName, "--git", gitRepo, "--git-ssh-key", gitSshFile},
+					ExpectedOutput: `my-git-ssh-cred created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedGitSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+
+		when("a namespace is provided", func() {
+			var (
+				namespace = "some-namespace"
+			)
+
+			it("creates a secret with the correct annotations for git ssh in the provided namespace and updates the service account", func() {
+				expectedGitSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: namespace,
+						Annotations: map[string]string{
+							secret.GitAnnotation: gitRepo,
+						},
+					},
+					Data: map[string][]byte{
+						corev1.SSHAuthPrivateKey: []byte("some git ssh data"),
+					},
+					Type: corev1.SecretTypeSSHAuth,
+				}
+
+				defaultServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+					},
+				}
+
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{secretName, "--git", gitRepo, "--git-ssh-key", gitSshFile, "-n", namespace},
+					ExpectedOutput: `my-git-ssh-cred created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedGitSecret,
 					},
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{

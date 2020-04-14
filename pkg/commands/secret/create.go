@@ -19,6 +19,7 @@ const (
 	GcrUrl             = "gcr.io"
 	GcrUser            = "_json_key"
 	RegistryAnnotation = "build.pivotal.io/docker"
+	GitAnnotation      = "build.pivotal.io/git"
 )
 
 type PasswordReader interface {
@@ -44,29 +45,9 @@ func NewCreateCommand(k8sClient k8s.Interface, passwordReader PasswordReader, de
 				return err
 			}
 
-			configJson := dockerConfigJson{Auths: DockerCreds{
-				cred.resource: authn.AuthConfig{
-					Username: cred.username,
-					Password: cred.password,
-				},
-			}}
-			dockerCfgJson, err := json.Marshal(configJson)
+			secret, err := cred.toSecret(args[0], namespace)
 			if err != nil {
 				return err
-			}
-
-			secret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      args[0],
-					Namespace: namespace,
-					Annotations: map[string]string{
-						RegistryAnnotation: cred.resource,
-					},
-				},
-				Data: map[string][]byte{
-					corev1.DockerConfigJsonKey: dockerCfgJson,
-				},
-				Type: corev1.SecretTypeDockerConfigJson,
 			}
 
 			_, err = k8sClient.CoreV1().Secrets(namespace).Create(secret)
@@ -96,15 +77,68 @@ func NewCreateCommand(k8sClient k8s.Interface, passwordReader PasswordReader, de
 	cmd.Flags().StringVarP(&credFactory.registry, "registry", "", "", "registry")
 	cmd.Flags().StringVarP(&credFactory.registryUser, "registry-user", "", "", "registry user")
 	cmd.Flags().StringVarP(&credFactory.gcrServiceAccountFile, "gcr", "", "", "path to a file containing the GCR service account")
+	cmd.Flags().StringVarP(&credFactory.git, "git", "", "", "git url")
+	cmd.Flags().StringVarP(&credFactory.gitSshKeyFile, "git-ssh-key", "", "", "path to a file containing the Git SSH private key")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "the namespace of the image")
 
 	return cmd
 }
 
+type secretKind int
+
+const (
+	registryKind secretKind = iota
+	gitSshKind
+)
+
 type credential struct {
+	kind     secretKind
 	resource string
 	username string
 	password string
+}
+
+func (c credential) toSecret(name, namespace string) (*corev1.Secret, error) {
+	if c.kind == registryKind {
+		configJson := dockerConfigJson{Auths: DockerCreds{
+			c.resource: authn.AuthConfig{
+				Username: c.username,
+				Password: c.password,
+			},
+		}}
+		dockerCfgJson, err := json.Marshal(configJson)
+		if err != nil {
+			return nil, err
+		}
+
+		return &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+				Annotations: map[string]string{
+					RegistryAnnotation: c.resource,
+				},
+			},
+			Data: map[string][]byte{
+				corev1.DockerConfigJsonKey: dockerCfgJson,
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+		}, nil
+	} else {
+		return &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+				Annotations: map[string]string{
+					GitAnnotation: c.resource,
+				},
+			},
+			Data: map[string][]byte{
+				corev1.SSHAuthPrivateKey: []byte(c.password),
+			},
+			Type: corev1.SecretTypeSSHAuth,
+		}, nil
+	}
 }
 
 type credentialFactory struct {
@@ -112,6 +146,8 @@ type credentialFactory struct {
 	registry              string
 	registryUser          string
 	gcrServiceAccountFile string
+	git                   string
+	gitSshKeyFile         string
 }
 
 func (c credentialFactory) makeCredential(writer io.Writer, passwordReader PasswordReader) (credential, error) {
@@ -122,6 +158,7 @@ func (c credentialFactory) makeCredential(writer io.Writer, passwordReader Passw
 		}
 
 		return credential{
+			kind:     registryKind,
 			resource: DockerhubUrl,
 			username: c.dockerhubId,
 			password: password,
@@ -133,6 +170,7 @@ func (c credentialFactory) makeCredential(writer io.Writer, passwordReader Passw
 		}
 
 		return credential{
+			kind:     registryKind,
 			resource: c.registry,
 			username: c.registryUser,
 			password: password,
@@ -144,8 +182,21 @@ func (c credentialFactory) makeCredential(writer io.Writer, passwordReader Passw
 		}
 
 		return credential{
+			kind:     registryKind,
 			resource: GcrUrl,
 			username: GcrUser,
+			password: string(buf),
+		}, nil
+	} else if c.git != "" && c.gitSshKeyFile != "" {
+		buf, err := ioutil.ReadFile(c.gitSshKeyFile)
+		if err != nil {
+			return credential{}, err
+		}
+
+		return credential{
+			kind:     gitSshKind,
+			resource: c.git,
+			username: "",
 			password: string(buf),
 		}, nil
 	}
