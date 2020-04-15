@@ -24,12 +24,12 @@ func NewCreateCommand(k8sClient k8s.Interface, secretFactory *secret.Factory, de
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cred, err := secretFactory.MakeSecret(args[0], namespace)
+			sec, err := secretFactory.MakeSecret(args[0], namespace)
 			if err != nil {
 				return err
 			}
 
-			_, err = k8sClient.CoreV1().Secrets(namespace).Create(cred)
+			_, err = k8sClient.CoreV1().Secrets(namespace).Create(sec)
 			if err != nil {
 				return err
 			}

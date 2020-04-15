@@ -2,6 +2,8 @@ package secret
 
 import (
 	"encoding/json"
+	"sort"
+	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pkg/errors"
@@ -38,7 +40,7 @@ func (f *Factory) MakeSecret(name, namespace string) (*corev1.Secret, error) {
 		return nil, err
 	}
 
-	kind, err := f.kind()
+	kind, err := f.getSecretKind()
 	if err != nil {
 		return nil, err
 	}
@@ -60,10 +62,50 @@ func (f *Factory) MakeSecret(name, namespace string) (*corev1.Secret, error) {
 }
 
 func (f *Factory) validate() error {
+	set := paramSet{}
+	set.add("dockerhub", f.DockerhubId)
+	set.add("registry", f.Registry)
+	set.add("gcr", f.GcrServiceAccountFile)
+	set.add("git", f.Git)
+
+	if len(set) != 1 {
+		return errors.Errorf("secret must be one of dockerhub, gcr, registry, or git")
+	}
+
+	set.add("registry-user", f.RegistryUser)
+	set.add("git-user", f.GitUser)
+	set.add("git-ssh-key", f.GitSshKeyFile)
+
+	if set.contains("dockerhub") && len(set) != 1 {
+		return set.getExtraParamsError("dockerhub")
+	}
+
+	if set.contains("gcr") && len(set) != 1 {
+		return set.getExtraParamsError("gcr")
+	}
+
+	if set.contains("registry") {
+		if !set.contains("registry-user") {
+			return errors.Errorf("missing parameter registry-user")
+		} else if len(set) != 2 {
+			return set.getExtraParamsError("registry", "registry-user")
+		}
+	}
+
+	if set.contains("git") {
+		if !set.contains("git-user") && !set.contains("git-ssh-key") {
+			return errors.Errorf("missing parameter git-user or git-ssh-key")
+		} else if set.contains("git-user") && set.contains("git-ssh-key") {
+			return errors.Errorf("must provide one of git-user or git-ssh-key")
+		} else if len(set) != 2 {
+			return set.getExtraParamsError("git", "git-user", "git-ssh-key")
+		}
+	}
+
 	return nil
 }
 
-func (f *Factory) kind() (secretKind, error) {
+func (f *Factory) getSecretKind() (secretKind, error) {
 	if f.DockerhubId != "" {
 		return dockerHubKind, nil
 	} else if f.Registry != "" && f.RegistryUser != "" {
@@ -226,6 +268,31 @@ const (
 	gitSshKind                  = "git ssh"
 	gitBasicAuthKind            = "git basic auth"
 )
+
+type paramSet map[string]interface{}
+
+func (p paramSet) add(key string, value string) {
+	if value != "" {
+		p[key] = nil
+	}
+}
+
+func (p paramSet) contains(key string) bool {
+	_, ok := p[key]
+	return ok
+}
+
+func (p paramSet) getExtraParamsError(keys ...string) error {
+	for _, k := range keys {
+		delete(p, k)
+	}
+	var v []string
+	for k := range p {
+		v = append(v, k)
+	}
+	sort.Strings(v)
+	return errors.Errorf("extraneous parameters: %s", strings.Join(v, ", "))
+}
 
 type dockerCreds map[string]authn.AuthConfig
 
