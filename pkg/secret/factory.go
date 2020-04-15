@@ -102,6 +102,14 @@ func (f *Factory) validate() error {
 		}
 	}
 
+	if f.GitUser != "" && !(strings.HasPrefix(f.Git, "http://") || strings.HasPrefix(f.Git, "https://")) {
+		return errors.Errorf("must provide a valid git url for basic auth (ex. https://github.com)")
+	}
+
+	if f.GitSshKeyFile != "" && !strings.HasPrefix(f.Git, "git@") {
+		return errors.Errorf("must provide a valid git url for SSH (ex. git@github.com)")
+	}
+
 	return nil
 }
 

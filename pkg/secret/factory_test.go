@@ -101,4 +101,22 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 			require.EqualError(t, err, "must provide one of git-user or git-ssh-key")
 		})
 	})
+
+	when("using git basic auth", func() {
+		it("validates that the git url begins with http:// or https://", func() {
+			factory.Git = "some-git"
+			factory.GitUser = "some-git-user"
+			_, err := factory.MakeSecret("test-name", "test-namespace")
+			require.EqualError(t, err, "must provide a valid git url for basic auth (ex. https://github.com)")
+		})
+	})
+
+	when("using git ssh keys", func() {
+		it("validates that the git url begins with git@", func() {
+			factory.Git = "some-git"
+			factory.GitSshKeyFile = "some-ssh-key"
+			_, err := factory.MakeSecret("test-name", "test-namespace")
+			require.EqualError(t, err, "must provide a valid git url for SSH (ex. git@github.com)")
+		})
+	})
 }
