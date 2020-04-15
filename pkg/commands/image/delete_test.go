@@ -45,7 +45,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 					ExpectedOutput: `"some-image" deleted
 `,
-				}.Test(t, cmdFunc)
+				}.TestKpack(t, cmdFunc)
 			})
 		})
 	})
@@ -69,7 +69,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Args: []string{"some-image"},
 					ExpectedOutput: `"some-image" deleted
 `,
-				}.Test(t, cmdFunc)
+				}.TestKpack(t, cmdFunc)
 			})
 		})
 
@@ -84,7 +84,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						"some-image",
 					},
 					ExpectErr: true,
-				}.Test(t, cmdFunc)
+				}.TestKpack(t, cmdFunc)
 			})
 		})
 	})

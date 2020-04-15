@@ -6,8 +6,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
+	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/secret"
 )
 
 func main() {
@@ -18,6 +21,12 @@ func main() {
 	}
 
 	kpackClient, err := k8s.NewKpackClient()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	k8sClient, err := k8s.NewK8sClient()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -34,11 +43,26 @@ func main() {
 		imgcmds.NewDeleteCommand(kpackClient, defaultNamespace),
 	)
 
+	credentialFetcher := &commands.CredentialFetcher{}
+
+	secretFactory := &secret.Factory{
+		CredentialFetcher: credentialFetcher,
+	}
+
+	secretRootCmd := &cobra.Command{
+		Use:   "secret",
+		Short: "Secret Commands",
+	}
+	secretRootCmd.AddCommand(
+		secretcmds.NewCreateCommand(k8sClient, secretFactory, defaultNamespace),
+	)
+
 	rootCmd := &cobra.Command{
 		Use: "tbctl",
 	}
 	rootCmd.AddCommand(
 		imageRootCmd,
+		secretRootCmd,
 	)
 
 	err = rootCmd.Execute()

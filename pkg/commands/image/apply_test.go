@@ -65,7 +65,7 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 				ExpectCreates: []runtime.Object{
 					expectedImage,
 				},
-			}.Test(t, cmdFunc)
+			}.TestKpack(t, cmdFunc)
 		})
 
 		when("a valid image config with no namespace exists", func() {
@@ -79,7 +79,7 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedImage,
 					},
-				}.Test(t, cmdFunc)
+				}.TestKpack(t, cmdFunc)
 			})
 		})
 
@@ -100,7 +100,7 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 							Object: expectedImage,
 						},
 					},
-				}.Test(t, cmdFunc)
+				}.TestKpack(t, cmdFunc)
 			})
 		})
 	})
