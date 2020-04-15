@@ -19,7 +19,19 @@ func NewCreateCommand(k8sClient k8s.Interface, secretFactory *secret.Factory, de
 	cmd := &cobra.Command{
 		Use:   "create <name>",
 		Short: "Create a secret configuration",
-		Long:  "Create a secret configuration using registry or git credentials.",
+		Long: `Create a secret configuration using registry or git credentials.
+
+The flags for this command determine the type of secret that will be created:
+
+	"--dockerhub" to create DockerHub credentials
+
+	"--gcr" to create Google Container Registry credentials
+
+	"--registry" and "--registry-user" to create credentials for other registries
+
+	"--git" and "--git-ssh-key" to create SSH based git credentials
+
+	"--git" and "--git-user" to create Basic Auth based git credentials`,
 		Example: `tbctl secret create my-docker-hub-creds --dockerhub dockerhub-id
 tbctl secret create my-gcr-creds --gcr /path/to/gcr/service-account.json
 tbctl secret create my-registry-cred --registry example-registry.io/my-repo --registry-user my-registry-user
