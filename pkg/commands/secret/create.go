@@ -19,8 +19,12 @@ func NewCreateCommand(k8sClient k8s.Interface, secretFactory *secret.Factory, de
 	cmd := &cobra.Command{
 		Use:          "create <name>",
 		Short:        "Create a secret configuration",
-		Long:         "Create a secret configuration using registry or github credentials.",
-		Example:      "tbctl secret create my-docker-hub-creds --dockerhub dockerhub-id",
+		Long:         "Create a secret configuration using registry or git credentials.",
+		Example:      `tbctl secret create my-docker-hub-creds --dockerhub dockerhub-id
+tbctl secret create my-gcr-creds --gcr /path/to/gcr/service-account.json
+tbctl secret create my-registry-cred --registry example-registry.io/my-repo --registry-user my-registry-user
+tbctl secret create my-git-ssh-cred --git git@github.com --git-ssh-key /path/to/git/ssh-private-key.pem
+tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
