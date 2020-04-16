@@ -34,7 +34,7 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 			const secretName = "some-secret"
 
 			when("the secret exist", func() {
-				it("deletes the secrets", func() {
+				it("deletes the secret and removes it from the default service account", func() {
 					secretOne := &corev1.Secret{
 						ObjectMeta: v1.ObjectMeta{
 							Name:      secretName,
@@ -44,13 +44,38 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							},
 						},
 					}
+					serviceAccount := &corev1.ServiceAccount{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "default",
+							Namespace: defaultNamespace,
+						},
+						Secrets: []corev1.ObjectReference{
+							{Name: secretName},
+						},
+						ImagePullSecrets: []corev1.LocalObjectReference{
+							{Name: secretName},
+						},
+					}
+
+					expectedServiceAccount := &corev1.ServiceAccount{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "default",
+							Namespace: defaultNamespace,
+						},
+					}
 
 					testhelpers.CommandTest{
 						Objects: []runtime.Object{
 							secretOne,
+							serviceAccount,
 						},
 						Args:           []string{secretName},
 						ExpectedOutput: "\"some-secret\" deleted\n",
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
 						ExpectDeletes: []clientgotesting.DeleteActionImpl{
 							{
 								ActionImpl: clientgotesting.ActionImpl{
@@ -65,7 +90,17 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 			when("the secret does not exist", func() {
 				it("prints an appropriate message", func() {
+					serviceAccount := &corev1.ServiceAccount{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "default",
+							Namespace: defaultNamespace,
+						},
+					}
+
 					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							serviceAccount,
+						},
 						Args: []string{"some-secret"},
 						ExpectDeletes: []clientgotesting.DeleteActionImpl{
 							{
@@ -89,7 +124,7 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 			)
 
 			when("the secret exist", func() {
-				it("deletes the secrets", func() {
+				it("deletes the secret and removes it from the default service account", func() {
 					secretOne := &corev1.Secret{
 						ObjectMeta: v1.ObjectMeta{
 							Name:      secretName,
@@ -99,13 +134,38 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							},
 						},
 					}
+					serviceAccount := &corev1.ServiceAccount{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "default",
+							Namespace: namespace,
+						},
+						Secrets: []corev1.ObjectReference{
+							{Name: secretName},
+						},
+						ImagePullSecrets: []corev1.LocalObjectReference{
+							{Name: secretName},
+						},
+					}
+
+					expectedServiceAccount := &corev1.ServiceAccount{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "default",
+							Namespace: namespace,
+						},
+					}
 
 					testhelpers.CommandTest{
 						Objects: []runtime.Object{
 							secretOne,
+							serviceAccount,
 						},
 						Args:           []string{secretName, "-n", namespace},
 						ExpectedOutput: "\"some-secret\" deleted\n",
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
 						ExpectDeletes: []clientgotesting.DeleteActionImpl{
 							{
 								ActionImpl: clientgotesting.ActionImpl{
@@ -120,7 +180,17 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 			when("the secret does not exist", func() {
 				it("prints an appropriate message", func() {
+					serviceAccount := &corev1.ServiceAccount{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "default",
+							Namespace: namespace,
+						},
+					}
+
 					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							serviceAccount,
+						},
 						Args: []string{secretName, "-n", namespace},
 						ExpectDeletes: []clientgotesting.DeleteActionImpl{
 							{

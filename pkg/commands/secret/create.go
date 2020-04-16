@@ -54,9 +54,8 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 			if err != nil {
 				return err
 			}
-
-			serviceAccount.ImagePullSecrets = append(serviceAccount.ImagePullSecrets, corev1.LocalObjectReference{Name: args[0]})
 			serviceAccount.Secrets = append(serviceAccount.Secrets, corev1.ObjectReference{Name: args[0]})
+			serviceAccount.ImagePullSecrets = append(serviceAccount.ImagePullSecrets, corev1.LocalObjectReference{Name: args[0]})
 
 			_, err = k8sClient.CoreV1().ServiceAccounts(namespace).Update(serviceAccount)
 			if err != nil {
