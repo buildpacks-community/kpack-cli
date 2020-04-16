@@ -63,7 +63,7 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 				return err
 			}
 
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s created\n", args[0])
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", args[0])
 			return err
 		},
 	}
