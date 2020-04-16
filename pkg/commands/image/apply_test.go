@@ -21,7 +21,6 @@ func TestImageApplyCommand(t *testing.T) {
 }
 
 func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
-
 	const defaultNamespace = "some-default-namespace"
 
 	var (

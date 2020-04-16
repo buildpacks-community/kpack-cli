@@ -46,7 +46,7 @@ func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *
 				return err
 			}
 
-			_, err = cmd.OutOrStdout().Write([]byte(fmt.Sprintf("\"%s\" applied\n", imageConfig.Name)))
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" applied\n", imageConfig.Name)
 			return err
 		},
 		SilenceUsage: true,

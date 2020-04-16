@@ -26,7 +26,7 @@ func NewDeleteCommand(kpackClient versioned.Interface, defaultNamespace string) 
 				return errors.Errorf("image \"%s\" not found", args[0])
 			}
 
-			_, err = cmd.OutOrStdout().Write([]byte(fmt.Sprintf("\"%s\" deleted\n", args[0])))
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" deleted\n", args[0])
 			return err
 		},
 		SilenceUsage: true,

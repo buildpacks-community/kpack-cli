@@ -55,6 +55,7 @@ func main() {
 	}
 	secretRootCmd.AddCommand(
 		secretcmds.NewCreateCommand(k8sClient, secretFactory, defaultNamespace),
+		secretcmds.NewListCommand(k8sClient, defaultNamespace),
 	)
 
 	rootCmd := &cobra.Command{
