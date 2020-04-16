@@ -16,10 +16,10 @@ import (
 )
 
 func TestSecretListCommand(t *testing.T) {
-	spec.Run(t, "TestSecretListCommand", testSuite)
+	spec.Run(t, "TestSecretListCommand", testSecretListCommand)
 }
 
-func testSuite(t *testing.T, when spec.G, it spec.S) {
+func testSecretListCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		defaultNamespace = "some-default-namespace"
 	)

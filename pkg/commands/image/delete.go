@@ -32,7 +32,7 @@ func NewDeleteCommand(kpackClient versioned.Interface, defaultNamespace string) 
 		SilenceUsage: true,
 	}
 
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "the namespace of the image to delete")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
 
 	return cmd
 }

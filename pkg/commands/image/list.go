@@ -37,7 +37,7 @@ func NewListCommand(kpackClient versioned.Interface, defaultNamespace string) *c
 		},
 		SilenceUsage: true,
 	}
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "the namespace to query")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
 
 	return cmd
 }

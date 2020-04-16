@@ -68,6 +68,7 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 		},
 	}
 
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
 	cmd.Flags().StringVarP(&secretFactory.DockerhubId, "dockerhub", "", "", "dockerhub id")
 	cmd.Flags().StringVarP(&secretFactory.Registry, "registry", "", "", "registry")
 	cmd.Flags().StringVarP(&secretFactory.RegistryUser, "registry-user", "", "", "registry user")
@@ -75,7 +76,6 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 	cmd.Flags().StringVarP(&secretFactory.Git, "git", "", "", "git url")
 	cmd.Flags().StringVarP(&secretFactory.GitSshKeyFile, "git-ssh-key", "", "", "path to a file containing the Git SSH private key")
 	cmd.Flags().StringVarP(&secretFactory.GitUser, "git-user", "", "", "git user")
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "the namespace of the image")
 
 	return cmd
 }

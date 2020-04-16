@@ -36,7 +36,7 @@ func NewListCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.Com
 		},
 	}
 
-	command.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "namespace name")
+	command.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
 
 	return &command
 }

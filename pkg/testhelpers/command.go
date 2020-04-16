@@ -22,7 +22,7 @@ type CommandTest struct {
 	ExpectedOutput string
 	ExpectUpdates  []clientgotesting.UpdateActionImpl
 	ExpectCreates  []runtime.Object
-	ExpectDeletes  []string
+	ExpectDeletes  []clientgotesting.DeleteActionImpl
 }
 
 func (c CommandTest) TestKpack(t *testing.T, cmdFactory func(clientSet *kpackfakes.Clientset) *cobra.Command) {

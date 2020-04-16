@@ -36,6 +36,6 @@ func NewGetCommand(kpackClient versioned.Interface, defaultNamespace string) *co
 		SilenceUsage: true,
 	}
 
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "the namespace of the image")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
 	return cmd
 }

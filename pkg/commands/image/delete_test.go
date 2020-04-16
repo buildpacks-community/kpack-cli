@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientgotesting "k8s.io/client-go/testing"
 
 	"github.com/pivotal/build-service-cli/pkg/commands/image"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
@@ -39,12 +40,16 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						image,
 					},
-					Args: []string{"some-image", "-n", "some-namespace"},
-					ExpectDeletes: []string{
-						image.Name,
+					Args:           []string{"some-image", "-n", "some-namespace"},
+					ExpectedOutput: "\"some-image\" deleted\n",
+					ExpectDeletes: []clientgotesting.DeleteActionImpl{
+						{
+							ActionImpl: clientgotesting.ActionImpl{
+								Namespace: "some-namespace",
+							},
+							Name: image.Name,
+						},
 					},
-					ExpectedOutput: `"some-image" deleted
-`,
 				}.TestKpack(t, cmdFunc)
 			})
 		})
@@ -63,12 +68,16 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						image,
 					},
-					ExpectDeletes: []string{
-						image.Name,
+					Args:           []string{"some-image"},
+					ExpectedOutput: "\"some-image\" deleted\n",
+					ExpectDeletes: []clientgotesting.DeleteActionImpl{
+						{
+							ActionImpl: clientgotesting.ActionImpl{
+								Namespace: defaultNamespace,
+							},
+							Name: image.Name,
+						},
 					},
-					Args: []string{"some-image"},
-					ExpectedOutput: `"some-image" deleted
-`,
 				}.TestKpack(t, cmdFunc)
 			})
 		})
@@ -78,12 +87,16 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 				testhelpers.CommandTest{
 					Objects: nil,
 					Args:    []string{"some-image", "-n", "some-namespace"},
-					ExpectedOutput: `Error: image "some-image" not found
-`,
-					ExpectDeletes: []string{
-						"some-image",
+					ExpectDeletes: []clientgotesting.DeleteActionImpl{
+						{
+							ActionImpl: clientgotesting.ActionImpl{
+								Namespace: "some-namespace",
+							},
+							Name: "some-image",
+						},
 					},
-					ExpectErr: true,
+					ExpectedOutput: "Error: image \"some-image\" not found\n",
+					ExpectErr:      true,
 				}.TestKpack(t, cmdFunc)
 			})
 		})

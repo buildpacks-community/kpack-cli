@@ -55,6 +55,7 @@ func main() {
 	}
 	secretRootCmd.AddCommand(
 		secretcmds.NewCreateCommand(k8sClient, secretFactory, defaultNamespace),
+		secretcmds.NewDeleteCommand(k8sClient, defaultNamespace),
 		secretcmds.NewListCommand(k8sClient, defaultNamespace),
 	)
 
