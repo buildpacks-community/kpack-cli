@@ -84,7 +84,8 @@ secret-three
 			when("there are no secrets", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						ExpectedOutput: "no secrets found in some-default-namespace namespace\n",
+						ExpectErr:      true,
+						ExpectedOutput: "Error: no secrets found in \"some-default-namespace\" namespace\n",
 					}.TestK8s(t, cmdFunc)
 				})
 			})
@@ -149,7 +150,8 @@ secret-three
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
 						Args:           []string{"-n", namespace},
-						ExpectedOutput: "no secrets found in some-namespace namespace\n",
+						ExpectErr:      true,
+						ExpectedOutput: "Error: no secrets found in \"some-namespace\" namespace\n",
 					}.TestK8s(t, cmdFunc)
 				})
 			})

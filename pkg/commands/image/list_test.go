@@ -120,9 +120,9 @@ test-image-3    True       test-registry.io/test-image-3@sha256:abcdef123
 			when("the namespace has no images", func() {
 				it("returns a message that the namespace has no images", func() {
 					testhelpers.CommandTest{
-						Args: []string{"-n", "test-namespace"},
-						ExpectedOutput: `no images found in test-namespace namespace
-`,
+						Args:           []string{"-n", "test-namespace"},
+						ExpectErr:      true,
+						ExpectedOutput: "Error: no images found in \"test-namespace\" namespace\n",
 					}.TestKpack(t, cmdFunc)
 
 				})
@@ -224,8 +224,8 @@ test-image-3    True       test-registry.io/test-image-3@sha256:abcdef123
 			when("the namespace has no images", func() {
 				it("returns a message that the namespace has no images", func() {
 					testhelpers.CommandTest{
-						ExpectedOutput: `no images found in some-default-namespace namespace
-`,
+						ExpectErr:      true,
+						ExpectedOutput: "Error: no images found in \"some-default-namespace\" namespace\n",
 					}.TestKpack(t, cmdFunc)
 
 				})

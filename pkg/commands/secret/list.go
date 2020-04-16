@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"text/tabwriter"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,8 +29,7 @@ func NewListCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.Com
 			}
 
 			if len(secretList.Items) == 0 {
-				_, err := fmt.Fprintf(cmd.OutOrStdout(), "no secrets found in %s namespace\n", namespace)
-				return err
+				return errors.Errorf("no secrets found in \"%s\" namespace", namespace)
 			} else {
 				return displaySecretsTable(cmd, secretList)
 			}

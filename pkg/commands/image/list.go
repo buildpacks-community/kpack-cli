@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,8 +29,7 @@ func NewListCommand(kpackClient versioned.Interface, defaultNamespace string) *c
 			}
 
 			if len(imageList.Items) == 0 {
-				_, err := fmt.Fprintf(cmd.OutOrStdout(), "no images found in %s namespace\n", namespace)
-				return err
+				return errors.Errorf("no images found in \"%s\" namespace", namespace)
 			} else {
 				return displayImagesTable(cmd, imageList)
 			}
