@@ -13,6 +13,8 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/secret"
 )
 
+var Version = "dev"
+
 func main() {
 	defaultNamespace, err := k8s.GetDefaultNamespace()
 	if err != nil {
@@ -59,10 +61,19 @@ func main() {
 		secretcmds.NewListCommand(k8sClient, defaultNamespace),
 	)
 
+	versionCmd := &cobra.Command{
+		Use:   "version",
+		Short: "Display tbctl version",
+		Run: func(cmd *cobra.Command, _ []string) {
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), Version)
+		},
+	}
+
 	rootCmd := &cobra.Command{
 		Use: "tbctl",
 	}
 	rootCmd.AddCommand(
+		versionCmd,
 		imageRootCmd,
 		secretRootCmd,
 	)
