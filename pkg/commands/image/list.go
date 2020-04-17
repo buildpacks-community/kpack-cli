@@ -17,9 +17,11 @@ func NewListCommand(kpackClient versioned.Interface, defaultNamespace string) *c
 	)
 
 	cmd := &cobra.Command{
-		Use:     "list",
-		Short:   "Display images in the desired namespace",
-		Long:    "Prints a table of the most important information about images. You will only see images in your current namespace.\nIf no namespace is provided, the default namespace is queried.",
+		Use:   "list",
+		Short: "List images",
+		Long: `Prints a table of the most important information about images.
+Will only display images in your current namespace.
+If no namespace is provided, the default namespace is queried.`,
 		Example: "tbctl image list\ntbctl image list -n my-namespace",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			imageList, err := kpackClient.BuildV1alpha1().Images(namespace).List(metav1.ListOptions{})

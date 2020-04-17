@@ -5,10 +5,13 @@ import (
 	"io"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/pkg/errors"
 )
 
 type TableWriter struct {
-	writer *tabwriter.Writer
+	numColumns int
+	writer     *tabwriter.Writer
 }
 
 func NewTableWriter(out io.Writer, headers ...string) (*TableWriter, error) {
@@ -19,10 +22,17 @@ func NewTableWriter(out io.Writer, headers ...string) (*TableWriter, error) {
 		return nil, err
 	}
 
-	return &TableWriter{writer: writer}, nil
+	return &TableWriter{
+		numColumns: len(headers),
+		writer:     writer,
+	}, nil
 }
 
 func (w *TableWriter) AddRow(columns ...string) error {
+	if len(columns) != w.numColumns {
+		return errors.New("incorrect number of columns for row")
+	}
+
 	_, err := fmt.Fprintln(w.writer, strings.Join(columns, "\t"))
 	return err
 }

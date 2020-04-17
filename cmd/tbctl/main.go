@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	buildcmds "github.com/pivotal/build-service-cli/pkg/commands/build"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
@@ -34,6 +35,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	buildRootCmd := &cobra.Command{
+		Use:   "build",
+		Short: "Build Commands",
+	}
+	buildRootCmd.AddCommand(
+		buildcmds.NewListCommand(kpackClient, defaultNamespace),
+	)
+
 	imageRootCmd := &cobra.Command{
 		Use:   "image",
 		Short: "Image commands",
@@ -43,6 +52,7 @@ func main() {
 		imgcmds.NewApplyCommand(kpackClient, defaultNamespace),
 		imgcmds.NewListCommand(kpackClient, defaultNamespace),
 		imgcmds.NewDeleteCommand(kpackClient, defaultNamespace),
+		buildRootCmd,
 	)
 
 	credentialFetcher := &commands.CredentialFetcher{}

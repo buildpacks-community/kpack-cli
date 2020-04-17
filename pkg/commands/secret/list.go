@@ -15,10 +15,12 @@ func NewListCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.Com
 	var namespace string
 
 	command := cobra.Command{
-		Use:          "list",
-		Short:        "Display list of secrets",
-		Long:         "Prints a table of the most important information about secrets. Only displays secrets in the current namespace.",
-		Example:      "tbctl secret list",
+		Use:   "list",
+		Short: "List secrets",
+		Long: `Prints a table of the most important information about secrets.
+Will only display secrets in the current namespace.
+If no namespace is provided, the default namespace is queried.`,
+		Example:      "tbctl secret list\ntbctl secret list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			secretList, err := k8sClient.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
