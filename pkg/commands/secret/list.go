@@ -1,15 +1,13 @@
 package secret
 
 import (
-	"fmt"
-	"text/tabwriter"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "k8s.io/client-go/kubernetes"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/secret"
 )
 
@@ -42,9 +40,7 @@ func NewListCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.Com
 }
 
 func displaySecretsTable(cmd *cobra.Command, secretList *v1.SecretList) error {
-	writer := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 4, 4, ' ', 0)
-
-	_, err := fmt.Fprintln(writer, "NAME\tTARGET")
+	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "TARGET")
 	if err != nil {
 		return err
 	}
@@ -55,11 +51,11 @@ func displaySecretsTable(cmd *cobra.Command, secretList *v1.SecretList) error {
 			secretValue = item.Annotations[secret.GitAnnotation]
 		}
 
-		_, err := fmt.Fprintf(writer, "%s\t%s\n", item.Name, secretValue)
+		err := writer.AddRow(item.Name, secretValue)
 		if err != nil {
 			return err
 		}
 	}
 
-	return writer.Flush()
+	return writer.Write()
 }

@@ -1,15 +1,14 @@
 package image
 
 import (
-	"fmt"
-	"text/tabwriter"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
 func NewListCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
@@ -43,21 +42,19 @@ func NewListCommand(kpackClient versioned.Interface, defaultNamespace string) *c
 }
 
 func displayImagesTable(cmd *cobra.Command, imageList *v1alpha1.ImageList) error {
-	writer := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 4, 4, ' ', 0)
-
-	_, err := fmt.Fprintln(writer, "NAME\tREADY\tLATEST IMAGE")
+	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY", "LATEST IMAGE")
 	if err != nil {
 		return err
 	}
 
 	for _, img := range imageList.Items {
-		_, err = fmt.Fprintf(writer, "%s\t%s\t%s\n", img.Name, getReadyText(img), img.Status.LatestImage)
+		err := writer.AddRow(img.Name, getReadyText(img), img.Status.LatestImage)
 		if err != nil {
 			return err
 		}
 	}
 
-	return writer.Flush()
+	return writer.Write()
 }
 
 func getReadyText(img v1alpha1.Image) string {
