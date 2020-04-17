@@ -1,10 +1,8 @@
 package build
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
-	"text/tabwriter"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
@@ -75,71 +73,50 @@ func findBuild(buildList *v1alpha1.BuildList, buildNumber int, img, namespace st
 }
 
 func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
-	writer := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 4, 4, ' ', 0)
+	statusWriter := commands.NewStatusWriter(cmd.OutOrStdout())
 
-	_, err := fmt.Fprintf(writer, "Image:\t%s\n", bld.Status.LatestImage)
+	err := statusWriter.AddBlock(
+		"Image", bld.Status.LatestImage,
+		"Status", getStatus(bld),
+		"Reasons", bld.Annotations[v1alpha1.BuildReasonAnnotation],
+	)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(writer, "Status:\t%s\n", getStatus(bld))
-	if err != nil {
-		return err
-	}
-
-	_, err = fmt.Fprintf(writer, "Reasons:\t%s\n\n", bld.Annotations[v1alpha1.BuildReasonAnnotation])
-	if err != nil {
-		return err
-	}
-
-	_, err = fmt.Fprintf(writer, "Builder:\t%s\n", bld.Spec.Builder.Image)
-	if err != nil {
-		return err
-	}
-
-	_, err = fmt.Fprintf(writer, "Run Image:\t%s\n\n", bld.Status.Stack.RunImage)
+	err = statusWriter.AddBlock(
+		"Builder", bld.Spec.Builder.Image,
+		"Run Image", bld.Status.Stack.RunImage,
+	)
 	if err != nil {
 		return err
 	}
 
 	if bld.Spec.Source.Git != nil {
-		_, err = fmt.Fprintln(writer, "Source:\tGit")
-		if err != nil {
-			return err
-		}
-
-		_, err = fmt.Fprintf(writer, "Url:\t%s\n", bld.Spec.Source.Git.URL)
-		if err != nil {
-			return err
-		}
-
-		_, err = fmt.Fprintf(writer, "Revision:\t%s\n", bld.Spec.Source.Git.Revision)
+		err = statusWriter.AddBlock(
+			"Source", "Git",
+			"Url", bld.Spec.Source.Git.URL,
+			"Revision", bld.Spec.Source.Git.Revision,
+		)
 		if err != nil {
 			return err
 		}
 	} else if bld.Spec.Source.Blob != nil {
-		_, err = fmt.Fprintln(writer, "Source:\tBlob")
-		if err != nil {
-			return err
-		}
-
-		_, err = fmt.Fprintf(writer, "Url:\t%s\n", bld.Spec.Source.Blob.URL)
+		err = statusWriter.AddBlock(
+			"Source", "Blob",
+			"Url", bld.Spec.Source.Blob.URL,
+		)
 		if err != nil {
 			return err
 		}
 	} else {
-		_, err = fmt.Fprintln(writer, "Source:\tLocal Source")
+		err = statusWriter.AddBlock("Source", "Local Source")
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err = fmt.Fprintln(writer, "")
-	if err != nil {
-		return err
-	}
-
-	err = writer.Flush()
+	err = statusWriter.Write()
 	if err != nil {
 		return err
 	}
