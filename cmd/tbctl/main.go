@@ -41,6 +41,7 @@ func main() {
 	}
 	buildRootCmd.AddCommand(
 		buildcmds.NewListCommand(kpackClient, defaultNamespace),
+		buildcmds.NewStatusCommand(kpackClient, defaultNamespace),
 	)
 
 	imageRootCmd := &cobra.Command{
