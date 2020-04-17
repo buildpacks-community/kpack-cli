@@ -57,7 +57,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						Name:      secretName,
 						Namespace: defaultNamespace,
 						Annotations: map[string]string{
-							secret.RegistryAnnotation: secret.DockerhubUrl,
+							secret.TargetAnnotation: secret.DockerhubUrl,
 						},
 					},
 					Data: map[string][]byte{
@@ -116,7 +116,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						Name:      secretName,
 						Namespace: namespace,
 						Annotations: map[string]string{
-							secret.RegistryAnnotation: secret.DockerhubUrl,
+							secret.TargetAnnotation: secret.DockerhubUrl,
 						},
 					},
 					Data: map[string][]byte{
@@ -183,7 +183,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						Name:      secretName,
 						Namespace: defaultNamespace,
 						Annotations: map[string]string{
-							secret.RegistryAnnotation: registry,
+							secret.TargetAnnotation: registry,
 						},
 					},
 					Data: map[string][]byte{
@@ -244,7 +244,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						Name:      secretName,
 						Namespace: namespace,
 						Annotations: map[string]string{
-							secret.RegistryAnnotation: registry,
+							secret.TargetAnnotation: registry,
 						},
 					},
 					Data: map[string][]byte{
@@ -309,7 +309,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						Name:      secretName,
 						Namespace: defaultNamespace,
 						Annotations: map[string]string{
-							secret.RegistryAnnotation: secret.GcrUrl,
+							secret.TargetAnnotation: secret.GcrUrl,
 						},
 					},
 					Data: map[string][]byte{
@@ -370,7 +370,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						Name:      secretName,
 						Namespace: namespace,
 						Annotations: map[string]string{
-							secret.RegistryAnnotation: secret.GcrUrl,
+							secret.TargetAnnotation: secret.GcrUrl,
 						},
 					},
 					Data: map[string][]byte{

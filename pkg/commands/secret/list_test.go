@@ -37,7 +37,7 @@ func testSecretListCommand(t *testing.T, when spec.G, it spec.S) {
 							Name:      "secret-one",
 							Namespace: defaultNamespace,
 							Annotations: map[string]string{
-								secret.RegistryAnnotation: secret.DockerhubUrl,
+								secret.TargetAnnotation: secret.DockerhubUrl,
 							},
 						},
 					}
@@ -101,7 +101,7 @@ secret-three
 							Name:      "secret-one",
 							Namespace: namespace,
 							Annotations: map[string]string{
-								secret.RegistryAnnotation: secret.DockerhubUrl,
+								secret.TargetAnnotation: secret.DockerhubUrl,
 							},
 						},
 					}

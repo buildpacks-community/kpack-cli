@@ -40,7 +40,7 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							Name:      secretName,
 							Namespace: defaultNamespace,
 							Annotations: map[string]string{
-								secret.RegistryAnnotation: secret.DockerhubUrl,
+								secret.TargetAnnotation: secret.DockerhubUrl,
 							},
 						},
 					}
@@ -130,7 +130,7 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							Name:      secretName,
 							Namespace: namespace,
 							Annotations: map[string]string{
-								secret.RegistryAnnotation: secret.DockerhubUrl,
+								secret.TargetAnnotation: secret.DockerhubUrl,
 							},
 						},
 					}

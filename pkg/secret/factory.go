@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	DockerhubUrl       = "https://index.docker.io/v1/"
-	GcrUrl             = "gcr.io"
-	GcrUser            = "_json_key"
-	RegistryAnnotation = "build.pivotal.io/docker"
-	GitAnnotation      = "build.pivotal.io/git"
+	DockerhubUrl     = "https://index.docker.io/v1/"
+	GcrUrl           = "gcr.io"
+	GcrUser          = "_json_key"
+	TargetAnnotation = "build.pivotal.io/secret-target"
+	GitAnnotation    = "build.pivotal.io/git"
 )
 
 type CredentialFetcher interface {
@@ -150,7 +150,7 @@ func (f *Factory) makeDockerhubSecret(name, namespace string) (*corev1.Secret, e
 			Name:      name,
 			Namespace: namespace,
 			Annotations: map[string]string{
-				RegistryAnnotation: DockerhubUrl,
+				TargetAnnotation: DockerhubUrl,
 			},
 		},
 		Data: map[string][]byte{
@@ -182,7 +182,7 @@ func (f *Factory) makeGcrSecret(name string, namespace string) (*corev1.Secret, 
 			Name:      name,
 			Namespace: namespace,
 			Annotations: map[string]string{
-				RegistryAnnotation: GcrUrl,
+				TargetAnnotation: GcrUrl,
 			},
 		},
 		Data: map[string][]byte{
@@ -214,7 +214,7 @@ func (f *Factory) makeRegistrySecret(name string, namespace string) (*corev1.Sec
 			Name:      name,
 			Namespace: namespace,
 			Annotations: map[string]string{
-				RegistryAnnotation: f.Registry,
+				TargetAnnotation: f.Registry,
 			},
 		},
 		Data: map[string][]byte{

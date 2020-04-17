@@ -48,7 +48,7 @@ func displaySecretsTable(cmd *cobra.Command, secretList *v1.SecretList) error {
 	}
 
 	for _, item := range secretList.Items {
-		var secretValue = item.Annotations[secret.RegistryAnnotation]
+		var secretValue = item.Annotations[secret.TargetAnnotation]
 		if secretValue == "" {
 			secretValue = item.Annotations[secret.GitAnnotation]
 		}
