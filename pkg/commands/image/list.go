@@ -30,7 +30,7 @@ If no namespace is provided, the default namespace is queried.`,
 			}
 
 			if len(imageList.Items) == 0 {
-				return errors.Errorf("no images found in \"%s\" namespace", namespace)
+				return errors.New("no images found")
 			} else {
 				return displayImagesTable(cmd, imageList)
 			}

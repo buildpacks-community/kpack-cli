@@ -20,7 +20,6 @@ func TestImageDeleteCommand(t *testing.T) {
 }
 
 func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
-
 	const defaultNamespace = "some-default-namespace"
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
@@ -50,6 +49,25 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							Name: image.Name,
 						},
 					},
+				}.TestKpack(t, cmdFunc)
+			})
+		})
+
+		when("an image is not available", func() {
+			it("returns an error", func() {
+				testhelpers.CommandTest{
+					Objects: nil,
+					Args:    []string{"some-image", "-n", "some-namespace"},
+					ExpectDeletes: []clientgotesting.DeleteActionImpl{
+						{
+							ActionImpl: clientgotesting.ActionImpl{
+								Namespace: "some-namespace",
+							},
+							Name: "some-image",
+						},
+					},
+					ExpectedOutput: "Error: image \"some-image\" not found\n",
+					ExpectErr:      true,
 				}.TestKpack(t, cmdFunc)
 			})
 		})
