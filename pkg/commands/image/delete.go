@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -23,7 +22,7 @@ func NewDeleteCommand(kpackClient versioned.Interface, defaultNamespace string) 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := kpackClient.BuildV1alpha1().Images(namespace).Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
-				return errors.Errorf("image \"%s\" not found", args[0])
+				return err
 			}
 
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" deleted\n", args[0])

@@ -21,7 +21,6 @@ func TestImageListCommand(t *testing.T) {
 }
 
 func testImageListCommand(t *testing.T, when spec.G, it spec.S) {
-
 	const defaultNamespace = "some-default-namespace"
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {

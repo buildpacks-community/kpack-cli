@@ -53,6 +53,8 @@ func main() {
 		imgcmds.NewApplyCommand(kpackClient, defaultNamespace),
 		imgcmds.NewListCommand(kpackClient, defaultNamespace),
 		imgcmds.NewDeleteCommand(kpackClient, defaultNamespace),
+		imgcmds.NewTriggerCommand(kpackClient, defaultNamespace),
+		imgcmds.NewStatusCommand(kpackClient, defaultNamespace),
 		buildRootCmd,
 	)
 

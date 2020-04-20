@@ -76,6 +76,7 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 	statusWriter := commands.NewStatusWriter(cmd.OutOrStdout())
 
 	err := statusWriter.AddBlock(
+		"",
 		"Image", bld.Status.LatestImage,
 		"Status", getStatus(bld),
 		"Reasons", bld.Annotations[v1alpha1.BuildReasonAnnotation],
@@ -85,6 +86,7 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 	}
 
 	err = statusWriter.AddBlock(
+		"",
 		"Builder", bld.Spec.Builder.Image,
 		"Run Image", bld.Status.Stack.RunImage,
 	)
@@ -94,6 +96,7 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 
 	if bld.Spec.Source.Git != nil {
 		err = statusWriter.AddBlock(
+			"",
 			"Source", "Git",
 			"Url", bld.Spec.Source.Git.URL,
 			"Revision", bld.Spec.Source.Git.Revision,
@@ -103,6 +106,7 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 		}
 	} else if bld.Spec.Source.Blob != nil {
 		err = statusWriter.AddBlock(
+			"",
 			"Source", "Blob",
 			"Url", bld.Spec.Source.Blob.URL,
 		)
@@ -110,7 +114,7 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 			return err
 		}
 	} else {
-		err = statusWriter.AddBlock("Source", "Local Source")
+		err = statusWriter.AddBlock("", "Source", "Local Source")
 		if err != nil {
 			return err
 		}

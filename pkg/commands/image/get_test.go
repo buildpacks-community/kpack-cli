@@ -52,6 +52,17 @@ status: {}
 				}.TestKpack(t, cmdFunc)
 			})
 		})
+
+		when("an image is not available", func() {
+			it("returns an error", func() {
+				testhelpers.CommandTest{
+					Objects:        nil,
+					Args:           []string{"some-image", "-n", "some-namespace"},
+					ExpectedOutput: "Error: images.build.pivotal.io \"some-image\" not found\n",
+					ExpectErr:      true,
+				}.TestKpack(t, cmdFunc)
+			})
+		})
 	})
 
 	when("a namespace is not provided", func() {
@@ -84,11 +95,10 @@ status: {}
 		when("an image is not available", func() {
 			it("returns an error", func() {
 				testhelpers.CommandTest{
-					Objects: nil,
-					Args:    []string{"some-image", "-n", "some-namespace"},
-					ExpectedOutput: `Error: image "some-image" not found
-`,
-					ExpectErr: true,
+					Objects:        nil,
+					Args:           []string{"some-image"},
+					ExpectedOutput: "Error: images.build.pivotal.io \"some-image\" not found\n",
+					ExpectErr:      true,
 				}.TestKpack(t, cmdFunc)
 			})
 		})

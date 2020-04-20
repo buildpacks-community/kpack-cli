@@ -66,7 +66,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							Name: "some-image",
 						},
 					},
-					ExpectedOutput: "Error: image \"some-image\" not found\n",
+					ExpectedOutput: "Error: images.build.pivotal.io \"some-image\" not found\n",
 					ExpectErr:      true,
 				}.TestKpack(t, cmdFunc)
 			})
@@ -113,7 +113,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							Name: "some-image",
 						},
 					},
-					ExpectedOutput: "Error: image \"some-image\" not found\n",
+					ExpectedOutput: "Error: images.build.pivotal.io \"some-image\" not found\n",
 					ExpectErr:      true,
 				}.TestKpack(t, cmdFunc)
 			})

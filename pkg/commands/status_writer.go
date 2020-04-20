@@ -18,10 +18,18 @@ func NewStatusWriter(out io.Writer) *StatusWriter {
 	}
 }
 
-func (s *StatusWriter) AddBlock(items ...string) error {
+func (s *StatusWriter) AddBlock(header string, items ...string) error {
 	if len(items)%2 != 0 {
 		return errors.Errorf("block must contain an equal number of items")
 	}
+
+	if header != "" {
+		_, err := fmt.Fprintln(s.writer, header)
+		if err != nil {
+			return err
+		}
+	}
+
 	for i := 0; i < len(items); i += 2 {
 		_, err := fmt.Fprintf(s.writer, "%s:\t%s\n", items[i], items[i+1])
 		if err != nil {

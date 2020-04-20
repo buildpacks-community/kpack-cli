@@ -3,7 +3,6 @@ package image
 import (
 	"github.com/ghodss/yaml"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -22,7 +21,7 @@ func NewGetCommand(kpackClient versioned.Interface, defaultNamespace string) *co
 		RunE: func(cmd *cobra.Command, args []string) error {
 			image, err := kpackClient.BuildV1alpha1().Images(namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
-				return errors.Errorf("image \"%s\" not found", args[0])
+				return err
 			}
 
 			bytes, err := yaml.Marshal(image)
