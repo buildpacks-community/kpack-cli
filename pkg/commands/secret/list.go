@@ -1,6 +1,8 @@
 package secret
 
 import (
+	"sort"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
@@ -54,12 +56,18 @@ func displaySecretsTable(cmd *cobra.Command, sa *v1.ServiceAccount) error {
 		secretNameSet[item.Name] = nil
 	}
 
+	var secretNames []string
+	for name := range secretNameSet {
+		secretNames = append(secretNames, name)
+	}
+	sort.Strings(secretNames)
+
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "TARGET")
 	if err != nil {
 		return err
 	}
 
-	for name := range secretNameSet {
+	for _, name := range secretNames {
 		err := writer.AddRow(name, managedSecrets[name])
 		if err != nil {
 			return err

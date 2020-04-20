@@ -59,8 +59,8 @@ func testSecretListCommand(t *testing.T, when spec.G, it spec.S) {
 
 					const expectedOutput = `NAME            TARGET
 secret-one      https://index.docker.io/v1/
-secret-two      some-git-url
 secret-three    
+secret-two      some-git-url
 `
 
 					testhelpers.CommandTest{
@@ -125,8 +125,8 @@ secret-three
 
 					const expectedOutput = `NAME            TARGET
 secret-one      https://index.docker.io/v1/
-secret-two      some-git-url
 secret-three    
+secret-two      some-git-url
 `
 
 					testhelpers.CommandTest{
