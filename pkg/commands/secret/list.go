@@ -8,7 +8,6 @@ import (
 	k8s "k8s.io/client-go/kubernetes"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
-	"github.com/pivotal/build-service-cli/pkg/secret"
 )
 
 func NewListCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.Command {
@@ -23,15 +22,15 @@ If no namespace is provided, the default namespace is queried.`,
 		Example:      "tbctl secret list\ntbctl secret list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			secretList, err := k8sClient.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
+			serviceAccount, err := k8sClient.CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			if len(secretList.Items) == 0 {
+			if len(serviceAccount.Secrets) == 0 && len(serviceAccount.ImagePullSecrets) == 0 {
 				return errors.Errorf("no secrets found in \"%s\" namespace", namespace)
 			} else {
-				return displaySecretsTable(cmd, secretList)
+				return displaySecretsTable(cmd, serviceAccount)
 			}
 		},
 	}
@@ -41,19 +40,27 @@ If no namespace is provided, the default namespace is queried.`,
 	return &command
 }
 
-func displaySecretsTable(cmd *cobra.Command, secretList *v1.SecretList) error {
+func displaySecretsTable(cmd *cobra.Command, sa *v1.ServiceAccount) error {
+	managedSecrets, err := readManagedSecrets(sa)
+	if err != nil {
+		return err
+	}
+
+	secretNameSet := map[string]interface{}{}
+	for _, item := range append(sa.Secrets) {
+		secretNameSet[item.Name] = nil
+	}
+	for _, item := range append(sa.ImagePullSecrets) {
+		secretNameSet[item.Name] = nil
+	}
+
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "TARGET")
 	if err != nil {
 		return err
 	}
 
-	for _, item := range secretList.Items {
-		var secretValue = item.Annotations[secret.TargetAnnotation]
-		if secretValue == "" {
-			secretValue = item.Annotations[secret.GitAnnotation]
-		}
-
-		err := writer.AddRow(item.Name, secretValue)
+	for name := range secretNameSet {
+		err := writer.AddRow(name, managedSecrets[name])
 		if err != nil {
 			return err
 		}

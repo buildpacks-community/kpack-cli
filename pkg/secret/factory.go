@@ -12,11 +12,10 @@ import (
 )
 
 const (
-	DockerhubUrl     = "https://index.docker.io/v1/"
-	GcrUrl           = "gcr.io"
-	GcrUser          = "_json_key"
-	TargetAnnotation = "build.pivotal.io/secret-target"
-	GitAnnotation    = "build.pivotal.io/git"
+	DockerhubUrl  = "https://index.docker.io/v1/"
+	GcrUrl        = "gcr.io"
+	GcrUser       = "_json_key"
+	GitAnnotation = "build.pivotal.io/git"
 )
 
 type CredentialFetcher interface {
@@ -35,14 +34,14 @@ type Factory struct {
 	GitUser               string
 }
 
-func (f *Factory) MakeSecret(name, namespace string) (*corev1.Secret, error) {
+func (f *Factory) MakeSecret(name, namespace string) (*corev1.Secret, string, error) {
 	if err := f.validate(); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	kind, err := f.getSecretKind()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	switch kind {
@@ -58,7 +57,7 @@ func (f *Factory) MakeSecret(name, namespace string) (*corev1.Secret, error) {
 		return f.makeGitBasicAuthSecret(name, namespace)
 	}
 
-	return nil, errors.Errorf("incorrect flags provided")
+	return nil, "", errors.Errorf("incorrect flags provided")
 }
 
 func (f *Factory) validate() error {
@@ -128,10 +127,10 @@ func (f *Factory) getSecretKind() (secretKind, error) {
 	return "", errors.Errorf("received secret with unknown type")
 }
 
-func (f *Factory) makeDockerhubSecret(name, namespace string) (*corev1.Secret, error) {
+func (f *Factory) makeDockerhubSecret(name, namespace string) (*corev1.Secret, string, error) {
 	password, err := f.CredentialFetcher.FetchPassword("DOCKER_PASSWORD", "dockerhub password: ")
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	configJson := dockerConfigJson{Auths: dockerCreds{
@@ -142,28 +141,25 @@ func (f *Factory) makeDockerhubSecret(name, namespace string) (*corev1.Secret, e
 	}}
 	dockerCfgJson, err := json.Marshal(configJson)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-			Annotations: map[string]string{
-				TargetAnnotation: DockerhubUrl,
-			},
 		},
 		Data: map[string][]byte{
 			corev1.DockerConfigJsonKey: dockerCfgJson,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
-	}, nil
+	}, DockerhubUrl, nil
 }
 
-func (f *Factory) makeGcrSecret(name string, namespace string) (*corev1.Secret, error) {
+func (f *Factory) makeGcrSecret(name string, namespace string) (*corev1.Secret, string, error) {
 	password, err := f.CredentialFetcher.FetchFile("GCR_SERVICE_ACCOUNT_PATH", f.GcrServiceAccountFile)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	configJson := dockerConfigJson{Auths: dockerCreds{
@@ -174,28 +170,25 @@ func (f *Factory) makeGcrSecret(name string, namespace string) (*corev1.Secret, 
 	}}
 	dockerCfgJson, err := json.Marshal(configJson)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-			Annotations: map[string]string{
-				TargetAnnotation: GcrUrl,
-			},
 		},
 		Data: map[string][]byte{
 			corev1.DockerConfigJsonKey: dockerCfgJson,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
-	}, nil
+	}, GcrUrl, nil
 }
 
-func (f *Factory) makeRegistrySecret(name string, namespace string) (*corev1.Secret, error) {
+func (f *Factory) makeRegistrySecret(name string, namespace string) (*corev1.Secret, string, error) {
 	password, err := f.CredentialFetcher.FetchPassword("REGISTRY_PASSWORD", "registry password: ")
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	configJson := dockerConfigJson{Auths: dockerCreds{
@@ -206,28 +199,25 @@ func (f *Factory) makeRegistrySecret(name string, namespace string) (*corev1.Sec
 	}}
 	dockerCfgJson, err := json.Marshal(configJson)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-			Annotations: map[string]string{
-				TargetAnnotation: f.Registry,
-			},
 		},
 		Data: map[string][]byte{
 			corev1.DockerConfigJsonKey: dockerCfgJson,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
-	}, nil
+	}, f.Registry, nil
 }
 
-func (f *Factory) makeGitSshSecret(name string, namespace string) (*corev1.Secret, error) {
+func (f *Factory) makeGitSshSecret(name string, namespace string) (*corev1.Secret, string, error) {
 	password, err := f.CredentialFetcher.FetchFile("GIT_SSH_KEY_PATH", f.GitSshKeyFile)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	return &corev1.Secret{
@@ -242,13 +232,13 @@ func (f *Factory) makeGitSshSecret(name string, namespace string) (*corev1.Secre
 			corev1.SSHAuthPrivateKey: []byte(password),
 		},
 		Type: corev1.SecretTypeSSHAuth,
-	}, nil
+	}, f.Git, nil
 }
 
-func (f *Factory) makeGitBasicAuthSecret(name string, namespace string) (*corev1.Secret, error) {
+func (f *Factory) makeGitBasicAuthSecret(name string, namespace string) (*corev1.Secret, string, error) {
 	password, err := f.CredentialFetcher.FetchPassword("GIT_PASSWORD", "git password: ")
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	return &corev1.Secret{
@@ -264,7 +254,7 @@ func (f *Factory) makeGitBasicAuthSecret(name string, namespace string) (*corev1
 			corev1.BasicAuthPasswordKey: []byte(password),
 		},
 		Type: corev1.SecretTypeBasicAuth,
-	}, nil
+	}, f.Git, nil
 }
 
 type secretKind string

@@ -11,7 +11,6 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
-	"github.com/pivotal/build-service-cli/pkg/secret"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -32,34 +31,29 @@ func testSecretListCommand(t *testing.T, when spec.G, it spec.S) {
 		when("listing secrets in the default namespace", func() {
 			when("there are secrets", func() {
 				it("lists the secrets", func() {
-					secretOne := &corev1.Secret{
+					serviceAccount := &corev1.ServiceAccount{
 						ObjectMeta: v1.ObjectMeta{
-							Name:      "secret-one",
+							Name:      "default",
 							Namespace: defaultNamespace,
 							Annotations: map[string]string{
-								secret.TargetAnnotation: secret.DockerhubUrl,
+								secretcmds.ManagedSecretAnnotationKey: `{"secret-one":"https://index.docker.io/v1/", "secret-two":"some-git-url", "secret-three":""}`,
 							},
 						},
-					}
-					secretTwo := &corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      "secret-two",
-							Namespace: defaultNamespace,
-							Annotations: map[string]string{
-								secret.GitAnnotation: "some-git-url",
+						Secrets: []corev1.ObjectReference{
+							{
+								Name: "secret-one",
+							},
+							{
+								Name: "secret-two",
+							},
+							{
+								Name: "secret-three",
 							},
 						},
-					}
-					secretThree := &corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      "secret-three",
-							Namespace: defaultNamespace,
-						},
-					}
-					secretFour := &corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      "secret-four",
-							Namespace: "other-namespace",
+						ImagePullSecrets: []corev1.LocalObjectReference{
+							{
+								Name: "secret-one",
+							},
 						},
 					}
 
@@ -71,10 +65,7 @@ secret-three
 
 					testhelpers.CommandTest{
 						Objects: []runtime.Object{
-							secretOne,
-							secretTwo,
-							secretThree,
-							secretFour,
+							serviceAccount,
 						},
 						ExpectedOutput: expectedOutput,
 					}.TestK8s(t, cmdFunc)
@@ -83,7 +74,17 @@ secret-three
 
 			when("there are no secrets", func() {
 				it("prints an appropriate message", func() {
+					serviceAccount := &corev1.ServiceAccount{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "default",
+							Namespace: defaultNamespace,
+						},
+					}
+
 					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							serviceAccount,
+						},
 						ExpectErr:      true,
 						ExpectedOutput: "Error: no secrets found in \"some-default-namespace\" namespace\n",
 					}.TestK8s(t, cmdFunc)
@@ -96,34 +97,29 @@ secret-three
 
 			when("there are secrets", func() {
 				it("lists the secrets", func() {
-					secretOne := &corev1.Secret{
+					serviceAccount := &corev1.ServiceAccount{
 						ObjectMeta: v1.ObjectMeta{
-							Name:      "secret-one",
+							Name:      "default",
 							Namespace: namespace,
 							Annotations: map[string]string{
-								secret.TargetAnnotation: secret.DockerhubUrl,
+								secretcmds.ManagedSecretAnnotationKey: `{"secret-one":"https://index.docker.io/v1/", "secret-two":"some-git-url", "secret-three":""}`,
 							},
 						},
-					}
-					secretTwo := &corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      "secret-two",
-							Namespace: namespace,
-							Annotations: map[string]string{
-								secret.GitAnnotation: "some-git-url",
+						Secrets: []corev1.ObjectReference{
+							{
+								Name: "secret-one",
+							},
+							{
+								Name: "secret-two",
+							},
+							{
+								Name: "secret-three",
 							},
 						},
-					}
-					secretThree := &corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      "secret-three",
-							Namespace: namespace,
-						},
-					}
-					secretFour := &corev1.Secret{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      "secret-four",
-							Namespace: defaultNamespace,
+						ImagePullSecrets: []corev1.LocalObjectReference{
+							{
+								Name: "secret-one",
+							},
 						},
 					}
 
@@ -135,10 +131,7 @@ secret-three
 
 					testhelpers.CommandTest{
 						Objects: []runtime.Object{
-							secretOne,
-							secretTwo,
-							secretThree,
-							secretFour,
+							serviceAccount,
 						},
 						Args:           []string{"-n", namespace},
 						ExpectedOutput: expectedOutput,
@@ -148,7 +141,17 @@ secret-three
 
 			when("there are no secrets", func() {
 				it("prints an appropriate message", func() {
+					serviceAccount := &corev1.ServiceAccount{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "default",
+							Namespace: namespace,
+						},
+					}
+
 					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							serviceAccount,
+						},
 						Args:           []string{"-n", namespace},
 						ExpectErr:      true,
 						ExpectedOutput: "Error: no secrets found in \"some-namespace\" namespace\n",

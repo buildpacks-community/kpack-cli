@@ -25,7 +25,10 @@ func NewDeleteCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.C
 				return err
 			}
 
-			if deleteSecretsFromServiceAccount(serviceAccount, args[0]) {
+			wasModified, err := deleteSecretsFromServiceAccount(serviceAccount, args[0])
+			if err != nil {
+				return err
+			} else if wasModified {
 				_, err = k8sClient.CoreV1().ServiceAccounts(namespace).Update(serviceAccount)
 				if err != nil {
 					return err
@@ -47,24 +50,34 @@ func NewDeleteCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.C
 	return &command
 }
 
-func deleteSecretsFromServiceAccount(sa *corev1.ServiceAccount, name string) bool {
-	updated := false
+func deleteSecretsFromServiceAccount(sa *corev1.ServiceAccount, name string) (bool, error) {
+	managedSecrets, err := readManagedSecrets(sa)
+	if err != nil {
+		return false, err
+	}
 
+	modified := false
 	for i, s := range sa.Secrets {
 		if s.Name == name {
 			sa.Secrets = append(sa.Secrets[:i], sa.Secrets[i+1:]...)
-			updated = true
+			delete(managedSecrets, s.Name)
+			modified = true
 			break
 		}
 	}
-
 	for i, s := range sa.ImagePullSecrets {
 		if s.Name == name {
 			sa.ImagePullSecrets = append(sa.ImagePullSecrets[:i], sa.ImagePullSecrets[i+1:]...)
-			updated = true
+			delete(managedSecrets, s.Name)
+			modified = true
 			break
 		}
 	}
 
-	return updated
+	err = writeManagedSecrets(managedSecrets, sa)
+	if err != nil {
+		return false, err
+	}
+
+	return modified, nil
 }

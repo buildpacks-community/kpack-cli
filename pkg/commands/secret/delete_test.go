@@ -1,6 +1,7 @@
 package secret_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/sclevine/spec"
@@ -39,15 +40,16 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						ObjectMeta: v1.ObjectMeta{
 							Name:      secretName,
 							Namespace: defaultNamespace,
-							Annotations: map[string]string{
-								secret.TargetAnnotation: secret.DockerhubUrl,
-							},
 						},
 					}
+
 					serviceAccount := &corev1.ServiceAccount{
 						ObjectMeta: v1.ObjectMeta{
 							Name:      "default",
 							Namespace: defaultNamespace,
+							Annotations: map[string]string{
+								secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s", "foo":"bar"}`, secretName, secret.DockerhubUrl),
+							},
 						},
 						Secrets: []corev1.ObjectReference{
 							{Name: secretName},
@@ -61,6 +63,9 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						ObjectMeta: v1.ObjectMeta{
 							Name:      "default",
 							Namespace: defaultNamespace,
+							Annotations: map[string]string{
+								secretcmds.ManagedSecretAnnotationKey: `{"foo":"bar"}`,
+							},
 						},
 					}
 
@@ -129,15 +134,16 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						ObjectMeta: v1.ObjectMeta{
 							Name:      secretName,
 							Namespace: namespace,
-							Annotations: map[string]string{
-								secret.TargetAnnotation: secret.DockerhubUrl,
-							},
 						},
 					}
+
 					serviceAccount := &corev1.ServiceAccount{
 						ObjectMeta: v1.ObjectMeta{
 							Name:      "default",
 							Namespace: namespace,
+							Annotations: map[string]string{
+								secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s", "foo":"bar"}`, secretName, secret.DockerhubUrl),
+							},
 						},
 						Secrets: []corev1.ObjectReference{
 							{Name: secretName},
@@ -151,6 +157,9 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						ObjectMeta: v1.ObjectMeta{
 							Name:      "default",
 							Namespace: namespace,
+							Annotations: map[string]string{
+								secretcmds.ManagedSecretAnnotationKey: `{"foo":"bar"}`,
+							},
 						},
 					}
 

@@ -18,7 +18,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 
 	when("no params are set", func() {
 		it("returns an error message", func() {
-			_, err := factory.MakeSecret("test-name", "test-namespace")
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "secret must be one of dockerhub, gcr, registry, or git")
 		})
 	})
@@ -27,7 +27,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 		it("returns an error message", func() {
 			factory.DockerhubId = "some-dockerhub-id"
 			factory.GcrServiceAccountFile = "some-gcr-service-account"
-			_, err := factory.MakeSecret("test-name", "test-namespace")
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "secret must be one of dockerhub, gcr, registry, or git")
 		})
 	})
@@ -37,7 +37,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.DockerhubId = "some-dockerhub-id"
 			factory.RegistryUser = "some-reg-user"
 			factory.GitUser = "some-git-user"
-			_, err := factory.MakeSecret("test-name", "test-namespace")
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "extraneous parameters: git-user, registry-user")
 		})
 	})
@@ -47,7 +47,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.GcrServiceAccountFile = "some-gcr-service-account-file"
 			factory.RegistryUser = "some-reg-user"
 			factory.GitSshKeyFile = "some-git-ssh-key-file"
-			_, err := factory.MakeSecret("test-name", "test-namespace")
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "extraneous parameters: git-ssh-key, registry-user")
 		})
 	})
@@ -55,7 +55,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 	when("registry is missing registry user", func() {
 		it("returns an error message", func() {
 			factory.Registry = "some-dockerhub-id"
-			_, err := factory.MakeSecret("test-name", "test-namespace")
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "missing parameter registry-user")
 		})
 	})
@@ -65,7 +65,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.Registry = "some-registry"
 			factory.RegistryUser = "some-reg-user"
 			factory.GitUser = "some-git-user"
-			_, err := factory.MakeSecret("test-name", "test-namespace")
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "extraneous parameters: git-user")
 		})
 	})
@@ -76,7 +76,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 				factory.Git = "some-git"
 				factory.RegistryUser = "some-reg-user"
 				factory.GitUser = "some-git-user"
-				_, err := factory.MakeSecret("test-name", "test-namespace")
+				_, _, err := factory.MakeSecret("test-name", "test-namespace")
 				require.EqualError(t, err, "extraneous parameters: registry-user")
 			})
 		})
@@ -86,7 +86,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 		it("returns an error message", func() {
 			it("returns an error message", func() {
 				factory.Git = "some-git"
-				_, err := factory.MakeSecret("test-name", "test-namespace")
+				_, _, err := factory.MakeSecret("test-name", "test-namespace")
 				require.EqualError(t, err, "missing parameter git-user or git-ssh-key")
 			})
 		})
@@ -97,7 +97,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.Git = "some-git"
 			factory.GitUser = "some-git-user"
 			factory.GitSshKeyFile = "some-ssh-key"
-			_, err := factory.MakeSecret("test-name", "test-namespace")
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "must provide one of git-user or git-ssh-key")
 		})
 	})
@@ -106,7 +106,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 		it("validates that the git url begins with http:// or https://", func() {
 			factory.Git = "some-git"
 			factory.GitUser = "some-git-user"
-			_, err := factory.MakeSecret("test-name", "test-namespace")
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "must provide a valid git url for basic auth (ex. https://github.com)")
 		})
 	})
@@ -115,7 +115,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 		it("validates that the git url begins with git@", func() {
 			factory.Git = "some-git"
 			factory.GitSshKeyFile = "some-ssh-key"
-			_, err := factory.MakeSecret("test-name", "test-namespace")
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "must provide a valid git url for SSH (ex. git@github.com)")
 		})
 	})
