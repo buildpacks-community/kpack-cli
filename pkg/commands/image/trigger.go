@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/build"
 )
 
 const BuildNeededAnnotation = "image.build.pivotal.io/additionalBuildNeeded"
@@ -36,7 +38,7 @@ func NewTriggerCommand(kpackClient versioned.Interface, defaultNamespace string)
 			if len(buildList.Items) == 0 {
 				return errors.New("no builds found")
 			} else {
-				sort.Slice(buildList.Items, sortBuilds(buildList.Items))
+				sort.Slice(buildList.Items, build.Sort(buildList.Items))
 
 				build := buildList.Items[len(buildList.Items)-1].DeepCopy()
 				build.Annotations[BuildNeededAnnotation] = time.Now().String()
@@ -55,10 +57,4 @@ func NewTriggerCommand(kpackClient versioned.Interface, defaultNamespace string)
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
 
 	return cmd
-}
-
-func sortBuilds(builds []v1alpha1.Build) func(i int, j int) bool {
-	return func(i, j int) bool {
-		return builds[j].ObjectMeta.CreationTimestamp.After(builds[i].ObjectMeta.CreationTimestamp.Time)
-	}
 }

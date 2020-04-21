@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/build"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
@@ -38,7 +39,7 @@ If the build flag is not provided, the most recent build status will be shown.`,
 			if len(buildList.Items) == 0 {
 				return errors.Errorf("no builds for image \"%s\" found in \"%s\" namespace", args[0], namespace)
 			} else {
-				sort.Slice(buildList.Items, sortBuilds(buildList.Items))
+				sort.Slice(buildList.Items, build.Sort(buildList.Items))
 				bld, err := findBuild(buildList, buildNumber, args[0], namespace)
 				if err != nil {
 					return err

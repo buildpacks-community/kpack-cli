@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/build"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
@@ -37,7 +38,7 @@ If no namespace is provided, the default namespace is queried.`,
 			if len(buildList.Items) == 0 {
 				return errors.Errorf("no builds for image \"%s\" found in \"%s\" namespace", args[0], namespace)
 			} else {
-				sort.Slice(buildList.Items, sortBuilds(buildList.Items))
+				sort.Slice(buildList.Items, build.Sort(buildList.Items))
 				return displayBuildsTable(cmd, buildList)
 			}
 		},

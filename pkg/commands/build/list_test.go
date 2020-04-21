@@ -35,7 +35,7 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are builds", func() {
 				it("lists the builds", func() {
 					testhelpers.CommandTest{
-						Objects:        makeTestBuilds(image, defaultNamespace),
+						Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
 						Args:           []string{image},
 						ExpectedOutput: expectedOutput,
 					}.TestKpack(t, cmdFunc)
@@ -59,7 +59,7 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are builds", func() {
 				it("lists the builds", func() {
 					testhelpers.CommandTest{
-						Objects:        makeTestBuilds(image, namespace),
+						Objects:        testhelpers.MakeTestBuilds(image, namespace),
 						Args:           []string{image, "-n", namespace},
 						ExpectedOutput: expectedOutput,
 					}.TestKpack(t, cmdFunc)

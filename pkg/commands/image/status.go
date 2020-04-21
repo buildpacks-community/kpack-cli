@@ -11,6 +11,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/build"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
@@ -39,7 +40,7 @@ func NewStatusCommand(kpackClient versioned.Interface, defaultNamespace string) 
 				return err
 			}
 
-			sort.Slice(buildList.Items, sortBuilds(buildList.Items))
+			sort.Slice(buildList.Items, build.Sort(buildList.Items))
 			return displayImageStatus(cmd, image, buildList.Items)
 		},
 	}

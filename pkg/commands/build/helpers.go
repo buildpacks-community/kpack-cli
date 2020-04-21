@@ -7,12 +7,6 @@ import (
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 )
 
-func sortBuilds(builds []v1alpha1.Build) func(i int, j int) bool {
-	return func(i, j int) bool {
-		return builds[j].ObjectMeta.CreationTimestamp.After(builds[i].ObjectMeta.CreationTimestamp.Time)
-	}
-}
-
 func getStatus(b v1alpha1.Build) string {
 	cond := b.Status.GetCondition(corev1alpha1.ConditionSucceeded)
 	switch {

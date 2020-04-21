@@ -27,8 +27,8 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 		imageName        = "test-image"
 	)
 
-	testBuilds := makeTestBuilds(imageName, defaultNamespace)
-	testNamespacedBuilds := makeTestBuilds(imageName, namespace)
+	testBuilds := testhelpers.MakeTestBuilds(imageName, defaultNamespace)
+	testNamespacedBuilds := testhelpers.MakeTestBuilds(imageName, namespace)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		return image.NewStatusCommand(clientSet, defaultNamespace)

@@ -1,4 +1,4 @@
-package image_test
+package testhelpers
 
 import (
 	"time"
@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func makeTestBuilds(image string, namespace string) []runtime.Object {
+func MakeTestBuilds(image string, namespace string) []runtime.Object {
 	buildOne := &v1alpha1.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "build-one",

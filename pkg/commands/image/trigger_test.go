@@ -23,8 +23,8 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 		namespace        = "some-namespace"
 	)
 
-	testBuilds := makeTestBuilds("some-image", defaultNamespace)
-	testNamespacedBuilds := makeTestBuilds("some-image", namespace)
+	testBuilds := testhelpers.MakeTestBuilds("some-image", defaultNamespace)
+	testNamespacedBuilds := testhelpers.MakeTestBuilds("some-image", namespace)
 
 	when("a namespace is provided", func() {
 		when("an image build is available", func() {

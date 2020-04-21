@@ -57,7 +57,7 @@ bp-id-2         bp-version-2
 				when("the build flag is provided", func() {
 					it("shows the build status", func() {
 						testhelpers.CommandTest{
-							Objects:        makeTestBuilds(image, defaultNamespace),
+							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
 							Args:           []string{image, "-b", "1"},
 							ExpectedOutput: expectedOutputForBuildNumber,
 						}.TestKpack(t, cmdFunc)
@@ -67,7 +67,7 @@ bp-id-2         bp-version-2
 				when("the build flag is not provided", func() {
 					it("shows the build status of the most recent build", func() {
 						testhelpers.CommandTest{
-							Objects:        makeTestBuilds(image, defaultNamespace),
+							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
 							Args:           []string{image},
 							ExpectedOutput: expectedOutputForMostRecent,
 						}.TestKpack(t, cmdFunc)
@@ -79,7 +79,7 @@ bp-id-2         bp-version-2
 				when("the build flag is provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Objects:        makeTestBuilds(image, defaultNamespace),
+							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
 							Args:           []string{image, "-b", "123"},
 							ExpectErr:      true,
 							ExpectedOutput: "Error: build \"123\" for image \"test-image\" not found in \"some-default-namespace\" namespace\n",
@@ -106,7 +106,7 @@ bp-id-2         bp-version-2
 				when("the build flag is provided", func() {
 					it("gets the build status", func() {
 						testhelpers.CommandTest{
-							Objects:        makeTestBuilds(image, namespace),
+							Objects:        testhelpers.MakeTestBuilds(image, namespace),
 							Args:           []string{image, "-b", "1", "-n", namespace},
 							ExpectedOutput: expectedOutputForBuildNumber,
 						}.TestKpack(t, cmdFunc)
@@ -116,7 +116,7 @@ bp-id-2         bp-version-2
 				when("the build flag is not provided", func() {
 					it("shows the build status of the most recent build", func() {
 						testhelpers.CommandTest{
-							Objects:        makeTestBuilds(image, namespace),
+							Objects:        testhelpers.MakeTestBuilds(image, namespace),
 							Args:           []string{image, "-n", namespace},
 							ExpectedOutput: expectedOutputForMostRecent,
 						}.TestKpack(t, cmdFunc)
@@ -128,7 +128,7 @@ bp-id-2         bp-version-2
 				when("the build flag is provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Objects:        makeTestBuilds(image, namespace),
+							Objects:        testhelpers.MakeTestBuilds(image, namespace),
 							Args:           []string{image, "-b", "123", "-n", namespace},
 							ExpectErr:      true,
 							ExpectedOutput: "Error: build \"123\" for image \"test-image\" not found in \"some-namespace\" namespace\n",
