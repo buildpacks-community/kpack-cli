@@ -18,8 +18,28 @@ func NewCreateCommand(kpackClient versioned.Interface, factory *image.Factory, d
 		Use:   "create <name> <tag>",
 		Short: "Create an image configuration",
 		Long: `Create an image configuration by providing command line arguments.
-This image will be created if it does not yet exist.`,
-		Example:      "",
+This image will be created if it does not yet exist.
+
+The flags for this command determine how the build will retrieve source code:
+
+	"--git" and "--git-revision" to use Git based source
+
+	"--blob" to use source code hosted in a blob store
+
+	"--local-path" to use source code from the local machine
+
+Local source code will be pushed to the same registry provided for the image tag.
+Therefore, you must have credentials to access the registry on your machine.
+
+Environment variables may be provided by using the "--env" flag.
+For each environment variable, supply the "--env" flag followed by
+the key value pair. For example, "--env key1=value1 --env key=value2 ...".
+`,
+		Example: `tbctl image create my-image my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
+tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host.com/my-blob
+tbctl image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code
+tbctl image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code --builder my-builder -n my-namespace
+tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple`,
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -38,14 +58,14 @@ This image will be created if it does not yet exist.`,
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
-	cmd.Flags().StringVarP(&factory.GitRepo, "git", "", "", "")
-	cmd.Flags().StringVarP(&factory.GitRevision, "git-revision", "", "master", "")
-	cmd.Flags().StringVarP(&factory.Blob, "blob", "", "", "")
-	cmd.Flags().StringVarP(&factory.LocalPath, "local-path", "", "", "")
-	cmd.Flags().StringVarP(&factory.SubPath, "sub-path", "", "", "")
-	cmd.Flags().StringVarP(&factory.Builder, "builder", "", "", "")
-	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "", "", "")
-	cmd.Flags().StringArrayVarP(&factory.Env, "env", "", []string{}, "")
+	cmd.Flags().StringVarP(&factory.GitRepo, "git", "", "", "git repository url")
+	cmd.Flags().StringVarP(&factory.GitRevision, "git-revision", "", "master", "git revision")
+	cmd.Flags().StringVarP(&factory.Blob, "blob", "", "", "source code blob url")
+	cmd.Flags().StringVarP(&factory.LocalPath, "local-path", "", "", "path to local source code")
+	cmd.Flags().StringVarP(&factory.SubPath, "sub-path", "", "", "build code at the sub path located within the source code directory")
+	cmd.Flags().StringVarP(&factory.Builder, "builder", "", "", "builder name")
+	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "", "", "cluster builder name")
+	cmd.Flags().StringArrayVarP(&factory.Env, "env", "", []string{}, "build time environment variables")
 
 	return cmd
 }
