@@ -10,7 +10,9 @@ import (
 	buildcmds "github.com/pivotal/build-service-cli/pkg/commands/build"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
+	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 	"github.com/pivotal/build-service-cli/pkg/secret"
 )
 
@@ -44,6 +46,12 @@ func main() {
 		buildcmds.NewStatusCommand(kpackClient, defaultNamespace),
 	)
 
+	sourceUploader := &registry.SourceUploader{}
+
+	imageFactory := &image.Factory{
+		SourceUploader: sourceUploader,
+	}
+
 	imageRootCmd := &cobra.Command{
 		Use:   "image",
 		Short: "Image commands",
@@ -55,6 +63,7 @@ func main() {
 		imgcmds.NewDeleteCommand(kpackClient, defaultNamespace),
 		imgcmds.NewTriggerCommand(kpackClient, defaultNamespace),
 		imgcmds.NewStatusCommand(kpackClient, defaultNamespace),
+		imgcmds.NewCreateCommand(kpackClient, imageFactory, defaultNamespace),
 		buildRootCmd,
 	)
 
