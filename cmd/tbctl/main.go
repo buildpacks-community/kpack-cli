@@ -45,6 +45,7 @@ func main() {
 	buildRootCmd.AddCommand(
 		buildcmds.NewListCommand(kpackClient, defaultNamespace),
 		buildcmds.NewStatusCommand(kpackClient, defaultNamespace),
+		buildcmds.NewLogsCommand(kpackClient, k8sClient, defaultNamespace),
 	)
 
 	sourceUploader := &registry.SourceUploader{}
