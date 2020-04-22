@@ -25,7 +25,7 @@ func NewStatusCommand(kpackClient versioned.Interface, defaultNamespace string) 
 		Short: "Display image build status",
 		Long: `Prints detailed information about the status of a specific image build.
 If the build flag is not provided, the most recent build status will be shown.`,
-		Example:      "tbctl image build status my-image\ntbctl image build status my-image -b 2 -n my-namespace",
+		Example:      "tbctl build status my-image\ntbctl build status my-image -b 2 -n my-namespace",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

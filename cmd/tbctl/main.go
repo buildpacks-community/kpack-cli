@@ -90,6 +90,7 @@ func main() {
 	}
 	clusterBuilderRootCmd.AddCommand(
 		clusterbuildercmds.NewApplyCommand(kpackClient),
+		clusterbuildercmds.NewListCommand(kpackClient),
 	)
 
 	versionCmd := &cobra.Command{
