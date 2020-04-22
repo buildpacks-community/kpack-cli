@@ -82,7 +82,7 @@ bp-id-2         bp-version-2
 							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
 							Args:           []string{image, "-b", "123"},
 							ExpectErr:      true,
-							ExpectedOutput: "Error: build \"123\" for image \"test-image\" not found in \"some-default-namespace\" namespace\n",
+							ExpectedOutput: "Error: build \"123\" not found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})
@@ -92,7 +92,7 @@ bp-id-2         bp-version-2
 						testhelpers.CommandTest{
 							Args:           []string{image},
 							ExpectErr:      true,
-							ExpectedOutput: "Error: no builds for image \"test-image\" found in \"some-default-namespace\" namespace\n",
+							ExpectedOutput: "Error: no builds found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})
@@ -131,7 +131,7 @@ bp-id-2         bp-version-2
 							Objects:        testhelpers.MakeTestBuilds(image, namespace),
 							Args:           []string{image, "-b", "123", "-n", namespace},
 							ExpectErr:      true,
-							ExpectedOutput: "Error: build \"123\" for image \"test-image\" not found in \"some-namespace\" namespace\n",
+							ExpectedOutput: "Error: build \"123\" not found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})
@@ -141,7 +141,7 @@ bp-id-2         bp-version-2
 						testhelpers.CommandTest{
 							Args:           []string{image, "-n", namespace},
 							ExpectErr:      true,
-							ExpectedOutput: "Error: no builds for image \"test-image\" found in \"some-namespace\" namespace\n",
+							ExpectedOutput: "Error: no builds found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})

@@ -21,7 +21,7 @@ func NewStatusCommand(kpackClient versioned.Interface, defaultNamespace string) 
 	)
 
 	cmd := &cobra.Command{
-		Use:   "status <name>",
+		Use:   "status <image-name>",
 		Short: "Display image build status",
 		Long: `Prints detailed information about the status of a specific image build.
 If the build flag is not provided, the most recent build status will be shown.`,
@@ -37,7 +37,7 @@ If the build flag is not provided, the most recent build status will be shown.`,
 			}
 
 			if len(buildList.Items) == 0 {
-				return errors.Errorf("no builds for image \"%s\" found in \"%s\" namespace", args[0], namespace)
+				return errors.New("no builds found")
 			} else {
 				sort.Slice(buildList.Items, build.Sort(buildList.Items))
 				bld, err := findBuild(buildList, buildNumber, args[0], namespace)
@@ -70,7 +70,7 @@ func findBuild(buildList *v1alpha1.BuildList, buildNumber int, img, namespace st
 		}
 	}
 
-	return v1alpha1.Build{}, errors.Errorf("build \"%d\" for image \"%s\" not found in \"%s\" namespace", buildNumber, img, namespace)
+	return v1alpha1.Build{}, errors.Errorf("build \"%d\" not found", buildNumber)
 }
 
 func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {

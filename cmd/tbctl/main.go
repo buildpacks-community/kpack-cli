@@ -66,7 +66,6 @@ func main() {
 		imgcmds.NewTriggerCommand(kpackClient, defaultNamespace),
 		imgcmds.NewStatusCommand(kpackClient, defaultNamespace),
 		imgcmds.NewCreateCommand(kpackClient, imageFactory, defaultNamespace),
-		buildRootCmd,
 	)
 
 	credentialFetcher := &commands.CredentialFetcher{}
@@ -107,6 +106,7 @@ func main() {
 	rootCmd.AddCommand(
 		versionCmd,
 		imageRootCmd,
+		buildRootCmd,
 		secretRootCmd,
 		clusterBuilderRootCmd,
 	)

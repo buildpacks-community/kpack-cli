@@ -47,7 +47,7 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 					testhelpers.CommandTest{
 						Args:           []string{image},
 						ExpectErr:      true,
-						ExpectedOutput: "Error: no builds for image \"test-image\" found in \"some-default-namespace\" namespace\n",
+						ExpectedOutput: "Error: no builds found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})
@@ -71,7 +71,7 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 					testhelpers.CommandTest{
 						Args:           []string{image, "-n", namespace},
 						ExpectErr:      true,
-						ExpectedOutput: "Error: no builds for image \"test-image\" found in \"some-namespace\" namespace\n",
+						ExpectedOutput: "Error: no builds found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})

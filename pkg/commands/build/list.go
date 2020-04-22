@@ -19,7 +19,7 @@ func NewListCommand(kpackClient versioned.Interface, defaultNamespace string) *c
 	)
 
 	cmd := &cobra.Command{
-		Use:   "list <name>",
+		Use:   "list <image-name>",
 		Short: "List image builds",
 		Long: `Prints a table of the most important information about an image's builds.
 Will only display builds in your current namespace.
@@ -36,7 +36,7 @@ If no namespace is provided, the default namespace is queried.`,
 			}
 
 			if len(buildList.Items) == 0 {
-				return errors.Errorf("no builds for image \"%s\" found in \"%s\" namespace", args[0], namespace)
+				return errors.New("no builds found")
 			} else {
 				sort.Slice(buildList.Items, build.Sort(buildList.Items))
 				return displayBuildsTable(cmd, buildList)

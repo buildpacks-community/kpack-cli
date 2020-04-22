@@ -22,7 +22,7 @@ func NewLogsCommand(kpackClient versioned.Interface, k8sClient k8s.Interface, de
 	)
 
 	cmd := &cobra.Command{
-		Use:   "logs <name>",
+		Use:   "logs <image-name>",
 		Short: "Tails build logs for an image",
 		Long: `Tails the logs from the containers of a specified build of an image.
 Defaults to tailing logs from the latest build if build is not specified`,
@@ -38,7 +38,7 @@ Defaults to tailing logs from the latest build if build is not specified`,
 			}
 
 			if len(buildList.Items) == 0 {
-				return errors.Errorf("no builds for image \"%s\" found in \"%s\" namespace", args[0], namespace)
+				return errors.New("no builds found")
 			} else {
 				sort.Slice(buildList.Items, build.Sort(buildList.Items))
 				bld, err := findBuild(buildList, buildNumber, args[0], namespace)
