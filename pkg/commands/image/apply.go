@@ -34,19 +34,28 @@ func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *
 				imageConfig.Namespace = defaultNamespace
 			}
 
-			_, err = kpackClient.BuildV1alpha1().Images(imageConfig.Namespace).Get(imageConfig.Name, metav1.GetOptions{})
+			exisitingImage, err := kpackClient.BuildV1alpha1().Images(imageConfig.Namespace).Get(imageConfig.Name, metav1.GetOptions{})
 			if err != nil && !k8serrors.IsNotFound(err) {
 				return err
 			} else if k8serrors.IsNotFound(err) {
 				_, err = kpackClient.BuildV1alpha1().Images(imageConfig.Namespace).Create(imageConfig)
+				if err != nil {
+					return err
+				}
+
+				_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", imageConfig.Name)
 			} else {
+				imageConfig.ResourceVersion = exisitingImage.ResourceVersion
 				_, err = kpackClient.BuildV1alpha1().Images(imageConfig.Namespace).Update(imageConfig)
+				if err != nil {
+					return err
+				}
+				_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" updated\n", imageConfig.Name)
 			}
 			if err != nil {
 				return err
 			}
 
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" applied\n", imageConfig.Name)
 			return err
 		},
 		SilenceUsage: true,
