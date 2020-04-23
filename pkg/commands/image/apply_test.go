@@ -59,7 +59,7 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 
 			testhelpers.CommandTest{
 				Args: []string{"-f", "./testdata/image.yaml"},
-				ExpectedOutput: `"test-image" applied
+				ExpectedOutput: `"test-image" created
 `,
 				ExpectCreates: []runtime.Object{
 					expectedImage,
@@ -73,7 +73,7 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 
 				testhelpers.CommandTest{
 					Args: []string{"-f", "./testdata/image-without-namespace.yaml"},
-					ExpectedOutput: `"test-image" applied
+					ExpectedOutput: `"test-image" created
 `,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
@@ -85,18 +85,22 @@ func testImageApplyCommand(t *testing.T, when spec.G, it spec.S) {
 		when("a valid image config is applied for an existing image", func() {
 			it("updates the image", func() {
 				existingImage := expectedImage.DeepCopy()
+				existingImage.ResourceVersion = "123"
 				existingImage.Spec.Source.Git.Revision = "old-git-revision"
+
+				expectedUpdate := expectedImage.DeepCopy()
+				expectedUpdate.ResourceVersion = existingImage.ResourceVersion
 
 				testhelpers.CommandTest{
 					Args: []string{"-f", "./testdata/image.yaml"},
 					Objects: []runtime.Object{
 						existingImage,
 					},
-					ExpectedOutput: `"test-image" applied
+					ExpectedOutput: `"test-image" updated
 `,
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{
-							Object: expectedImage,
+							Object: expectedUpdate,
 						},
 					},
 				}.TestKpack(t, cmdFunc)
