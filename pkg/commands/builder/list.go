@@ -1,4 +1,4 @@
-package clusterbuilder
+package builder
 
 import (
 	"sort"
@@ -13,33 +13,39 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewListCommand(kpackClient versioned.Interface) *cobra.Command {
-
+func NewListCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
+	var (
+		namespace string
+	)
 	cmd := &cobra.Command{
-		Use:          "list",
-		Short:        "List clusterbuilders available",
-		Long:         `Prints a table of the most important information about the available clusterbuilders.`,
-		Example:      "tbctl clusterbuilder list",
+		Use:   "list",
+		Short: "List builders available",
+		Long: `Prints a table of the most important information about the available builders.
+Will only display builders in your current namespace.
+If no namespace is provided, the default namespace is queried.`,
+		Example:      "tbctl builder list\ntbctl builder list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			clusterBuilderList, err := kpackClient.ExperimentalV1alpha1().CustomClusterBuilders().List(metav1.ListOptions{})
+			builderList, err := kpackClient.ExperimentalV1alpha1().CustomBuilders(namespace).List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
 
-			if len(clusterBuilderList.Items) == 0 {
-				return errors.New("no clusterbuilders found")
+			if len(builderList.Items) == 0 {
+				return errors.New("no builders found")
 			} else {
-				sort.Slice(clusterBuilderList.Items, Sort(clusterBuilderList.Items))
-				return displayClusterBuildersTable(cmd, clusterBuilderList)
+				sort.Slice(builderList.Items, Sort(builderList.Items))
+				return displayClusterBuildersTable(cmd, builderList)
 			}
 		},
 	}
 
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+
 	return cmd
 }
 
-func displayClusterBuildersTable(cmd *cobra.Command, builderList *expv1alpha1.CustomClusterBuilderList) error {
+func displayClusterBuildersTable(cmd *cobra.Command, builderList *expv1alpha1.CustomBuilderList) error {
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "Name", "Ready", "Stack", "Image")
 	if err != nil {
 		return err
@@ -61,13 +67,13 @@ func displayClusterBuildersTable(cmd *cobra.Command, builderList *expv1alpha1.Cu
 	return writer.Write()
 }
 
-func Sort(builds []expv1alpha1.CustomClusterBuilder) func(i int, j int) bool {
+func Sort(builds []expv1alpha1.CustomBuilder) func(i int, j int) bool {
 	return func(i, j int) bool {
 		return builds[j].ObjectMeta.Name > builds[i].ObjectMeta.Name
 	}
 }
 
-func getStatus(b expv1alpha1.CustomClusterBuilder) string {
+func getStatus(b expv1alpha1.CustomBuilder) string {
 	cond := b.Status.GetCondition(corev1alpha1.ConditionReady)
 	switch {
 	case cond.IsTrue():

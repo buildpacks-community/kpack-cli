@@ -102,6 +102,7 @@ func main() {
 	}
 	builderRootCmd.AddCommand(
 		buildercmds.NewApplyCommand(kpackClient, defaultNamespace),
+		buildercmds.NewListCommand(kpackClient, defaultNamespace),
 	)
 
 	versionCmd := &cobra.Command{
