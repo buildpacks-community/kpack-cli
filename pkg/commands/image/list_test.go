@@ -112,6 +112,7 @@ func testImageListCommand(t *testing.T, when spec.G, it spec.S) {
 test-image-1    False      test-registry.io/test-image-1@sha256:abcdef123
 test-image-2    Unknown    test-registry.io/test-image-2@sha256:abcdef123
 test-image-3    True       test-registry.io/test-image-3@sha256:abcdef123
+
 `,
 				}.TestKpack(t, cmdFunc)
 			})
@@ -216,6 +217,7 @@ test-image-3    True       test-registry.io/test-image-3@sha256:abcdef123
 test-image-1    False      test-registry.io/test-image-1@sha256:abcdef123
 test-image-2    Unknown    test-registry.io/test-image-2@sha256:abcdef123
 test-image-3    True       test-registry.io/test-image-3@sha256:abcdef123
+
 `,
 				}.TestKpack(t, cmdFunc)
 			})

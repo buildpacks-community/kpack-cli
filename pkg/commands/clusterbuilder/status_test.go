@@ -17,22 +17,40 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestClusterBuilderListCommand(t *testing.T) {
-	spec.Run(t, "TestClusterBuilderListCommand", testClusterBuilderListCommand)
+func TestClusterBuilderStatusCommand(t *testing.T) {
+	spec.Run(t, "TestClusterBuilderStatusCommand", testClusterBuilderStatusCommand)
 }
 
-func testClusterBuilderListCommand(t *testing.T, when spec.G, it spec.S) {
+func testClusterBuilderStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
-		expectedOutput = `NAME              READY    STACK                          IMAGE
-test-builder-1    true     io.buildpacks.stacks.centos    some-registry.com/test-builder-1:tag
-test-builder-2    false                                   
-test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test-builder-3:tag
+		expectedReadyOutput = `Status:       Ready
+Image:        some-registry.com/test-builder-1:tag
+Stack:        io.buildpacks.stacks.centos
+Run Image:    gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234
+
+BUILDPACK ID               VERSION
+org.cloudfoundry.nodejs    v0.2.1
+org.cloudfoundry.go        v0.0.3
+
+
+DETECTION ORDER              
+Group #1                     
+  org.cloudfoundry.nodejs    
+Group #2                     
+  org.cloudfoundry.go        
+
+`
+		expectedNotReadyOutput = `Status:    Not Ready
+Reason:    this builder is not ready for the purpose of a test
+
+`
+		expectedUnkownOutput = `Status:    Unknown
 
 `
 	)
 
 	var (
-		customClusterBuilder1 = &expv1alpha1.CustomClusterBuilder{
+		readyClusterBuilder = &expv1alpha1.CustomClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       expv1alpha1.CustomClusterBuilderKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
@@ -81,6 +99,16 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 							},
 						},
 					},
+					BuilderMetadata: v1alpha1.BuildpackMetadataList{
+						{
+							Id:      "org.cloudfoundry.nodejs",
+							Version: "v0.2.1",
+						},
+						{
+							Id:      "org.cloudfoundry.go",
+							Version: "v0.0.3",
+						},
+					},
 					Stack: v1alpha1.BuildStack{
 						RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 						ID:       "io.buildpacks.stacks.centos",
@@ -89,7 +117,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 				},
 			},
 		}
-		customClusterBuilder2 = &expv1alpha1.CustomClusterBuilder{
+		notReadyClusterBuilder = &expv1alpha1.CustomClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       expv1alpha1.CustomClusterBuilderKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
@@ -133,15 +161,16 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
-								Type:   corev1alpha1.ConditionReady,
-								Status: corev1.ConditionFalse,
+								Type:    corev1alpha1.ConditionReady,
+								Status:  corev1.ConditionFalse,
+								Message: "this builder is not ready for the purpose of a test",
 							},
 						},
 					},
 				},
 			},
 		}
-		customClusterBuilder3 = &expv1alpha1.CustomClusterBuilder{
+		unknownClusterBuilder = &expv1alpha1.CustomClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       expv1alpha1.CustomClusterBuilderKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
@@ -181,48 +210,54 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 				},
 			},
 			Status: expv1alpha1.CustomBuilderStatus{
-				BuilderStatus: v1alpha1.BuilderStatus{
-					Status: corev1alpha1.Status{
-						Conditions: []corev1alpha1.Condition{
-							{
-								Type:   corev1alpha1.ConditionReady,
-								Status: corev1.ConditionTrue,
-							},
-						},
-					},
-					Stack: v1alpha1.BuildStack{
-						RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9fasdfa847098234",
-						ID:       "io.buildpacks.stacks.bionic",
-					},
-					LatestImage: "some-registry.com/test-builder-3:tag",
-				},
+				BuilderStatus: v1alpha1.BuilderStatus{},
 			},
 		}
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return clusterbuilder.NewListCommand(clientSet)
+		return clusterbuilder.NewStatusCommand(clientSet)
 	}
 
-	when("listing clusterbuilder", func() {
-		when("there are clusterbuilders", func() {
-			it("lists the builders", func() {
-				testhelpers.CommandTest{
-					Objects: []runtime.Object{
-						customClusterBuilder1,
-						customClusterBuilder2,
-						customClusterBuilder3,
-					},
-					ExpectedOutput: expectedOutput,
-				}.TestKpack(t, cmdFunc)
+	when("getting clusterbuilder status", func() {
+		when("the clusterbuilder exists", func() {
+			when("the builder is ready", func() {
+				it("shows the build status", func() {
+					testhelpers.CommandTest{
+						Objects:        []runtime.Object{readyClusterBuilder},
+						Args:           []string{"test-builder-1"},
+						ExpectedOutput: expectedReadyOutput,
+					}.TestKpack(t, cmdFunc)
+				})
+			})
+
+			when("the builder is not ready", func() {
+				it("shows the build status of not ready builder", func() {
+					testhelpers.CommandTest{
+						Objects:        []runtime.Object{notReadyClusterBuilder},
+						Args:           []string{"test-builder-2"},
+						ExpectedOutput: expectedNotReadyOutput,
+					}.TestKpack(t, cmdFunc)
+				})
+			})
+
+			when("the builder is unknown", func() {
+				it("shows the build status of unknown builder", func() {
+					testhelpers.CommandTest{
+						Objects:        []runtime.Object{unknownClusterBuilder},
+						Args:           []string{"test-builder-3"},
+						ExpectedOutput: expectedUnkownOutput,
+					}.TestKpack(t, cmdFunc)
+				})
 			})
 		})
 
-		when("there are no clusterbuilders", func() {
+		when("the clusterbuidler does not exist", func() {
 			it("prints an appropriate message", func() {
 				testhelpers.CommandTest{
+					Args:           []string{"non-existant-builder"},
 					ExpectErr:      true,
-					ExpectedOutput: "Error: no clusterbuilders found\n",
+					ExpectedOutput: "Error: customclusterbuilders.experimental.kpack.pivotal.io \"non-existant-builder\" not found\n",
 				}.TestKpack(t, cmdFunc)
 			})
 		})

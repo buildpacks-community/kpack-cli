@@ -31,6 +31,7 @@ Source:    Local Source
 BUILDPACK ID    BUILDPACK VERSION
 bp-id-1         bp-version-1
 bp-id-2         bp-version-2
+
 `
 		expectedOutputForBuildNumber = `Image:      repo.com/image-1:tag
 Status:     SUCCESS
@@ -44,6 +45,7 @@ Source:    Local Source
 BUILDPACK ID    BUILDPACK VERSION
 bp-id-1         bp-version-1
 bp-id-2         bp-version-2
+
 `
 	)
 

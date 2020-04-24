@@ -38,5 +38,9 @@ func (w *TableWriter) AddRow(columns ...string) error {
 }
 
 func (w *TableWriter) Write() error {
+	_, err := fmt.Fprintln(w.writer, "")
+	if err != nil {
+		return err
+	}
 	return w.writer.Flush()
 }

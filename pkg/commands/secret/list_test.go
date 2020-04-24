@@ -61,6 +61,7 @@ func testSecretListCommand(t *testing.T, when spec.G, it spec.S) {
 secret-one      https://index.docker.io/v1/
 secret-three    
 secret-two      some-git-url
+
 `
 
 					testhelpers.CommandTest{
@@ -127,6 +128,7 @@ secret-two      some-git-url
 secret-one      https://index.docker.io/v1/
 secret-three    
 secret-two      some-git-url
+
 `
 
 					testhelpers.CommandTest{
