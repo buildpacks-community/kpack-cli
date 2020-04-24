@@ -149,7 +149,7 @@ func (f *Factory) makeBuilder(namespace string) corev1.ObjectReference {
 	} else if f.ClusterBuilder != "" {
 		return corev1.ObjectReference{
 			Kind: expv1alpha1.CustomClusterBuilderKind,
-			Name: f.Builder,
+			Name: f.ClusterBuilder,
 		}
 	} else {
 		return corev1.ObjectReference{

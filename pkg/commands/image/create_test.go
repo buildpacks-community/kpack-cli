@@ -255,6 +255,44 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestKpack(t, cmdFunc)
 		})
 	})
+
+	when("the image uses a non-default cluster builder", func() {
+		it("uploads the source image and creates the image config", func() {
+			expectedImage := &v1alpha1.Image{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "some-image",
+					Namespace: defaultNamespace,
+				},
+				Spec: v1alpha1.ImageSpec{
+					Tag: "some-registry.io/some-repo",
+					Builder: corev1.ObjectReference{
+						Kind: expv1alpha1.CustomClusterBuilderKind,
+						Name: "some-builder",
+					},
+					ServiceAccount: "default",
+					Source: v1alpha1.SourceConfig{
+						Blob: &v1alpha1.Blob{
+							URL: "some-blob",
+						},
+					},
+					Build: &v1alpha1.ImageBuild{},
+				},
+			}
+
+			testhelpers.CommandTest{
+				Args: []string{
+					"some-image",
+					"some-registry.io/some-repo",
+					"--blob", "some-blob",
+					"--cluster-builder", "some-builder",
+				},
+				ExpectedOutput: "\"some-image\" created\n",
+				ExpectCreates: []runtime.Object{
+					expectedImage,
+				},
+			}.TestKpack(t, cmdFunc)
+		})
+	})
 }
 
 type fakeSourceUploader struct {
