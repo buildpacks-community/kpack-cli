@@ -1,0 +1,16 @@
+# Buildpack API version
+api = "0.2"
+
+# Buildpack ID and metadata
+[buildpack]
+id = "sample/buildpackage"
+version = "0.0.1"
+name = "sample buildpackage"
+homepage = "sample.com"
+
+# Stacks that the buildpack will work with
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+
+[[stacks]]
+id = "org.cloudfoundry.stacks.tiny"

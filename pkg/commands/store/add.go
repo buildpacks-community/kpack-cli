@@ -1,0 +1,109 @@
+package store
+
+import (
+	"strings"
+
+	"github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/commands"
+)
+
+type BuildpackageUploader interface {
+	Upload(repository, buildPackage string) (string, error)
+}
+
+const (
+	defaultStoreName            = "build-service-store"
+	defaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
+)
+
+func NewStoreAddCommand(kpackClient versioned.Interface, buildpackUploader BuildpackageUploader) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "add <buildpackage>",
+		Short: "Create an image configuration",
+		Long: `Upload builpackage(s) to a the buildpack store.
+
+Buildpackages will be uploaded to the the registry configured on your store.
+Therefore, you must have credentials to access the registry on your machine.".
+`,
+		Example: `tbctl store add my-registry.com/my-buildpackage
+tbctl store add my-registry.com/my-buildpackage my-registry.com/my-other-buildpackage my-registry.com/my-third-buildpackage
+tbctl store add ../path/to/my-local-buildpackage.cnb
+`,
+		Args:         cobra.MinimumNArgs(1),
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logger := commands.NewLogger(cmd)
+
+			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(defaultStoreName, v1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			repository, ok := store.Annotations[defaultRepositoryAnnotation]
+			if !ok {
+				return errors.Errorf("Unable to find default registry for store: %s", defaultStoreName)
+			}
+
+			logger.Infof("Uploading to '%s'...", repository)
+
+			var uploaded []string
+			for _, buildpackage := range args {
+				uploadedBp, err := buildpackUploader.Upload(repository, buildpackage)
+				if err != nil {
+					return err
+				}
+				uploaded = append(uploaded, uploadedBp)
+			}
+
+			storeUpdated := false
+			for _, uploadedBp := range uploaded {
+				if storeContains(store, uploadedBp) {
+					logger.Infof("Buildpackage '%s' already exists in the store", uploadedBp)
+					continue
+				}
+
+				store.Spec.Sources = append(store.Spec.Sources, v1alpha1.StoreImage{
+					Image: uploadedBp,
+				})
+				storeUpdated = true
+				logger.Infof("Added Buildpackage '%s'", uploadedBp)
+			}
+
+			if !storeUpdated {
+				logger.Infof("Store Unchanged")
+				return nil
+			}
+
+			_, err = kpackClient.ExperimentalV1alpha1().Stores().Update(store)
+			if err != nil {
+				return err
+			}
+
+			logger.Infof("Store Updated")
+			return nil
+		},
+	}
+	return cmd
+}
+
+func storeContains(store *v1alpha1.Store, buildpackage string) bool {
+	digest := strings.Split(buildpackage, "@")[1]
+
+	for _, image := range store.Spec.Sources {
+		parts := strings.Split(image.Image, "@")
+		if len(parts) != 2 {
+			continue
+		}
+
+		if parts[1] == digest {
+			return true
+		}
+	}
+	return false
+}

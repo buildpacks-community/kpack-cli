@@ -1,0 +1,3 @@
+# The buildpack source intended for packaging
+[buildpack]
+uri = "."

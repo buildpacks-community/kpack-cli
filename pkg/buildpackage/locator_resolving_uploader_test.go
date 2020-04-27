@@ -1,0 +1,58 @@
+package buildpackage
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/google/go-containerregistry/pkg/v1/random"
+	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
+	"github.com/sclevine/spec"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/pivotal/build-service-cli/pkg/buildpackage/fakes"
+)
+
+func TestLocatingResolvingUpdater(t *testing.T) {
+	spec.Run(t, "testLocatingResolvingUpdater", testLocatingResolvingUpdater)
+}
+
+func testLocatingResolvingUpdater(t *testing.T, when spec.G, it spec.S) {
+	fetcher := &fakes.Fetcher{}
+	uploader := &LocatorResolvingUpdater{
+		Fetcher:   fetcher,
+		Relocator: fakes.FakeRelocator{},
+	}
+
+	when("cnb file is provided", func() {
+		it("it uploads to registry", func() {
+
+			image, err := uploader.Upload("kpackcr.org/somepath", "testdata/sample-bp.cnb")
+			require.NoError(t, err)
+
+			const expectedFixture = "kpackcr.org/somepath/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
+			assert.Equal(t, expectedFixture, image)
+		})
+	})
+
+	when("remote location", func() {
+		it("it uploads to registry", func() {
+			testImage, err := random.Image(10, 10)
+			require.NoError(t, err)
+
+			testImage, err = imagehelpers.SetStringLabel(testImage, "io.buildpacks.buildpackage.metadata", `{"id": "sample-buildpack/name"}`)
+			require.NoError(t, err)
+
+			fetcher.AddImage(testImage, "some/remote-bp")
+
+			image, err := uploader.Upload("kpackcr.org/somepath", "some/remote-bp")
+			require.NoError(t, err)
+
+			digest, err := testImage.Digest()
+			require.NoError(t, err)
+
+			expectedImage := fmt.Sprintf("kpackcr.org/somepath/sample-buildpack_name@%s", digest)
+			assert.Equal(t, expectedImage, image)
+		})
+	})
+}
