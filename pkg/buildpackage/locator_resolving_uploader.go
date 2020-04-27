@@ -1,19 +1,17 @@
 package buildpackage
 
 import (
-	"archive/tar"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
-
-	"github.com/pkg/errors"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
+	"github.com/pkg/errors"
+
+	"github.com/pivotal/build-service-cli/pkg/archive"
 )
 
 const (
@@ -72,13 +70,12 @@ func isLocalCnb(buildPackage string) bool {
 }
 
 func readCNB(buildPackage, tempDir string) (v1.Image, error) {
-
 	cnbFile, err := os.Open(buildPackage)
 	if err != nil {
 		return nil, err
 	}
 
-	err = extractTar(cnbFile, tempDir)
+	err = archive.ReadTar(cnbFile, tempDir)
 	if err != nil {
 		return nil, err
 	}
@@ -99,35 +96,4 @@ func readCNB(buildPackage, tempDir string) (v1.Image, error) {
 	}
 
 	return image, nil
-}
-
-func extractTar(reader io.Reader, dir string) error {
-	tarReader := tar.NewReader(reader)
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-
-		filePath := filepath.Join(dir, header.Name)
-		switch header.Typeflag {
-		case tar.TypeDir:
-			err := os.MkdirAll(filePath, os.FileMode(header.Mode))
-			if err != nil {
-				return err
-			}
-		case tar.TypeReg:
-			outFile, err := os.Create(filePath)
-			if err != nil {
-				return err
-			}
-			defer outFile.Close()
-			if _, err := io.Copy(outFile, tarReader); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
