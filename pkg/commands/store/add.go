@@ -46,7 +46,7 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 			}
 
 			repository, ok := store.Annotations[defaultRepositoryAnnotation]
-			if !ok {
+			if !ok || repository == "" {
 				return errors.Errorf("Unable to find default registry for store: %s", defaultStoreName)
 			}
 
