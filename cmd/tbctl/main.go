@@ -113,6 +113,7 @@ func main() {
 		Short: "Stack Commands",
 	}
 	stackRootCmd.AddCommand(
+		stackcmds.NewListCommand(kpackClient),
 		stackcmds.NewStatusCommand(kpackClient),
 	)
 

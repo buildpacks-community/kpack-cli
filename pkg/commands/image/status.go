@@ -113,14 +113,14 @@ type imageDetails struct {
 
 func getImageDetails(image *v1alpha1.Image) imageDetails {
 	details := imageDetails{
-		status:      "UNKNOWN",
-		message:     "N/A",
-		latestImage: "N/A",
+		status:      "Unknown",
+		message:     "",
+		latestImage: "",
 	}
 
 	if cond := image.Status.GetCondition(v1alpha1.ConditionBuilderReady); cond != nil {
 		if cond.Status != v1.ConditionTrue {
-			details.status = "NOT READY"
+			details.status = "Not Ready"
 			details.message = getNotReadyMessage(cond.Reason, image.Spec.Builder.Name)
 			return details
 		}
@@ -128,11 +128,11 @@ func getImageDetails(image *v1alpha1.Image) imageDetails {
 
 	if cond := image.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
 		if cond.Status == v1.ConditionTrue {
-			details.status = "READY"
+			details.status = "Ready"
 		} else if cond.Status == v1.ConditionUnknown {
-			details.status = "BUILDING"
+			details.status = "Building"
 		} else {
-			details.status = "NOT READY"
+			details.status = "Not Ready"
 			details.message = getNotReadyMessage(cond.Reason, image.Spec.Builder.Name)
 		}
 	}
@@ -150,25 +150,25 @@ func getNotReadyMessage(reason, builderName string) string {
 	} else if reason == v1alpha1.BuilderNotReady {
 		return fmt.Sprintf("Builder '%s' not ready", builderName)
 	}
-	return "N/A"
+	return ""
 }
 
 func getId(build *v1alpha1.Build) string {
 	if build == nil {
-		return "N/A"
+		return ""
 	}
 	if val, ok := build.Labels[v1alpha1.BuildNumberLabel]; ok {
 		return val
 	}
-	return "N/A"
+	return ""
 }
 
 func getReason(build *v1alpha1.Build) string {
 	if build == nil {
-		return "N/A"
+		return ""
 	}
 	if val, ok := build.Annotations[v1alpha1.BuildReasonAnnotation]; ok {
 		return val
 	}
-	return "N/A"
+	return ""
 }

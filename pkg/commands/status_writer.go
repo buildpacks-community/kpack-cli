@@ -31,7 +31,12 @@ func (s *StatusWriter) AddBlock(header string, items ...string) error {
 	}
 
 	for i := 0; i < len(items); i += 2 {
-		_, err := fmt.Fprintf(s.writer, "%s:\t%s\n", items[i], items[i+1])
+		value := items[i+1]
+		if value == "" {
+			value = "--"
+		}
+
+		_, err := fmt.Fprintf(s.writer, "%s:\t%s\n", items[i], value)
 		if err != nil {
 			return err
 		}

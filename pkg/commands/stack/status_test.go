@@ -43,7 +43,8 @@ func testStackStatusCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}
 
-			const expectedOutput = `Id:             some-stack-id
+			const expectedOutput = `Status:         Unknown
+Id:             some-stack-id
 Run Image:      some-build-image
 Build Image:    some-run-image
 Mixins:         mixin1, mixin2
