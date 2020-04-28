@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewLogger(cmd *cobra.Command) *Logger {
+func NewPrinter(cmd *cobra.Command) *Logger {
 	return &Logger{
 		Out: cmd.OutOrStdout(),
 		Err: cmd.OutOrStderr(),
@@ -19,6 +19,6 @@ type Logger struct {
 	Err io.Writer
 }
 
-func (l *Logger) Infof(format string, a ...interface{}) {
+func (l *Logger) Printf(format string, a ...interface{}) {
 	l.Out.Write([]byte(fmt.Sprintf(format+"\n", a...)))
 }

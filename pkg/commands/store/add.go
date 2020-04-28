@@ -38,7 +38,7 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 		Args:         cobra.MinimumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logger := commands.NewLogger(cmd)
+			printer := commands.NewPrinter(cmd)
 
 			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(defaultStoreName, v1.GetOptions{})
 			if err != nil {
@@ -50,7 +50,7 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 				return errors.Errorf("Unable to find default registry for store: %s", defaultStoreName)
 			}
 
-			logger.Infof("Uploading to '%s'...", repository)
+			printer.Printf("Uploading to '%s'...", repository)
 
 			var uploaded []string
 			for _, buildpackage := range args {
@@ -64,7 +64,7 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 			storeUpdated := false
 			for _, uploadedBp := range uploaded {
 				if storeContains(store, uploadedBp) {
-					logger.Infof("Buildpackage '%s' already exists in the store", uploadedBp)
+					printer.Printf("Buildpackage '%s' already exists in the store", uploadedBp)
 					continue
 				}
 
@@ -72,11 +72,11 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 					Image: uploadedBp,
 				})
 				storeUpdated = true
-				logger.Infof("Added Buildpackage '%s'", uploadedBp)
+				printer.Printf("Added Buildpackage '%s'", uploadedBp)
 			}
 
 			if !storeUpdated {
-				logger.Infof("Store Unchanged")
+				printer.Printf("Store Unchanged")
 				return nil
 			}
 
@@ -85,7 +85,7 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 				return err
 			}
 
-			logger.Infof("Store Updated")
+			printer.Printf("Store Updated")
 			return nil
 		},
 	}
