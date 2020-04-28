@@ -26,6 +26,37 @@ func CreateTar(path string) (string, error) {
 	return fh.Name(), nil
 }
 
+func ReadTar(reader io.Reader, dir string) error {
+	tarReader := tar.NewReader(reader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+
+		filePath := filepath.Join(dir, header.Name)
+		switch header.Typeflag {
+		case tar.TypeDir:
+			err := os.MkdirAll(filePath, os.FileMode(header.Mode))
+			if err != nil {
+				return err
+			}
+		case tar.TypeReg:
+			outFile, err := os.Create(filePath)
+			if err != nil {
+				return err
+			}
+			defer outFile.Close()
+			if _, err := io.Copy(outFile, tarReader); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func writeDirToTar(tw *tar.Writer, srcDir, basePath string, uid, gid int, mode int64) error {
 	return filepath.Walk(srcDir, func(file string, fi os.FileInfo, err error) error {
 		if err != nil {

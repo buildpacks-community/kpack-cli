@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/pivotal/build-service-cli/pkg/buildpackage"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	buildcmds "github.com/pivotal/build-service-cli/pkg/commands/build"
 	buildercmds "github.com/pivotal/build-service-cli/pkg/commands/builder"
@@ -13,6 +14,7 @@ import (
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
 	stackcmds "github.com/pivotal/build-service-cli/pkg/commands/stack"
+	"github.com/pivotal/build-service-cli/pkg/commands/store"
 	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
@@ -108,6 +110,19 @@ func main() {
 		buildercmds.NewStatusCommand(kpackClient, defaultNamespace),
 	)
 
+	uploader := &buildpackage.BuildpackageUploader{
+		Relocator: &registry.Relocator{},
+		Fetcher:   &registry.Fetcher{},
+	}
+
+	storeRootCommand := &cobra.Command{
+		Use:   "store",
+		Short: "Store Commands",
+	}
+	storeRootCommand.AddCommand(
+		store.NewStoreAddCommand(kpackClient, uploader),
+	)
+
 	stackRootCmd := &cobra.Command{
 		Use:   "stack",
 		Short: "Stack Commands",
@@ -136,6 +151,7 @@ func main() {
 		clusterBuilderRootCmd,
 		builderRootCmd,
 		stackRootCmd,
+		storeRootCommand,
 	)
 
 	err = rootCmd.Execute()
