@@ -26,12 +26,12 @@ type Fetcher interface {
 	Fetch(src string) (v1.Image, error)
 }
 
-type LocatorResolvingUpdater struct {
+type BuildpackageUploader struct {
 	Relocator Relocator
 	Fetcher   Fetcher
 }
 
-func (u *LocatorResolvingUpdater) Upload(repository, buildPackage string) (string, error) {
+func (u *BuildpackageUploader) Upload(repository, buildPackage string) (string, error) {
 	tempDir, err := ioutil.TempDir("", "cnb-upload")
 	if err != nil {
 		return "", err
@@ -56,7 +56,7 @@ func (u *LocatorResolvingUpdater) Upload(repository, buildPackage string) (strin
 	return u.Relocator.Relocate(image, path.Join(repository, strings.ReplaceAll(metadata.Id, "/", "_")))
 }
 
-func (u *LocatorResolvingUpdater) read(buildPackage, tempDir string) (v1.Image, error) {
+func (u *BuildpackageUploader) read(buildPackage, tempDir string) (v1.Image, error) {
 	if isLocalCnb(buildPackage) {
 		cnb, err := readCNB(buildPackage, tempDir)
 		return cnb, errors.Wrapf(err, "invalid local buildpackage %s", buildPackage)

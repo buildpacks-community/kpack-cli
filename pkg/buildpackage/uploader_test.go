@@ -13,13 +13,13 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/buildpackage/fakes"
 )
 
-func TestLocatingResolvingUpdater(t *testing.T) {
-	spec.Run(t, "testLocatingResolvingUpdater", testLocatingResolvingUpdater)
+func TestBuildpackageUploader(t *testing.T) {
+	spec.Run(t, "testBuildpackageUploader", testBuildpackageUploader)
 }
 
-func testLocatingResolvingUpdater(t *testing.T, when spec.G, it spec.S) {
+func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 	fetcher := &fakes.Fetcher{}
-	uploader := &LocatorResolvingUpdater{
+	uploader := &BuildpackageUploader{
 		Fetcher:   fetcher,
 		Relocator: fakes.FakeRelocator{},
 	}

@@ -110,7 +110,7 @@ func main() {
 		buildercmds.NewStatusCommand(kpackClient, defaultNamespace),
 	)
 
-	uploader := &buildpackage.LocatorResolvingUpdater{
+	uploader := &buildpackage.BuildpackageUploader{
 		Relocator: &registry.Relocator{},
 		Fetcher:   &registry.Fetcher{},
 	}
