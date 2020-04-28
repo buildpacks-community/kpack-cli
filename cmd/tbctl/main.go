@@ -12,6 +12,7 @@ import (
 	clusterbuildercmds "github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
+	stackcmds "github.com/pivotal/build-service-cli/pkg/commands/stack"
 	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
@@ -107,6 +108,14 @@ func main() {
 		buildercmds.NewStatusCommand(kpackClient, defaultNamespace),
 	)
 
+	stackRootCmd := &cobra.Command{
+		Use:   "stack",
+		Short: "Stack Commands",
+	}
+	stackRootCmd.AddCommand(
+		stackcmds.NewStatusCommand(kpackClient),
+	)
+
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "Display tbctl version",
@@ -125,6 +134,7 @@ func main() {
 		secretRootCmd,
 		clusterBuilderRootCmd,
 		builderRootCmd,
+		stackRootCmd,
 	)
 
 	err = rootCmd.Execute()
