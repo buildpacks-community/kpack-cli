@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/buildpackage/fakes"
+	"github.com/pivotal/build-service-cli/pkg/registry/fakes"
 )
 
 func TestBuildpackageUploader(t *testing.T) {
@@ -19,7 +19,7 @@ func TestBuildpackageUploader(t *testing.T) {
 
 func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 	fetcher := &fakes.Fetcher{}
-	uploader := &BuildpackageUploader{
+	uploader := &Uploader{
 		Fetcher:   fetcher,
 		Relocator: fakes.FakeRelocator{},
 	}

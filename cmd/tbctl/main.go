@@ -110,7 +110,7 @@ func main() {
 		buildercmds.NewStatusCommand(kpackClient, defaultNamespace),
 	)
 
-	uploader := &buildpackage.BuildpackageUploader{
+	bpUploader := &buildpackage.Uploader{
 		Relocator: &registry.Relocator{},
 		Fetcher:   &registry.Fetcher{},
 	}
@@ -120,8 +120,13 @@ func main() {
 		Short: "Store Commands",
 	}
 	storeRootCommand.AddCommand(
-		store.NewStoreAddCommand(kpackClient, uploader),
+		store.NewStoreAddCommand(kpackClient, bpUploader),
 	)
+
+	imgUploader := &image.Uploader{
+		Fetcher:   &registry.Fetcher{},
+		Relocator: &registry.Relocator{},
+	}
 
 	stackRootCmd := &cobra.Command{
 		Use:   "stack",
@@ -130,6 +135,7 @@ func main() {
 	stackRootCmd.AddCommand(
 		stackcmds.NewListCommand(kpackClient),
 		stackcmds.NewStatusCommand(kpackClient),
+		stackcmds.NewUpdateCommand(kpackClient, imgUploader),
 	)
 
 	versionCmd := &cobra.Command{

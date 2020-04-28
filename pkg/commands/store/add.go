@@ -12,24 +12,23 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-type BuildpackageUploader interface {
-	Upload(repository, buildPackage string) (string, error)
-}
-
 const (
 	defaultStoreName            = "build-service-store"
 	defaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
 )
 
-func NewStoreAddCommand(kpackClient versioned.Interface, buildpackUploader BuildpackageUploader) *cobra.Command {
+type BuildpackageUploader interface {
+	Upload(repository, buildPackage string) (string, error)
+}
 
+func NewStoreAddCommand(kpackClient versioned.Interface, buildpackUploader BuildpackageUploader) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <buildpackage>",
 		Short: "Create an image configuration",
 		Long: `Upload builpackage(s) to a the buildpack store.
 
 Buildpackages will be uploaded to the the registry configured on your store.
-Therefore, you must have credentials to access the registry on your machine.".
+Therefore, you must have credentials to access the registry on your machine.
 `,
 		Example: `tbctl store add my-registry.com/my-buildpackage
 tbctl store add my-registry.com/my-buildpackage my-registry.com/my-other-buildpackage my-registry.com/my-third-buildpackage
