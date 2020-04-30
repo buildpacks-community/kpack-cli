@@ -1,6 +1,8 @@
 package stack
 
 import (
+	"strings"
+
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
@@ -71,7 +73,9 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 				return err
 			}
 
-			if !mutateStack(stack, uploadedBuildImageRef, uploadedRunImageRef, uploadedStackId) {
+			if mutated, err := mutateStack(stack, uploadedBuildImageRef, uploadedRunImageRef, uploadedStackId); err != nil {
+				return err
+			} else if !mutated {
 				printer.Printf("Build and Run images already exist in stack\nStack Unchanged")
 				return nil
 			}
@@ -125,12 +129,40 @@ func getStackLabel(image v1.Image, label string) (string, error) {
 	return id, nil
 }
 
-func mutateStack(stack *expv1alpha1.Stack, buildImageRef, runImageRef, stackId string) bool {
-	if stack.Status.BuildImage.LatestImage != buildImageRef && stack.Status.RunImage.LatestImage != runImageRef {
+func mutateStack(stack *expv1alpha1.Stack, buildImageRef, runImageRef, stackId string) (bool, error) {
+	oldBuildDigest, err := getDigest(stack.Status.BuildImage.LatestImage)
+	if err != nil {
+		return false, err
+	}
+
+	newBuildDigest, err := getDigest(buildImageRef)
+	if err != nil {
+		return false, err
+	}
+
+	oldRunDigest, err := getDigest(stack.Status.RunImage.LatestImage)
+	if err != nil {
+		return false, err
+	}
+
+	newRunDigest, err := getDigest(runImageRef)
+	if err != nil {
+		return false, err
+	}
+
+	if oldBuildDigest != newBuildDigest && oldRunDigest != newRunDigest {
 		stack.Spec.BuildImage.Image = buildImageRef
 		stack.Spec.RunImage.Image = runImageRef
 		stack.Spec.Id = stackId
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
+}
+
+func getDigest(ref string) (string, error) {
+	s := strings.Split(ref, "@")
+	if len(s) != 2 {
+		return "", errors.New("failed to get image digest")
+	}
+	return s[1], nil
 }
