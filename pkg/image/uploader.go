@@ -21,7 +21,7 @@ type Uploader struct {
 	Relocator Relocator
 }
 
-func (u *Uploader) Upload(repository, image, name string) (string, v1.Image, error) {
+func (u *Uploader) Upload(repository, name, image string) (string, v1.Image, error) {
 	img, err := u.read(image)
 	if err != nil {
 		return "", nil, err

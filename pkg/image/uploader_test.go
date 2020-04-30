@@ -26,7 +26,7 @@ func testImageUploader(t *testing.T, when spec.G, it spec.S) {
 
 	when("image file is provided", func() {
 		it("it uploads to registry", func() {
-			ref, _, err := uploader.Upload("kpackcr.org/somepath", "testdata/test-image.tar", "new-image-name")
+			ref, _, err := uploader.Upload("kpackcr.org/somepath", "new-image-name", "testdata/test-image.tar")
 			require.NoError(t, err)
 
 			const expectedRef = "kpackcr.org/somepath/new-image-name@sha256:c486cfa1439f5ca6e19f5572a1c589070f475be1d246a6827fe326cc9e6738c6"
@@ -41,7 +41,7 @@ func testImageUploader(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.AddImage(testImage, "some/remote-bp")
 
-			ref, _, err := uploader.Upload("kpackcr.org/somepath", "some/remote-bp", "new-image-name")
+			ref, _, err := uploader.Upload("kpackcr.org/somepath", "new-image-name", "some/remote-bp")
 			require.NoError(t, err)
 
 			digest, err := testImage.Digest()
