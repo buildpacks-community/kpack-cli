@@ -89,8 +89,9 @@ func main() {
 	)
 
 	clusterBuilderRootCmd := &cobra.Command{
-		Use:   "clusterbuilder",
-		Short: "Cluster Builder Commands",
+		Use:     "custom-cluster-builder",
+		Short:   "Custom Cluster Builder Commands",
+		Aliases: []string{"ccb"},
 	}
 	clusterBuilderRootCmd.AddCommand(
 		clusterbuildercmds.NewApplyCommand(kpackClient),
@@ -100,8 +101,9 @@ func main() {
 	)
 
 	builderRootCmd := &cobra.Command{
-		Use:   "builder",
-		Short: "Builder Commands",
+		Use:     "custom-builder",
+		Short:   "Custom Builder Commands",
+		Aliases: []string{"cb"},
 	}
 	builderRootCmd.AddCommand(
 		buildercmds.NewApplyCommand(kpackClient, defaultNamespace),
