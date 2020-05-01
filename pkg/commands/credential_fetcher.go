@@ -23,7 +23,7 @@ func (c CredentialFetcher) FetchPassword(envVar, prompt string) (string, error) 
 		return "", err
 	}
 
-	pwBytes, err := terminal.ReadPassword(syscall.Stdin)
+	pwBytes, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		return "", err
 	}
