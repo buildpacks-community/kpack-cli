@@ -3,7 +3,6 @@ package stack
 import (
 	"strings"
 
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
@@ -11,20 +10,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	pkgstack "github.com/pivotal/build-service-cli/pkg/stack"
 )
 
 const (
-	StackIdLabel                = "io.buildpacks.stack.id"
 	RunImageName                = "run"
 	BuildImageName              = "build"
 	DefaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
 )
 
-type ImageUploader interface {
-	Upload(repository, name, image string) (string, v1.Image, error)
-}
-
-func NewUpdateCommand(kpackClient versioned.Interface, imageUploader ImageUploader) *cobra.Command {
+func NewUpdateCommand(kpackClient versioned.Interface, imageUploader pkgstack.ImageUploader) *cobra.Command {
 	var (
 		buildImage string
 		runImage   string
@@ -58,17 +53,27 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 
 			printer.Printf("Uploading to '%s'...", repository)
 
-			uploadedBuildImageRef, uploadedBuildImage, err := imageUploader.Upload(repository, BuildImageName, buildImage)
+			buildImg, err := imageUploader.Read(buildImage)
 			if err != nil {
 				return err
 			}
 
-			uploadedRunImageRef, uploadedRunImage, err := imageUploader.Upload(repository, RunImageName, runImage)
+			runImg, err := imageUploader.Read(runImage)
 			if err != nil {
 				return err
 			}
 
-			uploadedStackId, err := getStackID(uploadedBuildImage, uploadedRunImage)
+			uploadedStackId, err := pkgstack.GetStackID(buildImg, runImg)
+			if err != nil {
+				return err
+			}
+
+			uploadedBuildImageRef, err := imageUploader.Upload(buildImg, repository, BuildImageName)
+			if err != nil {
+				return err
+			}
+
+			uploadedRunImageRef, err := imageUploader.Upload(runImg, repository, RunImageName)
 			if err != nil {
 				return err
 			}
@@ -96,37 +101,6 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 	_ = cmd.MarkFlagRequired("run-image")
 
 	return cmd
-}
-
-func getStackID(buildImg, runImg v1.Image) (string, error) {
-	buildStack, err := getStackLabel(buildImg, StackIdLabel)
-	if err != nil {
-		return "", err
-	}
-
-	runStack, err := getStackLabel(runImg, StackIdLabel)
-	if err != nil {
-		return "", err
-	}
-
-	if buildStack != runStack {
-		return "", errors.Errorf("build stack '%s' does not match run stack '%s'", buildStack, runStack)
-	}
-
-	return buildStack, nil
-}
-
-func getStackLabel(image v1.Image, label string) (string, error) {
-	config, err := image.ConfigFile()
-	if err != nil {
-		return "", err
-	}
-	labels := config.Config.Labels
-	id, ok := labels[label]
-	if !ok {
-		return "", errors.New("invalid stack image")
-	}
-	return id, nil
 }
 
 func mutateStack(stack *expv1alpha1.Stack, buildImageRef, runImageRef, stackId string) (bool, error) {

@@ -1,15 +1,16 @@
-package image_test
+package stack_test
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/v1/random"
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/registry/fakes"
+	"github.com/pivotal/build-service-cli/pkg/stack"
 )
 
 func TestImageUploader(t *testing.T) {
@@ -19,14 +20,17 @@ func TestImageUploader(t *testing.T) {
 func testImageUploader(t *testing.T, when spec.G, it spec.S) {
 	fetcher := &fakes.Fetcher{}
 	relocator := &fakes.FakeRelocator{}
-	uploader := &image.Uploader{
+	uploader := &stack.Uploader{
 		Fetcher:   fetcher,
 		Relocator: relocator,
 	}
 
 	when("image file is provided", func() {
 		it("it uploads to registry", func() {
-			ref, _, err := uploader.Upload("kpackcr.org/somepath", "new-image-name", "testdata/test-image.tar")
+			testImage, err := tarball.ImageFromPath("testdata/test-image.tar", nil)
+			require.NoError(t, err)
+
+			ref, err := uploader.Upload(testImage, "new-image-name", "kpackcr.org/somepath")
 			require.NoError(t, err)
 
 			const expectedRef = "kpackcr.org/somepath/new-image-name@sha256:c486cfa1439f5ca6e19f5572a1c589070f475be1d246a6827fe326cc9e6738c6"
@@ -41,7 +45,7 @@ func testImageUploader(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.AddImage(testImage, "some/remote-bp")
 
-			ref, _, err := uploader.Upload("kpackcr.org/somepath", "new-image-name", "some/remote-bp")
+			ref, err := uploader.Upload(testImage, "new-image-name", "kpackcr.org/somepath")
 			require.NoError(t, err)
 
 			digest, err := testImage.Digest()

@@ -1,4 +1,4 @@
-package image
+package stack
 
 import (
 	"fmt"
@@ -7,6 +7,11 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 )
+
+type ImageUploader interface {
+	Upload(img v1.Image, repository, name string) (string, error)
+	Read(name string) (v1.Image, error)
+}
 
 type Relocator interface {
 	Relocate(image v1.Image, dest string) (string, error)
@@ -21,21 +26,16 @@ type Uploader struct {
 	Relocator Relocator
 }
 
-func (u *Uploader) Upload(repository, name, image string) (string, v1.Image, error) {
-	img, err := u.read(image)
-	if err != nil {
-		return "", nil, err
-	}
-
+func (u *Uploader) Upload(img v1.Image, repository, name string) (string, error) {
 	ref, err := u.Relocator.Relocate(img, fmt.Sprintf("%s/%s", repository, name))
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
-	return ref, img, nil
+	return ref, nil
 }
 
-func (u *Uploader) read(name string) (v1.Image, error) {
+func (u *Uploader) Read(name string) (v1.Image, error) {
 	if u.isLocalImage(name) {
 		return tarball.ImageFromPath(name, nil)
 	} else {

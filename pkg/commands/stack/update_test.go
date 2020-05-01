@@ -16,6 +16,7 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 
 	"github.com/pivotal/build-service-cli/pkg/commands/stack"
+	pkgstack "github.com/pivotal/build-service-cli/pkg/stack"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -160,7 +161,7 @@ func makeStackImages(t *testing.T, stackId string) (v1.Image, v1.Image) {
 		t.Fatal(err)
 	}
 
-	buildImage, err = imagehelpers.SetStringLabel(buildImage, stack.StackIdLabel, stackId)
+	buildImage, err = imagehelpers.SetStringLabel(buildImage, pkgstack.StackIdLabel, stackId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +171,7 @@ func makeStackImages(t *testing.T, stackId string) (v1.Image, v1.Image) {
 		t.Fatal(err)
 	}
 
-	runImage, err = imagehelpers.SetStringLabel(runImage, stack.StackIdLabel, stackId)
+	runImage, err = imagehelpers.SetStringLabel(runImage, pkgstack.StackIdLabel, stackId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,13 +186,21 @@ type fakeImageTuple struct {
 
 type fakeImageUploader map[string]fakeImageTuple
 
-func (f fakeImageUploader) Upload(repository, name, image string) (string, v1.Image, error) {
+func (f fakeImageUploader) Upload(img v1.Image, repository, name string) (string, error) {
 	if repository != expectedRepository {
-		return "", nil, errors.Errorf("unexpected repository %s expected %s", repository, expectedRepository)
+		return "", errors.Errorf("unexpected repository %s expected %s", repository, expectedRepository)
 	}
-	tuple, ok := f[image]
+	tuple, ok := f[name]
 	if !ok {
-		return "", nil, errors.Errorf("could not upload %s", image)
+		return "", errors.Errorf("could not upload %s", name)
 	}
-	return tuple.ref, tuple.image, nil
+	return tuple.ref, nil
+}
+
+func (f fakeImageUploader) Read(name string) (v1.Image, error) {
+	tuple, ok := f[name]
+	if !ok {
+		return nil, errors.Errorf("could not upload %s", name)
+	}
+	return tuple.image, nil
 }
