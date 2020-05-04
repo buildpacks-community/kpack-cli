@@ -24,7 +24,7 @@ func NewListCommand(kpackClient versioned.Interface, defaultNamespace string) *c
 		Long: `Prints a table of the most important information about an image's builds.
 Will only display builds in your current namespace.
 If no namespace is provided, the default namespace is queried.`,
-		Example:      "tbctl build list\ntbctl build list -n my-namespace",
+		Example:      "tbctl build list my-image\ntbctl build list my-image -n my-namespace",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

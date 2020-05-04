@@ -1,4 +1,4 @@
-package builder_test
+package custombuilder_test
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/builder"
+	"github.com/pivotal/build-service-cli/pkg/commands/custombuilder"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -23,7 +23,7 @@ func testBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	const defaultNamespace = "some-default-namespace"
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return builder.NewDeleteCommand(clientSet, defaultNamespace)
+		return custombuilder.NewDeleteCommand(clientSet, defaultNamespace)
 	}
 
 	when("a namespace has been provided", func() {

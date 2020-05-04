@@ -1,4 +1,4 @@
-package builder
+package custombuilder
 
 import (
 	"fmt"
@@ -15,9 +15,9 @@ func NewDeleteCommand(kpackClient versioned.Interface, defaultNamespace string) 
 
 	cmd := &cobra.Command{
 		Use:     "delete <name>",
-		Short:   "Delete a builder",
-		Long:    "Delete a builder from the provided namespace.\n If no namespace is provided, it attempts to delete the builder from the defaulted namespace",
-		Example: "tbctl builder delete my-builder\ntbctl builder delete -n my-namespace other-builder",
+		Short:   "Delete a custom builder",
+		Long:    "Delete a custom builder from the provided namespace.\n If no namespace is provided, it attempts to delete the custo, builder from the default namespace",
+		Example: "tbctl cb delete my-builder\ntbctl cb delete -n my-namespace other-builder",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := kpackClient.ExperimentalV1alpha1().CustomBuilders(namespace).Delete(args[0], &metav1.DeleteOptions{})

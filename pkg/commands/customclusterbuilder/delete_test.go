@@ -1,4 +1,4 @@
-package clusterbuilder_test
+package customclusterbuilder_test
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
+	"github.com/pivotal/build-service-cli/pkg/commands/customclusterbuilder"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -22,7 +22,7 @@ func TestClusterBuilderDeleteCommand(t *testing.T) {
 func testClusterBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return clusterbuilder.NewDeleteCommand(clientSet)
+		return customclusterbuilder.NewDeleteCommand(clientSet)
 	}
 
 	when("a clusterbuilder is available", func() {

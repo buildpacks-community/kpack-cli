@@ -1,4 +1,4 @@
-package builder
+package customclusterbuilder
 
 import (
 	"fmt"
@@ -14,33 +14,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
+func NewApplyCommand(kpackClient versioned.Interface) *cobra.Command {
 	var (
 		path string
 	)
 
 	cmd := &cobra.Command{
 		Use:     "apply",
-		Short:   "Apply a builder configuration",
-		Long:    "Apply a builder configuration by filename.\nThe builder will be created if it does not yet exist.\nOnly YAML files are accepted.",
-		Example: "tbctl builder apply -f ./builder.yaml\ncat ./builder.yaml | tbctl builder apply -f -",
+		Short:   "Apply a custom cluster builder configuration",
+		Long:    "Apply a custom cluster builder configuration by filename.\nThe custom cluster builder will be created if it does not yet exist.\nOnly YAML files are accepted.",
+		Example: "tbctl ccb apply -f ./builder.yaml\ncat ./builder.yaml | tbctl ccb apply -f -",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			builderConfig, err := getBuilderConfig(path)
 			if err != nil {
 				return err
 			}
 
-			if builderConfig.Namespace == "" {
-				builderConfig.Namespace = defaultNamespace
-			}
-
-			_, err = kpackClient.ExperimentalV1alpha1().CustomBuilders(builderConfig.Namespace).Get(builderConfig.Name, metav1.GetOptions{})
+			_, err = kpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Get(builderConfig.Name, metav1.GetOptions{})
 			if err != nil && !k8serrors.IsNotFound(err) {
 				return err
 			} else if k8serrors.IsNotFound(err) {
-				_, err = kpackClient.ExperimentalV1alpha1().CustomBuilders(builderConfig.Namespace).Create(builderConfig)
+				_, err = kpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Create(builderConfig)
 			} else {
-				_, err = kpackClient.ExperimentalV1alpha1().CustomBuilders(builderConfig.Namespace).Update(builderConfig)
+				_, err = kpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Update(builderConfig)
 			}
 			if err != nil {
 				return err
@@ -57,7 +53,7 @@ func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *
 	return cmd
 }
 
-func getBuilderConfig(path string) (*expv1alpha1.CustomBuilder, error) {
+func getBuilderConfig(path string) (*expv1alpha1.CustomClusterBuilder, error) {
 	var (
 		file io.ReadCloser
 		err  error
@@ -78,7 +74,7 @@ func getBuilderConfig(path string) (*expv1alpha1.CustomBuilder, error) {
 		return nil, err
 	}
 
-	var builderConfig expv1alpha1.CustomBuilder
+	var builderConfig expv1alpha1.CustomClusterBuilder
 	err = yaml.Unmarshal(buf, &builderConfig)
 	if err != nil {
 		return nil, err

@@ -1,4 +1,4 @@
-package builder_test
+package custombuilder_test
 
 import (
 	"testing"
@@ -13,47 +13,30 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/builder"
+	"github.com/pivotal/build-service-cli/pkg/commands/custombuilder"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestClusterBuilderStatusCommand(t *testing.T) {
-	spec.Run(t, "TestClusterBuilderStatusCommand", testClusterBuilderStatusCommand)
+func TestBuilderListCommand(t *testing.T) {
+	spec.Run(t, "TestBuilderListCommand", testBuilderListCommand)
 }
 
-func testClusterBuilderStatusCommand(t *testing.T, when spec.G, it spec.S) {
+func testBuilderListCommand(t *testing.T, when spec.G, it spec.S) {
+
 	const (
-		defaultNamespace    = "some-default-namespace"
-		expectedReadyOutput = `Status:       Ready
-Image:        some-registry.com/test-builder-1:tag
-Stack:        io.buildpacks.stacks.centos
-Run Image:    gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234
-
-BUILDPACK ID               VERSION
-org.cloudfoundry.nodejs    v0.2.1
-org.cloudfoundry.go        v0.0.3
-
-
-DETECTION ORDER              
-Group #1                     
-  org.cloudfoundry.nodejs    
-Group #2                     
-  org.cloudfoundry.go        
+		expectedOutput = `NAME              READY    STACK                          IMAGE
+test-builder-1    true     io.buildpacks.stacks.centos    some-registry.com/test-builder-1:tag
+test-builder-2    false                                   
+test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test-builder-3:tag
 
 `
-		expectedNotReadyOutput = `Status:    Not Ready
-Reason:    this builder is not ready for the purpose of a test
-
-`
-		expectedUnkownOutput = `Status:    Unknown
-
-`
+		defaultNamespace = "some-default-namespace"
 	)
 
 	var (
-		readyDefaultBuilder = &expv1alpha1.CustomBuilder{
+		defaultNamespacedCustomBuilder1 = &expv1alpha1.CustomBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.CustomClusterBuilderKind,
+				Kind:       expv1alpha1.CustomBuilderKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -97,16 +80,6 @@ Reason:    this builder is not ready for the purpose of a test
 							},
 						},
 					},
-					BuilderMetadata: v1alpha1.BuildpackMetadataList{
-						{
-							Id:      "org.cloudfoundry.nodejs",
-							Version: "v0.2.1",
-						},
-						{
-							Id:      "org.cloudfoundry.go",
-							Version: "v0.0.3",
-						},
-					},
 					Stack: v1alpha1.BuildStack{
 						RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 						ID:       "io.buildpacks.stacks.centos",
@@ -115,9 +88,9 @@ Reason:    this builder is not ready for the purpose of a test
 				},
 			},
 		}
-		notReadyDefaultBuilder = &expv1alpha1.CustomBuilder{
+		defaultNamespacedCustomBuilder2 = &expv1alpha1.CustomBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.CustomClusterBuilderKind,
+				Kind:       expv1alpha1.CustomBuilderKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -156,18 +129,17 @@ Reason:    this builder is not ready for the purpose of a test
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
-								Type:    corev1alpha1.ConditionReady,
-								Status:  corev1.ConditionFalse,
-								Message: "this builder is not ready for the purpose of a test",
+								Type:   corev1alpha1.ConditionReady,
+								Status: corev1.ConditionFalse,
 							},
 						},
 					},
 				},
 			},
 		}
-		unknownDefaultBuilder = &expv1alpha1.CustomBuilder{
+		defaultNamespacedCustomBuilder3 = &expv1alpha1.CustomBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.CustomClusterBuilderKind,
+				Kind:       expv1alpha1.CustomBuilderKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -202,13 +174,27 @@ Reason:    this builder is not ready for the purpose of a test
 				},
 			},
 			Status: expv1alpha1.CustomBuilderStatus{
-				BuilderStatus: v1alpha1.BuilderStatus{},
+				BuilderStatus: v1alpha1.BuilderStatus{
+					Status: corev1alpha1.Status{
+						Conditions: []corev1alpha1.Condition{
+							{
+								Type:   corev1alpha1.ConditionReady,
+								Status: corev1.ConditionTrue,
+							},
+						},
+					},
+					Stack: v1alpha1.BuildStack{
+						RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9fasdfa847098234",
+						ID:       "io.buildpacks.stacks.bionic",
+					},
+					LatestImage: "some-registry.com/test-builder-3:tag",
+				},
 			},
 		}
 
-		readyNamespaceBuilder = &expv1alpha1.CustomBuilder{
+		otherNamespacedCustomBuilder1 = &expv1alpha1.CustomBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.CustomClusterBuilderKind,
+				Kind:       expv1alpha1.CustomBuilderKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -252,16 +238,6 @@ Reason:    this builder is not ready for the purpose of a test
 							},
 						},
 					},
-					BuilderMetadata: v1alpha1.BuildpackMetadataList{
-						{
-							Id:      "org.cloudfoundry.nodejs",
-							Version: "v0.2.1",
-						},
-						{
-							Id:      "org.cloudfoundry.go",
-							Version: "v0.0.3",
-						},
-					},
 					Stack: v1alpha1.BuildStack{
 						RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 						ID:       "io.buildpacks.stacks.centos",
@@ -270,9 +246,9 @@ Reason:    this builder is not ready for the purpose of a test
 				},
 			},
 		}
-		notReadyNamespaceBuilder = &expv1alpha1.CustomBuilder{
+		otherNamespacedCustomBuilder2 = &expv1alpha1.CustomBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.CustomClusterBuilderKind,
+				Kind:       expv1alpha1.CustomBuilderKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -311,18 +287,17 @@ Reason:    this builder is not ready for the purpose of a test
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
-								Type:    corev1alpha1.ConditionReady,
-								Status:  corev1.ConditionFalse,
-								Message: "this builder is not ready for the purpose of a test",
+								Type:   corev1alpha1.ConditionReady,
+								Status: corev1.ConditionFalse,
 							},
 						},
 					},
 				},
 			},
 		}
-		unknownNamespaceBuilder = &expv1alpha1.CustomBuilder{
+		otherNamespacedCustomBuilder3 = &expv1alpha1.CustomBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.CustomClusterBuilderKind,
+				Kind:       expv1alpha1.CustomBuilderKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -357,101 +332,74 @@ Reason:    this builder is not ready for the purpose of a test
 				},
 			},
 			Status: expv1alpha1.CustomBuilderStatus{
-				BuilderStatus: v1alpha1.BuilderStatus{},
+				BuilderStatus: v1alpha1.BuilderStatus{
+					Status: corev1alpha1.Status{
+						Conditions: []corev1alpha1.Condition{
+							{
+								Type:   corev1alpha1.ConditionReady,
+								Status: corev1.ConditionTrue,
+							},
+						},
+					},
+					Stack: v1alpha1.BuildStack{
+						RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9fasdfa847098234",
+						ID:       "io.buildpacks.stacks.bionic",
+					},
+					LatestImage: "some-registry.com/test-builder-3:tag",
+				},
 			},
 		}
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return builder.NewStatusCommand(clientSet, defaultNamespace)
+		return custombuilder.NewListCommand(clientSet, defaultNamespace)
 	}
 
-	when("getting builder status", func() {
-		when("in the default namespace", func() {
-
-			when("the builder exists", func() {
-				when("the builder is ready", func() {
-					it("shows the build status", func() {
-						testhelpers.CommandTest{
-							Objects:        []runtime.Object{readyDefaultBuilder},
-							Args:           []string{"test-builder-1"},
-							ExpectedOutput: expectedReadyOutput,
-						}.TestKpack(t, cmdFunc)
-					})
-				})
-
-				when("the builder is not ready", func() {
-					it("shows the build status of not ready builder", func() {
-						testhelpers.CommandTest{
-							Objects:        []runtime.Object{notReadyDefaultBuilder},
-							Args:           []string{"test-builder-2"},
-							ExpectedOutput: expectedNotReadyOutput,
-						}.TestKpack(t, cmdFunc)
-					})
-				})
-
-				when("the builder is unknown", func() {
-					it("shows the build status of unknown builder", func() {
-						testhelpers.CommandTest{
-							Objects:        []runtime.Object{unknownDefaultBuilder},
-							Args:           []string{"test-builder-3"},
-							ExpectedOutput: expectedUnkownOutput,
-						}.TestKpack(t, cmdFunc)
-					})
+	when("listing clusterbuilder", func() {
+		when("namespace is provided", func() {
+			when("there are builders in the namespace", func() {
+				it("lists the builders", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							otherNamespacedCustomBuilder1,
+							otherNamespacedCustomBuilder2,
+							otherNamespacedCustomBuilder3,
+						},
+						Args:           []string{"-n", "test-namespace"},
+						ExpectedOutput: expectedOutput,
+					}.TestKpack(t, cmdFunc)
 				})
 			})
 
-			when("the builder does not exist", func() {
+			when("there are no builders in the namespace", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						Args:           []string{"non-existant-builder"},
 						ExpectErr:      true,
-						ExpectedOutput: "Error: custombuilders.experimental.kpack.pivotal.io \"non-existant-builder\" not found\n",
+						ExpectedOutput: "Error: no builders found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})
 		})
 
-		when("in the specified namespace", func() {
-
-			when("the builder exists", func() {
-				when("the builder is ready", func() {
-					it("shows the build status", func() {
-						testhelpers.CommandTest{
-							Objects:        []runtime.Object{readyNamespaceBuilder},
-							Args:           []string{"test-builder-1", "-n", "test-namespace"},
-							ExpectedOutput: expectedReadyOutput,
-						}.TestKpack(t, cmdFunc)
-					})
-				})
-
-				when("the builder is not ready", func() {
-					it("shows the build status of not ready builder", func() {
-						testhelpers.CommandTest{
-							Objects:        []runtime.Object{notReadyNamespaceBuilder},
-							Args:           []string{"test-builder-2", "-n", "test-namespace"},
-							ExpectedOutput: expectedNotReadyOutput,
-						}.TestKpack(t, cmdFunc)
-					})
-				})
-
-				when("the builder is unknown", func() {
-					it("shows the build status of unknown builder", func() {
-						testhelpers.CommandTest{
-							Objects:        []runtime.Object{unknownNamespaceBuilder},
-							Args:           []string{"test-builder-3", "-n", "test-namespace"},
-							ExpectedOutput: expectedUnkownOutput,
-						}.TestKpack(t, cmdFunc)
-					})
+		when("namespace is not provided", func() {
+			when("there are builders in the default namespace", func() {
+				it("lists the builders", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedCustomBuilder1,
+							defaultNamespacedCustomBuilder2,
+							defaultNamespacedCustomBuilder3,
+						},
+						ExpectedOutput: expectedOutput,
+					}.TestKpack(t, cmdFunc)
 				})
 			})
 
-			when("the builder does not exist", func() {
+			when("there are no builders in the default namespace", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						Args:           []string{"non-existant-builder", "-n", "test-namespace"},
 						ExpectErr:      true,
-						ExpectedOutput: "Error: custombuilders.experimental.kpack.pivotal.io \"non-existant-builder\" not found\n",
+						ExpectedOutput: "Error: no builders found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})

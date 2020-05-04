@@ -1,4 +1,4 @@
-package clusterbuilder_test
+package customclusterbuilder_test
 
 import (
 	"testing"
@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
+	"github.com/pivotal/build-service-cli/pkg/commands/customclusterbuilder"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -216,7 +216,7 @@ Reason:    this builder is not ready for the purpose of a test
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return clusterbuilder.NewStatusCommand(clientSet)
+		return customclusterbuilder.NewStatusCommand(clientSet)
 	}
 
 	when("getting clusterbuilder status", func() {

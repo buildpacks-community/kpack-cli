@@ -1,4 +1,4 @@
-package clusterbuilder_test
+package customclusterbuilder_test
 
 import (
 	"testing"
@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
+	"github.com/pivotal/build-service-cli/pkg/commands/customclusterbuilder"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -201,7 +201,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return clusterbuilder.NewListCommand(clientSet)
+		return customclusterbuilder.NewListCommand(clientSet)
 	}
 
 	when("listing clusterbuilder", func() {

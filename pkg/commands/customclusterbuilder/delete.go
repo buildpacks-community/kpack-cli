@@ -1,4 +1,4 @@
-package clusterbuilder
+package customclusterbuilder
 
 import (
 	"fmt"
@@ -11,9 +11,9 @@ import (
 func NewDeleteCommand(kpackClient versioned.Interface) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <name>",
-		Short:   "Delete a clusterbuilder",
-		Long:    "Delete a clusterbuilder from the cluster.",
-		Example: "tbctl clusterbuilder delete my-clusterbuilder",
+		Short:   "Delete a custom cluster builder",
+		Long:    "Delete a custom cluster builder from the cluster.",
+		Example: "tbctl ccb delete my-builder",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := kpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Delete(args[0], &metav1.DeleteOptions{})
