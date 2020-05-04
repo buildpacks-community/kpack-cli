@@ -123,6 +123,7 @@ func main() {
 	}
 	storeRootCommand.AddCommand(
 		store.NewStoreAddCommand(kpackClient, bpUploader),
+		store.NewStatusCommand(kpackClient),
 	)
 
 	imgUploader := &image.Uploader{

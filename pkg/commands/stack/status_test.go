@@ -57,16 +57,16 @@ Mixins:         mixin1, mixin2
 				ExpectedOutput: expectedOutput,
 			}.TestKpack(t, cmdFunc)
 		})
+	})
 
-		when("the stack does not exist", func() {
-			it("returns a message that there is no stack", func() {
-				testhelpers.CommandTest{
-					Args:           []string{"stack-does-not-exist"},
-					ExpectErr:      true,
-					ExpectedOutput: "Error: stacks.experimental.kpack.pivotal.io \"stack-does-not-exist\" not found\n",
-				}.TestKpack(t, cmdFunc)
+	when("the stack does not exist", func() {
+		it("returns a message that there is no stack", func() {
+			testhelpers.CommandTest{
+				Args:           []string{"stack-does-not-exist"},
+				ExpectErr:      true,
+				ExpectedOutput: "Error: stacks.experimental.kpack.pivotal.io \"stack-does-not-exist\" not found\n",
+			}.TestKpack(t, cmdFunc)
 
-			})
 		})
 	})
 }
