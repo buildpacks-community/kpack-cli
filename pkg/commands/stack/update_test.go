@@ -8,7 +8,6 @@ import (
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
-	"github.com/pkg/errors"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,25 +39,6 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	relocator := &fakes.Relocator{}
 
-	//imageUploader := fakeImageUploader{
-	//	"some-old-build-image": fakeImageTuple{
-	//		ref:   "some-registry.com/my-repo/build@sha256:xyz",
-	//		image: oldBuildImage,
-	//	},
-	//	"some-old-run-image": fakeImageTuple{
-	//		ref:   "some-registry.com/my-repo/run@sha256:xyz",
-	//		image: oldRunImage,
-	//	},
-	//	"some-new-build-image": fakeImageTuple{
-	//		ref:   "some-registry.com/my-repo/build@sha256:abc",
-	//		image: newBuildImage,
-	//	},
-	//	"some-new-run-image": fakeImageTuple{
-	//		ref:   "some-registry.com/my-repo/run@sha256:abc",
-	//		image: newRunImage,
-	//	},
-	//}
-
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		return stack.NewUpdateCommand(clientSet, fetcher, relocator)
 	}
@@ -67,7 +47,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-stack",
 			Annotations: map[string]string{
-				stack.DefaultRepositoryAnnotation: expectedRepository,
+				stackpkg.DefaultRepositoryAnnotation: expectedRepository,
 			},
 		},
 		Spec: expv1alpha1.StackSpec{
@@ -134,7 +114,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it("returns error on invalid registry annotation", func() {
-		stck.Annotations[stack.DefaultRepositoryAnnotation] = ""
+		stck.Annotations[stackpkg.DefaultRepositoryAnnotation] = ""
 
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
@@ -194,22 +174,4 @@ func makeStackImages(t *testing.T, stackId string) (v1.Image, string, v1.Image, 
 	}
 
 	return buildImage, buildImageHash.String(), runImage, runImageHash.String()
-}
-
-type fakeImageTuple struct {
-	ref   string
-	image v1.Image
-}
-
-type fakeImageUploader map[string]fakeImageTuple
-
-func (f fakeImageUploader) Upload(repository, name, image string) (string, v1.Image, error) {
-	if repository != expectedRepository {
-		return "", nil, errors.Errorf("unexpected repository %s expected %s", repository, expectedRepository)
-	}
-	tuple, ok := f[image]
-	if !ok {
-		return "", nil, errors.Errorf("could not upload %s", image)
-	}
-	return tuple.ref, tuple.image, nil
 }

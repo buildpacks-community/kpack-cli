@@ -2,12 +2,16 @@ package stack
 
 import (
 	"errors"
+	"strings"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
 const (
-	IdLabel = "io.buildpacks.stack.id"
+	IdLabel                     = "io.buildpacks.stack.id"
+	RunImageName                = "run"
+	BuildImageName              = "build"
+	DefaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
 )
 
 func GetStackId(img v1.Image) (string, error) {
@@ -24,4 +28,12 @@ func GetStackId(img v1.Image) (string, error) {
 	}
 
 	return id, nil
+}
+
+func GetDigest(ref string) (string, error) {
+	s := strings.Split(ref, "@")
+	if len(s) != 2 {
+		return "", errors.New("failed to get image digest")
+	}
+	return s[1], nil
 }

@@ -2,7 +2,6 @@ package stack
 
 import (
 	"fmt"
-	"strings"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
@@ -15,21 +14,15 @@ import (
 	stackpkg "github.com/pivotal/build-service-cli/pkg/stack"
 )
 
-const (
-	RunImageName                = "run"
-	BuildImageName              = "build"
-	DefaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
-)
-
-type Fetcher interface {
+type ImageFetcher interface {
 	Fetch(src string) (v1.Image, error)
 }
 
-type Relocator interface {
+type ImageRelocator interface {
 	Relocate(image v1.Image, dest string) (string, error)
 }
 
-func NewUpdateCommand(kpackClient versioned.Interface, fetcher Fetcher, relocator Relocator) *cobra.Command {
+func NewUpdateCommand(kpackClient versioned.Interface, fetcher ImageFetcher, relocator ImageRelocator) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -56,7 +49,7 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 				return err
 			}
 
-			repository, ok := stack.Annotations[DefaultRepositoryAnnotation]
+			repository, ok := stack.Annotations[stackpkg.DefaultRepositoryAnnotation]
 			if !ok || repository == "" {
 				return errors.Errorf("Unable to find default registry for stack: %s", args[0])
 			}
@@ -87,17 +80,17 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 				return errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
 			}
 
-			relocatedBuildImage, err := relocator.Relocate(buildImage, fmt.Sprintf("%s/%s", repository, BuildImageName))
+			relocatedBuildImageRef, err := relocator.Relocate(buildImage, fmt.Sprintf("%s/%s", repository, stackpkg.BuildImageName))
 			if err != nil {
 				return err
 			}
 
-			relocatedRunImage, err := relocator.Relocate(runImage, fmt.Sprintf("%s/%s", repository, RunImageName))
+			relocatedRunImageRef, err := relocator.Relocate(runImage, fmt.Sprintf("%s/%s", repository, stackpkg.RunImageName))
 			if err != nil {
 				return err
 			}
 
-			if wasUpdated, err := updateStack(stack, relocatedBuildImage, relocatedRunImage, buildStackId); err != nil {
+			if wasUpdated, err := updateStack(stack, relocatedBuildImageRef, relocatedRunImageRef, buildStackId); err != nil {
 				return err
 			} else if !wasUpdated {
 				printer.Printf("Build and Run images already exist in stack\nStack Unchanged")
@@ -123,22 +116,22 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 }
 
 func updateStack(stack *expv1alpha1.Stack, buildImageRef, runImageRef, stackId string) (bool, error) {
-	oldBuildDigest, err := getDigest(stack.Status.BuildImage.LatestImage)
+	oldBuildDigest, err := stackpkg.GetDigest(stack.Status.BuildImage.LatestImage)
 	if err != nil {
 		return false, err
 	}
 
-	newBuildDigest, err := getDigest(buildImageRef)
+	newBuildDigest, err := stackpkg.GetDigest(buildImageRef)
 	if err != nil {
 		return false, err
 	}
 
-	oldRunDigest, err := getDigest(stack.Status.RunImage.LatestImage)
+	oldRunDigest, err := stackpkg.GetDigest(stack.Status.RunImage.LatestImage)
 	if err != nil {
 		return false, err
 	}
 
-	newRunDigest, err := getDigest(runImageRef)
+	newRunDigest, err := stackpkg.GetDigest(runImageRef)
 	if err != nil {
 		return false, err
 	}
@@ -151,12 +144,4 @@ func updateStack(stack *expv1alpha1.Stack, buildImageRef, runImageRef, stackId s
 	}
 
 	return false, nil
-}
-
-func getDigest(ref string) (string, error) {
-	s := strings.Split(ref, "@")
-	if len(s) != 2 {
-		return "", errors.New("failed to get image digest")
-	}
-	return s[1], nil
 }

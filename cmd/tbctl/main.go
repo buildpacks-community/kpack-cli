@@ -19,6 +19,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/secret"
 	"github.com/pivotal/build-service-cli/pkg/source"
+	"github.com/pivotal/build-service-cli/pkg/stack"
 )
 
 var Version = "dev"
@@ -126,11 +127,17 @@ func main() {
 		store.NewStatusCommand(kpackClient),
 	)
 
+	stackFactory := &stack.Factory{
+		Fetcher:   &image.Fetcher{},
+		Relocator: &image.Relocator{},
+	}
+
 	stackRootCmd := &cobra.Command{
 		Use:   "stack",
 		Short: "Stack Commands",
 	}
 	stackRootCmd.AddCommand(
+		stackcmds.NewCreateCommand(kpackClient, stackFactory),
 		stackcmds.NewListCommand(kpackClient),
 		stackcmds.NewStatusCommand(kpackClient),
 		stackcmds.NewUpdateCommand(kpackClient, &image.Fetcher{}, &image.Relocator{}),
