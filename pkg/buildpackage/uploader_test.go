@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/registry/fakes"
+	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 )
 
 func TestBuildpackageUploader(t *testing.T) {
@@ -19,9 +19,10 @@ func TestBuildpackageUploader(t *testing.T) {
 
 func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 	fetcher := &fakes.Fetcher{}
+	relocator := &fakes.Relocator{}
 	uploader := &Uploader{
 		Fetcher:   fetcher,
-		Relocator: fakes.FakeRelocator{},
+		Relocator: relocator,
 	}
 
 	when("cnb file is provided", func() {
@@ -43,7 +44,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 			testImage, err = imagehelpers.SetStringLabel(testImage, "io.buildpacks.buildpackage.metadata", `{"id": "sample-buildpack/name"}`)
 			require.NoError(t, err)
 
-			fetcher.AddImage(testImage, "some/remote-bp")
+			fetcher.AddImage("some/remote-bp", testImage)
 
 			image, err := uploader.Upload("kpackcr.org/somepath", "some/remote-bp")
 			require.NoError(t, err)

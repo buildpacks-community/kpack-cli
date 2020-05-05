@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"fmt"
 	"strings"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -11,23 +12,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	stackpkg "github.com/pivotal/build-service-cli/pkg/stack"
 )
 
 const (
-	StackIdLabel                = "io.buildpacks.stack.id"
 	RunImageName                = "run"
 	BuildImageName              = "build"
 	DefaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
 )
 
-type ImageUploader interface {
-	Upload(repository, name, image string) (string, v1.Image, error)
+type Fetcher interface {
+	Fetch(src string) (v1.Image, error)
 }
 
-func NewUpdateCommand(kpackClient versioned.Interface, imageUploader ImageUploader) *cobra.Command {
+type Relocator interface {
+	Relocate(image v1.Image, dest string) (string, error)
+}
+
+func NewUpdateCommand(kpackClient versioned.Interface, fetcher Fetcher, relocator Relocator) *cobra.Command {
 	var (
-		buildImage string
-		runImage   string
+		buildImageRef string
+		runImageRef   string
 	)
 
 	cmd := &cobra.Command{
@@ -58,24 +63,43 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 
 			printer.Printf("Uploading to '%s'...", repository)
 
-			uploadedBuildImageRef, uploadedBuildImage, err := imageUploader.Upload(repository, BuildImageName, buildImage)
+			buildImage, err := fetcher.Fetch(buildImageRef)
 			if err != nil {
 				return err
 			}
 
-			uploadedRunImageRef, uploadedRunImage, err := imageUploader.Upload(repository, RunImageName, runImage)
+			buildStackId, err := stackpkg.GetStackId(buildImage)
 			if err != nil {
 				return err
 			}
 
-			uploadedStackId, err := getStackID(uploadedBuildImage, uploadedRunImage)
+			runImage, err := fetcher.Fetch(runImageRef)
 			if err != nil {
 				return err
 			}
 
-			if mutated, err := mutateStack(stack, uploadedBuildImageRef, uploadedRunImageRef, uploadedStackId); err != nil {
+			runStackId, err := stackpkg.GetStackId(runImage)
+			if err != nil {
 				return err
-			} else if !mutated {
+			}
+
+			if buildStackId != runStackId {
+				return errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
+			}
+
+			relocatedBuildImage, err := relocator.Relocate(buildImage, fmt.Sprintf("%s/%s", repository, BuildImageName))
+			if err != nil {
+				return err
+			}
+
+			relocatedRunImage, err := relocator.Relocate(runImage, fmt.Sprintf("%s/%s", repository, RunImageName))
+			if err != nil {
+				return err
+			}
+
+			if wasUpdated, err := updateStack(stack, relocatedBuildImage, relocatedRunImage, buildStackId); err != nil {
+				return err
+			} else if !wasUpdated {
 				printer.Printf("Build and Run images already exist in stack\nStack Unchanged")
 				return nil
 			}
@@ -90,46 +114,15 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 		},
 	}
 
-	cmd.Flags().StringVarP(&buildImage, "build-image", "b", "", "build image tag or local tar file path")
-	cmd.Flags().StringVarP(&runImage, "run-image", "r", "", "run image tag or local tar file path")
+	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
+	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")
 
 	return cmd
 }
 
-func getStackID(buildImg, runImg v1.Image) (string, error) {
-	buildStack, err := getStackLabel(buildImg, StackIdLabel)
-	if err != nil {
-		return "", err
-	}
-
-	runStack, err := getStackLabel(runImg, StackIdLabel)
-	if err != nil {
-		return "", err
-	}
-
-	if buildStack != runStack {
-		return "", errors.Errorf("build stack '%s' does not match run stack '%s'", buildStack, runStack)
-	}
-
-	return buildStack, nil
-}
-
-func getStackLabel(image v1.Image, label string) (string, error) {
-	config, err := image.ConfigFile()
-	if err != nil {
-		return "", err
-	}
-	labels := config.Config.Labels
-	id, ok := labels[label]
-	if !ok {
-		return "", errors.New("invalid stack image")
-	}
-	return id, nil
-}
-
-func mutateStack(stack *expv1alpha1.Stack, buildImageRef, runImageRef, stackId string) (bool, error) {
+func updateStack(stack *expv1alpha1.Stack, buildImageRef, runImageRef, stackId string) (bool, error) {
 	oldBuildDigest, err := getDigest(stack.Status.BuildImage.LatestImage)
 	if err != nil {
 		return false, err
@@ -156,6 +149,7 @@ func mutateStack(stack *expv1alpha1.Stack, buildImageRef, runImageRef, stackId s
 		stack.Spec.Id = stackId
 		return true, nil
 	}
+
 	return false, nil
 }
 

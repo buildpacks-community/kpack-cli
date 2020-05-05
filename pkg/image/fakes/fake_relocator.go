@@ -7,10 +7,10 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
-type FakeRelocator struct {
+type Relocator struct {
 }
 
-func (r FakeRelocator) Relocate(image v1.Image, dest string) (string, error) {
+func (r *Relocator) Relocate(image v1.Image, dest string) (string, error) {
 	digest, err := image.Digest()
 	if err != nil {
 		return "", err

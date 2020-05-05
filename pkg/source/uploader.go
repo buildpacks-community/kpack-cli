@@ -1,4 +1,4 @@
-package registry
+package source
 
 import (
 	"fmt"
@@ -18,10 +18,10 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/archive"
 )
 
-type SourceUploader struct {
+type Uploader struct {
 }
 
-func (s *SourceUploader) Upload(ref, path string) (string, error) {
+func (s *Uploader) Upload(ref, path string) (string, error) {
 	if archive.IsZip(path) {
 		unzipDest, err := ioutil.TempDir("", "zipdir")
 		if err != nil {

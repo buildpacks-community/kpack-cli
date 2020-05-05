@@ -16,6 +16,8 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 
 	"github.com/pivotal/build-service-cli/pkg/commands/stack"
+	"github.com/pivotal/build-service-cli/pkg/image/fakes"
+	stackpkg "github.com/pivotal/build-service-cli/pkg/stack"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -26,30 +28,39 @@ func TestUpdateCommand(t *testing.T) {
 }
 
 func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
-	oldBuildImage, oldRunImage := makeStackImages(t, "some-old-id")
-	newBuildImage, newRunImage := makeStackImages(t, "some-new-id")
+	fetcher := &fakes.Fetcher{}
 
-	imageUploader := fakeImageUploader{
-		"some-old-build-image": fakeImageTuple{
-			ref:   "some-registry.com/my-repo/build@sha256:xyz",
-			image: oldBuildImage,
-		},
-		"some-old-run-image": fakeImageTuple{
-			ref:   "some-registry.com/my-repo/run@sha256:xyz",
-			image: oldRunImage,
-		},
-		"some-new-build-image": fakeImageTuple{
-			ref:   "some-registry.com/my-repo/build@sha256:abc",
-			image: newBuildImage,
-		},
-		"some-new-run-image": fakeImageTuple{
-			ref:   "some-registry.com/my-repo/run@sha256:abc",
-			image: newRunImage,
-		},
-	}
+	oldBuildImage, oldBuildImageId, oldRunImage, oldRunImageId := makeStackImages(t, "some-old-id")
+	fetcher.AddImage("some-old-build-image", oldBuildImage)
+	fetcher.AddImage("some-old-run-image", oldRunImage)
+
+	newBuildImage, newBuildImageId, newRunImage, newRunImageId := makeStackImages(t, "some-new-id")
+	fetcher.AddImage("some-new-build-image", newBuildImage)
+	fetcher.AddImage("some-new-run-image", newRunImage)
+
+	relocator := &fakes.Relocator{}
+
+	//imageUploader := fakeImageUploader{
+	//	"some-old-build-image": fakeImageTuple{
+	//		ref:   "some-registry.com/my-repo/build@sha256:xyz",
+	//		image: oldBuildImage,
+	//	},
+	//	"some-old-run-image": fakeImageTuple{
+	//		ref:   "some-registry.com/my-repo/run@sha256:xyz",
+	//		image: oldRunImage,
+	//	},
+	//	"some-new-build-image": fakeImageTuple{
+	//		ref:   "some-registry.com/my-repo/build@sha256:abc",
+	//		image: newBuildImage,
+	//	},
+	//	"some-new-run-image": fakeImageTuple{
+	//		ref:   "some-registry.com/my-repo/run@sha256:abc",
+	//		image: newRunImage,
+	//	},
+	//}
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
-		return stack.NewUpdateCommand(clientSet, imageUploader)
+		return stack.NewUpdateCommand(clientSet, fetcher, relocator)
 	}
 
 	stck := &expv1alpha1.Stack{
@@ -72,11 +83,11 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			ResolvedStack: expv1alpha1.ResolvedStack{
 				Id: "some-old-id",
 				BuildImage: expv1alpha1.StackStatusImage{
-					LatestImage: "some-registry.com/my-repo/build@sha256:xyz",
+					LatestImage: "some-registry.com/old-repo/build@" + oldBuildImageId,
 					Image:       "some-old-build-image",
 				},
 				RunImage: expv1alpha1.StackStatusImage{
-					LatestImage: "some-registry.com/my-repo/run@sha256:xyz",
+					LatestImage: "some-registry.com/old-repo/run@" + oldRunImageId,
 					Image:       "some-old-run-image",
 				},
 			},
@@ -97,10 +108,10 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 						Spec: expv1alpha1.StackSpec{
 							Id: "some-new-id",
 							BuildImage: expv1alpha1.StackSpecImage{
-								Image: "some-registry.com/my-repo/build@sha256:abc",
+								Image: "some-registry.com/some-repo/build@" + newBuildImageId,
 							},
 							RunImage: expv1alpha1.StackSpecImage{
-								Image: "some-registry.com/my-repo/run@sha256:abc",
+								Image: "some-registry.com/some-repo/run@" + newRunImageId,
 							},
 						},
 						Status: stck.Status,
@@ -136,12 +147,9 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it("returns error when build image and run image have different stack Ids", func() {
-		_, runImage := makeStackImages(t, "other-stack-id")
+		_, _, runImage, _ := makeStackImages(t, "other-stack-id")
 
-		imageUploader["some-new-run-image"] = fakeImageTuple{
-			ref:   "some-registry.com/my-repo/run@sha256:abc",
-			image: runImage,
-		}
+		fetcher.AddImage("some-new-run-image", runImage)
 
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
@@ -154,13 +162,13 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 	})
 }
 
-func makeStackImages(t *testing.T, stackId string) (v1.Image, v1.Image) {
+func makeStackImages(t *testing.T, stackId string) (v1.Image, string, v1.Image, string) {
 	buildImage, err := random.Image(0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	buildImage, err = imagehelpers.SetStringLabel(buildImage, stack.StackIdLabel, stackId)
+	buildImage, err = imagehelpers.SetStringLabel(buildImage, stackpkg.IdLabel, stackId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,12 +178,22 @@ func makeStackImages(t *testing.T, stackId string) (v1.Image, v1.Image) {
 		t.Fatal(err)
 	}
 
-	runImage, err = imagehelpers.SetStringLabel(runImage, stack.StackIdLabel, stackId)
+	runImage, err = imagehelpers.SetStringLabel(runImage, stackpkg.IdLabel, stackId)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return buildImage, runImage
+	buildImageHash, err := buildImage.Digest()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	runImageHash, err := runImage.Digest()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return buildImage, buildImageHash.String(), runImage, runImageHash.String()
 }
 
 type fakeImageTuple struct {

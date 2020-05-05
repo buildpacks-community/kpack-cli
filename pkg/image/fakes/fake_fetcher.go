@@ -18,7 +18,7 @@ func (f Fetcher) Fetch(src string) (v1.Image, error) {
 	return image, nil
 }
 
-func (f *Fetcher) AddImage(image v1.Image, identifier string) {
+func (f *Fetcher) AddImage(identifier string, image v1.Image) {
 	if f.images == nil {
 		f.images = make(map[string]v1.Image)
 	}

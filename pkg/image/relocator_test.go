@@ -1,4 +1,4 @@
-package registry_test
+package image_test
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/registry"
+	"github.com/pivotal/build-service-cli/pkg/image"
 )
 
 func TestRelocateStackImages(t *testing.T) {
@@ -25,7 +25,7 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 	when("#Fetch", func() {
 		when("remote", func() {
 			it("it should fetch the image with the digest", func() {
-				fetcher := registry.Fetcher{}
+				fetcher := image.Fetcher{}
 
 				image, err := fetcher.Fetch("cloudfoundry/run:tiny-cnb")
 				require.NoError(t, err)
@@ -68,7 +68,7 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 			srcImageDigest, err := srcImage.Digest()
 			require.NoError(t, err)
 
-			relocator := registry.Relocator{}
+			relocator := image.Relocator{}
 			relocatedRef, err := relocator.Relocate(srcImage, dst)
 			require.NoError(t, err)
 			require.Equal(t, 1, strings.Count(relocatedRef, "sha256:"))
@@ -80,7 +80,7 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 		it("should error on invalid destination", func() {
 			srcImage, err := random.Image(int64(100), int64(5))
 			require.NoError(t, err)
-			relocator := registry.Relocator{}
+			relocator := image.Relocator{}
 			_, err = relocator.Relocate(srcImage, "notuser/notimage:tag")
 			require.Error(t, err)
 		})
