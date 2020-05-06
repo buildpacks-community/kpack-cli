@@ -21,7 +21,7 @@ type BuildpackageUploader interface {
 	Upload(repository, buildPackage string) (string, error)
 }
 
-func NewStoreAddCommand(kpackClient versioned.Interface, buildpackUploader BuildpackageUploader) *cobra.Command {
+func NewAddCommand(kpackClient versioned.Interface, buildpackUploader BuildpackageUploader) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <buildpackage>",
 		Short: "Create an image configuration",

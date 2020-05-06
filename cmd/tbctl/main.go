@@ -123,8 +123,9 @@ func main() {
 		Short: "Store Commands",
 	}
 	storeRootCommand.AddCommand(
-		store.NewStoreAddCommand(kpackClient, bpUploader),
+		store.NewAddCommand(kpackClient, bpUploader),
 		store.NewStatusCommand(kpackClient),
+		store.NewDeleteCommand(kpackClient),
 	)
 
 	stackFactory := &stack.Factory{

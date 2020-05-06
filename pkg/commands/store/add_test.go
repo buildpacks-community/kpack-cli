@@ -31,7 +31,7 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
-		return store.NewStoreAddCommand(clientSet, fakeBuildpackageUploader)
+		return store.NewAddCommand(clientSet, fakeBuildpackageUploader)
 	}
 
 	store := &expv1alpha1.Store{
