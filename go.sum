@@ -63,7 +63,6 @@ github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6r
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
 github.com/blang/semver v3.5.0+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/buildpacks/imgutil v0.0.0-20200313170640-a02052f47d62/go.mod h1:TjPmM78urjQIiMal4T7en6iBekAPv6z1yVMZobc4Kd8=
-github.com/buildpacks/lifecycle v0.7.2/go.mod h1:k41tT3XOt7ufaMGAvOpEsXyuJpUPoo4F686Z652lU3E=
 github.com/buildpacks/lifecycle v0.7.3/go.mod h1:m3r4XPZtU8vu2bJfB42fausoVr0hdIDZSq3qqCdOKVc=
 github.com/census-instrumentation/opencensus-proto v0.2.0/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
@@ -285,8 +284,6 @@ github.com/opencontainers/image-spec v1.0.1/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zM
 github.com/pelletier/go-buffruneio v0.2.0/go.mod h1:JkE26KsDizTr40EUHkXVtNPvgGtbSNq5BcowyYOWdKo=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
-github.com/pivotal/kpack v0.0.8 h1:jlX35bd1zoXCVChG9TM8WLr4719hT0hFla5/ixpsEzg=
-github.com/pivotal/kpack v0.0.8/go.mod h1:qx89VCGoGi5+PSj5sCVK5jWbqQIB026ElzDxcPhyKXw=
 github.com/pivotal/kpack v0.0.9-0.20200504152623-019fd44d611a h1:uVLVXNQRh9SSaq2fdIx7CceAMzEg5AHGYGfG8Zi+z2Y=
 github.com/pivotal/kpack v0.0.9-0.20200504152623-019fd44d611a/go.mod h1:yrANllRpqVsWCksR7s3F2den1xVya1zyaBXw4rM/CDQ=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

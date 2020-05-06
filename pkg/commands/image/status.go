@@ -88,18 +88,18 @@ func displayImageStatus(cmd *cobra.Command, image *v1alpha1.Image, builds []v1al
 }
 
 func getLastSuccessfulBuild(builds []v1alpha1.Build) *v1alpha1.Build {
-	for _, build := range builds {
-		if build.IsSuccess() {
-			return &build
+	for i, _ := range builds {
+		if builds[len(builds)-1-i].IsSuccess() {
+			return &builds[len(builds)-1-i]
 		}
 	}
 	return nil
 }
 
 func getLastFailedBuild(builds []v1alpha1.Build) *v1alpha1.Build {
-	for _, build := range builds {
-		if build.IsFailure() {
-			return &build
+	for i, _ := range builds {
+		if builds[len(builds)-1-i].IsFailure() {
+			return &builds[len(builds)-1-i]
 		}
 	}
 	return nil
