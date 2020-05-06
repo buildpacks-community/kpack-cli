@@ -13,8 +13,8 @@ type CredentialFetcher struct {
 }
 
 func (c CredentialFetcher) FetchPassword(envVar, prompt string) (string, error) {
-	password := os.Getenv(envVar)
-	if password != "" {
+	password, ok := os.LookupEnv(envVar)
+	if ok {
 		return password, nil
 	}
 
@@ -34,8 +34,8 @@ func (c CredentialFetcher) FetchPassword(envVar, prompt string) (string, error) 
 }
 
 func (c CredentialFetcher) FetchFile(envVar, filename string) (string, error) {
-	password := os.Getenv(envVar)
-	if password != "" {
+	password, ok := os.LookupEnv(envVar)
+	if ok {
 		return password, nil
 	}
 
