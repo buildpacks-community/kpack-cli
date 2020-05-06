@@ -141,6 +141,7 @@ func main() {
 		stackcmds.NewListCommand(kpackClient),
 		stackcmds.NewStatusCommand(kpackClient),
 		stackcmds.NewUpdateCommand(kpackClient, &image.Fetcher{}, &image.Relocator{}),
+		stackcmds.NewDeleteCommand(kpackClient),
 	)
 
 	versionCmd := &cobra.Command{
