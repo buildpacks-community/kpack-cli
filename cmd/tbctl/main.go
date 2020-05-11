@@ -22,7 +22,10 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/stack"
 )
 
-var Version = "dev"
+var (
+	Version   = "dev"
+	CommitSHA = ""
+)
 
 func main() {
 	defaultNamespace, err := k8s.GetDefaultNamespace()
@@ -149,7 +152,7 @@ func main() {
 		Use:   "version",
 		Short: "Display tbctl version",
 		Run: func(cmd *cobra.Command, _ []string) {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), Version)
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), Version + " " + CommitSHA)
 		},
 	}
 
