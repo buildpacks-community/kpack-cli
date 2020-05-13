@@ -1,7 +1,6 @@
 package testhelpers
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -144,16 +143,7 @@ func TestK8sActions(
 
 	actualPatches := map[string]interface{}{}
 	for _, patchObj := range actions.Patches {
-		var rawPatches []interface{}
-		err := json.Unmarshal(patchObj.GetPatch(), &rawPatches)
-		require.NoError(t, err)
-
-		for _, p := range rawPatches {
-			buf, err := json.Marshal(p)
-			require.NoError(t, err)
-
-			actualPatches[string(buf)] = nil
-		}
+		actualPatches[string(patchObj.GetPatch())] = nil
 	}
 
 	for _, want := range expectPatches {
@@ -251,16 +241,7 @@ func TestKpackActions(
 
 	actualPatches := map[string]interface{}{}
 	for _, patchObj := range actions.Patches {
-		var rawPatches []interface{}
-		err := json.Unmarshal(patchObj.GetPatch(), &rawPatches)
-		require.NoError(t, err)
-
-		for _, p := range rawPatches {
-			buf, err := json.Marshal(p)
-			require.NoError(t, err)
-
-			actualPatches[string(buf)] = nil
-		}
+		actualPatches[string(patchObj.GetPatch())] = nil
 	}
 
 	for _, want := range expectPatches {

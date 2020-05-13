@@ -97,7 +97,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 					ExpectedOutput: "\"some-image\" patched\n",
 					ExpectPatches: []string{
-						`{"op":"remove","path":"/spec/source/subPath"}`,
+						`{"spec":{"source":{"subPath":null}}}`,
 					},
 				}.TestKpack(t, cmdFunc)
 			})
@@ -113,7 +113,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 					ExpectedOutput: "\"some-image\" patched\n",
 					ExpectPatches: []string{
-						`{"op":"replace","path":"/spec/source/subPath","value":"a-new-path"}`,
+						`{"spec":{"source":{"subPath":"a-new-path"}}}`,
 					},
 				}.TestKpack(t, cmdFunc)
 			})
@@ -130,8 +130,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "\"some-image\" patched\n",
 				ExpectPatches: []string{
-					`{"op":"add","path":"/spec/source/blob","value":{"url":"some-blob"}}`,
-					`{"op":"remove","path":"/spec/source/git"}`,
+					`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})
@@ -147,7 +146,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "\"some-image\" patched\n",
 				ExpectPatches: []string{
-					`{"op":"replace","path":"/spec/source/git/revision","value":"some-new-revision"}`,
+					`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})
@@ -169,8 +168,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "\"some-image\" patched\n",
 				ExpectPatches: []string{
-					`{"op":"add","path":"/spec/source/git","value":{"revision":"master","url":"some-new-git-url"}}`,
-					`{"op":"remove","path":"/spec/source/blob"}`,
+					`{"spec":{"source":{"blob":null,"git":{"revision":"master","url":"some-new-git-url"}}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})
@@ -188,9 +186,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "\"some-image\" patched\n",
 				ExpectPatches: []string{
-					`{"op":"replace","path":"/spec/builder/kind","value":"CustomBuilder"}`,
-					`{"op":"replace","path":"/spec/builder/name","value":"some-builder"}`,
-					`{"op":"add","path":"/spec/builder/namespace","value":"some-default-namespace"}`,
+					`{"spec":{"builder":{"kind":"CustomBuilder","name":"some-builder","namespace":"some-default-namespace"}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})
@@ -208,7 +204,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "\"some-image\" patched\n",
 				ExpectPatches: []string{
-					`{"op":"remove","path":"/spec/build/env/1"}`,
+					`{"spec":{"build":{"env":[{"name":"key1","value":"value1"}]}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})
@@ -224,7 +220,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "\"some-image\" patched\n",
 				ExpectPatches: []string{
-					`{"op":"replace","path":"/spec/build/env/0/value","value":"some-other-value"}`,
+					`{"spec":{"build":{"env":[{"name":"key1","value":"some-other-value"},{"name":"key2","value":"value2"}]}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})
@@ -240,7 +236,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "\"some-image\" patched\n",
 				ExpectPatches: []string{
-					`{"op":"add","path":"/spec/build/env/2","value":{"name":"key3","value":"value3"}}`,
+					`{"spec":{"build":{"env":[{"name":"key1","value":"value1"},{"name":"key2","value":"value2"},{"name":"key3","value":"value3"}]}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})

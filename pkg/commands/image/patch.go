@@ -69,7 +69,7 @@ tbctl image patch my-image --env foo=bar --env color=red --delete-env apple --de
 				return err
 			}
 
-			_, err = kpackClient.BuildV1alpha1().Images(namespace).Patch(args[0], types.JSONPatchType, patch)
+			_, err = kpackClient.BuildV1alpha1().Images(namespace).Patch(args[0], types.MergePatchType, patch)
 			if err != nil {
 				return err
 			}

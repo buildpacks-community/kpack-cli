@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/mattbaird/jsonpatch"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	v1alpha12 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pkg/errors"
@@ -55,16 +55,16 @@ func (f *PatchFactory) MakePatch(img *v1alpha1.Image) ([]byte, error) {
 		return nil, err
 	}
 
-	patch, err := jsonpatch.CreatePatch(imageBytes, patchedImageBytes)
+	patch, err := jsonpatch.CreateMergePatch(imageBytes, patchedImageBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(patch) == 0 {
+	if string(patch) == "{}" {
 		return nil, nil
 	}
 
-	return json.Marshal(patch)
+	return patch, nil
 }
 
 func (f *PatchFactory) validate(img *v1alpha1.Image) error {
