@@ -2,7 +2,6 @@ package image
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -19,7 +18,7 @@ type PatchFactory struct {
 	GitRevision    string
 	Blob           string
 	LocalPath      string
-	SubPath        string
+	SubPath        *string
 	Builder        string
 	ClusterBuilder string
 	Env            []string
@@ -27,41 +26,48 @@ type PatchFactory struct {
 }
 
 func (f *PatchFactory) MakePatch(img *v1alpha1.Image) ([]byte, error) {
-	err := f.validatePatch(img)
+	err := f.validate(img)
 	if err != nil {
 		return nil, err
 	}
 
 	patchedImage := img.DeepCopy()
 
-	patchedImage.Spec.Source, err = f.patchSource(patchedImage)
+	err = f.setSource(patchedImage)
 	if err != nil {
 		return nil, err
 	}
-	patchedImage.Spec.Build, err = f.patchBuild(patchedImage)
-	if err != nil {
-		return nil, err
-	}
-	patchedImage.Spec.Builder = f.patchBuilder(patchedImage)
 
-	patchedImageBytes, err := json.Marshal(patchedImage)
+	err = f.setBuild(patchedImage)
 	if err != nil {
 		return nil, err
 	}
+
+	f.setBuilder(patchedImage)
+
 	imageBytes, err := json.Marshal(img)
 	if err != nil {
 		return nil, err
 	}
 
-	jsonPatch, err := jsonpatch.CreatePatch(imageBytes, patchedImageBytes)
+	patchedImageBytes, err := json.Marshal(patchedImage)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(jsonPatch)
 
+	patch, err := jsonpatch.CreatePatch(imageBytes, patchedImageBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(patch) == 0 {
+		return nil, nil
+	}
+
+	return json.Marshal(patch)
 }
 
-func (f *PatchFactory) validatePatch(img *v1alpha1.Image) error {
+func (f *PatchFactory) validate(img *v1alpha1.Image) error {
 	sourceSet := paramSet{}
 	sourceSet.add("git", f.GitRepo)
 	sourceSet.add("blob", f.Blob)
@@ -71,16 +77,12 @@ func (f *PatchFactory) validatePatch(img *v1alpha1.Image) error {
 		return errors.New("image source must be one of git, blob, or local-path")
 	}
 
-	if len(sourceSet) == 1 && !sourceSet.contains("git") && f.GitRevision != "" {
-		return errors.New("parameter git-revision is incompatible with blob and local path sources")
+	if (sourceSet.contains("blob") || sourceSet.contains("local-path")) && f.GitRevision != "" {
+		return errors.New("git-revision is incompatible with blob and local path image sources")
 	}
 
-	if len(sourceSet) == 0 && f.GitRevision != "" && img.Spec.Source.Git.URL == "" {
-		return errors.New("parameter git-revision is incompatible with blob and local path sources")
-	}
-
-	if len(sourceSet) == 0 && f.GitRevision != "" {
-		f.GitRepo = img.Spec.Source.Git.URL
+	if len(sourceSet) == 0 && img.Spec.Source.Git == nil && f.GitRevision != "" {
+		return errors.New("git-revision is incompatible with existing image source")
 	}
 
 	builderSet := paramSet{}
@@ -91,86 +93,129 @@ func (f *PatchFactory) validatePatch(img *v1alpha1.Image) error {
 		return errors.New("must provide one of builder or cluster-builder")
 	}
 
-	if len(f.DeleteEnv) > 0 {
-		for _, varName := range f.DeleteEnv {
-			found := false
-			for _, envVar := range img.Spec.Build.Env {
-				if envVar.Name == varName {
-					found = true
-					break
-				}
+	envVars, err := f.makeEnvVars()
+	if err != nil {
+		return err
+	}
+
+	for _, varName := range f.DeleteEnv {
+		found := false
+
+		for _, envVar := range img.Spec.Build.Env {
+			if envVar.Name == varName {
+				found = true
+				break
 			}
-			if !found {
-				return errors.New(fmt.Sprintf("env var to delete %s not set on image configuration", varName))
+		}
+
+		if !found {
+			return errors.Errorf("delete-env parameter '%s' not found in existing image configuration", varName)
+		}
+
+		found = false
+
+		for _, envVar := range envVars {
+			if envVar.Name == varName {
+				found = true
+				break
 			}
+		}
+
+		if found {
+			return errors.Errorf("duplicate delete-env and env-var parameter '%s'", varName)
 		}
 	}
 
 	return nil
 }
 
-func (f *PatchFactory) sourceUpdated() bool {
-	if f.GitRepo == "" && f.GitRevision == "" && f.Blob == "" && f.LocalPath == "" {
-		return false
-	}
-	return true
-}
-
-func (f *PatchFactory) builderUpdated() bool {
-	if f.ClusterBuilder == "" && f.Builder == "" {
-		return false
-	}
-	return true
-}
-
-func (f *PatchFactory) buildUpdated() bool {
-	if len(f.Env) == 0 && len(f.DeleteEnv) == 0 {
-		return false
-	}
-	return true
-}
-
-func (f *PatchFactory) patchSource(image *v1alpha1.Image) (v1alpha1.SourceConfig, error) {
-	if !f.sourceUpdated() {
-		return image.Spec.Source, nil
+func (f *PatchFactory) setSource(image *v1alpha1.Image) error {
+	if f.SubPath != nil {
+		image.Spec.Source.SubPath = *f.SubPath
 	}
 
-	if f.SubPath == "" {
-		f.SubPath = image.Spec.Source.SubPath
-	}
-
-	if f.GitRepo != "" {
-		return v1alpha1.SourceConfig{
-			Git: &v1alpha1.Git{
+	if f.GitRepo != "" || f.GitRevision != "" {
+		if f.GitRepo != "" {
+			image.Spec.Source.Blob = nil
+			image.Spec.Source.Registry = nil
+			image.Spec.Source.Git = &v1alpha1.Git{
 				URL:      f.GitRepo,
-				Revision: f.GitRevision,
-			},
-			SubPath: f.SubPath,
-		}, nil
+				Revision: "master",
+			}
+		}
+
+		if f.GitRevision != "" {
+			image.Spec.Source.Git.Revision = f.GitRevision
+		}
 	} else if f.Blob != "" {
-		return v1alpha1.SourceConfig{
-			Blob: &v1alpha1.Blob{
-				URL: f.Blob,
-			},
-			SubPath: f.SubPath,
-		}, nil
-	} else {
+		image.Spec.Source.Git = nil
+		image.Spec.Source.Registry = nil
+		image.Spec.Source.Blob = &v1alpha1.Blob{URL: f.Blob}
+	} else if f.LocalPath != "" {
 		ref, err := name.ParseReference(image.Spec.Tag)
 		if err != nil {
-			return v1alpha1.SourceConfig{}, err
+			return err
 		}
 
 		sourceRef, err := f.SourceUploader.Upload(ref.Context().Name()+"-source", f.LocalPath)
 		if err != nil {
-			return v1alpha1.SourceConfig{}, err
+			return err
 		}
 
-		return v1alpha1.SourceConfig{
-			Registry: &v1alpha1.Registry{
-				Image: sourceRef,
-			},
-			SubPath: f.SubPath,
-		}, nil
+		image.Spec.Source.Git = nil
+		image.Spec.Source.Blob = nil
+		image.Spec.Source.Registry = &v1alpha1.Registry{Image: sourceRef}
+	}
+
+	return nil
+}
+
+func (f *PatchFactory) setBuild(image *v1alpha1.Image) error {
+	for _, envToDelete := range f.DeleteEnv {
+		for i, e := range image.Spec.Build.Env {
+			if e.Name == envToDelete {
+				image.Spec.Build.Env = append(image.Spec.Build.Env[:i], image.Spec.Build.Env[i+1:]...)
+				break
+			}
+		}
+	}
+
+	envsToUpsert, err := f.makeEnvVars()
+	if err != nil {
+		return err
+	}
+
+	for _, env := range envsToUpsert {
+		updated := false
+
+		for i, e := range image.Spec.Build.Env {
+			if e.Name == env.Name {
+				image.Spec.Build.Env[i].Value = env.Value
+				updated = true
+				break
+			}
+		}
+
+		if !updated {
+			image.Spec.Build.Env = append(image.Spec.Build.Env, corev1.EnvVar{Name: env.Name, Value: env.Value})
+		}
+	}
+
+	return nil
+}
+
+func (f *PatchFactory) setBuilder(image *v1alpha1.Image) {
+	if f.Builder != "" {
+		image.Spec.Builder = corev1.ObjectReference{
+			Kind:      v1alpha12.CustomBuilderKind,
+			Namespace: image.Namespace,
+			Name:      f.Builder,
+		}
+	} else if f.ClusterBuilder != "" {
+		image.Spec.Builder = corev1.ObjectReference{
+			Kind: v1alpha12.CustomClusterBuilderKind,
+			Name: f.ClusterBuilder,
+		}
 	}
 }
 
@@ -187,56 +232,4 @@ func (f *PatchFactory) makeEnvVars() ([]corev1.EnvVar, error) {
 		})
 	}
 	return envVars, nil
-}
-
-func (f *PatchFactory) patchBuild(image *v1alpha1.Image) (*v1alpha1.ImageBuild, error) {
-	if !f.buildUpdated() {
-		return image.Spec.Build, nil
-	}
-	for _, envToDelete := range f.DeleteEnv {
-		for i, e := range image.Spec.Build.Env {
-			if e.Name == envToDelete {
-				image.Spec.Build.Env = append(image.Spec.Build.Env[:i], image.Spec.Build.Env[i+1:]...)
-				break
-			}
-		}
-	}
-	envsToUpsert, err := f.makeEnvVars()
-	if err != nil {
-		return nil, err
-	}
-found:
-	for _, env := range envsToUpsert {
-		for i, e := range image.Spec.Build.Env {
-			if e.Name == env.Name {
-				image.Spec.Build.Env[i].Value = env.Value
-				continue found
-			}
-		}
-		image.Spec.Build.Env = append(image.Spec.Build.Env, corev1.EnvVar{
-			Name:  env.Name,
-			Value: env.Value,
-		})
-	}
-	return image.Spec.Build, nil
-}
-
-func (f *PatchFactory) patchBuilder(image *v1alpha1.Image) corev1.ObjectReference {
-	if !f.builderUpdated() {
-		return image.Spec.Builder
-	}
-
-	if f.Builder != "" {
-		return corev1.ObjectReference{
-			Kind:      v1alpha12.CustomBuilderKind,
-			Namespace: image.Namespace,
-			Name:      f.Builder,
-		}
-	} else {
-		return corev1.ObjectReference{
-			Kind: v1alpha12.CustomClusterBuilderKind,
-			Name: f.ClusterBuilder,
-		}
-	}
-
 }
