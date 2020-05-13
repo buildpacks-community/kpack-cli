@@ -14,6 +14,7 @@ import (
 
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	"github.com/pivotal/build-service-cli/pkg/image"
+	srcfakes "github.com/pivotal/build-service-cli/pkg/source/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -24,7 +25,9 @@ func TestImageCreateCommand(t *testing.T) {
 func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	const defaultNamespace = "some-default-namespace"
 
-	sourceUploader := &fakeSourceUploader{}
+	sourceUploader := &srcfakes.SourceUploader{
+		ImageRef: "some-registry.io/some-repo-source:source-id",
+	}
 
 	imageFactory := &image.Factory{
 		SourceUploader: sourceUploader,
@@ -293,11 +296,4 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestKpack(t, cmdFunc)
 		})
 	})
-}
-
-type fakeSourceUploader struct {
-}
-
-func (f *fakeSourceUploader) Upload(ref, path string) (string, error) {
-	return "some-registry.io/some-repo-source:source-id", nil
 }

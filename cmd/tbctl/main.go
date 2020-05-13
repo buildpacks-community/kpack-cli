@@ -62,6 +62,10 @@ func main() {
 		SourceUploader: sourceUploader,
 	}
 
+	imagePatchFactory := &image.PatchFactory{
+		SourceUploader: sourceUploader,
+	}
+
 	imageRootCmd := &cobra.Command{
 		Use:   "image",
 		Short: "Image commands",
@@ -74,6 +78,7 @@ func main() {
 		imgcmds.NewTriggerCommand(kpackClient, defaultNamespace),
 		imgcmds.NewStatusCommand(kpackClient, defaultNamespace),
 		imgcmds.NewCreateCommand(kpackClient, imageFactory, defaultNamespace),
+		imgcmds.NewPatchCommand(kpackClient, imagePatchFactory, defaultNamespace),
 	)
 
 	credentialFetcher := &commands.CredentialFetcher{}
@@ -152,7 +157,7 @@ func main() {
 		Use:   "version",
 		Short: "Display tbctl version",
 		Run: func(cmd *cobra.Command, _ []string) {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), Version + " " + CommitSHA)
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), Version+" "+CommitSHA)
 		},
 	}
 
