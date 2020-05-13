@@ -38,7 +38,7 @@ Environment variables may be provided by using the "--env" flag.
 For each environment variable, supply the "--env" flag followed by
 the key value pair. For example, "--env key1=value1 --env key2=value2 ...".
 
-Existing environment variables may be delete by using the "--delete-env" flag.
+Existing environment variables may be deleted by using the "--delete-env" flag.
 For each environment variable, supply the "--delete-env" flag followed by
 the variable name. For example, "--delete-env key1 --delete-env key2 ...".
 `,
