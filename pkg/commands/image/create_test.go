@@ -43,9 +43,16 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		when("the image config is valid", func() {
 			it("creates the image", func() {
 				expectedImage := &v1alpha1.Image{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Image",
+						APIVersion: "build.pivotal.io/v1alpha1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "some-image",
 						Namespace: namespace,
+						Annotations: map[string]string{
+							"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"build.pivotal.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"CustomClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
+						},
 					},
 					Spec: v1alpha1.ImageSpec{
 						Tag: "some-registry.io/some-repo",
@@ -111,9 +118,16 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		when("the image config is valid", func() {
 			it("creates the image", func() {
 				expectedImage := &v1alpha1.Image{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Image",
+						APIVersion: "build.pivotal.io/v1alpha1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "some-image",
 						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"build.pivotal.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"CustomClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
+						},
 					},
 					Spec: v1alpha1.ImageSpec{
 						Tag: "some-registry.io/some-repo",
@@ -176,9 +190,16 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	when("the image uses local source code", func() {
 		it("uploads the source image and creates the image config", func() {
 			expectedImage := &v1alpha1.Image{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Image",
+					APIVersion: "build.pivotal.io/v1alpha1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "some-image",
 					Namespace: defaultNamespace,
+					Annotations: map[string]string{
+						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"build.pivotal.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"CustomClusterBuilder","name":"default"},"serviceAccount":"default","source":{"registry":{"image":"some-registry.io/some-repo-source:source-id"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
+					},
 				},
 				Spec: v1alpha1.ImageSpec{
 					Tag: "some-registry.io/some-repo",
@@ -223,9 +244,16 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	when("the image uses a non-default builder", func() {
 		it("uploads the source image and creates the image config", func() {
 			expectedImage := &v1alpha1.Image{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Image",
+					APIVersion: "build.pivotal.io/v1alpha1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "some-image",
 					Namespace: defaultNamespace,
+					Annotations: map[string]string{
+						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"build.pivotal.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"CustomBuilder","namespace":"some-default-namespace","name":"some-builder"},"serviceAccount":"default","source":{"blob":{"url":"some-blob"}},"build":{"resources":{}}},"status":{}}`,
+					},
 				},
 				Spec: v1alpha1.ImageSpec{
 					Tag: "some-registry.io/some-repo",
@@ -262,9 +290,16 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	when("the image uses a non-default cluster builder", func() {
 		it("uploads the source image and creates the image config", func() {
 			expectedImage := &v1alpha1.Image{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Image",
+					APIVersion: "build.pivotal.io/v1alpha1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "some-image",
 					Namespace: defaultNamespace,
+					Annotations: map[string]string{
+						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"build.pivotal.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"CustomClusterBuilder","name":"some-builder"},"serviceAccount":"default","source":{"blob":{"url":"some-blob"}},"build":{"resources":{}}},"status":{}}`,
+					},
 				},
 				Spec: v1alpha1.ImageSpec{
 					Tag: "some-registry.io/some-repo",

@@ -47,6 +47,10 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error
 	builder := f.makeBuilder(namespace)
 
 	return &v1alpha1.Image{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Image",
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,

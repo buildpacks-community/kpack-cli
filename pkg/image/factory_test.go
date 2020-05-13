@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pivotal/build-service-cli/pkg/image"
+	srcfakes "github.com/pivotal/build-service-cli/pkg/source/fakes"
 )
 
 func TestImageFactory(t *testing.T) {
@@ -14,7 +15,20 @@ func TestImageFactory(t *testing.T) {
 }
 
 func testImageFactory(t *testing.T, when spec.G, it spec.S) {
-	factory := &image.Factory{}
+	factory := &image.Factory{
+		SourceUploader: &srcfakes.SourceUploader{
+			ImageRef: "",
+		},
+	}
+
+	it("sets type metadata", func() {
+		factory.Blob = "some-blob"
+		img, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+		require.NoError(t, err)
+
+		require.Equal(t, "Image", img.Kind)
+		require.Equal(t, "build.pivotal.io/v1alpha1", img.APIVersion)
+	})
 
 	when("no params are set", func() {
 		it("returns an error message", func() {

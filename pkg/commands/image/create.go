@@ -1,6 +1,7 @@
 package image
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
@@ -48,6 +49,16 @@ tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host
 				return err
 			}
 
+			originalImageCfg, err := json.Marshal(img)
+			if err != nil {
+				return err
+			}
+
+			if img.Annotations == nil {
+				img.Annotations = map[string]string{}
+			}
+			img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(originalImageCfg)
+
 			_, err = kpackClient.BuildV1alpha1().Images(namespace).Create(img)
 			if err != nil {
 				return err
@@ -58,14 +69,14 @@ tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
-	cmd.Flags().StringVarP(&factory.GitRepo, "git", "", "", "git repository url")
-	cmd.Flags().StringVarP(&factory.GitRevision, "git-revision", "", "master", "git revision")
-	cmd.Flags().StringVarP(&factory.Blob, "blob", "", "", "source code blob url")
-	cmd.Flags().StringVarP(&factory.LocalPath, "local-path", "", "", "path to local source code")
-	cmd.Flags().StringVarP(&factory.SubPath, "sub-path", "", "", "build code at the sub path located within the source code directory")
-	cmd.Flags().StringVarP(&factory.Builder, "builder", "", "", "builder name")
-	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "", "", "cluster builder name")
-	cmd.Flags().StringArrayVarP(&factory.Env, "env", "", []string{}, "build time environment variables")
+	cmd.Flags().StringVar(&factory.GitRepo, "git", "", "git repository url")
+	cmd.Flags().StringVar(&factory.GitRevision, "git-revision", "master", "git revision")
+	cmd.Flags().StringVar(&factory.Blob, "blob", "", "source code blob url")
+	cmd.Flags().StringVar(&factory.LocalPath, "local-path", "", "path to local source code")
+	cmd.Flags().StringVar(&factory.SubPath, "sub-path", "", "build code at the sub path located within the source code directory")
+	cmd.Flags().StringVar(&factory.Builder, "builder", "", "custom builder name")
+	cmd.Flags().StringVar(&factory.ClusterBuilder, "cluster-builder", "", "custom cluster builder name")
+	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 
 	return cmd
 }
