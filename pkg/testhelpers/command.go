@@ -23,6 +23,7 @@ type CommandTest struct {
 	ExpectUpdates  []clientgotesting.UpdateActionImpl
 	ExpectCreates  []runtime.Object
 	ExpectDeletes  []clientgotesting.DeleteActionImpl
+	ExpectPatches  []string
 }
 
 func (c CommandTest) TestKpack(t *testing.T, cmdFactory func(clientSet *kpackfakes.Clientset) *cobra.Command) {
@@ -43,7 +44,7 @@ func (c CommandTest) TestKpack(t *testing.T, cmdFactory func(clientSet *kpackfak
 	}
 
 	require.Equal(t, c.ExpectedOutput, out.String())
-	TestKpackActions(t, client, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes)
+	TestKpackActions(t, client, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes, c.ExpectPatches)
 }
 
 func (c CommandTest) TestK8s(t *testing.T, cmdFactory func(clientSet *k8sfakes.Clientset) *cobra.Command) {
@@ -67,5 +68,5 @@ func (c CommandTest) TestK8s(t *testing.T, cmdFactory func(clientSet *k8sfakes.C
 	}
 
 	require.Equal(t, c.ExpectedOutput, out.String())
-	TestK8sActions(t, client, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes)
+	TestK8sActions(t, client, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes, c.ExpectPatches)
 }

@@ -14,6 +14,7 @@ import (
 func NewPatchCommand(kpackClient versioned.Interface, factory *image.PatchFactory, defaultNamespace string) *cobra.Command {
 	var (
 		namespace string
+		subPath   string
 	)
 
 	cmd := &cobra.Command{
@@ -36,12 +37,16 @@ Therefore, you must have credentials to access the registry on your machine.
 Environment variables may be provided by using the "--env" flag.
 For each environment variable, supply the "--env" flag followed by
 the key value pair. For example, "--env key1=value1 --env key2=value2 ...".
+
+Existing environment variables may be delete by using the "--delete-env" flag.
+For each environment variable, supply the "--delete-env" flag followed by
+the variable name. For example, "--delete-env key1 --delete-env key2 ...".
 `,
 		Example: `tbctl image patch my-image --git-revision my-other-branch
 tbctl image patch my-image --blob https://my-blob-host.com/my-blob
 tbctl image patch my-image --local-path /path/to/local/source/code
-tbctl image patch my-image --local-path /path/to/local/source/code --builder my-builder -n my-namespace
-tbctl image patch my-image --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --delete-env food --delete-env PWD`,
+tbctl image patch my-image --local-path /path/to/local/source/code --builder my-builder
+tbctl image patch my-image --env foo=bar --env color=red --delete-env apple --delete-env potato`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -50,33 +55,39 @@ tbctl image patch my-image --blob https://my-blob-host.com/my-blob --env foo=bar
 				return err
 			}
 
+			if cmd.Flag("sub-path").Changed {
+				factory.SubPath = &subPath
+			}
+
 			patch, err := factory.MakePatch(img)
 			if err != nil {
 				return err
 			}
 
-			_, err = fmt.Fprint(cmd.OutOrStdout(), string(patch))
-			return nil
+			if len(patch) == 0 {
+				_, err = fmt.Fprintln(cmd.OutOrStdout(), "nothing to patch")
+				return err
+			}
 
 			_, err = kpackClient.BuildV1alpha1().Images(namespace).Patch(args[0], types.JSONPatchType, patch)
 			if err != nil {
 				return err
 			}
 
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", img.Name)
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" patched\n", img.Name)
 			return err
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
-	cmd.Flags().StringVarP(&factory.GitRepo, "git", "", "", "git repository url")
-	cmd.Flags().StringVarP(&factory.GitRevision, "git-revision", "", "master", "git revision")
-	cmd.Flags().StringVarP(&factory.Blob, "blob", "", "", "source code blob url")
-	cmd.Flags().StringVarP(&factory.LocalPath, "local-path", "", "", "path to local source code")
-	cmd.Flags().StringVarP(&factory.SubPath, "sub-path", "", "", "build code at the sub path located within the source code directory")
-	cmd.Flags().StringVarP(&factory.Builder, "builder", "", "", "builder name")
-	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "", "", "cluster builder name")
-	cmd.Flags().StringArrayVarP(&factory.Env, "env", "", []string{}, "build time environment variables to add/replace")
-	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "", []string{}, "build time environment variables to remove")
+	cmd.Flags().StringVar(&factory.GitRepo, "git", "", "git repository url")
+	cmd.Flags().StringVar(&factory.GitRevision, "git-revision", "", "git revision")
+	cmd.Flags().StringVar(&factory.Blob, "blob", "", "source code blob url")
+	cmd.Flags().StringVar(&factory.LocalPath, "local-path", "", "path to local source code")
+	cmd.Flags().StringVar(&subPath, "sub-path", "", "build code at the sub path located within the source code directory")
+	cmd.Flags().StringVar(&factory.Builder, "builder", "", "builder name")
+	cmd.Flags().StringVar(&factory.ClusterBuilder, "cluster-builder", "", "cluster builder name")
+	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables to add/replace")
+	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
 
 	return cmd
 }

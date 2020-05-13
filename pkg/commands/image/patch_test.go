@@ -14,6 +14,7 @@ import (
 
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	"github.com/pivotal/build-service-cli/pkg/image"
+	srcfakes "github.com/pivotal/build-service-cli/pkg/source/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -24,280 +25,224 @@ func TestImagePatchCommand(t *testing.T) {
 func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 	const defaultNamespace = "some-default-namespace"
 
-	sourceUploader := &fakeSourceUploader{}
+	sourceUploader := &srcfakes.SourceUploader{
+		ImageRef: "",
+	}
 
-	imageFactory := &image.Factory{
+	patchFactory := &image.PatchFactory{
 		SourceUploader: sourceUploader,
 	}
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return imgcmds.NewPatchCommand(clientSet, imageFactory, defaultNamespace)
+		return imgcmds.NewPatchCommand(clientSet, patchFactory, defaultNamespace)
 	}
 
-	when("a namespace is provided", func() {
-		const namespace = "some-namespace"
-
-		when("the image config is valid", func() {
-			it("creates the image", func() {
-				expectedImage := &v1alpha1.Image{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "some-image",
-						Namespace: namespace,
-					},
-					Spec: v1alpha1.ImageSpec{
-						Tag: "some-registry.io/some-repo",
-						Builder: corev1.ObjectReference{
-							Kind: expv1alpha1.CustomClusterBuilderKind,
-							Name: "default",
-						},
-						ServiceAccount: "default",
-						Source: v1alpha1.SourceConfig{
-							Git: &v1alpha1.Git{
-								URL:      "some-git-url",
-								Revision: "some-git-rev",
-							},
-							SubPath: "some-sub-path",
-						},
-						Build: &v1alpha1.ImageBuild{
-							Env: []corev1.EnvVar{
-								{
-									Name:  "some-key",
-									Value: "some-val",
-								},
-							},
-						},
-					},
-				}
-
-				testhelpers.CommandTest{
-					Args: []string{
-						"some-image",
-						"some-registry.io/some-repo",
-						"--git", "some-git-url",
-						"--git-revision", "some-git-rev",
-						"--sub-path", "some-sub-path",
-						"--env", "some-key=some-val",
-						"-n", namespace,
-					},
-					ExpectedOutput: "\"some-image\" created\n",
-					ExpectCreates: []runtime.Object{
-						expectedImage,
-					},
-				}.TestKpack(t, cmdFunc)
-			})
-		})
-
-		when("the image config is invalid", func() {
-			it("returns an error", func() {
-				testhelpers.CommandTest{
-					Args: []string{
-						"some-image",
-						"some-registry.io/some-repo",
-						"--blob", "some-blob",
-						"--git", "some-git-url",
-						"-n", namespace,
-					},
-					ExpectErr:      true,
-					ExpectedOutput: "Error: image source must be one of git, blob, or local-path\n",
-				}.TestKpack(t, cmdFunc)
-			})
-		})
-	})
-
-	when("a namespace is not provided", func() {
-		when("the image config is valid", func() {
-			it("creates the image", func() {
-				expectedImage := &v1alpha1.Image{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "some-image",
-						Namespace: defaultNamespace,
-					},
-					Spec: v1alpha1.ImageSpec{
-						Tag: "some-registry.io/some-repo",
-						Builder: corev1.ObjectReference{
-							Kind: expv1alpha1.CustomClusterBuilderKind,
-							Name: "default",
-						},
-						ServiceAccount: "default",
-						Source: v1alpha1.SourceConfig{
-							Git: &v1alpha1.Git{
-								URL:      "some-git-url",
-								Revision: "some-git-rev",
-							},
-							SubPath: "some-sub-path",
-						},
-						Build: &v1alpha1.ImageBuild{
-							Env: []corev1.EnvVar{
-								{
-									Name:  "some-key",
-									Value: "some-val",
-								},
-							},
-						},
-					},
-				}
-
-				testhelpers.CommandTest{
-					Args: []string{
-						"some-image",
-						"some-registry.io/some-repo",
-						"--git", "some-git-url",
-						"--git-revision", "some-git-rev",
-						"--sub-path", "some-sub-path",
-						"--env", "some-key=some-val",
-					},
-					ExpectedOutput: "\"some-image\" created\n",
-					ExpectCreates: []runtime.Object{
-						expectedImage,
-					},
-				}.TestKpack(t, cmdFunc)
-			})
-		})
-
-		when("the image config is invalid", func() {
-			it("returns an error", func() {
-				testhelpers.CommandTest{
-					Args: []string{
-						"some-image",
-						"some-registry.io/some-repo",
-						"--blob", "some-blob",
-						"--git", "some-git-url",
-					},
-					ExpectErr:      true,
-					ExpectedOutput: "Error: image source must be one of git, blob, or local-path\n",
-				}.TestKpack(t, cmdFunc)
-			})
-		})
-	})
-
-	when("the image uses local source code", func() {
-		it("uploads the source image and creates the image config", func() {
-			expectedImage := &v1alpha1.Image{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "some-image",
-					Namespace: defaultNamespace,
+	img := &v1alpha1.Image{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "some-image",
+			Namespace: defaultNamespace,
+		},
+		Spec: v1alpha1.ImageSpec{
+			Tag: "some-tag",
+			Builder: corev1.ObjectReference{
+				Kind: expv1alpha1.CustomClusterBuilderKind,
+				Name: "some-ccb",
+			},
+			Source: v1alpha1.SourceConfig{
+				Git: &v1alpha1.Git{
+					URL:      "some-git-url",
+					Revision: "some-revision",
 				},
-				Spec: v1alpha1.ImageSpec{
-					Tag: "some-registry.io/some-repo",
-					Builder: corev1.ObjectReference{
-						Kind: expv1alpha1.CustomClusterBuilderKind,
-						Name: "default",
+				SubPath: "some-path",
+			},
+			Build: &v1alpha1.ImageBuild{
+				Env: []corev1.EnvVar{
+					{
+						Name:  "key1",
+						Value: "value1",
 					},
-					ServiceAccount: "default",
-					Source: v1alpha1.SourceConfig{
-						Registry: &v1alpha1.Registry{
-							Image: "some-registry.io/some-repo-source:source-id",
-						},
-						SubPath: "some-sub-path",
+					{
+						Name:  "key2",
+						Value: "value2",
 					},
-					Build: &v1alpha1.ImageBuild{
-						Env: []corev1.EnvVar{
-							{
-								Name:  "some-key",
-								Value: "some-val",
-							},
-						},
+				},
+			},
+		},
+	}
+
+	when("no parameters are provided", func() {
+		it("does not create a patch", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
+				Args: []string{
+					"some-image",
+				},
+				ExpectedOutput: "nothing to patch\n",
+			}.TestKpack(t, cmdFunc)
+		})
+	})
+
+	when("patching source", func() {
+		when("patching the sub path", func() {
+			it("can patch it with an empty string", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						img,
 					},
+					Args: []string{
+						"some-image",
+						"--sub-path", "",
+					},
+					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectPatches: []string{
+						`{"op":"remove","path":"/spec/source/subPath"}`,
+					},
+				}.TestKpack(t, cmdFunc)
+			})
+
+			it("can patch it with a non-empty string", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						img,
+					},
+					Args: []string{
+						"some-image",
+						"--sub-path", "a-new-path",
+					},
+					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectPatches: []string{
+						`{"op":"replace","path":"/spec/source/subPath","value":"a-new-path"}`,
+					},
+				}.TestKpack(t, cmdFunc)
+			})
+		})
+
+		it("can change source types", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
+				Args: []string{
+					"some-image",
+					"--blob", "some-blob",
+				},
+				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectPatches: []string{
+					`{"op":"add","path":"/spec/source/blob","value":{"url":"some-blob"}}`,
+					`{"op":"remove","path":"/spec/source/git"}`,
+				},
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("can change git revision if existing source is git", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
+				Args: []string{
+					"some-image",
+					"--git-revision", "some-new-revision",
+				},
+				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectPatches: []string{
+					`{"op":"replace","path":"/spec/source/git/revision","value":"some-new-revision"}`,
+				},
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("git revision defaults to master if not provided with git", func() {
+			img.Spec.Source = v1alpha1.SourceConfig{
+				Blob: &v1alpha1.Blob{
+					URL: "some-blob",
 				},
 			}
 
 			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
 				Args: []string{
 					"some-image",
-					"some-registry.io/some-repo",
-					"--local-path", "some-local-path",
-					"--sub-path", "some-sub-path",
-					"--env", "some-key=some-val",
+					"--git", "some-new-git-url",
 				},
-				ExpectedOutput: "\"some-image\" created\n",
-				ExpectCreates: []runtime.Object{
-					expectedImage,
+				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectPatches: []string{
+					`{"op":"add","path":"/spec/source/git","value":{"revision":"master","url":"some-new-git-url"}}`,
+					`{"op":"remove","path":"/spec/source/blob"}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})
 	})
 
-	when("the image uses a non-default builder", func() {
-		it("uploads the source image and creates the image config", func() {
-			expectedImage := &v1alpha1.Image{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "some-image",
-					Namespace: defaultNamespace,
-				},
-				Spec: v1alpha1.ImageSpec{
-					Tag: "some-registry.io/some-repo",
-					Builder: corev1.ObjectReference{
-						Kind:      expv1alpha1.CustomBuilderKind,
-						Namespace: defaultNamespace,
-						Name:      "some-builder",
-					},
-					ServiceAccount: "default",
-					Source: v1alpha1.SourceConfig{
-						Blob: &v1alpha1.Blob{
-							URL: "some-blob",
-						},
-					},
-					Build: &v1alpha1.ImageBuild{},
-				},
-			}
-
+	when("patching the builder", func() {
+		it("can patch the builder", func() {
 			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
 				Args: []string{
 					"some-image",
-					"some-registry.io/some-repo",
-					"--blob", "some-blob",
 					"--builder", "some-builder",
 				},
-				ExpectedOutput: "\"some-image\" created\n",
-				ExpectCreates: []runtime.Object{
-					expectedImage,
+				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectPatches: []string{
+					`{"op":"replace","path":"/spec/builder/kind","value":"CustomBuilder"}`,
+					`{"op":"replace","path":"/spec/builder/name","value":"some-builder"}`,
+					`{"op":"add","path":"/spec/builder/namespace","value":"some-default-namespace"}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})
 	})
 
-	when("the image uses a non-default cluster builder", func() {
-		it("uploads the source image and creates the image config", func() {
-			expectedImage := &v1alpha1.Image{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "some-image",
-					Namespace: defaultNamespace,
-				},
-				Spec: v1alpha1.ImageSpec{
-					Tag: "some-registry.io/some-repo",
-					Builder: corev1.ObjectReference{
-						Kind: expv1alpha1.CustomClusterBuilderKind,
-						Name: "some-builder",
-					},
-					ServiceAccount: "default",
-					Source: v1alpha1.SourceConfig{
-						Blob: &v1alpha1.Blob{
-							URL: "some-blob",
-						},
-					},
-					Build: &v1alpha1.ImageBuild{},
-				},
-			}
-
+	when("patching env vars", func() {
+		it("can delete env vars", func() {
 			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
 				Args: []string{
 					"some-image",
-					"some-registry.io/some-repo",
-					"--blob", "some-blob",
-					"--cluster-builder", "some-builder",
+					"-d", "key2",
 				},
-				ExpectedOutput: "\"some-image\" created\n",
-				ExpectCreates: []runtime.Object{
-					expectedImage,
+				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectPatches: []string{
+					`{"op":"remove","path":"/spec/build/env/1"}`,
+				},
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("can update existing env vars", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
+				Args: []string{
+					"some-image",
+					"-e", "key1=some-other-value",
+				},
+				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectPatches: []string{
+					`{"op":"replace","path":"/spec/build/env/0/value","value":"some-other-value"}`,
+				},
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("can add new env vars", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
+				Args: []string{
+					"some-image",
+					"-e", "key3=value3",
+				},
+				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectPatches: []string{
+					`{"op":"add","path":"/spec/build/env/2","value":{"name":"key3","value":"value3"}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})
 	})
-}
-
-type fakeSourceUploader struct {
-}
-
-func (f *fakeSourceUploader) Upload(ref, path string) (string, error) {
-	return "some-registry.io/some-repo-source:source-id", nil
 }

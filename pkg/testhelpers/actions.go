@@ -1,6 +1,7 @@
 package testhelpers
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -66,7 +67,14 @@ func (l ActionRecorderList) ActionsByVerb() (Actions, error) {
 	return a, nil
 }
 
-func TestK8sActions(t *testing.T, clientset *k8sfakes.Clientset, expectUpdates []clientgotesting.UpdateActionImpl, expectCreates []runtime.Object, expectDeletes []clientgotesting.DeleteActionImpl) {
+func TestK8sActions(
+	t *testing.T,
+	clientset *k8sfakes.Clientset,
+	expectUpdates []clientgotesting.UpdateActionImpl,
+	expectCreates []runtime.Object,
+	expectDeletes []clientgotesting.DeleteActionImpl,
+	expectPatches []string,
+) {
 	t.Helper()
 	actions, err := ActionRecorderList{clientset}.ActionsByVerb()
 	require.NoError(t, err)
@@ -134,16 +142,46 @@ func TestK8sActions(t *testing.T, clientset *k8sfakes.Clientset, expectUpdates [
 		}
 	}
 
-	for _, extra := range actions.DeleteCollections {
-		t.Errorf("Extra delete-collection: %#v", extra)
+	actualPatches := map[string]interface{}{}
+	for _, patchObj := range actions.Patches {
+		var rawPatches []interface{}
+		err := json.Unmarshal(patchObj.GetPatch(), &rawPatches)
+		require.NoError(t, err)
+
+		for _, p := range rawPatches {
+			buf, err := json.Marshal(p)
+			require.NoError(t, err)
+
+			actualPatches[string(buf)] = nil
+		}
 	}
 
-	for _, extra := range actions.Patches {
-		t.Errorf("Extra patch: %#v; raw: %s", extra, string(extra.GetPatch()))
+	for _, want := range expectPatches {
+		if _, ok := actualPatches[want]; !ok {
+			t.Errorf("Missing patch: %s", want)
+			continue
+		}
+
+		delete(actualPatches, want)
+	}
+
+	for p := range actualPatches {
+		t.Errorf("Extra patch: %s", p)
+	}
+
+	for _, extra := range actions.DeleteCollections {
+		t.Errorf("Extra delete-collection: %#v", extra)
 	}
 }
 
-func TestKpackActions(t *testing.T, clientset *kpackfakes.Clientset, expectUpdates []clientgotesting.UpdateActionImpl, expectCreates []runtime.Object, expectDeletes []clientgotesting.DeleteActionImpl) {
+func TestKpackActions(
+	t *testing.T,
+	clientset *kpackfakes.Clientset,
+	expectUpdates []clientgotesting.UpdateActionImpl,
+	expectCreates []runtime.Object,
+	expectDeletes []clientgotesting.DeleteActionImpl,
+	expectPatches []string,
+) {
 	t.Helper()
 	actions, err := ActionRecorderList{clientset}.ActionsByVerb()
 	require.NoError(t, err)
@@ -211,11 +249,34 @@ func TestKpackActions(t *testing.T, clientset *kpackfakes.Clientset, expectUpdat
 		}
 	}
 
-	for _, extra := range actions.DeleteCollections {
-		t.Errorf("Extra delete-collection: %#v", extra)
+	actualPatches := map[string]interface{}{}
+	for _, patchObj := range actions.Patches {
+		var rawPatches []interface{}
+		err := json.Unmarshal(patchObj.GetPatch(), &rawPatches)
+		require.NoError(t, err)
+
+		for _, p := range rawPatches {
+			buf, err := json.Marshal(p)
+			require.NoError(t, err)
+
+			actualPatches[string(buf)] = nil
+		}
 	}
 
-	for _, extra := range actions.Patches {
-		t.Errorf("Extra patch: %#v; raw: %s", extra, string(extra.GetPatch()))
+	for _, want := range expectPatches {
+		if _, ok := actualPatches[want]; !ok {
+			t.Errorf("Missing patch: %s", want)
+			continue
+		}
+
+		delete(actualPatches, want)
+	}
+
+	for p := range actualPatches {
+		t.Errorf("Extra patch: %s", p)
+	}
+
+	for _, extra := range actions.DeleteCollections {
+		t.Errorf("Extra delete-collection: %#v", extra)
 	}
 }
