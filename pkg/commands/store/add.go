@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	defaultStoreName            = "build-service-store"
+	defaultStoreName            = "default"
 	defaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
 )
 
