@@ -35,7 +35,8 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return stackcmds.NewCreateCommand(clientSet, stackFactory)
+		cmdContext := testhelpers.NewFakeKpackClusterContext(clientSet)
+		return stackcmds.NewCreateCommand(cmdContext, stackFactory)
 	}
 
 	it("creates a stack", func() {

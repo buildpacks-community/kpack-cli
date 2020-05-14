@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +13,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewStatusCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
+func NewStatusCommand(cmdContext commands.ContextProvider) *cobra.Command {
 	var (
 		namespace   string
 		buildNumber int
@@ -29,7 +28,11 @@ If the build flag is not provided, the most recent build status will be shown.`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			buildList, err := kpackClient.BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
+			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+				return err
+			}
+
+			buildList, err := cmdContext.KpackClient().BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
@@ -48,7 +51,7 @@ If the build flag is not provided, the most recent build status will be shown.`,
 			}
 		},
 	}
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().IntVarP(&buildNumber, "build", "b", -1, "build number")
 
 	return cmd

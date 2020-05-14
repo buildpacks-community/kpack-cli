@@ -24,7 +24,8 @@ func testImageListCommand(t *testing.T, when spec.G, it spec.S) {
 	const defaultNamespace = "some-default-namespace"
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return image.NewListCommand(clientSet, defaultNamespace)
+		cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientSet)
+		return image.NewListCommand(cmdContext)
 	}
 
 	when("a namespace is provided", func() {

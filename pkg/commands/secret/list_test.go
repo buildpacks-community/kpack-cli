@@ -24,7 +24,8 @@ func testSecretListCommand(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	cmdFunc := func(k8sClient *fake.Clientset) *cobra.Command {
-		return secretcmds.NewListCommand(k8sClient, defaultNamespace)
+		cmdContext := testhelpers.NewFakeK8sContext(defaultNamespace, k8sClient)
+		return secretcmds.NewListCommand(cmdContext)
 	}
 
 	when("listing secrets", func() {

@@ -3,7 +3,6 @@ package stack
 import (
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,7 +10,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewListCommand(kpackClient versioned.Interface) *cobra.Command {
+func NewListCommand(cmdContext commands.ContextProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "list",
 		Short:        "List stacks",
@@ -19,7 +18,11 @@ func NewListCommand(kpackClient versioned.Interface) *cobra.Command {
 		Example:      "tbctl stack list",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			stackList, err := kpackClient.ExperimentalV1alpha1().Stacks().List(metav1.ListOptions{})
+			if err := cmdContext.Initialize(); err != nil {
+				return err
+			}
+
+			stackList, err := cmdContext.KpackClient().ExperimentalV1alpha1().Stacks().List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

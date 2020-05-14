@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +20,7 @@ type BuildpackageUploader interface {
 	Upload(repository, buildPackage string) (string, error)
 }
 
-func NewAddCommand(kpackClient versioned.Interface, buildpackUploader BuildpackageUploader) *cobra.Command {
+func NewAddCommand(cmdContext commands.ContextProvider, buildpackUploader BuildpackageUploader) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <buildpackage>",
 		Short: "Create an image configuration",
@@ -37,9 +36,13 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 		Args:         cobra.MinimumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := cmdContext.Initialize(); err != nil {
+				return err
+			}
+
 			printer := commands.NewPrinter(cmd)
 
-			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
+			store, err := cmdContext.KpackClient().ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -79,7 +82,7 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 				return nil
 			}
 
-			_, err = kpackClient.ExperimentalV1alpha1().Stores().Update(store)
+			_, err = cmdContext.KpackClient().ExperimentalV1alpha1().Stores().Update(store)
 			if err != nil {
 				return err
 			}

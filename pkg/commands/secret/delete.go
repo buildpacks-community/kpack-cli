@@ -6,10 +6,11 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8s "k8s.io/client-go/kubernetes"
+
+	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewDeleteCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.Command {
+func NewDeleteCommand(cmdContext commands.ContextProvider) *cobra.Command {
 	var namespace string
 
 	command := cobra.Command{
@@ -20,6 +21,12 @@ func NewDeleteCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.C
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+				return err
+			}
+
+			k8sClient := cmdContext.K8sClient()
+
 			serviceAccount, err := k8sClient.CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
 			if err != nil {
 				return err
@@ -45,7 +52,7 @@ func NewDeleteCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.C
 		},
 	}
 
-	command.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	command.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 
 	return &command
 }

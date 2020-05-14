@@ -3,12 +3,13 @@ package stack
 import (
 	"fmt"
 
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewDeleteCommand(kpackClient versioned.Interface) *cobra.Command {
+func NewDeleteCommand(cmdContext commands.ContextProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <name>",
 		Short:   "Delete a stack",
@@ -16,7 +17,11 @@ func NewDeleteCommand(kpackClient versioned.Interface) *cobra.Command {
 		Example: "tbctl stack delete my-stack",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := kpackClient.ExperimentalV1alpha1().Stacks().Delete(args[0], &metav1.DeleteOptions{})
+			if err := cmdContext.Initialize(); err != nil {
+				return err
+			}
+
+			err := cmdContext.KpackClient().ExperimentalV1alpha1().Stacks().Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

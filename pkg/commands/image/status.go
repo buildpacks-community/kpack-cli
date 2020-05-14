@@ -6,7 +6,6 @@ import (
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +14,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewStatusCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
+func NewStatusCommand(cmdContext commands.ContextProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -28,6 +27,12 @@ func NewStatusCommand(kpackClient versioned.Interface, defaultNamespace string) 
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+				return err
+			}
+
+			kpackClient := cmdContext.KpackClient()
+
 			image, err := kpackClient.BuildV1alpha1().Images(namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
@@ -45,7 +50,7 @@ func NewStatusCommand(kpackClient versioned.Interface, defaultNamespace string) 
 		},
 	}
 
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 
 	return cmd
 }

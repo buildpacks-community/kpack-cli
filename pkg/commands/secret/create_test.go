@@ -37,7 +37,8 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	cmdFunc := func(k8sClient *fake.Clientset) *cobra.Command {
-		return secretcmds.NewCreateCommand(k8sClient, factory, defaultNamespace)
+		cmdContext := testhelpers.NewFakeK8sContext(defaultNamespace, k8sClient)
+		return secretcmds.NewCreateCommand(cmdContext, factory)
 	}
 
 	defaultServiceAccount := &corev1.ServiceAccount{

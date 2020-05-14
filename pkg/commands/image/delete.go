@@ -3,12 +3,13 @@ package image
 import (
 	"fmt"
 
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewDeleteCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
+func NewDeleteCommand(cmdContext commands.ContextProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -20,7 +21,11 @@ func NewDeleteCommand(kpackClient versioned.Interface, defaultNamespace string) 
 		Example: "tbctl image delete my-image",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := kpackClient.BuildV1alpha1().Images(namespace).Delete(args[0], &metav1.DeleteOptions{})
+			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+				return err
+			}
+
+			err := cmdContext.KpackClient().BuildV1alpha1().Images(namespace).Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}
@@ -31,7 +36,7 @@ func NewDeleteCommand(kpackClient versioned.Interface, defaultNamespace string) 
 		SilenceUsage: true,
 	}
 
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 
 	return cmd
 }

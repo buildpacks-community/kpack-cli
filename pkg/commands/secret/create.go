@@ -6,12 +6,12 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8s "k8s.io/client-go/kubernetes"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/secret"
 )
 
-func NewCreateCommand(k8sClient k8s.Interface, secretFactory *secret.Factory, defaultNamespace string) *cobra.Command {
+func NewCreateCommand(cmdContext commands.ContextProvider, secretFactory *secret.Factory) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -40,6 +40,12 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+				return err
+			}
+
+			k8sClient := cmdContext.K8sClient()
+
 			sec, target, err := secretFactory.MakeSecret(args[0], namespace)
 			if err != nil {
 				return err
@@ -76,7 +82,7 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 		},
 	}
 
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&secretFactory.DockerhubId, "dockerhub", "", "", "dockerhub id")
 	cmd.Flags().StringVarP(&secretFactory.Registry, "registry", "", "", "registry")
 	cmd.Flags().StringVarP(&secretFactory.RegistryUser, "registry-user", "", "", "registry user")

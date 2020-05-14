@@ -7,12 +7,11 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8s "k8s.io/client-go/kubernetes"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewListCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.Command {
+func NewListCommand(cmdContext commands.ContextProvider) *cobra.Command {
 	var namespace string
 
 	command := cobra.Command{
@@ -24,7 +23,11 @@ If no namespace is provided, the default namespace is queried.`,
 		Example:      "tbctl secret list\ntbctl secret list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			serviceAccount, err := k8sClient.CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
+			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+				return err
+			}
+
+			serviceAccount, err := cmdContext.K8sClient().CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -37,7 +40,7 @@ If no namespace is provided, the default namespace is queried.`,
 		},
 	}
 
-	command.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	command.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 
 	return &command
 }

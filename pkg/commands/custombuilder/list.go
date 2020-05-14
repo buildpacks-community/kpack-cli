@@ -5,7 +5,6 @@ import (
 
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +12,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewListCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
+func NewListCommand(cmdContext commands.ContextProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -26,7 +25,11 @@ If no namespace is provided, the default namespace is queried.`,
 		Example:      "tbctl cb list\ntbctl cb list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			builderList, err := kpackClient.ExperimentalV1alpha1().CustomBuilders(namespace).List(metav1.ListOptions{})
+			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+				return err
+			}
+
+			builderList, err := cmdContext.KpackClient().ExperimentalV1alpha1().CustomBuilders(namespace).List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -40,7 +43,7 @@ If no namespace is provided, the default namespace is queried.`,
 		},
 	}
 
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 
 	return cmd
 }

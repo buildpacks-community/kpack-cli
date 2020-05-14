@@ -24,7 +24,8 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	const image2InStore = "some/imageinStore2@sha256:1232alreadyInStore"
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
-		return store.NewDeleteCommand(clientSet)
+		cmdContext := testhelpers.NewFakeKpackClusterContext(clientSet)
+		return store.NewDeleteCommand(cmdContext)
 	}
 
 	store := &expv1alpha1.Store{
