@@ -11,7 +11,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/secret"
 )
 
-func NewCreateCommand(cmdContext commands.ContextProvider, secretFactory *secret.Factory) *cobra.Command {
+func NewCreateCommand(contextProvider commands.ContextProvider, secretFactory *secret.Factory) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -40,11 +40,12 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			k8sClient := cmdContext.K8sClient()
+			k8sClient := context.K8sClient
 
 			sec, target, err := secretFactory.MakeSecret(args[0], namespace)
 			if err != nil {

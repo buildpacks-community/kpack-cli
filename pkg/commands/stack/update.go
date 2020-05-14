@@ -21,7 +21,7 @@ type ImageRelocator interface {
 	Relocate(image v1.Image, dest string) (string, error)
 }
 
-func NewUpdateCommand(cmdContext commands.ContextProvider, fetcher ImageFetcher, relocator ImageRelocator) *cobra.Command {
+func NewUpdateCommand(contextProvider commands.ContextProvider, fetcher ImageFetcher, relocator ImageRelocator) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -41,13 +41,14 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cmdContext.Initialize(); err != nil {
+			context, err := contextProvider.GetContext()
+			if err != nil {
 				return err
 			}
 
 			printer := commands.NewPrinter(cmd)
 
-			stack, err := cmdContext.KpackClient().ExperimentalV1alpha1().Stacks().Get(args[0], metav1.GetOptions{})
+			stack, err := context.KpackClient.ExperimentalV1alpha1().Stacks().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -100,7 +101,7 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 				return nil
 			}
 
-			_, err = cmdContext.KpackClient().ExperimentalV1alpha1().Stacks().Update(stack)
+			_, err = context.KpackClient.ExperimentalV1alpha1().Stacks().Update(stack)
 			if err != nil {
 				return err
 			}

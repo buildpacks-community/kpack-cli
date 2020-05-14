@@ -20,7 +20,7 @@ type BuildpackageUploader interface {
 	Upload(repository, buildPackage string) (string, error)
 }
 
-func NewAddCommand(cmdContext commands.ContextProvider, buildpackUploader BuildpackageUploader) *cobra.Command {
+func NewAddCommand(contextProvider commands.ContextProvider, buildpackUploader BuildpackageUploader) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <buildpackage>",
 		Short: "Create an image configuration",
@@ -36,13 +36,14 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 		Args:         cobra.MinimumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cmdContext.Initialize(); err != nil {
+			context, err := contextProvider.GetContext()
+			if err != nil {
 				return err
 			}
 
 			printer := commands.NewPrinter(cmd)
 
-			store, err := cmdContext.KpackClient().ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
+			store, err := context.KpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -82,7 +83,7 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 				return nil
 			}
 
-			_, err = cmdContext.KpackClient().ExperimentalV1alpha1().Stores().Update(store)
+			_, err = context.KpackClient.ExperimentalV1alpha1().Stores().Update(store)
 			if err != nil {
 				return err
 			}

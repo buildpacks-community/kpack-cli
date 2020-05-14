@@ -22,8 +22,8 @@ func TestStackListCommand(t *testing.T) {
 
 func testStackListCommand(t *testing.T, when spec.G, it spec.S) {
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackClusterContext(clientSet)
-		return stack.NewListCommand(cmdContext)
+		contextProvider := testhelpers.NewFakeKpackClusterContextProvider(clientSet)
+		return stack.NewListCommand(contextProvider)
 	}
 
 	when("the namespaces has images", func() {

@@ -12,7 +12,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewListCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewListCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -27,11 +27,12 @@ If no namespace is provided, the default namespace is queried.`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			buildList, err := cmdContext.KpackClient().BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
+			buildList, err := context.KpackClient.BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {

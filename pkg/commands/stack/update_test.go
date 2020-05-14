@@ -40,8 +40,8 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 	relocator := &fakes.Relocator{}
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackClusterContext(clientSet)
-		return stack.NewUpdateCommand(cmdContext, fetcher, relocator)
+		contextProvider := testhelpers.NewFakeKpackClusterContextProvider(clientSet)
+		return stack.NewUpdateCommand(contextProvider, fetcher, relocator)
 	}
 
 	stck := &expv1alpha1.Stack{

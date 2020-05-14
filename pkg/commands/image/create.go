@@ -10,7 +10,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/image"
 )
 
-func NewCreateCommand(cmdContext commands.ContextProvider, factory *image.Factory) *cobra.Command {
+func NewCreateCommand(contextProvider commands.ContextProvider, factory *image.Factory) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -44,7 +44,8 @@ tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
@@ -63,7 +64,7 @@ tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host
 			}
 			img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(originalImageCfg)
 
-			_, err = cmdContext.KpackClient().BuildV1alpha1().Images(namespace).Create(img)
+			_, err = context.KpackClient.BuildV1alpha1().Images(namespace).Create(img)
 			if err != nil {
 				return err
 			}

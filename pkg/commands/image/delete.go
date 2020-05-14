@@ -9,7 +9,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewDeleteCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewDeleteCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -21,11 +21,12 @@ func NewDeleteCommand(cmdContext commands.ContextProvider) *cobra.Command {
 		Example: "tbctl image delete my-image",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			err := cmdContext.KpackClient().BuildV1alpha1().Images(namespace).Delete(args[0], &metav1.DeleteOptions{})
+			err = context.KpackClient.BuildV1alpha1().Images(namespace).Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

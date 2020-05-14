@@ -34,8 +34,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientSet)
-		return imgcmds.NewPatchCommand(cmdContext, patchFactory)
+		contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientSet)
+		return imgcmds.NewPatchCommand(contextProvider, patchFactory)
 	}
 
 	img := &v1alpha1.Image{

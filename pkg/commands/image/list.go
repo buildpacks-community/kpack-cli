@@ -10,7 +10,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewListCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewListCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -23,11 +23,12 @@ Will only display images in your current namespace.
 If no namespace is provided, the default namespace is queried.`,
 		Example: "tbctl image list\ntbctl image list -n my-namespace",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			imageList, err := cmdContext.KpackClient().BuildV1alpha1().Images(namespace).List(metav1.ListOptions{})
+			imageList, err := context.KpackClient.BuildV1alpha1().Images(namespace).List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

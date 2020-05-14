@@ -14,7 +14,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewStatusCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewStatusCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -27,11 +27,12 @@ func NewStatusCommand(cmdContext commands.ContextProvider) *cobra.Command {
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			kpackClient := cmdContext.KpackClient()
+			kpackClient := context.KpackClient
 
 			image, err := kpackClient.BuildV1alpha1().Images(namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {

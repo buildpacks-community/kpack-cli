@@ -28,8 +28,8 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientSet)
-		return build.NewListCommand(cmdContext)
+		contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientSet)
+		return build.NewListCommand(contextProvider)
 	}
 
 	when("listing builds", func() {

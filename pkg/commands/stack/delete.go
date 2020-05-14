@@ -9,7 +9,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewDeleteCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewDeleteCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <name>",
 		Short:   "Delete a stack",
@@ -17,11 +17,12 @@ func NewDeleteCommand(cmdContext commands.ContextProvider) *cobra.Command {
 		Example: "tbctl stack delete my-stack",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cmdContext.Initialize(); err != nil {
+			context, err := contextProvider.GetContext()
+			if err != nil {
 				return err
 			}
 
-			err := cmdContext.KpackClient().ExperimentalV1alpha1().Stacks().Delete(args[0], &metav1.DeleteOptions{})
+			err = context.KpackClient.ExperimentalV1alpha1().Stacks().Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

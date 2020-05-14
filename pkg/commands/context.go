@@ -11,54 +11,43 @@ import (
 	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
 )
 
+type Context struct {
+	KpackClient      kpack.Interface
+	K8sClient        k8s.Interface
+	DefaultNamespace string
+}
+
 type ContextProvider interface {
-	Initialize() error
-	KpackClient() kpack.Interface
-	K8sClient() k8s.Interface
-	DefaultNamespace() string
+	GetContext() (Context, error)
 }
 
-type CommandContext struct {
-	kpackClient      *kpack.Clientset
-	k8sClient        *k8s.Clientset
-	defaultNamespace string
+type CommandContextProvider struct {
+	context Context
 }
 
-func InitContext(cmdContext ContextProvider, namespace *string) error {
-	if err := cmdContext.Initialize(); err != nil {
-		return err
+func GetContext(contextProvider ContextProvider, namespace *string) (Context, error) {
+	context, err := contextProvider.GetContext()
+	if err != nil {
+		return context, err
 	}
 
 	if *namespace == "" {
-		*namespace = cmdContext.DefaultNamespace()
+		*namespace = context.DefaultNamespace
+	}
+	return context, nil
+}
+
+func (c CommandContextProvider) GetContext() (context Context, err error) {
+	if c.context.DefaultNamespace, err = getDefaultNamespace(); err != nil {
+		return c.context, err
 	}
 
-	return nil
-}
-
-func (c CommandContext) Initialize() (err error) {
-	if c.defaultNamespace, err = getDefaultNamespace(); err != nil {
-		return err
+	if c.context.KpackClient, err = getKpackClient(); err != nil {
+		return c.context, err
 	}
 
-	if c.kpackClient, err = getKpackClient(); err != nil {
-		return err
-	}
-
-	c.k8sClient, err = getK8sClient()
-	return err
-}
-
-func (c CommandContext) KpackClient() kpack.Interface {
-	return c.kpackClient
-}
-
-func (c CommandContext) K8sClient() k8s.Interface {
-	return c.k8sClient
-}
-
-func (c CommandContext) DefaultNamespace() string {
-	return c.defaultNamespace
+	c.context.K8sClient, err = getK8sClient()
+	return c.context, err
 }
 
 func getKpackClient() (*kpack.Clientset, error) {

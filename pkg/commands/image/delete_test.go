@@ -23,8 +23,8 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	const defaultNamespace = "some-default-namespace"
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientSet)
-		return image.NewDeleteCommand(cmdContext)
+		contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientSet)
+		return image.NewDeleteCommand(contextProvider)
 	}
 
 	when("a namespace is provided", func() {

@@ -10,7 +10,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewDeleteCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewDeleteCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	var namespace string
 
 	command := cobra.Command{
@@ -21,11 +21,12 @@ func NewDeleteCommand(cmdContext commands.ContextProvider) *cobra.Command {
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			k8sClient := cmdContext.K8sClient()
+			k8sClient := context.K8sClient
 
 			serviceAccount, err := k8sClient.CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
 			if err != nil {

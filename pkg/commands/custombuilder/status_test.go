@@ -363,8 +363,8 @@ Reason:    this builder is not ready for the purpose of a test
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientSet)
-		return custombuilder.NewStatusCommand(cmdContext)
+		contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientSet)
+		return custombuilder.NewStatusCommand(contextProvider)
 	}
 
 	when("getting builder status", func() {

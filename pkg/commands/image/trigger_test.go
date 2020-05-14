@@ -31,8 +31,8 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 			it("triggers the latest build", func() {
 				clientset := fake.NewSimpleClientset(testNamespacedBuilds...)
 
-				cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientset)
-				cmd := image.NewTriggerCommand(cmdContext)
+				contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientset)
+				cmd := image.NewTriggerCommand(contextProvider)
 
 				out := &bytes.Buffer{}
 				cmd.SetOut(out)
@@ -56,8 +56,8 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 			it("returns an error", func() {
 				clientset := fake.NewSimpleClientset()
 
-				cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientset)
-				cmd := image.NewTriggerCommand(cmdContext)
+				contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientset)
+				cmd := image.NewTriggerCommand(contextProvider)
 
 				out := &bytes.Buffer{}
 				cmd.SetOut(out)
@@ -74,8 +74,8 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 			it("triggers the latest build", func() {
 				clientset := fake.NewSimpleClientset(testBuilds...)
 
-				cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientset)
-				cmd := image.NewTriggerCommand(cmdContext)
+				contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientset)
+				cmd := image.NewTriggerCommand(contextProvider)
 
 				out := &bytes.Buffer{}
 				cmd.SetOut(out)
@@ -99,8 +99,8 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 			it("returns an error", func() {
 				clientset := fake.NewSimpleClientset()
 
-				cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientset)
-				cmd := image.NewTriggerCommand(cmdContext)
+				contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientset)
+				cmd := image.NewTriggerCommand(contextProvider)
 
 				out := &bytes.Buffer{}
 				cmd.SetOut(out)

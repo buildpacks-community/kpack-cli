@@ -11,7 +11,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewListCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewListCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	var namespace string
 
 	command := cobra.Command{
@@ -23,11 +23,12 @@ If no namespace is provided, the default namespace is queried.`,
 		Example:      "tbctl secret list\ntbctl secret list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			serviceAccount, err := cmdContext.K8sClient().CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
+			serviceAccount, err := context.K8sClient.CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}

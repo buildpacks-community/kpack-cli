@@ -13,7 +13,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewStatusCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewStatusCommand(contextProvider commands.ContextProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:          "status <name>",
@@ -23,11 +23,12 @@ func NewStatusCommand(cmdContext commands.ContextProvider) *cobra.Command {
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cmdContext.Initialize(); err != nil {
+			context, err := contextProvider.GetContext()
+			if err != nil {
 				return err
 			}
 
-			bldr, err := cmdContext.KpackClient().ExperimentalV1alpha1().CustomClusterBuilders().Get(args[0], metav1.GetOptions{})
+			bldr, err := context.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}

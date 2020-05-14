@@ -12,7 +12,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewListCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewListCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -25,11 +25,12 @@ If no namespace is provided, the default namespace is queried.`,
 		Example:      "tbctl cb list\ntbctl cb list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			builderList, err := cmdContext.KpackClient().ExperimentalV1alpha1().CustomBuilders(namespace).List(metav1.ListOptions{})
+			builderList, err := context.KpackClient.ExperimentalV1alpha1().CustomBuilders(namespace).List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

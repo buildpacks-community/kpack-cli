@@ -27,20 +27,20 @@ var (
 )
 
 func main() {
-	var cmdContext commands.CommandContext
+	var contextProvider commands.CommandContextProvider
 
 	rootCmd := &cobra.Command{
 		Use: "tbctl",
 	}
 	rootCmd.AddCommand(
 		getVersionCommand(),
-		getImageCommand(cmdContext),
-		getBuildCommand(cmdContext),
-		getSecretCommand(cmdContext),
-		getClusterBuilderCommand(cmdContext),
-		getBuilderCommand(cmdContext),
-		getStackCommand(cmdContext),
-		getStoreCommand(cmdContext),
+		getImageCommand(contextProvider),
+		getBuildCommand(contextProvider),
+		getSecretCommand(contextProvider),
+		getClusterBuilderCommand(contextProvider),
+		getBuilderCommand(contextProvider),
+		getStackCommand(contextProvider),
+		getStoreCommand(contextProvider),
 	)
 
 	err := rootCmd.Execute()
@@ -60,7 +60,7 @@ func getVersionCommand() *cobra.Command {
 	return versionCmd
 }
 
-func getImageCommand(cmdContext commands.CommandContext) *cobra.Command {
+func getImageCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	sourceUploader := &source.Uploader{}
 
 	imageFactory := &image.Factory{
@@ -76,30 +76,30 @@ func getImageCommand(cmdContext commands.CommandContext) *cobra.Command {
 		Short: "Image commands",
 	}
 	imageRootCmd.AddCommand(
-		imgcmds.NewCreateCommand(cmdContext, imageFactory),
-		imgcmds.NewPatchCommand(cmdContext, imagePatchFactory),
-		imgcmds.NewListCommand(cmdContext),
-		imgcmds.NewDeleteCommand(cmdContext),
-		imgcmds.NewTriggerCommand(cmdContext),
-		imgcmds.NewStatusCommand(cmdContext),
+		imgcmds.NewCreateCommand(contextProvider, imageFactory),
+		imgcmds.NewPatchCommand(contextProvider, imagePatchFactory),
+		imgcmds.NewListCommand(contextProvider),
+		imgcmds.NewDeleteCommand(contextProvider),
+		imgcmds.NewTriggerCommand(contextProvider),
+		imgcmds.NewStatusCommand(contextProvider),
 	)
 	return imageRootCmd
 }
 
-func getBuildCommand(cmdContext commands.CommandContext) *cobra.Command {
+func getBuildCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	buildRootCmd := &cobra.Command{
 		Use:   "build",
 		Short: "Build Commands",
 	}
 	buildRootCmd.AddCommand(
-		buildcmds.NewListCommand(cmdContext),
-		buildcmds.NewStatusCommand(cmdContext),
-		buildcmds.NewLogsCommand(cmdContext),
+		buildcmds.NewListCommand(contextProvider),
+		buildcmds.NewStatusCommand(contextProvider),
+		buildcmds.NewLogsCommand(contextProvider),
 	)
 	return buildRootCmd
 }
 
-func getSecretCommand(cmdContext commands.CommandContext) *cobra.Command {
+func getSecretCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	credentialFetcher := &commands.CredentialFetcher{}
 	secretFactory := &secret.Factory{
 		CredentialFetcher: credentialFetcher,
@@ -110,29 +110,29 @@ func getSecretCommand(cmdContext commands.CommandContext) *cobra.Command {
 		Short: "Secret Commands",
 	}
 	secretRootCmd.AddCommand(
-		secretcmds.NewCreateCommand(cmdContext, secretFactory),
-		secretcmds.NewDeleteCommand(cmdContext),
-		secretcmds.NewListCommand(cmdContext),
+		secretcmds.NewCreateCommand(contextProvider, secretFactory),
+		secretcmds.NewDeleteCommand(contextProvider),
+		secretcmds.NewListCommand(contextProvider),
 	)
 	return secretRootCmd
 }
 
-func getClusterBuilderCommand(cmdContext commands.CommandContext) *cobra.Command {
+func getClusterBuilderCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	clusterBuilderRootCmd := &cobra.Command{
 		Use:     "custom-cluster-builder",
 		Short:   "Custom Cluster Builder Commands",
 		Aliases: []string{"ccb"},
 	}
 	clusterBuilderRootCmd.AddCommand(
-		clusterbuildercmds.NewApplyCommand(cmdContext),
-		clusterbuildercmds.NewListCommand(cmdContext),
-		clusterbuildercmds.NewStatusCommand(cmdContext),
-		clusterbuildercmds.NewDeleteCommand(cmdContext),
+		clusterbuildercmds.NewApplyCommand(contextProvider),
+		clusterbuildercmds.NewListCommand(contextProvider),
+		clusterbuildercmds.NewStatusCommand(contextProvider),
+		clusterbuildercmds.NewDeleteCommand(contextProvider),
 	)
 	return clusterBuilderRootCmd
 }
 
-func getStackCommand(cmdContext commands.CommandContext) *cobra.Command {
+func getStackCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	stackFactory := &stack.Factory{
 		Fetcher:   &image.Fetcher{},
 		Relocator: &image.Relocator{},
@@ -143,31 +143,31 @@ func getStackCommand(cmdContext commands.CommandContext) *cobra.Command {
 		Short: "Stack Commands",
 	}
 	stackRootCmd.AddCommand(
-		stackcmds.NewCreateCommand(cmdContext, stackFactory),
-		stackcmds.NewListCommand(cmdContext),
-		stackcmds.NewStatusCommand(cmdContext),
-		stackcmds.NewUpdateCommand(cmdContext, &image.Fetcher{}, &image.Relocator{}),
-		stackcmds.NewDeleteCommand(cmdContext),
+		stackcmds.NewCreateCommand(contextProvider, stackFactory),
+		stackcmds.NewListCommand(contextProvider),
+		stackcmds.NewStatusCommand(contextProvider),
+		stackcmds.NewUpdateCommand(contextProvider, &image.Fetcher{}, &image.Relocator{}),
+		stackcmds.NewDeleteCommand(contextProvider),
 	)
 	return stackRootCmd
 }
 
-func getBuilderCommand(cmdContext commands.CommandContext) *cobra.Command {
+func getBuilderCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	builderRootCmd := &cobra.Command{
 		Use:     "custom-builder",
 		Short:   "Custom Builder Commands",
 		Aliases: []string{"cb"},
 	}
 	builderRootCmd.AddCommand(
-		buildercmds.NewApplyCommand(cmdContext),
-		buildercmds.NewListCommand(cmdContext),
-		buildercmds.NewDeleteCommand(cmdContext),
-		buildercmds.NewStatusCommand(cmdContext),
+		buildercmds.NewApplyCommand(contextProvider),
+		buildercmds.NewListCommand(contextProvider),
+		buildercmds.NewDeleteCommand(contextProvider),
+		buildercmds.NewStatusCommand(contextProvider),
 	)
 	return builderRootCmd
 }
 
-func getStoreCommand(cmdContext commands.CommandContext) *cobra.Command {
+func getStoreCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	bpUploader := &buildpackage.Uploader{
 		Fetcher:   &image.Fetcher{},
 		Relocator: &image.Relocator{},
@@ -178,9 +178,9 @@ func getStoreCommand(cmdContext commands.CommandContext) *cobra.Command {
 		Short: "Store Commands",
 	}
 	storeRootCommand.AddCommand(
-		store.NewAddCommand(cmdContext, bpUploader),
-		store.NewStatusCommand(cmdContext),
-		store.NewDeleteCommand(cmdContext),
+		store.NewAddCommand(contextProvider, bpUploader),
+		store.NewStatusCommand(contextProvider),
+		store.NewDeleteCommand(contextProvider),
 	)
 
 	return storeRootCommand

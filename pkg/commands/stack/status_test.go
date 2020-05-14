@@ -20,8 +20,8 @@ func TestStackStatusCommand(t *testing.T) {
 
 func testStackStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackClusterContext(clientSet)
-		return stack.NewStatusCommand(cmdContext)
+		contextProvider := testhelpers.NewFakeKpackClusterContextProvider(clientSet)
+		return stack.NewStatusCommand(contextProvider)
 	}
 
 	when("the stack exists", func() {

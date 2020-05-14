@@ -22,8 +22,8 @@ func testBuildLogsCommand(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientSet)
-		return build.NewLogsCommand(cmdContext)
+		contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientSet)
+		return build.NewLogsCommand(contextProvider)
 	}
 
 	when("getting build logs", func() {

@@ -11,7 +11,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/image"
 )
 
-func NewPatchCommand(cmdContext commands.ContextProvider, factory *image.PatchFactory) *cobra.Command {
+func NewPatchCommand(contextProvider commands.ContextProvider, factory *image.PatchFactory) *cobra.Command {
 	var (
 		namespace string
 		subPath   string
@@ -50,11 +50,12 @@ tbctl image patch my-image --env foo=bar --env color=red --delete-env apple --de
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			img, err := cmdContext.KpackClient().BuildV1alpha1().Images(namespace).Get(args[0], metav1.GetOptions{})
+			img, err := context.KpackClient.BuildV1alpha1().Images(namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -73,7 +74,7 @@ tbctl image patch my-image --env foo=bar --env color=red --delete-env apple --de
 				return err
 			}
 
-			_, err = cmdContext.KpackClient().BuildV1alpha1().Images(namespace).Patch(args[0], types.MergePatchType, patch)
+			_, err = context.KpackClient.BuildV1alpha1().Images(namespace).Patch(args[0], types.MergePatchType, patch)
 			if err != nil {
 				return err
 			}

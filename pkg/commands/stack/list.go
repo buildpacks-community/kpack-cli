@@ -10,7 +10,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewListCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewListCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "list",
 		Short:        "List stacks",
@@ -18,11 +18,12 @@ func NewListCommand(cmdContext commands.ContextProvider) *cobra.Command {
 		Example:      "tbctl stack list",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cmdContext.Initialize(); err != nil {
+			context, err := contextProvider.GetContext()
+			if err != nil {
 				return err
 			}
 
-			stackList, err := cmdContext.KpackClient().ExperimentalV1alpha1().Stacks().List(metav1.ListOptions{})
+			stackList, err := context.KpackClient.ExperimentalV1alpha1().Stacks().List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

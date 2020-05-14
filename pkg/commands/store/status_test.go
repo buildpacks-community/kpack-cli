@@ -20,8 +20,8 @@ func TestStatusCommand(t *testing.T) {
 
 func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackClusterContext(clientSet)
-		return store.NewStatusCommand(cmdContext)
+		contextProvider := testhelpers.NewFakeKpackClusterContextProvider(clientSet)
+		return store.NewStatusCommand(contextProvider)
 	}
 
 	when("the store exists", func() {

@@ -15,7 +15,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewApplyCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewApplyCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	var (
 		path string
 	)
@@ -26,7 +26,8 @@ func NewApplyCommand(cmdContext commands.ContextProvider) *cobra.Command {
 		Long:    "Apply a custom builder configuration by filename.\nThe custom builder will be created if it does not yet exist.\nOnly YAML files are accepted.",
 		Example: "tbctl cb apply -f ./builder.yaml\ncat ./builder.yaml | tbctl cb apply -f -",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cmdContext.Initialize(); err != nil {
+			context, err := contextProvider.GetContext()
+			if err != nil {
 				return err
 			}
 
@@ -36,10 +37,10 @@ func NewApplyCommand(cmdContext commands.ContextProvider) *cobra.Command {
 			}
 
 			if builderConfig.Namespace == "" {
-				builderConfig.Namespace = cmdContext.DefaultNamespace()
+				builderConfig.Namespace = context.DefaultNamespace
 			}
 
-			kpackClient := cmdContext.KpackClient()
+			kpackClient := context.KpackClient
 			_, err = kpackClient.ExperimentalV1alpha1().CustomBuilders(builderConfig.Namespace).Get(builderConfig.Name, metav1.GetOptions{})
 			if err != nil && !k8serrors.IsNotFound(err) {
 				return err

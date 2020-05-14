@@ -23,8 +23,8 @@ func testBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	const defaultNamespace = "some-default-namespace"
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackContext(defaultNamespace, clientSet)
-		return custombuilder.NewDeleteCommand(cmdContext)
+		contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientSet)
+		return custombuilder.NewDeleteCommand(contextProvider)
 	}
 
 	when("a namespace has been provided", func() {

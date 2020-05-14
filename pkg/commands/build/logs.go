@@ -14,7 +14,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewLogsCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewLogsCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	var (
 		namespace   string
 		buildNumber int
@@ -29,11 +29,12 @@ Defaults to tailing logs from the latest build if build is not specified`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			cmdContext, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			buildList, err := cmdContext.KpackClient().BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
+			buildList, err := cmdContext.KpackClient.BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
@@ -48,7 +49,7 @@ Defaults to tailing logs from the latest build if build is not specified`,
 				if err != nil {
 					return err
 				}
-				return logs.NewBuildLogsClient(cmdContext.K8sClient()).Tail(context.Background(), cmd.OutOrStdout(), args[0], bld.Labels[v1alpha1.BuildNumberLabel], namespace)
+				return logs.NewBuildLogsClient(cmdContext.K8sClient).Tail(context.Background(), cmd.OutOrStdout(), args[0], bld.Labels[v1alpha1.BuildNumberLabel], namespace)
 			}
 		},
 	}

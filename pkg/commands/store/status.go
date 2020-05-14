@@ -12,7 +12,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
-func NewStatusCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewStatusCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "status",
 		Short:        "Display store status",
@@ -20,11 +20,12 @@ func NewStatusCommand(cmdContext commands.ContextProvider) *cobra.Command {
 		Example:      "tbctl store status",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cmdContext.Initialize(); err != nil {
+			context, err := contextProvider.GetContext()
+			if err != nil {
 				return err
 			}
 
-			store, err := cmdContext.KpackClient().ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
+			store, err := context.KpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
 			if err != nil {
 				return err
 			}

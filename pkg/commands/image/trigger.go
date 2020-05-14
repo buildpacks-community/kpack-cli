@@ -16,7 +16,7 @@ import (
 
 const BuildNeededAnnotation = "image.build.pivotal.io/additionalBuildNeeded"
 
-func NewTriggerCommand(cmdContext commands.ContextProvider) *cobra.Command {
+func NewTriggerCommand(contextProvider commands.ContextProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -28,11 +28,12 @@ func NewTriggerCommand(cmdContext commands.ContextProvider) *cobra.Command {
 		Example: "tbctl image trigger my-image",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := commands.InitContext(cmdContext, &namespace); err != nil {
+			context, err := commands.GetContext(contextProvider, &namespace)
+			if err != nil {
 				return err
 			}
 
-			buildList, err := cmdContext.KpackClient().BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
+			buildList, err := context.KpackClient.BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
@@ -46,7 +47,7 @@ func NewTriggerCommand(cmdContext commands.ContextProvider) *cobra.Command {
 
 				build := buildList.Items[len(buildList.Items)-1].DeepCopy()
 				build.Annotations[BuildNeededAnnotation] = time.Now().String()
-				_, err := cmdContext.KpackClient().BuildV1alpha1().Builds(namespace).Update(build)
+				_, err := context.KpackClient.BuildV1alpha1().Builds(namespace).Update(build)
 				if err != nil {
 					return err
 				}

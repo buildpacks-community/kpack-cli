@@ -31,8 +31,8 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
-		cmdContext := testhelpers.NewFakeKpackClusterContext(clientSet)
-		return store.NewAddCommand(cmdContext, fakeBuildpackageUploader)
+		contextProvider := testhelpers.NewFakeKpackClusterContextProvider(clientSet)
+		return store.NewAddCommand(contextProvider, fakeBuildpackageUploader)
 	}
 
 	store := &expv1alpha1.Store{
