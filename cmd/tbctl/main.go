@@ -71,14 +71,12 @@ func main() {
 		Short: "Image commands",
 	}
 	imageRootCmd.AddCommand(
-		imgcmds.NewGetCommand(kpackClient, defaultNamespace),
-		imgcmds.NewApplyCommand(kpackClient, defaultNamespace),
+		imgcmds.NewCreateCommand(kpackClient, imageFactory, defaultNamespace),
+		imgcmds.NewPatchCommand(kpackClient, imagePatchFactory, defaultNamespace),
 		imgcmds.NewListCommand(kpackClient, defaultNamespace),
 		imgcmds.NewDeleteCommand(kpackClient, defaultNamespace),
 		imgcmds.NewTriggerCommand(kpackClient, defaultNamespace),
 		imgcmds.NewStatusCommand(kpackClient, defaultNamespace),
-		imgcmds.NewCreateCommand(kpackClient, imageFactory, defaultNamespace),
-		imgcmds.NewPatchCommand(kpackClient, imagePatchFactory, defaultNamespace),
 	)
 
 	credentialFetcher := &commands.CredentialFetcher{}
