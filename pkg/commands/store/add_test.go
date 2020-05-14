@@ -36,7 +36,7 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 
 	store := &expv1alpha1.Store{
 		ObjectMeta: v1.ObjectMeta{
-			Name: "build-service-store",
+			Name: store.DefaultStoreName,
 			Annotations: map[string]string{
 				"buildservice.pivotal.io/defaultRepository": "some/path",
 			},
@@ -101,7 +101,7 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args:           []string{"some/someimage"},
 			ExpectErr:      true,
-			ExpectedOutput: "Error: Unable to find default registry for store: build-service-store\n",
+			ExpectedOutput: "Error: Unable to find default registry for store: default\n",
 		}.TestKpack(t, cmdFunc)
 	})
 }

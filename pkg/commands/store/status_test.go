@@ -27,7 +27,7 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 		it("returns store details", func() {
 			store := &expv1alpha1.Store{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "build-service-store",
+					Name: store.DefaultStoreName,
 				},
 				Status: expv1alpha1.StoreStatus{
 					Buildpacks: []expv1alpha1.StoreBuildpack{
@@ -125,7 +125,7 @@ DETECTION ORDER
 			testhelpers.CommandTest{
 				Args:           []string{},
 				ExpectErr:      true,
-				ExpectedOutput: "Error: stores.experimental.kpack.pivotal.io \"build-service-store\" not found\n",
+				ExpectedOutput: "Error: stores.experimental.kpack.pivotal.io \"default\" not found\n",
 			}.TestKpack(t, cmdFunc)
 
 		})

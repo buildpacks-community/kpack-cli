@@ -26,7 +26,7 @@ tbctl store delete my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09c
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printer := commands.NewPrinter(cmd)
 
-			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(defaultStoreName, v1.GetOptions{})
+			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
 			if err != nil {
 				return err
 			}

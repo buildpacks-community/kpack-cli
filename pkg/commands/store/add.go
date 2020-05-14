@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	defaultStoreName            = "default"
-	defaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
+	DefaultStoreName            = "default"
+	DefaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
 )
 
 type BuildpackageUploader interface {
@@ -39,14 +39,14 @@ tbctl store add ../path/to/my-local-buildpackage.cnb
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printer := commands.NewPrinter(cmd)
 
-			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(defaultStoreName, v1.GetOptions{})
+			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			repository, ok := store.Annotations[defaultRepositoryAnnotation]
+			repository, ok := store.Annotations[DefaultRepositoryAnnotation]
 			if !ok || repository == "" {
-				return errors.Errorf("Unable to find default registry for store: %s", defaultStoreName)
+				return errors.Errorf("Unable to find default registry for store: %s", DefaultStoreName)
 			}
 
 			printer.Printf("Uploading to '%s'...", repository)

@@ -29,7 +29,7 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	store := &expv1alpha1.Store{
 		ObjectMeta: v1.ObjectMeta{
-			Name: "build-service-store",
+			Name: store.DefaultStoreName,
 			Annotations: map[string]string{
 				"buildservice.pivotal.io/defaultRepository": "some/path",
 			},

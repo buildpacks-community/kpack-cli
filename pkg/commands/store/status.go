@@ -21,7 +21,7 @@ func NewStatusCommand(kpackClient versioned.Interface) *cobra.Command {
 		Example:      "tbctl store status",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(defaultStoreName, v1.GetOptions{})
+			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
 			if err != nil {
 				return err
 			}
