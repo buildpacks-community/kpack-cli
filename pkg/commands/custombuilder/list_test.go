@@ -352,7 +352,8 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return custombuilder.NewListCommand(clientSet, defaultNamespace)
+		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
+		return custombuilder.NewListCommand(clientSetProvider)
 	}
 
 	when("listing clusterbuilder", func() {

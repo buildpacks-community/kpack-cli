@@ -28,34 +28,40 @@ var (
 )
 
 func main() {
-	defaultNamespace, err := k8s.GetDefaultNamespace()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	var clientSetProvider k8s.DefaultClientSetProvider
 
-	kpackClient, err := k8s.NewKpackClient()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	rootCmd := &cobra.Command{
+		Use: "tbctl",
 	}
-
-	k8sClient, err := k8s.NewK8sClient()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	buildRootCmd := &cobra.Command{
-		Use:   "build",
-		Short: "Build Commands",
-	}
-	buildRootCmd.AddCommand(
-		buildcmds.NewListCommand(kpackClient, defaultNamespace),
-		buildcmds.NewStatusCommand(kpackClient, defaultNamespace),
-		buildcmds.NewLogsCommand(kpackClient, k8sClient, defaultNamespace),
+	rootCmd.AddCommand(
+		getVersionCommand(),
+		getImageCommand(clientSetProvider),
+		getBuildCommand(clientSetProvider),
+		getSecretCommand(clientSetProvider),
+		getClusterBuilderCommand(clientSetProvider),
+		getBuilderCommand(clientSetProvider),
+		getStackCommand(clientSetProvider),
+		getStoreCommand(clientSetProvider),
 	)
 
+	err := rootCmd.Execute()
+	if err != nil {
+		os.Exit(1)
+	}
+}
+
+func getVersionCommand() *cobra.Command {
+	versionCmd := &cobra.Command{
+		Use:   "version",
+		Short: "Display tbctl version",
+		Run: func(cmd *cobra.Command, _ []string) {
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), Version+" "+CommitSHA)
+		},
+	}
+	return versionCmd
+}
+
+func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	sourceUploader := &source.Uploader{}
 
 	imageFactory := &image.Factory{
@@ -71,16 +77,31 @@ func main() {
 		Short: "Image commands",
 	}
 	imageRootCmd.AddCommand(
-		imgcmds.NewCreateCommand(kpackClient, imageFactory, defaultNamespace),
-		imgcmds.NewPatchCommand(kpackClient, imagePatchFactory, defaultNamespace),
-		imgcmds.NewListCommand(kpackClient, defaultNamespace),
-		imgcmds.NewDeleteCommand(kpackClient, defaultNamespace),
-		imgcmds.NewTriggerCommand(kpackClient, defaultNamespace),
-		imgcmds.NewStatusCommand(kpackClient, defaultNamespace),
+		imgcmds.NewCreateCommand(clientSetProvider, imageFactory),
+		imgcmds.NewPatchCommand(clientSetProvider, imagePatchFactory),
+		imgcmds.NewListCommand(clientSetProvider),
+		imgcmds.NewDeleteCommand(clientSetProvider),
+		imgcmds.NewTriggerCommand(clientSetProvider),
+		imgcmds.NewStatusCommand(clientSetProvider),
 	)
+	return imageRootCmd
+}
 
+func getBuildCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	buildRootCmd := &cobra.Command{
+		Use:   "build",
+		Short: "Build Commands",
+	}
+	buildRootCmd.AddCommand(
+		buildcmds.NewListCommand(clientSetProvider),
+		buildcmds.NewStatusCommand(clientSetProvider),
+		buildcmds.NewLogsCommand(clientSetProvider),
+	)
+	return buildRootCmd
+}
+
+func getSecretCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	credentialFetcher := &commands.CredentialFetcher{}
-
 	secretFactory := &secret.Factory{
 		CredentialFetcher: credentialFetcher,
 	}
@@ -90,50 +111,44 @@ func main() {
 		Short: "Secret Commands",
 	}
 	secretRootCmd.AddCommand(
-		secretcmds.NewCreateCommand(k8sClient, secretFactory, defaultNamespace),
-		secretcmds.NewDeleteCommand(k8sClient, defaultNamespace),
-		secretcmds.NewListCommand(k8sClient, defaultNamespace),
+		secretcmds.NewCreateCommand(clientSetProvider, secretFactory),
+		secretcmds.NewDeleteCommand(clientSetProvider),
+		secretcmds.NewListCommand(clientSetProvider),
 	)
+	return secretRootCmd
+}
 
+func getClusterBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	clusterBuilderRootCmd := &cobra.Command{
 		Use:     "custom-cluster-builder",
 		Short:   "Custom Cluster Builder Commands",
 		Aliases: []string{"ccb"},
 	}
 	clusterBuilderRootCmd.AddCommand(
-		clusterbuildercmds.NewApplyCommand(kpackClient),
-		clusterbuildercmds.NewListCommand(kpackClient),
-		clusterbuildercmds.NewStatusCommand(kpackClient),
-		clusterbuildercmds.NewDeleteCommand(kpackClient),
+		clusterbuildercmds.NewApplyCommand(clientSetProvider),
+		clusterbuildercmds.NewListCommand(clientSetProvider),
+		clusterbuildercmds.NewStatusCommand(clientSetProvider),
+		clusterbuildercmds.NewDeleteCommand(clientSetProvider),
 	)
+	return clusterBuilderRootCmd
+}
 
+func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	builderRootCmd := &cobra.Command{
 		Use:     "custom-builder",
 		Short:   "Custom Builder Commands",
 		Aliases: []string{"cb"},
 	}
 	builderRootCmd.AddCommand(
-		buildercmds.NewApplyCommand(kpackClient, defaultNamespace),
-		buildercmds.NewListCommand(kpackClient, defaultNamespace),
-		buildercmds.NewDeleteCommand(kpackClient, defaultNamespace),
-		buildercmds.NewStatusCommand(kpackClient, defaultNamespace),
+		buildercmds.NewApplyCommand(clientSetProvider),
+		buildercmds.NewListCommand(clientSetProvider),
+		buildercmds.NewDeleteCommand(clientSetProvider),
+		buildercmds.NewStatusCommand(clientSetProvider),
 	)
+	return builderRootCmd
+}
 
-	bpUploader := &buildpackage.Uploader{
-		Fetcher:   &image.Fetcher{},
-		Relocator: &image.Relocator{},
-	}
-
-	storeRootCommand := &cobra.Command{
-		Use:   "store",
-		Short: "Store Commands",
-	}
-	storeRootCommand.AddCommand(
-		store.NewAddCommand(kpackClient, bpUploader),
-		store.NewStatusCommand(kpackClient),
-		store.NewDeleteCommand(kpackClient),
-	)
-
+func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	stackFactory := &stack.Factory{
 		Fetcher:   &image.Fetcher{},
 		Relocator: &image.Relocator{},
@@ -144,37 +159,29 @@ func main() {
 		Short: "Stack Commands",
 	}
 	stackRootCmd.AddCommand(
-		stackcmds.NewCreateCommand(kpackClient, stackFactory),
-		stackcmds.NewListCommand(kpackClient),
-		stackcmds.NewStatusCommand(kpackClient),
-		stackcmds.NewUpdateCommand(kpackClient, &image.Fetcher{}, &image.Relocator{}),
-		stackcmds.NewDeleteCommand(kpackClient),
+		stackcmds.NewCreateCommand(clientSetProvider, stackFactory),
+		stackcmds.NewListCommand(clientSetProvider),
+		stackcmds.NewStatusCommand(clientSetProvider),
+		stackcmds.NewUpdateCommand(clientSetProvider, &image.Fetcher{}, &image.Relocator{}),
+		stackcmds.NewDeleteCommand(clientSetProvider),
 	)
+	return stackRootCmd
+}
 
-	versionCmd := &cobra.Command{
-		Use:   "version",
-		Short: "Display tbctl version",
-		Run: func(cmd *cobra.Command, _ []string) {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), Version+" "+CommitSHA)
-		},
+func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	bpUploader := &buildpackage.Uploader{
+		Fetcher:   &image.Fetcher{},
+		Relocator: &image.Relocator{},
 	}
 
-	rootCmd := &cobra.Command{
-		Use: "tbctl",
+	storeRootCommand := &cobra.Command{
+		Use:   "store",
+		Short: "Store Commands",
 	}
-	rootCmd.AddCommand(
-		versionCmd,
-		imageRootCmd,
-		buildRootCmd,
-		secretRootCmd,
-		clusterBuilderRootCmd,
-		builderRootCmd,
-		stackRootCmd,
-		storeRootCommand,
+	storeRootCommand.AddCommand(
+		store.NewAddCommand(clientSetProvider, bpUploader),
+		store.NewStatusCommand(clientSetProvider),
+		store.NewDeleteCommand(clientSetProvider),
 	)
-
-	err = rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
+	return storeRootCommand
 }

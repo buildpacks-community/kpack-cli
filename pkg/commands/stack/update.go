@@ -5,12 +5,12 @@ import (
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 	stackpkg "github.com/pivotal/build-service-cli/pkg/stack"
 )
 
@@ -22,7 +22,7 @@ type ImageRelocator interface {
 	Relocate(image v1.Image, dest string) (string, error)
 }
 
-func NewUpdateCommand(kpackClient versioned.Interface, fetcher ImageFetcher, relocator ImageRelocator) *cobra.Command {
+func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, fetcher ImageFetcher, relocator ImageRelocator) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -42,9 +42,14 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cs, err := clientSetProvider.GetClientSet("")
+			if err != nil {
+				return err
+			}
+
 			printer := commands.NewPrinter(cmd)
 
-			stack, err := kpackClient.ExperimentalV1alpha1().Stacks().Get(args[0], metav1.GetOptions{})
+			stack, err := cs.KpackClient.ExperimentalV1alpha1().Stacks().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -97,7 +102,7 @@ tbctl stack update my-stack --build-image ../path/to/build.tar --run-image ../pa
 				return nil
 			}
 
-			_, err = kpackClient.ExperimentalV1alpha1().Stacks().Update(stack)
+			_, err = cs.KpackClient.ExperimentalV1alpha1().Stacks().Update(stack)
 			if err != nil {
 				return err
 			}

@@ -5,15 +5,15 @@ import (
 
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewListCommand(kpackClient versioned.Interface) *cobra.Command {
+func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:          "list",
@@ -22,7 +22,12 @@ func NewListCommand(kpackClient versioned.Interface) *cobra.Command {
 		Example:      "tbctl ccb list",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			clusterBuilderList, err := kpackClient.ExperimentalV1alpha1().CustomClusterBuilders().List(metav1.ListOptions{})
+			cs, err := clientSetProvider.GetClientSet("")
+			if err != nil {
+				return err
+			}
+
+			clusterBuilderList, err := cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

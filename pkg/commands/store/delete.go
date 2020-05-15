@@ -2,15 +2,15 @@ package store
 
 import (
 	"github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewDeleteCommand(kpackClient versioned.Interface) *cobra.Command {
+func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete <buildpackage>",
 		Short: "Delete buildpackage(s) from store",
@@ -24,9 +24,14 @@ tbctl store delete my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09c
 		Args:         cobra.MinimumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cs, err := clientSetProvider.GetClientSet("")
+			if err != nil {
+				return err
+			}
+
 			printer := commands.NewPrinter(cmd)
 
-			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
+			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -53,7 +58,7 @@ tbctl store delete my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09c
 
 			store.Spec.Sources = updatedStoreSources
 
-			_, err = kpackClient.ExperimentalV1alpha1().Stores().Update(store)
+			_, err = cs.KpackClient.ExperimentalV1alpha1().Stores().Update(store)
 			if err != nil {
 				return err
 			}

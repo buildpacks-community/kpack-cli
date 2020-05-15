@@ -22,7 +22,8 @@ func TestClusterBuilderDeleteCommand(t *testing.T) {
 func testClusterBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return customclusterbuilder.NewDeleteCommand(clientSet)
+		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
+		return customclusterbuilder.NewDeleteCommand(clientSetProvider)
 	}
 
 	when("a clusterbuilder is available", func() {

@@ -20,7 +20,8 @@ func TestStatusCommand(t *testing.T) {
 
 func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return store.NewStatusCommand(clientSet)
+		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
+		return store.NewStatusCommand(clientSetProvider)
 	}
 
 	when("the store exists", func() {

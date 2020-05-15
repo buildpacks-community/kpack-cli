@@ -6,12 +6,12 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8s "k8s.io/client-go/kubernetes"
 
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/secret"
 )
 
-func NewCreateCommand(k8sClient k8s.Interface, secretFactory *secret.Factory, defaultNamespace string) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, secretFactory *secret.Factory) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -40,17 +40,22 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			sec, target, err := secretFactory.MakeSecret(args[0], namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			_, err = k8sClient.CoreV1().Secrets(namespace).Create(sec)
+			sec, target, err := secretFactory.MakeSecret(args[0], cs.Namespace)
 			if err != nil {
 				return err
 			}
 
-			serviceAccount, err := k8sClient.CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
+			_, err = cs.K8sClient.CoreV1().Secrets(cs.Namespace).Create(sec)
+			if err != nil {
+				return err
+			}
+
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get("default", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -66,7 +71,7 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 				return err
 			}
 
-			_, err = k8sClient.CoreV1().ServiceAccounts(namespace).Update(serviceAccount)
+			_, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(serviceAccount)
 			if err != nil {
 				return err
 			}
@@ -76,7 +81,7 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 		},
 	}
 
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&secretFactory.DockerhubId, "dockerhub", "", "", "dockerhub id")
 	cmd.Flags().StringVarP(&secretFactory.Registry, "registry", "", "", "registry")
 	cmd.Flags().StringVarP(&secretFactory.RegistryUser, "registry-user", "", "", "registry user")

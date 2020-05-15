@@ -6,14 +6,14 @@ import (
 	"sort"
 
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewStatusCommand(kpackClient versioned.Interface) *cobra.Command {
+func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "status",
 		Short:        "Display store status",
@@ -21,7 +21,12 @@ func NewStatusCommand(kpackClient versioned.Interface) *cobra.Command {
 		Example:      "tbctl store status",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := kpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
+			cs, err := clientSetProvider.GetClientSet("")
+			if err != nil {
+				return err
+			}
+
+			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
 			if err != nil {
 				return err
 			}

@@ -22,7 +22,8 @@ func testBuildLogsCommand(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return build.NewLogsCommand(clientSet, nil, defaultNamespace)
+		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
+		return build.NewLogsCommand(clientSetProvider)
 	}
 
 	when("getting build logs", func() {

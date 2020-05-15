@@ -3,15 +3,15 @@ package image
 import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewListCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
+func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -24,7 +24,12 @@ Will only display images in your current namespace.
 If no namespace is provided, the default namespace is queried.`,
 		Example: "tbctl image list\ntbctl image list -n my-namespace",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			imageList, err := kpackClient.BuildV1alpha1().Images(namespace).List(metav1.ListOptions{})
+			cs, err := clientSetProvider.GetClientSet(namespace)
+			if err != nil {
+				return err
+			}
+
+			imageList, err := cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -38,7 +43,7 @@ If no namespace is provided, the default namespace is queried.`,
 		},
 		SilenceUsage: true,
 	}
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 
 	return cmd
 }

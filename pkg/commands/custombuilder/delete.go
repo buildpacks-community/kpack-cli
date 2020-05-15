@@ -3,12 +3,13 @@ package custombuilder
 import (
 	"fmt"
 
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewDeleteCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
+func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -20,7 +21,12 @@ func NewDeleteCommand(kpackClient versioned.Interface, defaultNamespace string) 
 		Example: "tbctl cb delete my-builder\ntbctl cb delete -n my-namespace other-builder",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := kpackClient.ExperimentalV1alpha1().CustomBuilders(namespace).Delete(args[0], &metav1.DeleteOptions{})
+			cs, err := clientSetProvider.GetClientSet(namespace)
+			if err != nil {
+				return err
+			}
+
+			err = cs.KpackClient.ExperimentalV1alpha1().CustomBuilders(cs.Namespace).Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}
@@ -31,7 +37,7 @@ func NewDeleteCommand(kpackClient versioned.Interface, defaultNamespace string) 
 		SilenceUsage: true,
 	}
 
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 
 	return cmd
 }

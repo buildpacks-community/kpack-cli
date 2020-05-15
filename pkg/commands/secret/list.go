@@ -7,13 +7,15 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8s "k8s.io/client-go/kubernetes"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewListCommand(k8sClient k8s.Interface, defaultNamespace string) *cobra.Command {
-	var namespace string
+func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	var (
+		namespace string
+	)
 
 	command := cobra.Command{
 		Use:   "list",
@@ -24,20 +26,25 @@ If no namespace is provided, the default namespace is queried.`,
 		Example:      "tbctl secret list\ntbctl secret list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			serviceAccount, err := k8sClient.CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
+			cs, err := clientSetProvider.GetClientSet(namespace)
+			if err != nil {
+				return err
+			}
+
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get("default", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
 			if len(serviceAccount.Secrets) == 0 && len(serviceAccount.ImagePullSecrets) == 0 {
-				return errors.Errorf("no secrets found in \"%s\" namespace", namespace)
+				return errors.Errorf("no secrets found in \"%s\" namespace", cs.Namespace)
 			} else {
 				return displaySecretsTable(cmd, serviceAccount)
 			}
 		},
 	}
 
-	command.Flags().StringVarP(&namespace, "namespace", "n", defaultNamespace, "kubernetes namespace")
+	command.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 
 	return &command
 }

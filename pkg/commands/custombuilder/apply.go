@@ -8,13 +8,14 @@ import (
 
 	"github.com/ghodss/yaml"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *cobra.Command {
+func NewApplyCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		path string
 	)
@@ -25,22 +26,27 @@ func NewApplyCommand(kpackClient versioned.Interface, defaultNamespace string) *
 		Long:    "Apply a custom builder configuration by filename.\nThe custom builder will be created if it does not yet exist.\nOnly YAML files are accepted.",
 		Example: "tbctl cb apply -f ./builder.yaml\ncat ./builder.yaml | tbctl cb apply -f -",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cs, err := clientSetProvider.GetClientSet("")
+			if err != nil {
+				return err
+			}
+
 			builderConfig, err := getBuilderConfig(path)
 			if err != nil {
 				return err
 			}
 
 			if builderConfig.Namespace == "" {
-				builderConfig.Namespace = defaultNamespace
+				builderConfig.Namespace = cs.Namespace
 			}
 
-			_, err = kpackClient.ExperimentalV1alpha1().CustomBuilders(builderConfig.Namespace).Get(builderConfig.Name, metav1.GetOptions{})
+			_, err = cs.KpackClient.ExperimentalV1alpha1().CustomBuilders(builderConfig.Namespace).Get(builderConfig.Name, metav1.GetOptions{})
 			if err != nil && !k8serrors.IsNotFound(err) {
 				return err
 			} else if k8serrors.IsNotFound(err) {
-				_, err = kpackClient.ExperimentalV1alpha1().CustomBuilders(builderConfig.Namespace).Create(builderConfig)
+				_, err = cs.KpackClient.ExperimentalV1alpha1().CustomBuilders(builderConfig.Namespace).Create(builderConfig)
 			} else {
-				_, err = kpackClient.ExperimentalV1alpha1().CustomBuilders(builderConfig.Namespace).Update(builderConfig)
+				_, err = cs.KpackClient.ExperimentalV1alpha1().CustomBuilders(builderConfig.Namespace).Update(builderConfig)
 			}
 			if err != nil {
 				return err

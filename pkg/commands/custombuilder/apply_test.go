@@ -64,7 +64,8 @@ func testBuilderApplyCommand(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		return custombuilder.NewApplyCommand(clientSet, defaultNamespace)
+		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
+		return custombuilder.NewApplyCommand(clientSetProvider)
 	}
 
 	when("a valid cluster builder config exists", func() {
