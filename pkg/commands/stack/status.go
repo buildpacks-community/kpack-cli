@@ -11,9 +11,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewStatusCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "status <name>",
 		Short:        "Display stack status",
@@ -22,17 +23,17 @@ func NewStatusCommand(contextProvider commands.ContextProvider) *cobra.Command {
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := contextProvider.GetContext()
+			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			s, err := context.KpackClient.ExperimentalV1alpha1().Stacks().Get(args[0], metav1.GetOptions{})
+			stack, err := cs.KpackClient.ExperimentalV1alpha1().Stacks().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			return displayStackStatus(cmd.OutOrStdout(), s)
+			return displayStackStatus(cmd.OutOrStdout(), stack)
 		},
 	}
 	return cmd

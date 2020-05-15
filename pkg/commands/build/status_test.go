@@ -50,8 +50,8 @@ bp-id-2         bp-version-2
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientSet)
-		return build.NewStatusCommand(contextProvider)
+		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
+		return build.NewStatusCommand(clientSetProvider)
 	}
 
 	when("getting build status", func() {

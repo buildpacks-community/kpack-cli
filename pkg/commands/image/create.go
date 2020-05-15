@@ -6,11 +6,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/image"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewCreateCommand(contextProvider commands.ContextProvider, factory *image.Factory) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -44,12 +44,12 @@ tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			img, err := factory.MakeImage(args[0], namespace, args[1])
+			img, err := factory.MakeImage(args[0], cs.Namespace, args[1])
 			if err != nil {
 				return err
 			}
@@ -64,7 +64,7 @@ tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host
 			}
 			img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(originalImageCfg)
 
-			_, err = context.KpackClient.BuildV1alpha1().Images(namespace).Create(img)
+			_, err = cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Create(img)
 			if err != nil {
 				return err
 			}

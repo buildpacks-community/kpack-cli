@@ -12,9 +12,10 @@ import (
 
 	"github.com/pivotal/build-service-cli/pkg/build"
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewStatusCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -27,19 +28,17 @@ func NewStatusCommand(contextProvider commands.ContextProvider) *cobra.Command {
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			kpackClient := context.KpackClient
-
-			image, err := kpackClient.BuildV1alpha1().Images(namespace).Get(args[0], metav1.GetOptions{})
+			image, err := cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			buildList, err := kpackClient.BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
+			buildList, err := cs.KpackClient.BuildV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {

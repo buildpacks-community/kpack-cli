@@ -8,9 +8,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewListCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -23,12 +24,12 @@ Will only display images in your current namespace.
 If no namespace is provided, the default namespace is queried.`,
 		Example: "tbctl image list\ntbctl image list -n my-namespace",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			imageList, err := context.KpackClient.BuildV1alpha1().Images(namespace).List(metav1.ListOptions{})
+			imageList, err := cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

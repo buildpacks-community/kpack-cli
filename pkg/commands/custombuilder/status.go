@@ -11,9 +11,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewStatusCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -26,12 +27,12 @@ func NewStatusCommand(contextProvider commands.ContextProvider) *cobra.Command {
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			bldr, err := context.KpackClient.ExperimentalV1alpha1().CustomBuilders(namespace).Get(args[0], metav1.GetOptions{})
+			bldr, err := cs.KpackClient.ExperimentalV1alpha1().CustomBuilders(cs.Namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}

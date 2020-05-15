@@ -5,11 +5,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/stack"
 )
 
-func NewCreateCommand(contextProvider commands.ContextProvider, factory *stack.Factory) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *stack.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create <name>",
 		Short: "Create a stack",
@@ -24,7 +24,7 @@ tbctl stack create my-stack --default-repository some-registry.io/some-repo --bu
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := contextProvider.GetContext()
+			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
@@ -34,7 +34,7 @@ tbctl stack create my-stack --default-repository some-registry.io/some-repo --bu
 				return err
 			}
 
-			_, err = context.KpackClient.ExperimentalV1alpha1().Stacks().Create(stk)
+			_, err = cs.KpackClient.ExperimentalV1alpha1().Stacks().Create(stk)
 			if err != nil {
 				return err
 			}

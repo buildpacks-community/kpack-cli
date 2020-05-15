@@ -29,10 +29,9 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace is provided", func() {
 		when("an image build is available", func() {
 			it("triggers the latest build", func() {
-				clientset := fake.NewSimpleClientset(testNamespacedBuilds...)
-
-				contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientset)
-				cmd := image.NewTriggerCommand(contextProvider)
+				clientSet := fake.NewSimpleClientset(testNamespacedBuilds...)
+				clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
+				cmd := image.NewTriggerCommand(clientSetProvider)
 
 				out := &bytes.Buffer{}
 				cmd.SetOut(out)
@@ -42,7 +41,7 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 				require.NoError(t, err)
 				require.Equal(t, "\"some-image\" triggered\n", out.String())
 
-				actions, err := testhelpers.ActionRecorderList{clientset}.ActionsByVerb()
+				actions, err := testhelpers.ActionRecorderList{clientSet}.ActionsByVerb()
 				require.NoError(t, err)
 
 				require.Len(t, actions.Updates, 1)
@@ -54,10 +53,9 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 
 		when("an image build is not available", func() {
 			it("returns an error", func() {
-				clientset := fake.NewSimpleClientset()
-
-				contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientset)
-				cmd := image.NewTriggerCommand(contextProvider)
+				clientSet := fake.NewSimpleClientset()
+				clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
+				cmd := image.NewTriggerCommand(clientSetProvider)
 
 				out := &bytes.Buffer{}
 				cmd.SetOut(out)
@@ -72,10 +70,9 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace is not provided", func() {
 		when("an image build is available", func() {
 			it("triggers the latest build", func() {
-				clientset := fake.NewSimpleClientset(testBuilds...)
-
-				contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientset)
-				cmd := image.NewTriggerCommand(contextProvider)
+				clientSet := fake.NewSimpleClientset(testBuilds...)
+				clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
+				cmd := image.NewTriggerCommand(clientSetProvider)
 
 				out := &bytes.Buffer{}
 				cmd.SetOut(out)
@@ -85,7 +82,7 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 				require.NoError(t, err)
 				require.Equal(t, "\"some-image\" triggered\n", out.String())
 
-				actions, err := testhelpers.ActionRecorderList{clientset}.ActionsByVerb()
+				actions, err := testhelpers.ActionRecorderList{clientSet}.ActionsByVerb()
 				require.NoError(t, err)
 
 				require.Len(t, actions.Updates, 1)
@@ -97,10 +94,9 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 
 		when("an image build is not available", func() {
 			it("returns an error", func() {
-				clientset := fake.NewSimpleClientset()
-
-				contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientset)
-				cmd := image.NewTriggerCommand(contextProvider)
+				clientSet := fake.NewSimpleClientset()
+				clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
+				cmd := image.NewTriggerCommand(clientSetProvider)
 
 				out := &bytes.Buffer{}
 				cmd.SetOut(out)

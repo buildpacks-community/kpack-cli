@@ -12,10 +12,10 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewApplyCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewApplyCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		path string
 	)
@@ -26,7 +26,7 @@ func NewApplyCommand(contextProvider commands.ContextProvider) *cobra.Command {
 		Long:    "Apply a custom cluster builder configuration by filename.\nThe custom cluster builder will be created if it does not yet exist.\nOnly YAML files are accepted.",
 		Example: "tbctl ccb apply -f ./builder.yaml\ncat ./builder.yaml | tbctl ccb apply -f -",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := contextProvider.GetContext()
+			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
@@ -36,14 +36,13 @@ func NewApplyCommand(contextProvider commands.ContextProvider) *cobra.Command {
 				return err
 			}
 
-			kpackClient := context.KpackClient
-			_, err = kpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Get(builderConfig.Name, metav1.GetOptions{})
+			_, err = cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Get(builderConfig.Name, metav1.GetOptions{})
 			if err != nil && !k8serrors.IsNotFound(err) {
 				return err
 			} else if k8serrors.IsNotFound(err) {
-				_, err = kpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Create(builderConfig)
+				_, err = cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Create(builderConfig)
 			} else {
-				_, err = kpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Update(builderConfig)
+				_, err = cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Update(builderConfig)
 			}
 			if err != nil {
 				return err

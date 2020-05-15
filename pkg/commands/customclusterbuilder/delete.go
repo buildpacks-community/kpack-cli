@@ -6,10 +6,10 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewDeleteCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <name>",
 		Short:   "Delete a custom cluster builder",
@@ -17,12 +17,12 @@ func NewDeleteCommand(contextProvider commands.ContextProvider) *cobra.Command {
 		Example: "tbctl ccb delete my-builder",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := contextProvider.GetContext()
+			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			err = context.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Delete(args[0], &metav1.DeleteOptions{})
+			err = cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

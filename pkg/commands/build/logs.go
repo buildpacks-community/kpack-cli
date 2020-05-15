@@ -11,10 +11,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/build"
-	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewLogsCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewLogsCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace   string
 		buildNumber int
@@ -29,12 +29,12 @@ Defaults to tailing logs from the latest build if build is not specified`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cmdContext, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			buildList, err := cmdContext.KpackClient.BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
+			buildList, err := cs.KpackClient.BuildV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
@@ -45,11 +45,11 @@ Defaults to tailing logs from the latest build if build is not specified`,
 				return errors.New("no builds found")
 			} else {
 				sort.Slice(buildList.Items, build.Sort(buildList.Items))
-				bld, err := findBuild(buildList, buildNumber, args[0], namespace)
+				bld, err := findBuild(buildList, buildNumber, args[0], cs.Namespace)
 				if err != nil {
 					return err
 				}
-				return logs.NewBuildLogsClient(cmdContext.K8sClient).Tail(context.Background(), cmd.OutOrStdout(), args[0], bld.Labels[v1alpha1.BuildNumberLabel], namespace)
+				return logs.NewBuildLogsClient(cs.K8sClient).Tail(context.Background(), cmd.OutOrStdout(), args[0], bld.Labels[v1alpha1.BuildNumberLabel], cs.Namespace)
 			}
 		},
 	}

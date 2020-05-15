@@ -7,11 +7,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/image"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewPatchCommand(contextProvider commands.ContextProvider, factory *image.PatchFactory) *cobra.Command {
+func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, factory *image.PatchFactory) *cobra.Command {
 	var (
 		namespace string
 		subPath   string
@@ -50,12 +50,12 @@ tbctl image patch my-image --env foo=bar --env color=red --delete-env apple --de
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			img, err := context.KpackClient.BuildV1alpha1().Images(namespace).Get(args[0], metav1.GetOptions{})
+			img, err := cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -74,7 +74,7 @@ tbctl image patch my-image --env foo=bar --env color=red --delete-env apple --de
 				return err
 			}
 
-			_, err = context.KpackClient.BuildV1alpha1().Images(namespace).Patch(args[0], types.MergePatchType, patch)
+			_, err = cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Patch(args[0], types.MergePatchType, patch)
 			if err != nil {
 				return err
 			}

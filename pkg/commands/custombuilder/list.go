@@ -10,12 +10,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewListCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace string
 	)
+
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List available custom builders",
@@ -25,12 +27,12 @@ If no namespace is provided, the default namespace is queried.`,
 		Example:      "tbctl cb list\ntbctl cb list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			builderList, err := context.KpackClient.ExperimentalV1alpha1().CustomBuilders(namespace).List(metav1.ListOptions{})
+			builderList, err := cs.KpackClient.ExperimentalV1alpha1().CustomBuilders(cs.Namespace).List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

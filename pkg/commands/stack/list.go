@@ -8,9 +8,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewListCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "list",
 		Short:        "List stacks",
@@ -18,12 +19,12 @@ func NewListCommand(contextProvider commands.ContextProvider) *cobra.Command {
 		Example:      "tbctl stack list",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := contextProvider.GetContext()
+			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			stackList, err := context.KpackClient.ExperimentalV1alpha1().Stacks().List(metav1.ListOptions{})
+			stackList, err := cs.KpackClient.ExperimentalV1alpha1().Stacks().List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

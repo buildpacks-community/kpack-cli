@@ -22,8 +22,8 @@ func TestStackDeleteCommand(t *testing.T) {
 func testStackDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		contextProvider := testhelpers.NewFakeKpackClusterContextProvider(clientSet)
-		return stack.NewDeleteCommand(contextProvider)
+		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
+		return stack.NewDeleteCommand(clientSetProvider)
 	}
 
 	when("a stack is available", func() {

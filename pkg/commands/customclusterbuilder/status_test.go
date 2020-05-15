@@ -216,8 +216,8 @@ Reason:    this builder is not ready for the purpose of a test
 	)
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		contextProvider := testhelpers.NewFakeKpackClusterContextProvider(clientSet)
-		return customclusterbuilder.NewStatusCommand(contextProvider)
+		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
+		return customclusterbuilder.NewStatusCommand(clientSetProvider)
 	}
 
 	when("getting clusterbuilder status", func() {

@@ -27,8 +27,8 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	cmdFunc := func(k8sClient *fake.Clientset) *cobra.Command {
-		contextProvider := testhelpers.NewFakeK8sContextProvider(defaultNamespace, k8sClient)
-		return secretcmds.NewDeleteCommand(contextProvider)
+		clientSetProvider := testhelpers.GetFakeK8sProvider(k8sClient, defaultNamespace)
+		return secretcmds.NewDeleteCommand(clientSetProvider)
 	}
 
 	when("deleting secrets", func() {

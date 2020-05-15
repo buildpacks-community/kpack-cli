@@ -11,9 +11,10 @@ import (
 
 	"github.com/pivotal/build-service-cli/pkg/build"
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewStatusCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace   string
 		buildNumber int
@@ -28,12 +29,12 @@ If the build flag is not provided, the most recent build status will be shown.`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			buildList, err := context.KpackClient.BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
+			buildList, err := cs.KpackClient.BuildV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
@@ -44,7 +45,7 @@ If the build flag is not provided, the most recent build status will be shown.`,
 				return errors.New("no builds found")
 			} else {
 				sort.Slice(buildList.Items, build.Sort(buildList.Items))
-				bld, err := findBuild(buildList, buildNumber, args[0], namespace)
+				bld, err := findBuild(buildList, buildNumber, args[0], cs.Namespace)
 				if err != nil {
 					return err
 				}

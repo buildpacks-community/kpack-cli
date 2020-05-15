@@ -7,11 +7,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/secret"
 )
 
-func NewCreateCommand(contextProvider commands.ContextProvider, secretFactory *secret.Factory) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, secretFactory *secret.Factory) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -40,24 +40,22 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			k8sClient := context.K8sClient
-
-			sec, target, err := secretFactory.MakeSecret(args[0], namespace)
+			sec, target, err := secretFactory.MakeSecret(args[0], cs.Namespace)
 			if err != nil {
 				return err
 			}
 
-			_, err = k8sClient.CoreV1().Secrets(namespace).Create(sec)
+			_, err = cs.K8sClient.CoreV1().Secrets(cs.Namespace).Create(sec)
 			if err != nil {
 				return err
 			}
 
-			serviceAccount, err := k8sClient.CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get("default", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -73,7 +71,7 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 				return err
 			}
 
-			_, err = k8sClient.CoreV1().ServiceAccounts(namespace).Update(serviceAccount)
+			_, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(serviceAccount)
 			if err != nil {
 				return err
 			}

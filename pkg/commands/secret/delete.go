@@ -7,11 +7,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewDeleteCommand(contextProvider commands.ContextProvider) *cobra.Command {
-	var namespace string
+func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	var (
+		namespace string
+	)
 
 	command := cobra.Command{
 		Use:          "delete <name>",
@@ -21,14 +23,12 @@ func NewDeleteCommand(contextProvider commands.ContextProvider) *cobra.Command {
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			k8sClient := context.K8sClient
-
-			serviceAccount, err := k8sClient.CoreV1().ServiceAccounts(namespace).Get("default", metav1.GetOptions{})
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get("default", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -37,13 +37,13 @@ func NewDeleteCommand(contextProvider commands.ContextProvider) *cobra.Command {
 			if err != nil {
 				return err
 			} else if wasModified {
-				_, err = k8sClient.CoreV1().ServiceAccounts(namespace).Update(serviceAccount)
+				_, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(serviceAccount)
 				if err != nil {
 					return err
 				}
 			}
 
-			err = k8sClient.CoreV1().Secrets(namespace).Delete(args[0], &metav1.DeleteOptions{})
+			err = cs.K8sClient.CoreV1().Secrets(cs.Namespace).Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

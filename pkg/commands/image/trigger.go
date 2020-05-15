@@ -11,12 +11,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/build"
-	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
 const BuildNeededAnnotation = "image.build.pivotal.io/additionalBuildNeeded"
 
-func NewTriggerCommand(contextProvider commands.ContextProvider) *cobra.Command {
+func NewTriggerCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace string
 	)
@@ -28,12 +28,12 @@ func NewTriggerCommand(contextProvider commands.ContextProvider) *cobra.Command 
 		Example: "tbctl image trigger my-image",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := commands.GetContext(contextProvider, &namespace)
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			buildList, err := context.KpackClient.BuildV1alpha1().Builds(namespace).List(metav1.ListOptions{
+			buildList, err := cs.KpackClient.BuildV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
@@ -47,7 +47,7 @@ func NewTriggerCommand(contextProvider commands.ContextProvider) *cobra.Command 
 
 				build := buildList.Items[len(buildList.Items)-1].DeepCopy()
 				build.Annotations[BuildNeededAnnotation] = time.Now().String()
-				_, err := context.KpackClient.BuildV1alpha1().Builds(namespace).Update(build)
+				_, err := cs.KpackClient.BuildV1alpha1().Builds(cs.Namespace).Update(build)
 				if err != nil {
 					return err
 				}

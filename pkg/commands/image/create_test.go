@@ -34,8 +34,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		contextProvider := testhelpers.NewFakeKpackContextProvider(defaultNamespace, clientSet)
-		return imgcmds.NewCreateCommand(contextProvider, imageFactory)
+		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
+		return imgcmds.NewCreateCommand(clientSetProvider, imageFactory)
 	}
 
 	when("a namespace is provided", func() {
