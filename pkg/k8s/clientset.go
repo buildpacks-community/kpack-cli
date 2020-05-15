@@ -3,6 +3,9 @@ package k8s
 import (
 	"os"
 
+	// load credential helpers
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
 	"github.com/pkg/errors"
 	k8s "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
