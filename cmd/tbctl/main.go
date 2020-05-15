@@ -28,7 +28,7 @@ var (
 )
 
 func main() {
-	clientSetProvider := k8s.NewDefaultClientSetProvider()
+	var clientSetProvider k8s.DefaultClientSetProvider
 
 	rootCmd := &cobra.Command{
 		Use: "tbctl",
@@ -133,6 +133,21 @@ func getClusterBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Co
 	return clusterBuilderRootCmd
 }
 
+func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	builderRootCmd := &cobra.Command{
+		Use:     "custom-builder",
+		Short:   "Custom Builder Commands",
+		Aliases: []string{"cb"},
+	}
+	builderRootCmd.AddCommand(
+		buildercmds.NewApplyCommand(clientSetProvider),
+		buildercmds.NewListCommand(clientSetProvider),
+		buildercmds.NewDeleteCommand(clientSetProvider),
+		buildercmds.NewStatusCommand(clientSetProvider),
+	)
+	return builderRootCmd
+}
+
 func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	stackFactory := &stack.Factory{
 		Fetcher:   &image.Fetcher{},
@@ -151,21 +166,6 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		stackcmds.NewDeleteCommand(clientSetProvider),
 	)
 	return stackRootCmd
-}
-
-func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	builderRootCmd := &cobra.Command{
-		Use:     "custom-builder",
-		Short:   "Custom Builder Commands",
-		Aliases: []string{"cb"},
-	}
-	builderRootCmd.AddCommand(
-		buildercmds.NewApplyCommand(clientSetProvider),
-		buildercmds.NewListCommand(clientSetProvider),
-		buildercmds.NewDeleteCommand(clientSetProvider),
-		buildercmds.NewStatusCommand(clientSetProvider),
-	)
-	return builderRootCmd
 }
 
 func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {

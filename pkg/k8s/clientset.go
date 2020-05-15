@@ -1,8 +1,14 @@
 package k8s
 
 import (
-	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
+	"os"
+
+	"github.com/pkg/errors"
 	k8s "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+
+	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
 )
 
 type ClientSet struct {
@@ -11,31 +17,82 @@ type ClientSet struct {
 	Namespace   string
 }
 
-type ClientSetProvider struct {
-	initializer ClientSetInitializer
+type ClientSetProvider interface {
+	GetClientSet(namespace string) (ClientSet, error)
 }
 
-func NewDefaultClientSetProvider() ClientSetProvider {
-	return ClientSetProvider{DefaultClientSetInitializer{}}
+type DefaultClientSetProvider struct {
+	context ClientSet
 }
 
-func NewClientSetProvider(initializer ClientSetInitializer) ClientSetProvider {
-	return ClientSetProvider{initializer}
-}
+func (d DefaultClientSetProvider) GetClientSet(namespace string) (ClientSet, error) {
+	var err error
 
-func (c ClientSetProvider) GetClientSet(namespace string) (cs ClientSet, err error) {
 	if namespace == "" {
-		if cs.Namespace, err = c.initializer.GetDefaultNamespace(); err != nil {
-			return
+		if d.context.Namespace, err = d.getDefaultNamespace(); err != nil {
+			return d.context, err
 		}
 	} else {
-		cs.Namespace = namespace
+		d.context.Namespace = namespace
 	}
 
-	if cs.KpackClient, err = c.initializer.GetKpackClient(); err != nil {
-		return
+	if d.context.KpackClient, err = d.getKpackClient(); err != nil {
+		return d.context, err
 	}
 
-	cs.K8sClient, err = c.initializer.GetK8sClient()
-	return
+	d.context.K8sClient, err = d.getK8sClient()
+	return d.context, err
+}
+
+func (d DefaultClientSetProvider) getKpackClient() (*kpack.Clientset, error) {
+	restConfig, err := d.restConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return kpack.NewForConfig(restConfig)
+}
+
+func (d DefaultClientSetProvider) getK8sClient() (*k8s.Clientset, error) {
+	restConfig, err := d.restConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return k8s.NewForConfig(restConfig)
+}
+
+func (d DefaultClientSetProvider) restConfig() (*rest.Config, error) {
+	clientConfig := clientcmd.NewInteractiveDeferredLoadingClientConfig(
+		clientcmd.NewDefaultClientConfigLoadingRules(),
+		&clientcmd.ConfigOverrides{},
+		os.Stdin,
+	)
+
+	restConfig, err := clientConfig.ClientConfig()
+	return restConfig, err
+}
+
+func (d DefaultClientSetProvider) getDefaultNamespace() (string, error) {
+	clientConfig := clientcmd.NewInteractiveDeferredLoadingClientConfig(
+		clientcmd.NewDefaultClientConfigLoadingRules(),
+		&clientcmd.ConfigOverrides{},
+		os.Stdin,
+	)
+
+	rawConfig, err := clientConfig.RawConfig()
+	if err != nil {
+		return "", err
+	}
+
+	if _, ok := rawConfig.Contexts[rawConfig.CurrentContext]; !ok {
+		return "", errors.New("Kubernetes current context is not set")
+	}
+
+	defaultNamespace := rawConfig.Contexts[rawConfig.CurrentContext].Namespace
+	if defaultNamespace == "" {
+		defaultNamespace = "default"
+	}
+
+	return defaultNamespace, nil
 }

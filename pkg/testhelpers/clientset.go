@@ -1,62 +1,53 @@
 package testhelpers
 
 import (
-	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
-	"k8s.io/client-go/kubernetes"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-type FakeClientSetInitializer struct {
-	KpackClient kpack.Interface
-	K8sClient   kubernetes.Interface
-	Namespace   string
+type FakeClientSetProvider struct {
+	clientSet k8s.ClientSet
 }
 
-func (f FakeClientSetInitializer) GetKpackClient() (kpack.Interface, error) {
-	return f.KpackClient, nil
-}
-
-func (f FakeClientSetInitializer) GetK8sClient() (kubernetes.Interface, error) {
-	return f.K8sClient, nil
-}
-
-func (f FakeClientSetInitializer) GetDefaultNamespace() (string, error) {
-	return f.Namespace, nil
+func (f FakeClientSetProvider) GetClientSet(namespace string) (clientSet k8s.ClientSet, err error) {
+	if namespace != "" {
+		f.clientSet.Namespace = namespace
+	}
+	return f.clientSet, nil
 }
 
 func GetFakeKpackProvider(
 	kpackClient *kpackfakes.Clientset,
-	namespace string) k8s.ClientSetProvider {
+	namespace string) FakeClientSetProvider {
 
-	return k8s.NewClientSetProvider(
-		FakeClientSetInitializer{
+	return FakeClientSetProvider{
+		clientSet: k8s.ClientSet{
 			KpackClient: kpackClient,
 			Namespace:   namespace,
 		},
-	)
+	}
 }
 
 func GetFakeKpackClusterProvider(
-	kpackClient *kpackfakes.Clientset) k8s.ClientSetProvider {
+	kpackClient *kpackfakes.Clientset) FakeClientSetProvider {
 
-	return k8s.NewClientSetProvider(
-		FakeClientSetInitializer{
+	return FakeClientSetProvider{
+		clientSet: k8s.ClientSet{
 			KpackClient: kpackClient,
 		},
-	)
+	}
 }
 
 func GetFakeK8sProvider(
 	k8sClient *k8sfakes.Clientset,
-	namespace string) k8s.ClientSetProvider {
+	namespace string) FakeClientSetProvider {
 
-	return k8s.NewClientSetProvider(
-		FakeClientSetInitializer{
+	return FakeClientSetProvider{
+		clientSet: k8s.ClientSet{
 			K8sClient: k8sClient,
 			Namespace: namespace,
 		},
-	)
+	}
 }
