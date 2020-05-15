@@ -22,26 +22,26 @@ type ClientSetProvider interface {
 }
 
 type DefaultClientSetProvider struct {
-	context ClientSet
+	clientSet ClientSet
 }
 
 func (d DefaultClientSetProvider) GetClientSet(namespace string) (ClientSet, error) {
 	var err error
 
 	if namespace == "" {
-		if d.context.Namespace, err = d.getDefaultNamespace(); err != nil {
-			return d.context, err
+		if d.clientSet.Namespace, err = d.getDefaultNamespace(); err != nil {
+			return d.clientSet, err
 		}
 	} else {
-		d.context.Namespace = namespace
+		d.clientSet.Namespace = namespace
 	}
 
-	if d.context.KpackClient, err = d.getKpackClient(); err != nil {
-		return d.context, err
+	if d.clientSet.KpackClient, err = d.getKpackClient(); err != nil {
+		return d.clientSet, err
 	}
 
-	d.context.K8sClient, err = d.getK8sClient()
-	return d.context, err
+	d.clientSet.K8sClient, err = d.getK8sClient()
+	return d.clientSet, err
 }
 
 func (d DefaultClientSetProvider) getKpackClient() (*kpack.Clientset, error) {
