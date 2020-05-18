@@ -10,6 +10,7 @@ import (
 	"github.com/ghodss/yaml"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/spf13/cobra"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/k8s"
@@ -48,6 +49,10 @@ tbctl cb create my-builder my-registry.com/my-builder-ta --order /path/to/order.
 			}
 
 			cb := &expv1alpha1.CustomBuilder{
+				TypeMeta: metaV1.TypeMeta{
+					Kind:       expv1alpha1.CustomBuilderKind,
+					APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        name,
 					Namespace:   cs.Namespace,

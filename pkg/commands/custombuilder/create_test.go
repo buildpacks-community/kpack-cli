@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -23,11 +24,15 @@ func testCustomBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	var (
 		expectedBuilder = &expv1alpha1.CustomBuilder{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       expv1alpha1.CustomBuilderKind,
+				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+			},
 			ObjectMeta: v1.ObjectMeta{
 				Name:      "test-builder",
 				Namespace: "some-namespace",
 				Annotations: map[string]string{
-					"kubectl.kubernetes.io/last-applied-configuration": `{"metadata":{"name":"test-builder","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":"some-stack","store":"default","order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccount":"default"},"status":{"stack":{}}}`,
+					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"CustomBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":"some-stack","store":"default","order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccount":"default"},"status":{"stack":{}}}`,
 				},
 			},
 			Spec: expv1alpha1.CustomNamespacedBuilderSpec{
@@ -86,7 +91,7 @@ func testCustomBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	it("creates a CustomBuilder with the default namespace and stack", func() {
 		expectedBuilder.Namespace = defaultNamespace
 		expectedBuilder.Spec.Stack = "default"
-		expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"metadata":{"name":"test-builder","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":"default","store":"default","order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccount":"default"},"status":{"stack":{}}}`
+		expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":"default","store":"default","order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccount":"default"},"status":{"stack":{}}}`
 
 		testhelpers.CommandTest{
 			Args: []string{

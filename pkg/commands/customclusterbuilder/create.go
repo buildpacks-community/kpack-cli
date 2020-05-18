@@ -48,6 +48,10 @@ tbctl ccb create my-builder my-registry.com/my-builder-ta --order /path/to/order
 			}
 
 			ccb := &expv1alpha1.CustomClusterBuilder{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       expv1alpha1.CustomClusterBuilderKind,
+					APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        name,
 					Annotations: map[string]string{},
