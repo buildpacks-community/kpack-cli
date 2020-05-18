@@ -35,7 +35,7 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 This custom builder will be created if it does not yet exist.
 `,
 		Example: `tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny 
-tbctl cb create my-builder my-registry.com/my-builder-ta --order /path/to/order.yaml
+tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml
 `,
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
