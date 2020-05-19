@@ -2,6 +2,7 @@ package secret
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -27,11 +28,13 @@ The flags for this command determine the type of secret that will be created:
 	Use the "DOCKER_PASSWORD" env var to bypass the password prompt.
 
 	"--gcr" to create Google Container Registry credentials.
+	Alternatively, provided the credentials in the "GCR_SERVICE_ACCOUNT_PATH" env var instead of the "--gcr" flag.
 
 	"--registry" and "--registry-user" to create credentials for other registries.
 	Use the "REGISTRY_PASSWORD" env var to bypass the password prompt.
 
 	"--git" and "--git-ssh-key" to create SSH based git credentials.
+	Alternatively, provided the credentials in the "GIT_SSH_KEY_PATH" env var instead of the "--git-ssh-key" flag.
 
 	"--git" and "--git-user" to create Basic Auth based git credentials.
 	Use the "GIT_PASSWORD" env var to bypass the password prompt.`,
@@ -46,6 +49,14 @@ tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`
 			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
+			}
+
+			if val, ok := os.LookupEnv("GCR_SERVICE_ACCOUNT_PATH"); ok {
+				secretFactory.GcrServiceAccountFile = val
+			}
+
+			if val, ok := os.LookupEnv("GIT_SSH_KEY_PATH"); ok {
+				secretFactory.GitSshKeyFile = val
 			}
 
 			sec, target, err := secretFactory.MakeSecret(args[0], cs.Namespace)

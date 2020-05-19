@@ -2,6 +2,7 @@ package secret
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"sort"
 	"strings"
 
@@ -20,7 +21,6 @@ const (
 
 type CredentialFetcher interface {
 	FetchPassword(envVar, prompt string) (string, error)
-	FetchFile(envVar, filename string) (string, error)
 }
 
 type Factory struct {
@@ -157,7 +157,7 @@ func (f *Factory) makeDockerhubSecret(name, namespace string) (*corev1.Secret, s
 }
 
 func (f *Factory) makeGcrSecret(name string, namespace string) (*corev1.Secret, string, error) {
-	password, err := f.CredentialFetcher.FetchFile("GCR_SERVICE_ACCOUNT_PATH", f.GcrServiceAccountFile)
+	password, err := ioutil.ReadFile(f.GcrServiceAccountFile)
 	if err != nil {
 		return nil, "", err
 	}
@@ -165,7 +165,7 @@ func (f *Factory) makeGcrSecret(name string, namespace string) (*corev1.Secret, 
 	configJson := dockerConfigJson{Auths: dockerCreds{
 		GcrUrl: authn.AuthConfig{
 			Username: GcrUser,
-			Password: password,
+			Password: string(password),
 		},
 	}}
 	dockerCfgJson, err := json.Marshal(configJson)
@@ -215,7 +215,7 @@ func (f *Factory) makeRegistrySecret(name string, namespace string) (*corev1.Sec
 }
 
 func (f *Factory) makeGitSshSecret(name string, namespace string) (*corev1.Secret, string, error) {
-	password, err := f.CredentialFetcher.FetchFile("GIT_SSH_KEY_PATH", f.GitSshKeyFile)
+	password, err := ioutil.ReadFile(f.GitSshKeyFile)
 	if err != nil {
 		return nil, "", err
 	}

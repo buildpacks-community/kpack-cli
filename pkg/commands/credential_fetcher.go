@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"syscall"
 
@@ -31,18 +30,4 @@ func (c CredentialFetcher) FetchPassword(envVar, prompt string) (string, error) 
 	_, _ = fmt.Fprintln(os.Stdout, "")
 
 	return string(pwBytes), nil
-}
-
-func (c CredentialFetcher) FetchFile(envVar, filename string) (string, error) {
-	password, ok := os.LookupEnv(envVar)
-	if ok {
-		return password, nil
-	}
-
-	buf, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-
-	return string(buf), nil
 }

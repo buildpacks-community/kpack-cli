@@ -640,10 +640,3 @@ func (f *fakeCredentialFetcher) FetchPassword(envVar, _ string) (string, error) 
 	}
 	return "", errors.Errorf("secret for %s not found", envVar)
 }
-
-func (f *fakeCredentialFetcher) FetchFile(_, filename string) (string, error) {
-	if password, ok := f.passwords[filename]; ok {
-		return password, nil
-	}
-	return "", errors.Errorf("secret for %s not found", filename)
-}
