@@ -3,16 +3,13 @@ package custombuilder
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
 
-	"github.com/ghodss/yaml"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/spf13/cobra"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/builder"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -68,7 +65,7 @@ tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order
 				},
 			}
 
-			cb.Spec.Order, err = readOrder(order)
+			cb.Spec.Order, err = builder.ReadOrder(order)
 			if err != nil {
 				return err
 			}
@@ -94,29 +91,4 @@ tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
 	return cmd
-}
-
-func readOrder(path string) ([]expv1alpha1.OrderEntry, error) {
-	var (
-		file io.ReadCloser
-		err  error
-	)
-
-	if path == "-" {
-		file = os.Stdin
-	} else {
-		file, err = os.Open(path)
-		if err != nil {
-			return nil, err
-		}
-	}
-	defer file.Close()
-
-	buf, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-
-	var order []expv1alpha1.OrderEntry
-	return order, yaml.Unmarshal(buf, &order)
 }

@@ -3,17 +3,15 @@ package customclusterbuilder
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
 
-	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/k8s"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+
+	"github.com/pivotal/build-service-cli/pkg/builder"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
 const (
@@ -68,7 +66,7 @@ tbctl ccb create my-builder my-registry.com/my-builder-tag --order /path/to/orde
 				},
 			}
 
-			ccb.Spec.Order, err = readOrder(order)
+			ccb.Spec.Order, err = builder.ReadOrder(order)
 			if err != nil {
 				return err
 			}
@@ -93,29 +91,4 @@ tbctl ccb create my-builder my-registry.com/my-builder-tag --order /path/to/orde
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
 	return cmd
-}
-
-func readOrder(path string) ([]expv1alpha1.OrderEntry, error) {
-	var (
-		file io.ReadCloser
-		err  error
-	)
-
-	if path == "-" {
-		file = os.Stdin
-	} else {
-		file, err = os.Open(path)
-		if err != nil {
-			return nil, err
-		}
-	}
-	defer file.Close()
-
-	buf, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-
-	var order []expv1alpha1.OrderEntry
-	return order, yaml.Unmarshal(buf, &order)
 }

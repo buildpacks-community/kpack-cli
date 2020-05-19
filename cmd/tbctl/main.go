@@ -126,6 +126,7 @@ func getClusterBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Co
 	}
 	clusterBuilderRootCmd.AddCommand(
 		clusterbuildercmds.NewCreateCommand(clientSetProvider),
+		clusterbuildercmds.NewPatchCommand(clientSetProvider),
 		clusterbuildercmds.NewListCommand(clientSetProvider),
 		clusterbuildercmds.NewStatusCommand(clientSetProvider),
 		clusterbuildercmds.NewDeleteCommand(clientSetProvider),
@@ -141,6 +142,7 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	}
 	builderRootCmd.AddCommand(
 		buildercmds.NewCreateCommand(clientSetProvider),
+		buildercmds.NewPatchCommand(clientSetProvider),
 		buildercmds.NewListCommand(clientSetProvider),
 		buildercmds.NewDeleteCommand(clientSetProvider),
 		buildercmds.NewStatusCommand(clientSetProvider),

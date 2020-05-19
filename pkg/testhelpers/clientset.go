@@ -18,10 +18,7 @@ func (f FakeClientSetProvider) GetClientSet(namespace string) (clientSet k8s.Cli
 	return f.clientSet, nil
 }
 
-func GetFakeKpackProvider(
-	kpackClient *kpackfakes.Clientset,
-	namespace string) FakeClientSetProvider {
-
+func GetFakeKpackProvider(kpackClient *kpackfakes.Clientset, namespace string) FakeClientSetProvider {
 	return FakeClientSetProvider{
 		clientSet: k8s.ClientSet{
 			KpackClient: kpackClient,
@@ -30,9 +27,7 @@ func GetFakeKpackProvider(
 	}
 }
 
-func GetFakeKpackClusterProvider(
-	kpackClient *kpackfakes.Clientset) FakeClientSetProvider {
-
+func GetFakeKpackClusterProvider(kpackClient *kpackfakes.Clientset) FakeClientSetProvider {
 	return FakeClientSetProvider{
 		clientSet: k8s.ClientSet{
 			KpackClient: kpackClient,
@@ -40,10 +35,7 @@ func GetFakeKpackClusterProvider(
 	}
 }
 
-func GetFakeK8sProvider(
-	k8sClient *k8sfakes.Clientset,
-	namespace string) FakeClientSetProvider {
-
+func GetFakeK8sProvider(k8sClient *k8sfakes.Clientset, namespace string) FakeClientSetProvider {
 	return FakeClientSetProvider{
 		clientSet: k8s.ClientSet{
 			K8sClient: k8sClient,

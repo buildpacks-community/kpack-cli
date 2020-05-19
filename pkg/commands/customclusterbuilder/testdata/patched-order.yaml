@@ -1,0 +1,4 @@
+- group:
+  - id: org.cloudfoundry.test-bp
+- group:
+  - id: org.cloudfoundry.fake-bp

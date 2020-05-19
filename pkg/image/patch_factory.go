@@ -1,15 +1,15 @@
 package image
 
 import (
-	"encoding/json"
 	"strings"
 
-	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	v1alpha12 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
 type PatchFactory struct {
@@ -45,26 +45,7 @@ func (f *PatchFactory) MakePatch(img *v1alpha1.Image) ([]byte, error) {
 
 	f.setBuilder(patchedImage)
 
-	imageBytes, err := json.Marshal(img)
-	if err != nil {
-		return nil, err
-	}
-
-	patchedImageBytes, err := json.Marshal(patchedImage)
-	if err != nil {
-		return nil, err
-	}
-
-	patch, err := jsonpatch.CreateMergePatch(imageBytes, patchedImageBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	if string(patch) == "{}" {
-		return nil, nil
-	}
-
-	return patch, nil
+	return k8s.CreatePatch(img, patchedImage)
 }
 
 func (f *PatchFactory) validate(img *v1alpha1.Image) error {
