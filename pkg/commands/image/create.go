@@ -39,7 +39,7 @@ the key value pair. For example, "--env key1=value1 --env key=value2 ...".
 		Example: `tbctl image create my-image my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
 tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host.com/my-blob
 tbctl image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code
-tbctl image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code --builder my-builder -n my-namespace
+tbctl image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code --custom-builder my-builder -n my-namespace
 tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple`,
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
@@ -79,8 +79,8 @@ tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host
 	cmd.Flags().StringVar(&factory.Blob, "blob", "", "source code blob url")
 	cmd.Flags().StringVar(&factory.LocalPath, "local-path", "", "path to local source code")
 	cmd.Flags().StringVar(&factory.SubPath, "sub-path", "", "build code at the sub path located within the source code directory")
-	cmd.Flags().StringVar(&factory.Builder, "builder", "", "custom builder name")
-	cmd.Flags().StringVar(&factory.ClusterBuilder, "cluster-builder", "", "custom cluster builder name")
+	cmd.Flags().StringVarP(&factory.Builder, "custom-builder", "b", "", "custom builder name")
+	cmd.Flags().StringVarP(&factory.ClusterBuilder, "custom-cluster-builder", "c", "", "custom cluster builder name")
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 
 	return cmd
