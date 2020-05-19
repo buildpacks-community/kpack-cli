@@ -23,15 +23,18 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, secretFactory *se
 
 The flags for this command determine the type of secret that will be created:
 
-	"--dockerhub" to create DockerHub credentials
+	"--dockerhub" to create DockerHub credentials.
+	Use the "DOCKER_PASSWORD" env var to bypass the password prompt.
 
-	"--gcr" to create Google Container Registry credentials
+	"--gcr" to create Google Container Registry credentials.
 
-	"--registry" and "--registry-user" to create credentials for other registries
+	"--registry" and "--registry-user" to create credentials for other registries.
+	Use the "REGISTRY_PASSWORD" env var to bypass the password prompt.
 
-	"--git" and "--git-ssh-key" to create SSH based git credentials
+	"--git" and "--git-ssh-key" to create SSH based git credentials.
 
-	"--git" and "--git-user" to create Basic Auth based git credentials`,
+	"--git" and "--git-user" to create Basic Auth based git credentials.
+	Use the "GIT_PASSWORD" env var to bypass the password prompt.`,
 		Example: `tbctl secret create my-docker-hub-creds --dockerhub dockerhub-id
 tbctl secret create my-gcr-creds --gcr /path/to/gcr/service-account.json
 tbctl secret create my-registry-cred --registry example-registry.io/my-repo --registry-user my-registry-user
