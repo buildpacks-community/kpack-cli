@@ -32,6 +32,11 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use: "tbctl",
+		Long: `tbctl controls the Kpack installation on Kubernetes.
+
+kpack extends Kubernetes and utilizes unprivileged kubernetes primitives to provide 
+builds of OCI images as a platform implementation of Cloud Native Buildpacks (CNB).
+Learn more about Kpack @ https://github.com/pivotal/kpack`,
 	}
 	rootCmd.AddCommand(
 		getVersionCommand(),
