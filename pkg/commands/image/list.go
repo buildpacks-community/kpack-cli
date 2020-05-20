@@ -19,9 +19,9 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List images",
-		Long: `Prints a table of the most important information about images.
-Will only display images in your current namespace.
-If no namespace is provided, the default namespace is queried.`,
+		Long: `Prints a table of the most important information about images in the provided namespace.
+
+namespace defaults to the kubernetes current-context namespace.`,
 		Example: "tbctl image list\ntbctl image list -n my-namespace",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)

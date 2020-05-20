@@ -20,24 +20,26 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, secretFactory *se
 	cmd := &cobra.Command{
 		Use:   "create <name>",
 		Short: "Create a secret configuration",
-		Long: `Create a secret configuration using registry or git credentials.
+		Long: `Create a secret configuration using registry or git credentials in the provided namespace.
+
+namespace defaults to the kubernetes current-context namespace.
 
 The flags for this command determine the type of secret that will be created:
 
-	"--dockerhub" to create DockerHub credentials.
-	Use the "DOCKER_PASSWORD" env var to bypass the password prompt.
+  "--dockerhub" to create DockerHub credentials.
+  Use the "DOCKER_PASSWORD" env var to bypass the password prompt.
 
-	"--gcr" to create Google Container Registry credentials.
-	Alternatively, provided the credentials in the "GCR_SERVICE_ACCOUNT_PATH" env var instead of the "--gcr" flag.
+  "--gcr" to create Google Container Registry credentials.
+  Alternatively, provided the credentials in the "GCR_SERVICE_ACCOUNT_PATH" env var instead of the "--gcr" flag.
 
-	"--registry" and "--registry-user" to create credentials for other registries.
-	Use the "REGISTRY_PASSWORD" env var to bypass the password prompt.
+  "--registry" and "--registry-user" to create credentials for other registries.
+  Use the "REGISTRY_PASSWORD" env var to bypass the password prompt.
 
-	"--git" and "--git-ssh-key" to create SSH based git credentials.
-	Alternatively, provided the credentials in the "GIT_SSH_KEY_PATH" env var instead of the "--git-ssh-key" flag.
+  "--git" and "--git-ssh-key" to create SSH based git credentials.
+  Alternatively, provided the credentials in the "GIT_SSH_KEY_PATH" env var instead of the "--git-ssh-key" flag.
 
-	"--git" and "--git-user" to create Basic Auth based git credentials.
-	Use the "GIT_PASSWORD" env var to bypass the password prompt.`,
+  "--git" and "--git-user" to create Basic Auth based git credentials.
+  Use the "GIT_PASSWORD" env var to bypass the password prompt.`,
 		Example: `tbctl secret create my-docker-hub-creds --dockerhub dockerhub-id
 tbctl secret create my-gcr-creds --gcr /path/to/gcr/service-account.json
 tbctl secret create my-registry-cred --registry example-registry.io/my-repo --registry-user my-registry-user

@@ -21,9 +21,11 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:          "status <name>",
-		Short:        "Display image status",
-		Long:         `Prints detailed information about the status of a specific image.`,
+		Use:   "status <name>",
+		Short: "Display status of an image",
+		Long: `Prints detailed information about the status of a specific image in the provided namespace.
+
+namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "tbctl image status my-image\ntbctl image status my-other-image -n my-namespace",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,

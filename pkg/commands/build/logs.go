@@ -17,14 +17,16 @@ import (
 func NewLogsCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace   string
-		buildNumber int
+		buildNumber string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "logs <image-name>",
-		Short: "Tails build logs for an image",
-		Long: `Tails the logs from the containers of a specified build of an image.
-Defaults to tailing logs from the latest build if build is not specified`,
+		Short: "Tails logs for an image build",
+		Long: `Tails logs from the containers of a specific build of an image in the provided namespace.
+
+build defaults to the latest build number.
+namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "tbctl build logs my-image\ntbctl build logs my-image -b 2 -n my-namespace",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
@@ -54,7 +56,7 @@ Defaults to tailing logs from the latest build if build is not specified`,
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
-	cmd.Flags().IntVarP(&buildNumber, "build", "b", -1, "build number")
+	cmd.Flags().StringVarP(&buildNumber, "build", "b", "", "build number")
 
 	return cmd
 }

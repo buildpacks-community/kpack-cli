@@ -22,9 +22,11 @@ func NewTriggerCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "trigger <name>",
-		Short:   "Trigger an image build",
-		Long:    "Trigger an image build using inputs identical to the last build.",
+		Use:   "trigger <name>",
+		Short: "Trigger an image build",
+		Long: `Trigger a build using current inputs for a specific image in the provided namespace.
+
+namespace defaults to the kubernetes current-context namespace.`,
 		Example: "tbctl image trigger my-image",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
