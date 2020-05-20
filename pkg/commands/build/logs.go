@@ -23,7 +23,7 @@ func NewLogsCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "logs <image-name>",
 		Short: "Tails logs for an image build",
-		Long: `Tails logs from the containers of a specified build of an image from the provided namespace.
+		Long: `Tails logs from the containers of a specific build of an image in the provided namespace.
 
 build defaults to the latest build number.
 namespace defaults to the kubernetes current-context namespace.`,

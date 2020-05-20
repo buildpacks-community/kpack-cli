@@ -20,7 +20,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	command := cobra.Command{
 		Use:   "list",
 		Short: "List secrets",
-		Long: `Prints a table of the most important information about secrets from the provided namespace.
+		Long: `Prints a table of the most important information about secrets in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "tbctl secret list\ntbctl secret list -n my-namespace",

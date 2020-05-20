@@ -21,7 +21,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Pat
 		Use:   "patch <name>",
 		Short: "Patch an existing image configuration",
 		Long: `Patch an existing image configuration by providing command line arguments.
-This will fail if the image does not already exist in the provided namespace.
+This will fail if the image does not exist in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.
 

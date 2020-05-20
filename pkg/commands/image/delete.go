@@ -17,7 +17,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete <name>",
 		Short: "Delete an image",
-		Long: `Delete an image and the associated image builds from the provided namespace.
+		Long: `Delete an image and its associated image builds in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
 		Example: "tbctl image delete my-image",

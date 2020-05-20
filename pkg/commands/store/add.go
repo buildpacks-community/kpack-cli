@@ -25,7 +25,7 @@ func NewAddCommand(clientSetProvider k8s.ClientSetProvider, buildpackUploader Bu
 	cmd := &cobra.Command{
 		Use:   "add <buildpackage>",
 		Short: "Create an image configuration",
-		Long: `Upload abuildpackage(s) to the buildpack store.
+		Long: `Upload buildpackage(s) to the buildpack store.
 
 Buildpackages will be uploaded to the the registry configured on your store.
 Therefore, you must have credentials to access the registry on your machine.`,

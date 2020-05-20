@@ -36,7 +36,7 @@ func main() {
 
 kpack extends Kubernetes and utilizes unprivileged kubernetes primitives to provide 
 builds of OCI images as a platform implementation of Cloud Native Buildpacks (CNB).
-Learn more about Kpack @ https://github.com/pivotal/kpack`,
+Learn more about kpack @ https://github.com/pivotal/kpack`,
 	}
 	rootCmd.AddCommand(
 		getVersionCommand(),

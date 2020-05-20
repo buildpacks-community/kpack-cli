@@ -31,7 +31,7 @@ func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, fetcher ImageFetc
 	cmd := &cobra.Command{
 		Use:   "update <name>",
 		Short: "Update a stack",
-		Long: `Updates the run and build images of specified stack.
+		Long: `Updates the run and build images of a specific stack.
 
 The run and build images will be uploaded to the the registry configured on your stack.
 Therefore, you must have credentials to access the registry on your machine.`,

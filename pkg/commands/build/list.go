@@ -21,7 +21,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list <image-name>",
 		Short: "List builds for an image",
-		Long: `Prints a table of the most important information about builds for an image from the provided namespace.
+		Long: `Prints a table of the most important information about builds for an image in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
 
