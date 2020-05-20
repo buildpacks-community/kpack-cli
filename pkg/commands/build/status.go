@@ -17,7 +17,7 @@ import (
 func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace   string
-		buildNumber int
+		buildNumber string
 	)
 
 	cmd := &cobra.Command{
@@ -56,14 +56,20 @@ namespace defaults to the kubernetes current-context namespace.`,
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
-	cmd.Flags().IntVarP(&buildNumber, "build", "b", -1, "build number")
+	cmd.Flags().StringVarP(&buildNumber, "build", "b", "", "build number")
 
 	return cmd
 }
 
-func findBuild(buildList *v1alpha1.BuildList, buildNumber int, img, namespace string) (v1alpha1.Build, error) {
-	if buildNumber == -1 {
+func findBuild(buildList *v1alpha1.BuildList, buildNumberString string, img, namespace string) (v1alpha1.Build, error) {
+
+	if buildNumberString == "" {
 		return buildList.Items[len(buildList.Items)-1], nil
+	}
+
+	buildNumber, err := strconv.Atoi(buildNumberString)
+	if err != nil {
+		return v1alpha1.Build{}, errors.Errorf("build number should be an integer: %v", buildNumberString)
 	}
 
 	for _, b := range buildList.Items {
