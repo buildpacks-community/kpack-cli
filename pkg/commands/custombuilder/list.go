@@ -21,9 +21,9 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List available custom builders",
-		Long: `Prints a table of the most important information about the available custom builders.
-Will only display custom builders in your current namespace.
-If no namespace is provided, the default namespace is queried.`,
+		Long: `Prints a table of the most important information about the available custom builders from the provided namespace.
+
+namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "tbctl cb list\ntbctl cb list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

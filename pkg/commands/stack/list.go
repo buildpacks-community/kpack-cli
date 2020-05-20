@@ -15,7 +15,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "list",
 		Short:        "List stacks",
-		Long:         `Prints a table of the most important information about stacks.`,
+		Long:         `Prints a table of the most important information about stacks in the cluster.`,
 		Example:      "tbctl stack list",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

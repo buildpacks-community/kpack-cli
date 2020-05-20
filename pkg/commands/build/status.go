@@ -22,9 +22,11 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "status <image-name>",
-		Short: "Display image build status",
-		Long: `Prints detailed information about the status of a specific image build.
-If the build flag is not provided, the most recent build status will be shown.`,
+		Short: "Display status for an image build",
+		Long: `Prints detailed information about the status of a specified build of an image in the provided namespace.
+
+build defaults to the latest build number.
+namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "tbctl build status my-image\ntbctl build status my-image -b 2 -n my-namespace",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,

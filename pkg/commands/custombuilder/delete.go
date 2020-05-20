@@ -15,9 +15,11 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:     "delete <name>",
-		Short:   "Delete a custom builder",
-		Long:    "Delete a custom builder from the provided namespace.\n If no namespace is provided, it attempts to delete the custo, builder from the default namespace",
+		Use:   "delete <name>",
+		Short: "Delete a custom builder",
+		Long: `Delete a custom builder from the provided namespace.
+
+namespace defaults to the kubernetes current-context namespace.`,
 		Example: "tbctl cb delete my-builder\ntbctl cb delete -n my-namespace other-builder",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

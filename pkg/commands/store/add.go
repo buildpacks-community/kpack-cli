@@ -25,15 +25,13 @@ func NewAddCommand(clientSetProvider k8s.ClientSetProvider, buildpackUploader Bu
 	cmd := &cobra.Command{
 		Use:   "add <buildpackage>",
 		Short: "Create an image configuration",
-		Long: `Upload builpackage(s) to a the buildpack store.
+		Long: `Upload abuildpackage(s) to the buildpack store.
 
 Buildpackages will be uploaded to the the registry configured on your store.
-Therefore, you must have credentials to access the registry on your machine.
-`,
+Therefore, you must have credentials to access the registry on your machine.`,
 		Example: `tbctl store add my-registry.com/my-buildpackage
 tbctl store add my-registry.com/my-buildpackage my-registry.com/my-other-buildpackage my-registry.com/my-third-buildpackage
-tbctl store add ../path/to/my-local-buildpackage.cnb
-`,
+tbctl store add ../path/to/my-local-buildpackage.cnb`,
 		Args:         cobra.MinimumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

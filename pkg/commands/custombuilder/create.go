@@ -29,11 +29,11 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Use:   "create <name> <tag>",
 		Short: "Create a custom builder",
 		Long: `Create a custom builder by providing command line arguments.
-This custom builder will be created if it does not yet exist.
-`,
+This custom builder will be created only if it does not yet exist in the provided namespace.
+
+namespace defaults to the kubernetes current-context namespace.`,
 		Example: `tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny 
-tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml
-`,
+tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml`,
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

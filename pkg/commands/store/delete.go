@@ -14,7 +14,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete <buildpackage>",
 		Short: "Delete buildpackage(s) from store",
-		Long: `Deletes existing builpackage(s) from the buildpack store.
+		Long: `Deletes existing buildpackage(s) from the buildpack store.
 
 This relies on the image(s) specified to exist in the store and deletes the associated buildpackage
 `,
