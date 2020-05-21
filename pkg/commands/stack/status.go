@@ -15,6 +15,10 @@ import (
 )
 
 func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	var (
+		verbose   bool
+	)
+
 	cmd := &cobra.Command{
 		Use:          "status <name>",
 		Short:        "Display stack status",
@@ -33,23 +37,30 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			return displayStackStatus(cmd.OutOrStdout(), stack)
+			return displayStackStatus(cmd.OutOrStdout(), stack, verbose)
 		},
 	}
+
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "display mixins")
+
 	return cmd
 }
 
-func displayStackStatus(out io.Writer, s *expv1alpha1.Stack) error {
+func displayStackStatus(out io.Writer, s *expv1alpha1.Stack, verbose bool) error {
 	writer := commands.NewStatusWriter(out)
 
-	err := writer.AddBlock("",
+	items := []string{
 		"Status", getStatusText(s),
 		"Id", s.Status.Id,
 		"Run Image", s.Status.RunImage.LatestImage,
 		"Build Image", s.Status.BuildImage.LatestImage,
-		"Mixins", strings.Join(s.Status.Mixins, ", "),
-	)
-	if err != nil {
+	}
+
+	if verbose {
+		items = append(items, "Mixins", strings.Join(s.Status.Mixins, ", "))
+	}
+
+	if err := writer.AddBlock("", items...); err != nil {
 		return err
 	}
 
