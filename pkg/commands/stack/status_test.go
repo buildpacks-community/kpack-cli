@@ -25,25 +25,39 @@ func testStackStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	when("the stack exists", func() {
-		it("returns stack details", func() {
-			stck := &expv1alpha1.Stack{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-stack",
-				},
-				Status: expv1alpha1.StackStatus{
-					ResolvedStack: expv1alpha1.ResolvedStack{
-						Id: "some-stack-id",
-						BuildImage: expv1alpha1.StackStatusImage{
-							LatestImage: "some-run-image",
-						},
-						RunImage: expv1alpha1.StackStatusImage{
-							LatestImage: "some-build-image",
-						},
-						Mixins: []string{"mixin1", "mixin2"},
+		stck := &expv1alpha1.Stack{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "some-stack",
+			},
+			Status: expv1alpha1.StackStatus{
+				ResolvedStack: expv1alpha1.ResolvedStack{
+					Id: "some-stack-id",
+					BuildImage: expv1alpha1.StackStatusImage{
+						LatestImage: "some-run-image",
 					},
+					RunImage: expv1alpha1.StackStatusImage{
+						LatestImage: "some-build-image",
+					},
+					Mixins: []string{"mixin1", "mixin2"},
 				},
-			}
+			},
+		}
+		it("returns stack details", func() {
+			const expectedOutput = `Status:         Unknown
+Id:             some-stack-id
+Run Image:      some-build-image
+Build Image:    some-run-image
 
+`
+
+			testhelpers.CommandTest{
+				Objects:        append([]runtime.Object{stck}),
+				Args:           []string{"some-stack"},
+				ExpectedOutput: expectedOutput,
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("includes mixins when --verbose flag is used", func(){
 			const expectedOutput = `Status:         Unknown
 Id:             some-stack-id
 Run Image:      some-build-image
@@ -54,7 +68,7 @@ Mixins:         mixin1, mixin2
 
 			testhelpers.CommandTest{
 				Objects:        append([]runtime.Object{stck}),
-				Args:           []string{"some-stack"},
+				Args:           []string{"some-stack", "--verbose"},
 				ExpectedOutput: expectedOutput,
 			}.TestKpack(t, cmdFunc)
 		})
