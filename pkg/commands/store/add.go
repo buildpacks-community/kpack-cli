@@ -24,7 +24,7 @@ type BuildpackageUploader interface {
 func NewAddCommand(clientSetProvider k8s.ClientSetProvider, buildpackUploader BuildpackageUploader) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <buildpackage>",
-		Short: "Create an image configuration",
+		Short: "Add buildpackage(s) to store",
 		Long: `Upload buildpackage(s) to the buildpack store.
 
 Buildpackages will be uploaded to the the registry configured on your store.
