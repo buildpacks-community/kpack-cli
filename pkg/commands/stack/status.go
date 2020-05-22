@@ -16,7 +16,7 @@ import (
 
 func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
-		verbose   bool
+		verbose bool
 	)
 
 	cmd := &cobra.Command{

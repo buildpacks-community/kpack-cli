@@ -57,7 +57,7 @@ Build Image:    some-run-image
 			}.TestKpack(t, cmdFunc)
 		})
 
-		it("includes mixins when --verbose flag is used", func(){
+		it("includes mixins when --verbose flag is used", func() {
 			const expectedOutput = `Status:         Unknown
 Id:             some-stack-id
 Run Image:      some-build-image
