@@ -84,7 +84,7 @@ func displayBuildpackagesTable(out io.Writer, buildpackages []buildpackageInfo) 
 		return nil
 	}
 
-	writer, err := commands.NewTableWriter(out, "BUILDPACKAGE", "ID")
+	writer, err := commands.NewTableWriter(out, "BUILDPACKAGE ID", "VERSION")
 	if err != nil {
 		return err
 	}

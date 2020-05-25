@@ -93,7 +93,7 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		it("returns store details", func() {
-			const expectedOutput = `BUILDPACKAGE        ID
+			const expectedOutput = `BUILDPACKAGE ID     VERSION
 meta                1
 simple-buildpack    3
 
