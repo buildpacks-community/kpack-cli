@@ -14,11 +14,16 @@ import (
 )
 
 func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	var (
+		verbose bool
+	)
+
 	cmd := &cobra.Command{
-		Use:          "status",
+		Use:          "status <store-name>",
 		Short:        "Display store status",
-		Long:         `Prints detailed information about the status of the store.`,
-		Example:      "tbctl store status",
+		Long:         `Prints information about the status of a specific store.`,
+		Example:      "tbctl store status my-store",
+		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
@@ -26,20 +31,71 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
+			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(args[0], v1.GetOptions{})
 			if err != nil {
 				return err
 			}
-			return displayStoreStatus(cmd.OutOrStdout(), store)
+
+			if verbose {
+				return displayStoreStatus(cmd.OutOrStdout(), store)
+			} else {
+				return displayBuildpackagesTable(cmd.OutOrStdout(), getBuildpackageInfos(store))
+			}
 		},
 	}
+
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "includes buildpacks and detection order")
 	return cmd
 }
 
-type buildpackageDetails struct {
-	buildpackage string
-	image        string
-	homepage     string
+type buildpackageInfo struct {
+	id      string
+	version string
+}
+
+func getBuildpackageInfos(store *expv1alpha1.Store) []buildpackageInfo {
+	buildpackagesMap := make(map[string]buildpackageInfo)
+
+	for _, buildpack := range store.Status.Buildpacks {
+		if buildpack.Buildpackage.Id == "" &&
+			buildpack.Buildpackage.Version == "" {
+			continue
+		}
+
+		buildpackageKey := fmt.Sprintf("%s@%s", buildpack.Buildpackage.Id, buildpack.Buildpackage.Version)
+		if _, ok := buildpackagesMap[buildpackageKey]; !ok {
+			buildpackagesMap[buildpackageKey] = buildpackageInfo{
+				id:      buildpack.Buildpackage.Id,
+				version: buildpack.Buildpackage.Version,
+			}
+		}
+	}
+
+	var buildpackageInfos []buildpackageInfo
+	for _, buildpackageInfo := range buildpackagesMap {
+		buildpackageInfos = append(buildpackageInfos, buildpackageInfo)
+	}
+
+	return buildpackageInfos
+}
+
+func displayBuildpackagesTable(out io.Writer, buildpackages []buildpackageInfo) error {
+	if len(buildpackages) <= 0 {
+		return nil
+	}
+
+	writer, err := commands.NewTableWriter(out, "BUILDPACKAGE", "ID")
+	if err != nil {
+		return err
+	}
+
+	for _, buildpackage := range buildpackages {
+		if err := writer.AddRow(buildpackage.id, buildpackage.version); err != nil {
+			return err
+		}
+	}
+
+	return writer.Write()
 }
 
 func displayStoreStatus(out io.Writer, s *expv1alpha1.Store) error {
