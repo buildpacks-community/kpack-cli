@@ -8,21 +8,20 @@ import (
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delete <store> <buildpackage> [<buildpackage>...]",
+		Use:   "delete <buildpackage>",
 		Short: "Delete buildpackage(s) from store",
 		Long: `Deletes existing buildpackage(s) from the buildpack store.
 
-This relies on the image(s) specified to exist in the store and deletes the associated buildpackage(s)
+This relies on the image(s) specified to exist in the store and deletes the associated buildpackage
 `,
 		Example: `tbctl store delete my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271
 tbctl store delete my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271 my-registry.com/my-buildpackage/buildpacks_nginx@sha256:eacecf914a57e4f5d6c4459226f6133ecaccb5c462717a09cfeae4763207b9ef
 `,
-		Args:         cobra.MinimumNArgs(2),
+		Args:         cobra.MinimumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
@@ -32,16 +31,12 @@ tbctl store delete my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09c
 
 			printer := commands.NewPrinter(cmd)
 
-			storeName, buildPackages := args[0], args[1:]
-
-			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(storeName, v1.GetOptions{})
-			if k8serrors.IsNotFound(err) {
-				return errors.Errorf("Store '%s' does not exist", storeName)
-			} else if err != nil {
+			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
+			if err != nil {
 				return err
 			}
 
-			for _, bpToDelete := range buildPackages {
+			for _, bpToDelete := range args {
 				if !storeContainsBuildpackage(store, bpToDelete) {
 					return errors.Errorf("Buildpackage '%s' does not exist in the store", bpToDelete)
 				}
