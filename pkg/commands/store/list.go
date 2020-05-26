@@ -15,11 +15,11 @@ import (
 func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List images",
-		Long: `Prints a table of the most important information about images in the provided namespace.
+		Short: "List stores",
+		Long: `Prints a table of the most important information about stores in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
-		Example: "tbctl image list\ntbctl image list -n my-namespace",
+		Example: "tbctl store list\ntbctl store list -n my-namespace",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
