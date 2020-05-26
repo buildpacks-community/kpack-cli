@@ -32,7 +32,6 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 			ccb, err := cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Get(args[0], metav1.GetOptions{})
 			if err != nil {
-
 				return err
 			}
 
