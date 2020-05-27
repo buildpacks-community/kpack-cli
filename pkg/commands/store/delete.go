@@ -4,11 +4,11 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
