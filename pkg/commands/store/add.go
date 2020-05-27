@@ -6,6 +6,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
@@ -23,16 +24,16 @@ type BuildpackageUploader interface {
 
 func NewAddCommand(clientSetProvider k8s.ClientSetProvider, buildpackUploader BuildpackageUploader) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add <buildpackage>",
+		Use:   "add <store> [<buildpackage>...]",
 		Short: "Add buildpackage(s) to store",
-		Long: `Upload buildpackage(s) to the buildpack store.
+		Long: `Upload buildpackage(s) to a specific buildpack store.
 
 Buildpackages will be uploaded to the the registry configured on your store.
 Therefore, you must have credentials to access the registry on your machine.`,
-		Example: `tbctl store add my-registry.com/my-buildpackage
-tbctl store add my-registry.com/my-buildpackage my-registry.com/my-other-buildpackage my-registry.com/my-third-buildpackage
-tbctl store add ../path/to/my-local-buildpackage.cnb`,
-		Args:         cobra.MinimumNArgs(1),
+		Example: `tbctl store add my-store my-registry.com/my-buildpackage
+tbctl store add my-store my-registry.com/my-buildpackage my-registry.com/my-other-buildpackage my-registry.com/my-third-buildpackage
+tbctl store add my-store ../path/to/my-local-buildpackage.cnb`,
+		Args:         cobra.MinimumNArgs(2),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
@@ -42,20 +43,24 @@ tbctl store add ../path/to/my-local-buildpackage.cnb`,
 
 			printer := commands.NewPrinter(cmd)
 
-			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(DefaultStoreName, v1.GetOptions{})
-			if err != nil {
+			storeName, buildpackages := args[0], args[1:]
+
+			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(storeName, v1.GetOptions{})
+			if k8serrors.IsNotFound(err) {
+				return errors.Errorf("Store '%s' does not exist", storeName)
+			} else if err != nil {
 				return err
 			}
 
 			repository, ok := store.Annotations[DefaultRepositoryAnnotation]
 			if !ok || repository == "" {
-				return errors.Errorf("Unable to find default registry for store: %s", DefaultStoreName)
+				return errors.Errorf("Unable to find default registry for store: %s", storeName)
 			}
 
 			printer.Printf("Uploading to '%s'...", repository)
 
 			var uploaded []string
-			for _, buildpackage := range args {
+			for _, buildpackage := range buildpackages {
 				uploadedBp, err := buildpackUploader.Upload(repository, buildpackage)
 				if err != nil {
 					return err

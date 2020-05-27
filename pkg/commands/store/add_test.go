@@ -1,6 +1,7 @@
 package store_test
 
 import (
+	"fmt"
 	"testing"
 
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
@@ -21,7 +22,10 @@ func TestStoreAddCommand(t *testing.T) {
 }
 
 func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
-	const imageAlreadyInStore = "some/imageinStore@sha256:123alreadyInStore"
+	const (
+		imageAlreadyInStore = "some/imageinStore@sha256:123alreadyInStore"
+		storeName           = "some-store-name"
+	)
 
 	fakeBuildpackageUploader := FakeBuildpackageUploader{
 		"some/newbp":    "some/path/newbp@sha256:123newbp",
@@ -37,7 +41,7 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 
 	store := &expv1alpha1.Store{
 		ObjectMeta: v1.ObjectMeta{
-			Name: store.DefaultStoreName,
+			Name: storeName,
 			Annotations: map[string]string{
 				"buildservice.pivotal.io/defaultRepository": "some/path",
 			},
@@ -56,7 +60,7 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			Objects: []runtime.Object{
 				store,
 			},
-			Args:      []string{"some/newbp", "bpfromcnb.cnb"},
+			Args:      []string{storeName, "some/newbp", "bpfromcnb.cnb"},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
@@ -87,22 +91,33 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			Objects: []runtime.Object{
 				store,
 			},
-			Args:           []string{"some/imageAlreadyInStore"},
+			Args:           []string{storeName, "some/imageAlreadyInStore"},
 			ExpectErr:      false,
 			ExpectedOutput: "Uploading to 'some/path'...\nBuildpackage 'some/path/imageInStoreDifferentPath@sha256:123alreadyInStore' already exists in the store\nStore Unchanged\n",
 		}.TestKpack(t, cmdFunc)
 	})
 
-	it("returns error on invalid registry annotation", func() {
+	it("errors if the provided store does not exist", func() {
+		testhelpers.CommandTest{
+			Objects: []runtime.Object{
+				store,
+			},
+			Args:           []string{"invalid-store", "some/image"},
+			ExpectErr:      true,
+			ExpectedOutput: "Error: Store 'invalid-store' does not exist\n",
+		}.TestKpack(t, cmdFunc)
+	})
+
+	it("errors on invalid registry annotation", func() {
 		store.Annotations["buildservice.pivotal.io/defaultRepository"] = ""
 
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
 				store,
 			},
-			Args:           []string{"some/someimage"},
+			Args:           []string{storeName, "some/someimage"},
 			ExpectErr:      true,
-			ExpectedOutput: "Error: Unable to find default registry for store: default\n",
+			ExpectedOutput: fmt.Sprintf("Error: Unable to find default registry for store: %s\n", storeName),
 		}.TestKpack(t, cmdFunc)
 	})
 }
