@@ -20,17 +20,20 @@ func TestStoreDeleteCommand(t *testing.T) {
 }
 
 func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
-	const image1InStore = "some/imageinStore1@sha256:1231alreadyInStore"
-	const image2InStore = "some/imageinStore2@sha256:1232alreadyInStore"
+	const (
+		storeName     = "some-store"
+		image1InStore = "some/imageinStore1@sha256:1231alreadyInStore"
+		image2InStore = "some/imageinStore2@sha256:1232alreadyInStore"
+	)
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
 		return store.NewDeleteCommand(clientSetProvider)
 	}
 
-	store := &expv1alpha1.Store{
+	st := &expv1alpha1.Store{
 		ObjectMeta: v1.ObjectMeta{
-			Name: store.DefaultStoreName,
+			Name: storeName,
 			Annotations: map[string]string{
 				"buildservice.pivotal.io/defaultRepository": "some/path",
 			},
@@ -47,17 +50,17 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
-	it("removes single buildpackages from the store", func() {
+	it("removes a single buildpackage from the store", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
-				store,
+				st,
 			},
-			Args:      []string{"some/imageinStore1@sha256:1231alreadyInStore"},
+			Args:      []string{storeName, "some/imageinStore1@sha256:1231alreadyInStore"},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
 					Object: &expv1alpha1.Store{
-						ObjectMeta: store.ObjectMeta,
+						ObjectMeta: st.ObjectMeta,
 						Spec: expv1alpha1.StoreSpec{
 							Sources: []expv1alpha1.StoreImage{
 								{
@@ -75,14 +78,14 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	it("removes multiple buildpackages from the store", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
-				store,
+				st,
 			},
-			Args:      []string{"some/imageinStore1@sha256:1231alreadyInStore", "some/imageinStore2@sha256:1232alreadyInStore"},
+			Args:      []string{storeName, "some/imageinStore1@sha256:1231alreadyInStore", "some/imageinStore2@sha256:1232alreadyInStore"},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
 					Object: &expv1alpha1.Store{
-						ObjectMeta: store.ObjectMeta,
+						ObjectMeta: st.ObjectMeta,
 						Spec: expv1alpha1.StoreSpec{
 							Sources: []expv1alpha1.StoreImage{},
 						},
@@ -93,12 +96,23 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 		}.TestKpack(t, cmdFunc)
 	})
 
+	it("fails if the provided store does not exist", func() {
+		testhelpers.CommandTest{
+			Objects: []runtime.Object{
+				st,
+			},
+			Args:           []string{"invalid-store", "some/imageinStore1@sha256:1231alreadyInStore", "some/imageNotinStore@sha256:1232notInStore"},
+			ExpectErr:      true,
+			ExpectedOutput: "Error: Store 'invalid-store' does not exist\n",
+		}.TestKpack(t, cmdFunc)
+	})
+
 	it("fails if even one buildpackage is not in the store but the rest are", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
-				store,
+				st,
 			},
-			Args:           []string{"some/imageinStore1@sha256:1231alreadyInStore", "some/imageNotinStore@sha256:1232notInStore"},
+			Args:           []string{storeName, "some/imageinStore1@sha256:1231alreadyInStore", "some/imageNotinStore@sha256:1232notInStore"},
 			ExpectErr:      true,
 			ExpectedOutput: "Error: Buildpackage 'some/imageNotinStore@sha256:1232notInStore' does not exist in the store\n",
 		}.TestKpack(t, cmdFunc)
@@ -107,9 +121,9 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	it("returns error if buildpackage does not exist in store", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
-				store,
+				st,
 			},
-			Args:           []string{"some/imageNotinStore@sha256:1233alreadyInStore"},
+			Args:           []string{storeName, "some/imageNotinStore@sha256:1233alreadyInStore"},
 			ExpectErr:      true,
 			ExpectedOutput: "Error: Buildpackage 'some/imageNotinStore@sha256:1233alreadyInStore' does not exist in the store\n",
 		}.TestKpack(t, cmdFunc)
