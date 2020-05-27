@@ -188,7 +188,7 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	storeRootCommand.AddCommand(
 		store.NewAddCommand(clientSetProvider, bpUploader),
 		store.NewStatusCommand(clientSetProvider),
-		store.NewDeleteCommand(clientSetProvider),
+		store.NewRemoveCommand(clientSetProvider),
 		store.NewListCommand(clientSetProvider),
 	)
 	return storeRootCommand

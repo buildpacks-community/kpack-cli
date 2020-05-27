@@ -11,16 +11,16 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+func NewRemoveCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delete <store> <buildpackage> [<buildpackage>...]",
-		Short: "Delete buildpackage(s) from store",
-		Long: `Deletes existing buildpackage(s) from the buildpack store.
+		Use:   "remove <store> <buildpackage> [<buildpackage>...]",
+		Short: "Remove buildpackage(s) from store",
+		Long: `Removes existing buildpackage(s) from a specific buildpack store.
 
-This relies on the image(s) specified to exist in the store and deletes the associated buildpackage(s)
+This relies on the image(s) specified to exist in the store and removes the associated buildpackage(s)
 `,
-		Example: `tbctl store delete my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271
-tbctl store delete my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271 my-registry.com/my-buildpackage/buildpacks_nginx@sha256:eacecf914a57e4f5d6c4459226f6133ecaccb5c462717a09cfeae4763207b9ef
+		Example: `tbctl store remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271
+tbctl store remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271 my-registry.com/my-buildpackage/buildpacks_nginx@sha256:eacecf914a57e4f5d6c4459226f6133ecaccb5c462717a09cfeae4763207b9ef
 `,
 		Args:         cobra.MinimumNArgs(2),
 		SilenceUsage: true,
@@ -41,18 +41,18 @@ tbctl store delete my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha
 				return err
 			}
 
-			for _, bpToDelete := range buildPackages {
-				if !storeContainsBuildpackage(store, bpToDelete) {
-					return errors.Errorf("Buildpackage '%s' does not exist in the store", bpToDelete)
+			for _, bpToRemove := range buildPackages {
+				if !storeContainsBuildpackage(store, bpToRemove) {
+					return errors.Errorf("Buildpackage '%s' does not exist in the store", bpToRemove)
 				}
 			}
 			var updatedStoreSources = []v1alpha1.StoreImage{}
 			for _, storeImg := range store.Spec.Sources {
 				found := false
-				for _, bpToDelete := range args {
-					if storeImg.Image == bpToDelete {
+				for _, bpToRemove := range args {
+					if storeImg.Image == bpToRemove {
 						found = true
-						printer.Printf("Removing buildpackage %s", bpToDelete)
+						printer.Printf("Removing buildpackage %s", bpToRemove)
 						break
 					}
 				}

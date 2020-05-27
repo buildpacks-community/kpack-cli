@@ -24,7 +24,7 @@ type BuildpackageUploader interface {
 
 func NewAddCommand(clientSetProvider k8s.ClientSetProvider, buildpackUploader BuildpackageUploader) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add <store> [<buildpackage>...]",
+		Use:   "add <store> <buildpackage> [<buildpackage>...]",
 		Short: "Add buildpackage(s) to store",
 		Long: `Upload buildpackage(s) to a specific buildpack store.
 

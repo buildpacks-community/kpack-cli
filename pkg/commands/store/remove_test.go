@@ -15,11 +15,11 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestStoreDeleteCommand(t *testing.T) {
-	spec.Run(t, "TestStoreDeleteCommand", testStoreDeleteCommand)
+func TestStoreRemoveCommand(t *testing.T) {
+	spec.Run(t, "TestStoreRemoveCommand", testStoreRemoveCommand)
 }
 
-func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
+func testStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		storeName     = "some-store"
 		image1InStore = "some/imageinStore1@sha256:1231alreadyInStore"
@@ -28,7 +28,7 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return store.NewDeleteCommand(clientSetProvider)
+		return store.NewRemoveCommand(clientSetProvider)
 	}
 
 	st := &expv1alpha1.Store{
