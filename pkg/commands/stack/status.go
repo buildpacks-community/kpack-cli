@@ -7,7 +7,7 @@ import (
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/spf13/cobra"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
@@ -69,9 +69,9 @@ func displayStackStatus(out io.Writer, s *expv1alpha1.Stack, verbose bool) error
 
 func getStatusText(s *expv1alpha1.Stack) string {
 	if cond := s.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
-		if cond.Status == v1.ConditionTrue {
+		if cond.Status == corev1.ConditionTrue {
 			return "Ready"
-		} else if cond.Status == v1.ConditionFalse {
+		} else if cond.Status == corev1.ConditionFalse {
 			return "Not Ready"
 		}
 	}

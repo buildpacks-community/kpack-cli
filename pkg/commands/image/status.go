@@ -7,7 +7,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/build"
@@ -126,7 +126,7 @@ func getImageDetails(image *v1alpha1.Image) imageDetails {
 	}
 
 	if cond := image.Status.GetCondition(v1alpha1.ConditionBuilderReady); cond != nil {
-		if cond.Status != v1.ConditionTrue {
+		if cond.Status != corev1.ConditionTrue {
 			details.status = "Not Ready"
 			details.message = getNotReadyMessage(cond.Reason, image.Spec.Builder.Name)
 			return details
@@ -134,9 +134,9 @@ func getImageDetails(image *v1alpha1.Image) imageDetails {
 	}
 
 	if cond := image.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
-		if cond.Status == v1.ConditionTrue {
+		if cond.Status == corev1.ConditionTrue {
 			details.status = "Ready"
-		} else if cond.Status == v1.ConditionUnknown {
+		} else if cond.Status == corev1.ConditionUnknown {
 			details.status = "Building"
 		} else {
 			details.status = "Not Ready"

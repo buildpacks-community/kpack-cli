@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
@@ -48,7 +49,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 	return &command
 }
 
-func displaySecretsTable(cmd *cobra.Command, sa *v1.ServiceAccount) error {
+func displaySecretsTable(cmd *cobra.Command, sa *corev1.ServiceAccount) error {
 	managedSecrets, err := readManagedSecrets(sa)
 	if err != nil {
 		return err
