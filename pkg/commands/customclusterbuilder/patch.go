@@ -14,6 +14,7 @@ import (
 func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		stack string
+		store string
 		order string
 	)
 
@@ -39,6 +40,10 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 			if stack != "" {
 				patchedCcb.Spec.Stack = stack
+			}
+
+			if store != "" {
+				patchedCcb.Spec.Store = store
 			}
 
 			if order != "" {
@@ -70,6 +75,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&stack, "stack", "s", "", "stack resource to use")
+	cmd.Flags().StringVar(&store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
 	return cmd

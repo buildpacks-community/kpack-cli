@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	defaultStack             = "default"
 	defaultStore             = "default"
 	kubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
 )
@@ -22,6 +23,7 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace string
 		stack     string
+		store     string
 		order     string
 	)
 
@@ -32,7 +34,7 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 This custom builder will be created only if it does not exist in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
-		Example: `tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny 
+		Example: `tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
 tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml`,
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
@@ -59,7 +61,7 @@ tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order
 					CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
 						Tag:   tag,
 						Stack: stack,
-						Store: defaultStore,
+						Store: store,
 					},
 					ServiceAccount: "default",
 				},
@@ -87,7 +89,8 @@ tbctl cb create my-builder my-registry.com/my-builder-tag --order /path/to/order
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
-	cmd.Flags().StringVarP(&stack, "stack", "s", "default", "stack resource to use")
+	cmd.Flags().StringVarP(&stack, "stack", "s", defaultStack, "stack resource to use")
+	cmd.Flags().StringVar(&store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
 	return cmd

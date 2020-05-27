@@ -22,6 +22,7 @@ const (
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		stack string
+		store string
 		order string
 	)
 
@@ -30,7 +31,7 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short: "Create a custom cluster builder",
 		Long: `Create a custom cluster builder by providing command line arguments.
 This custom cluster builder will be created only if it does not exist.`,
-		Example: `tbctl ccb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny
+		Example: `tbctl ccb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
 tbctl ccb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml`,
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
@@ -56,7 +57,7 @@ tbctl ccb create my-builder my-registry.com/my-builder-tag --order /path/to/orde
 					CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
 						Tag:   tag,
 						Stack: stack,
-						Store: defaultStore,
+						Store: store,
 					},
 					ServiceAccountRef: corev1.ObjectReference{
 						Namespace: "build-service",
@@ -86,6 +87,7 @@ tbctl ccb create my-builder my-registry.com/my-builder-tag --order /path/to/orde
 		},
 	}
 	cmd.Flags().StringVarP(&stack, "stack", "s", "default", "stack resource to use")
+	cmd.Flags().StringVar(&store, "store", "default", "buildpack store to use")
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
 	return cmd

@@ -35,7 +35,7 @@ func testCustomBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
 					Tag:   "some-registry.com/test-builder",
 					Stack: "some-stack",
-					Store: "default",
+					Store: "some-store",
 					Order: []expv1alpha1.OrderEntry{
 						{
 							Group: []expv1alpha1.BuildpackRef{
@@ -75,12 +75,13 @@ func testCustomBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 			Args: []string{
 				builder.Name,
 				"--stack", "some-other-stack",
+				"--store", "some-other-store",
 				"--order", "./testdata/patched-order.yaml",
 				"-n", builder.Namespace,
 			},
 			ExpectedOutput: "\"test-builder\" patched\n",
 			ExpectPatches: []string{
-				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":"some-other-stack"}}`,
+				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":"some-other-stack","store":"some-other-store"}}`,
 			},
 		}.TestKpack(t, cmdFunc)
 	})
@@ -95,11 +96,12 @@ func testCustomBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 			Args: []string{
 				builder.Name,
 				"--stack", "some-other-stack",
+				"--store", "some-other-store",
 				"--order", "./testdata/patched-order.yaml",
 			},
 			ExpectedOutput: "\"test-builder\" patched\n",
 			ExpectPatches: []string{
-				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":"some-other-stack"}}`,
+				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":"some-other-stack","store":"some-other-store"}}`,
 			},
 		}.TestKpack(t, cmdFunc)
 	})

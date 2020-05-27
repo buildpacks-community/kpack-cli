@@ -15,6 +15,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace string
 		stack     string
+		store     string
 		order     string
 	)
 
@@ -40,6 +41,10 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 			if stack != "" {
 				patchedCb.Spec.Stack = stack
+			}
+
+			if store != "" {
+				patchedCb.Spec.Store = store
 			}
 
 			if order != "" {
@@ -72,6 +77,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&stack, "stack", "s", "", "stack resource to use")
+	cmd.Flags().StringVar(&store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
 	return cmd

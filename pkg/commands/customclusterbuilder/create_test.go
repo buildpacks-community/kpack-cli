@@ -30,14 +30,14 @@ func testCustomClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S)
 			ObjectMeta: v1.ObjectMeta{
 				Name: "test-builder",
 				Annotations: map[string]string{
-					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":"some-stack","store":"default","order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"build-service","name":"ccb-service-account"}},"status":{"stack":{}}}`,
+					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"build-service","name":"ccb-service-account"}},"status":{"stack":{}}}`,
 				},
 			},
 			Spec: expv1alpha1.CustomClusterBuilderSpec{
 				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
 					Tag:   "some-registry.com/test-builder",
 					Stack: "some-stack",
-					Store: "default",
+					Store: "some-store",
 					Order: []expv1alpha1.OrderEntry{
 						{
 							Group: []expv1alpha1.BuildpackRef{
@@ -78,6 +78,7 @@ func testCustomClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S)
 				expectedBuilder.Name,
 				expectedBuilder.Spec.Tag,
 				"--stack", expectedBuilder.Spec.Stack,
+				"--store", expectedBuilder.Spec.Store,
 				"--order", "./testdata/order.yaml",
 			},
 			ExpectedOutput: `"test-builder" created
@@ -90,6 +91,7 @@ func testCustomClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S)
 
 	it("creates a CustomClusterBuilder with the default stack", func() {
 		expectedBuilder.Spec.Stack = "default"
+		expectedBuilder.Spec.Store = "default"
 		expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":"default","store":"default","order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"build-service","name":"ccb-service-account"}},"status":{"stack":{}}}`
 
 		testhelpers.CommandTest{
@@ -98,8 +100,7 @@ func testCustomClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S)
 				expectedBuilder.Spec.Tag,
 				"--order", "./testdata/order.yaml",
 			},
-			ExpectedOutput: `"test-builder" created
-`,
+			ExpectedOutput: "\"test-builder\" created\n",
 			ExpectCreates: []runtime.Object{
 				expectedBuilder,
 			},
