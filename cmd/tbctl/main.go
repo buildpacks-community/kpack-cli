@@ -14,12 +14,13 @@ import (
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
 	stackcmds "github.com/pivotal/build-service-cli/pkg/commands/stack"
-	"github.com/pivotal/build-service-cli/pkg/commands/store"
+	storecmds "github.com/pivotal/build-service-cli/pkg/commands/store"
 	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/secret"
 	"github.com/pivotal/build-service-cli/pkg/source"
 	"github.com/pivotal/build-service-cli/pkg/stack"
+	"github.com/pivotal/build-service-cli/pkg/store"
 )
 
 var (
@@ -181,15 +182,18 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Relocator: &image.Relocator{},
 	}
 
+	factory := &store.Factory{Uploader: bpUploader}
+
 	storeRootCommand := &cobra.Command{
 		Use:   "store",
 		Short: "Store Commands",
 	}
 	storeRootCommand.AddCommand(
-		store.NewAddCommand(clientSetProvider, bpUploader),
-		store.NewStatusCommand(clientSetProvider),
-		store.NewRemoveCommand(clientSetProvider),
-		store.NewListCommand(clientSetProvider),
+		storecmds.NewCreateCommand(clientSetProvider, factory),
+		storecmds.NewAddCommand(clientSetProvider, bpUploader),
+		storecmds.NewStatusCommand(clientSetProvider),
+		storecmds.NewRemoveCommand(clientSetProvider),
+		storecmds.NewListCommand(clientSetProvider),
 	)
 	return storeRootCommand
 }
