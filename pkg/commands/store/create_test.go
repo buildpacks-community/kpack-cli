@@ -44,7 +44,7 @@ func testStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-store",
 				Annotations: map[string]string{
-					"buildservice.pivotal.io/defaultRepository": "some-registry.io/some-repo",
+					"buildservice.pivotal.io/defaultRepository":        "some-registry.io/some-repo",
 					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Store","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-store","creationTimestamp":null,"annotations":{"buildservice.pivotal.io/defaultRepository":"some-registry.io/some-repo"}},"spec":{"sources":[{"image":"some/path/newbp@sha256:123newbp"},{"image":"some/path/bpfromcnb@sha256:123imagefromcnb"}]},"status":{}}`,
 				},
 			},

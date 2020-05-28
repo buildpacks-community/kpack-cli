@@ -1,9 +1,6 @@
 package store
 
 import (
-	"strings"
-
-	"github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -11,17 +8,10 @@ import (
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/store"
 )
 
-const (
-	DefaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
-)
-
-type BuildpackageUploader interface {
-	Upload(repository, buildPackage string) (string, error)
-}
-
-func NewAddCommand(clientSetProvider k8s.ClientSetProvider, buildpackUploader BuildpackageUploader) *cobra.Command {
+func NewAddCommand(clientSetProvider k8s.ClientSetProvider, factory *store.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <store> <buildpackage> [<buildpackage>...]",
 		Short: "Add buildpackage(s) to store",
@@ -35,81 +25,40 @@ tbctl store add my-store ../path/to/my-local-buildpackage.cnb`,
 		Args:         cobra.MinimumNArgs(2),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			storeName := args[0]
+			buildpackages := args[1:]
+			factory.Printer = commands.NewPrinter(cmd)
+
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			printer := commands.NewPrinter(cmd)
-
-			storeName, buildpackages := args[0], args[1:]
-
-			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(storeName, v1.GetOptions{})
+			s, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(storeName, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				return errors.Errorf("Store '%s' does not exist", storeName)
 			} else if err != nil {
 				return err
 			}
 
-			repository, ok := store.Annotations[DefaultRepositoryAnnotation]
-			if !ok || repository == "" {
-				return errors.Errorf("Unable to find default registry for store: %s", storeName)
-			}
-
-			printer.Printf("Uploading to '%s'...", repository)
-
-			var uploaded []string
-			for _, buildpackage := range buildpackages {
-				uploadedBp, err := buildpackUploader.Upload(repository, buildpackage)
-				if err != nil {
-					return err
-				}
-				uploaded = append(uploaded, uploadedBp)
-			}
-
-			storeUpdated := false
-			for _, uploadedBp := range uploaded {
-				if storeContains(store, uploadedBp) {
-					printer.Printf("Buildpackage '%s' already exists in the store", uploadedBp)
-					continue
-				}
-
-				store.Spec.Sources = append(store.Spec.Sources, v1alpha1.StoreImage{
-					Image: uploadedBp,
-				})
-				storeUpdated = true
-				printer.Printf("Added Buildpackage '%s'", uploadedBp)
-			}
-
-			if !storeUpdated {
-				printer.Printf("Store Unchanged")
-				return nil
-			}
-
-			_, err = cs.KpackClient.ExperimentalV1alpha1().Stores().Update(store)
+			updatedStore, storeUpdated, err := factory.AddToStore(s, buildpackages...)
 			if err != nil {
 				return err
 			}
 
-			printer.Printf("Store Updated")
+			if !storeUpdated {
+				factory.Printer.Printf("Store Unchanged")
+				return nil
+			}
+
+			_, err = cs.KpackClient.ExperimentalV1alpha1().Stores().Update(updatedStore)
+			if err != nil {
+				return err
+			}
+
+			factory.Printer.Printf("Store Updated")
 			return nil
 		},
 	}
 	return cmd
-}
-
-func storeContains(store *v1alpha1.Store, buildpackage string) bool {
-	digest := strings.Split(buildpackage, "@")[1]
-
-	for _, image := range store.Spec.Sources {
-		parts := strings.Split(image.Image, "@")
-		if len(parts) != 2 {
-			continue
-		}
-
-		if parts[1] == digest {
-			return true
-		}
-	}
-	return false
 }

@@ -12,7 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/store"
+	storecmds "github.com/pivotal/build-service-cli/pkg/commands/store"
+	"github.com/pivotal/build-service-cli/pkg/store"
 	"github.com/pivotal/build-service-cli/pkg/store/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
@@ -34,9 +35,13 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 		"some/imageAlreadyInStore": "some/path/imageInStoreDifferentPath@sha256:123alreadyInStore",
 	}
 
+	factory := &store.Factory{
+		Uploader: fakeBuildpackageUploader,
+	}
+
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return store.NewAddCommand(clientSetProvider, fakeBuildpackageUploader)
+		return storecmds.NewAddCommand(clientSetProvider, factory)
 	}
 
 	store := &expv1alpha1.Store{

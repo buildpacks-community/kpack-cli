@@ -1,7 +1,6 @@
 package store
 
 import (
-	"fmt"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/store"
 
@@ -10,7 +9,6 @@ import (
 )
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *store.Factory) *cobra.Command {
-
 	cmd := &cobra.Command{
 		Use:   "create <store> <buildpackage> [<buildpackage>...]",
 		Short: "Create a store",
@@ -27,7 +25,7 @@ tbctl store create my-store ../path/to/my-local-buildpackage.cnb --default-repos
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
-			factory.Buildpackages = args[1:]
+			buildpackages := args[1:]
 			factory.Printer = commands.NewPrinter(cmd)
 
 			cs, err := clientSetProvider.GetClientSet("")
@@ -35,7 +33,7 @@ tbctl store create my-store ../path/to/my-local-buildpackage.cnb --default-repos
 				return err
 			}
 
-			newStore, err := factory.MakeStore(name)
+			newStore, err := factory.MakeStore(name, buildpackages...)
 			if err != nil {
 				return err
 			}
@@ -45,8 +43,8 @@ tbctl store create my-store ../path/to/my-local-buildpackage.cnb --default-repos
 				return err
 			}
 
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", newStore.Name)
-			return err
+			factory.Printer.Printf("\"%s\" created", newStore.Name)
+			return nil
 		},
 	}
 

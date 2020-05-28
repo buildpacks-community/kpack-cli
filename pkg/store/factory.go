@@ -2,6 +2,7 @@ package store
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
@@ -22,13 +23,12 @@ type BuildpackageUploader interface {
 
 type Factory struct {
 	Uploader          BuildpackageUploader
-	Buildpackages     []string
 	DefaultRepository string
 	Printer           *commands.Logger
 }
 
-func (f *Factory) MakeStore(name string) (*v1alpha1.Store, error) {
-	if err := f.validate(); err != nil {
+func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Store, error) {
+	if err := f.validate(buildpackages); err != nil {
 		return nil, err
 	}
 
@@ -49,7 +49,7 @@ func (f *Factory) MakeStore(name string) (*v1alpha1.Store, error) {
 	f.Printer.Printf("Uploading to '%s'...", f.DefaultRepository)
 
 	var uploaded []string
-	for _, buildpackage := range f.Buildpackages {
+	for _, buildpackage := range buildpackages {
 		uploadedBp, err := f.Uploader.Upload(f.DefaultRepository, buildpackage)
 		if err != nil {
 			return nil, err
@@ -72,12 +72,62 @@ func (f *Factory) MakeStore(name string) (*v1alpha1.Store, error) {
 	return newStore, nil
 }
 
-func (f *Factory) validate() error {
-	if len(f.Buildpackages) < 1 {
+func (f *Factory) AddToStore(store *v1alpha1.Store, buildpackages ...string) (*v1alpha1.Store, bool, error) {
+	repository, ok := store.Annotations[defaultRepositoryAnnotation]
+	if !ok || repository == "" {
+		return nil, false, errors.Errorf("Unable to find default registry for store: %s", store.Name)
+	}
+
+	f.Printer.Printf("Uploading to '%s'...", repository)
+
+	var uploaded []string
+	for _, buildpackage := range buildpackages {
+		uploadedBp, err := f.Uploader.Upload(repository, buildpackage)
+		if err != nil {
+			return nil, false, err
+		}
+		uploaded = append(uploaded, uploadedBp)
+	}
+
+	storeUpdated := false
+	for _, uploadedBp := range uploaded {
+		if storeContains(store, uploadedBp) {
+			f.Printer.Printf("Buildpackage '%s' already exists in the store", uploadedBp)
+			continue
+		}
+
+		store.Spec.Sources = append(store.Spec.Sources, v1alpha1.StoreImage{
+			Image: uploadedBp,
+		})
+		storeUpdated = true
+		f.Printer.Printf("Added Buildpackage '%s'", uploadedBp)
+	}
+
+	return store, storeUpdated, nil
+}
+
+func (f *Factory) validate(buildpackages []string) error {
+	if len(buildpackages) < 1 {
 		return errors.New("At least one buildpackage must be provided")
 	}
 
 	_, err := name.ParseReference(f.DefaultRepository, name.WeakValidation)
 
 	return err
+}
+
+func storeContains(store *v1alpha1.Store, buildpackage string) bool {
+	digest := strings.Split(buildpackage, "@")[1]
+
+	for _, image := range store.Spec.Sources {
+		parts := strings.Split(image.Image, "@")
+		if len(parts) != 2 {
+			continue
+		}
+
+		if parts[1] == digest {
+			return true
+		}
+	}
+	return false
 }
