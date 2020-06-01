@@ -9,17 +9,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-type ConfirmationProvider interface {
-	Confirm(message string, okayResponses ...string) (bool, error)
-}
-
 type defaultConfirmationProvider struct {
 	reader               io.Reader
 	writer               io.Writer
 	defaultOkayResponses []string
 }
 
-func NewConfirmationProvider() ConfirmationProvider {
+func NewConfirmationProvider() defaultConfirmationProvider {
 	return defaultConfirmationProvider{
 		reader:               os.Stdin,
 		writer:               os.Stdout,

@@ -8,11 +8,14 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvider commands.ConfirmationProvider) *cobra.Command {
+type ConfirmationProvider interface {
+	Confirm(message string, okayResponses ...string) (bool, error)
+}
+
+func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvider ConfirmationProvider) *cobra.Command {
 	const (
 		warningMessage = "WARNING: Builders referring to buildpacks from this store will no longer schedule rebuilds for buildpack updates."
 	)
