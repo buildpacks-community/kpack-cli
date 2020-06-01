@@ -33,7 +33,7 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use: "tbctl",
-		Long: `tbctl controls the Kpack installation on Kubernetes.
+		Long: `tbctl controls the kpack installation on Kubernetes.
 
 kpack extends Kubernetes and utilizes unprivileged kubernetes primitives to provide 
 builds of OCI images as a platform implementation of Cloud Native Buildpacks (CNB).
@@ -190,6 +190,7 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	}
 	storeRootCommand.AddCommand(
 		storecmds.NewCreateCommand(clientSetProvider, factory),
+		storecmds.NewDeleteCommand(clientSetProvider, commands.NewConfirmationProvider()),
 		storecmds.NewAddCommand(clientSetProvider, factory),
 		storecmds.NewStatusCommand(clientSetProvider),
 		storecmds.NewRemoveCommand(clientSetProvider),
