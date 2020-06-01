@@ -6,14 +6,15 @@ import (
 
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
-	"github.com/pkg/errors"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/store"
+	storecmds "github.com/pivotal/build-service-cli/pkg/commands/store"
+	"github.com/pivotal/build-service-cli/pkg/store"
+	"github.com/pivotal/build-service-cli/pkg/store/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -27,16 +28,20 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 		storeName           = "some-store-name"
 	)
 
-	fakeBuildpackageUploader := FakeBuildpackageUploader{
+	fakeBuildpackageUploader := fakes.FakeBuildpackageUploader{
 		"some/newbp":    "some/path/newbp@sha256:123newbp",
 		"bpfromcnb.cnb": "some/path/bpfromcnb@sha256:123imagefromcnb",
 
 		"some/imageAlreadyInStore": "some/path/imageInStoreDifferentPath@sha256:123alreadyInStore",
 	}
 
+	factory := &store.Factory{
+		Uploader: fakeBuildpackageUploader,
+	}
+
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return store.NewAddCommand(clientSetProvider, fakeBuildpackageUploader)
+		return storecmds.NewAddCommand(clientSetProvider, factory)
 	}
 
 	store := &expv1alpha1.Store{
@@ -120,19 +125,4 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectedOutput: fmt.Sprintf("Error: Unable to find default registry for store: %s\n", storeName),
 		}.TestKpack(t, cmdFunc)
 	})
-}
-
-type FakeBuildpackageUploader map[string]string
-
-func (f FakeBuildpackageUploader) Upload(defaultRepository string, buildpackage string) (string, error) {
-	const expectedRepository = "some/path"
-	if defaultRepository != expectedRepository {
-		return "", errors.Errorf("unexpected repository %s expected %s", defaultRepository, expectedRepository)
-	}
-
-	uploadedImage, ok := f[buildpackage]
-	if !ok {
-		return "", errors.Errorf("could not upload %s", buildpackage)
-	}
-	return uploadedImage, nil
 }

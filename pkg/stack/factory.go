@@ -29,6 +29,10 @@ type Factory struct {
 }
 
 func (f *Factory) MakeStack(name string) (*expv1alpha1.Stack, error) {
+	if err := f.validate(); err != nil {
+		return nil, err
+	}
+
 	buildImage, err := f.Fetcher.Fetch(f.BuildImageRef)
 	if err != nil {
 		return nil, err
@@ -84,8 +88,5 @@ func (f *Factory) MakeStack(name string) (*expv1alpha1.Stack, error) {
 
 func (f *Factory) validate() error {
 	_, err := name.ParseReference(f.DefaultRepository, name.WeakValidation)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
