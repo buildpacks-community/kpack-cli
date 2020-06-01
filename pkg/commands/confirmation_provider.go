@@ -3,30 +3,41 @@ package commands
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
+
+	"github.com/pkg/errors"
 )
 
 type ConfirmationProvider interface {
 	Confirm(message string, okayResponses ...string) (bool, error)
 }
 
-type confirmationProviderImpl struct {
+type defaultConfirmationProvider struct {
+	reader               io.Reader
+	writer               io.Writer
 	defaultOkayResponses []string
 }
 
 func NewConfirmationProvider() ConfirmationProvider {
-	return confirmationProviderImpl{
+	return defaultConfirmationProvider{
+		reader:               os.Stdin,
+		writer:               os.Stdout,
 		defaultOkayResponses: []string{"y", "Y", "yes", "YES"},
 	}
 }
 
-func (s confirmationProviderImpl) Confirm(message string, okayResponses ...string) (bool, error) {
-	_, err := fmt.Fprint(os.Stdout, message)
+func (s defaultConfirmationProvider) Confirm(message string, okayResponses ...string) (bool, error) {
+	if message == "" {
+		return false, errors.New("confirmation message cannot be empty")
+	}
+
+	_, err := fmt.Fprint(s.writer, message)
 	if err != nil {
 		return false, err
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(s.reader)
 	scanner.Scan()
 	response := scanner.Text()
 
