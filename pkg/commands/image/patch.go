@@ -11,10 +11,11 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, factory *image.PatchFactory) *cobra.Command {
+func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, factory *image.PatchFactory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
 		namespace string
 		subPath   string
+		wait      bool
 	)
 
 	cmd := &cobra.Command{
@@ -73,13 +74,25 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
-			_, err = cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Patch(args[0], types.MergePatchType, patch)
+			img, err = cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Patch(args[0], types.MergePatchType, patch)
 			if err != nil {
 				return err
 			}
 
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" patched\n", img.Name)
-			return err
+			if err != nil {
+				return err
+			}
+
+			if wait {
+				_, err = newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
+				if err != nil {
+					return err
+				}
+
+			}
+
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
@@ -93,5 +106,6 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables to add/replace")
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
 
+	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image patch to be reconciled and tail resulting build logs")
 	return cmd
 }

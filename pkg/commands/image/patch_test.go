@@ -1,6 +1,9 @@
 package image_test
 
 import (
+	"context"
+	"github.com/stretchr/testify/assert"
+	"io"
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -14,6 +17,7 @@ import (
 
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	"github.com/pivotal/build-service-cli/pkg/image"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 	srcfakes "github.com/pivotal/build-service-cli/pkg/source/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
@@ -32,10 +36,13 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 	patchFactory := &image.PatchFactory{
 		SourceUploader: sourceUploader,
 	}
+	fakeImageWaiter := &FakeImageWaiter{}
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-		return imgcmds.NewPatchCommand(clientSetProvider, patchFactory)
+		return imgcmds.NewPatchCommand(clientSetProvider, patchFactory, func(set k8s.ClientSet) imgcmds.ImageWaiter {
+			return fakeImageWaiter
+		})
 	}
 
 	img := &v1alpha1.Image{
@@ -82,6 +89,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "nothing to patch\n",
 			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.calls, 0)
 		})
 	})
 
@@ -101,6 +109,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 						`{"spec":{"source":{"subPath":null}}}`,
 					},
 				}.TestKpack(t, cmdFunc)
+				assert.Len(t, fakeImageWaiter.calls, 0)
 			})
 
 			it("can patch it with a non-empty string", func() {
@@ -117,6 +126,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 						`{"spec":{"source":{"subPath":"a-new-path"}}}`,
 					},
 				}.TestKpack(t, cmdFunc)
+				assert.Len(t, fakeImageWaiter.calls, 0)
 			})
 		})
 
@@ -134,6 +144,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.calls, 0)
 		})
 
 		it("can change git revision if existing source is git", func() {
@@ -150,6 +161,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.calls, 0)
 		})
 
 		it("git revision defaults to master if not provided with git", func() {
@@ -172,7 +184,9 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"source":{"blob":null,"git":{"revision":"master","url":"some-new-git-url"}}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.calls, 0)
 		})
+
 	})
 
 	when("patching the builder", func() {
@@ -190,6 +204,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"builder":{"kind":"CustomBuilder","name":"some-builder","namespace":"some-default-namespace"}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.calls, 0)
 		})
 	})
 
@@ -208,6 +223,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"build":{"env":[{"name":"key1","value":"value1"}]}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.calls, 0)
 		})
 
 		it("can update existing env vars", func() {
@@ -224,6 +240,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"build":{"env":[{"name":"key1","value":"some-other-value"},{"name":"key2","value":"value2"}]}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.calls, 0)
 		})
 
 		it("can add new env vars", func() {
@@ -240,6 +257,40 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"build":{"env":[{"name":"key1","value":"value1"},{"name":"key2","value":"value2"},{"name":"key3","value":"value3"}]}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
+
+			assert.Len(t, fakeImageWaiter.calls, 0)
 		})
 	})
+
+	it("will wait on the image update if requested", func() {
+		testhelpers.CommandTest{
+			Objects: []runtime.Object{
+				img,
+			},
+			Args: []string{
+				"some-image",
+				"--git-revision", "some-new-revision",
+				"--wait",
+			},
+			ExpectedOutput: "\"some-image\" patched\n",
+			ExpectPatches: []string{
+				`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
+			},
+		}.TestKpack(t, cmdFunc)
+
+		expectedWaitImage := img.DeepCopy()
+		expectedWaitImage.Spec.Source.Git.Revision = "some-new-revision"
+
+		assert.Len(t, fakeImageWaiter.calls, 1)
+		assert.Equal(t, fakeImageWaiter.calls[0], expectedWaitImage)
+	})
+}
+
+type FakeImageWaiter struct {
+	calls []*v1alpha1.Image
+}
+
+func (f *FakeImageWaiter) Wait(ctx context.Context, writer io.Writer, image *v1alpha1.Image) (string, error) {
+	f.calls = append(f.calls, image)
+	return "", nil
 }

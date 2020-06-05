@@ -10,9 +10,10 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
 		namespace string
+		wait      bool
 	)
 
 	cmd := &cobra.Command{
@@ -63,13 +64,24 @@ kp image create my-image my-registry.com/my-repo  --blob https://my-blob-host.co
 			}
 			img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(originalImageCfg)
 
-			_, err = cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Create(img)
+			img, err = cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Create(img)
 			if err != nil {
 				return err
 			}
 
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", img.Name)
-			return err
+			if err != nil {
+				return err
+			}
+			if wait {
+				_, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
+				if err != nil {
+					return err
+				}
+
+			}
+
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
@@ -81,6 +93,8 @@ kp image create my-image my-registry.com/my-repo  --blob https://my-blob-host.co
 	cmd.Flags().StringVarP(&factory.Builder, "custom-builder", "b", "", "custom builder name")
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "custom-cluster-builder", "c", "", "custom cluster builder name")
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
+
+	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
 
 	return cmd
 }
