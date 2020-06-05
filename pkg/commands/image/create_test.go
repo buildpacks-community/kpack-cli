@@ -1,13 +1,16 @@
 package image_test
 
 import (
+	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"testing"
 
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,17 +35,20 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	imageFactory := &image.Factory{
 		SourceUploader: sourceUploader,
 	}
+	fakeImageWaiter := &fakes.FakeImageWaiter{}
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-		return imgcmds.NewCreateCommand(clientSetProvider, imageFactory)
+		return imgcmds.NewCreateCommand(clientSetProvider, imageFactory, func(set k8s.ClientSet) imgcmds.ImageWaiter {
+			return fakeImageWaiter
+		})
 	}
 
 	when("a namespace is provided", func() {
 		const namespace = "some-namespace"
 
 		when("the image config is valid", func() {
-			it("creates the image", func() {
+			it("creates the image and wait on the image", func() {
 				expectedImage := &v1alpha1.Image{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Image",
@@ -89,12 +95,16 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
 						"-n", namespace,
+						"--wait",
 					},
 					ExpectedOutput: "\"some-image\" created\n",
 					ExpectCreates: []runtime.Object{
 						expectedImage,
 					},
 				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 1)
+				assert.Equal(t, fakeImageWaiter.Calls[0], expectedImage)
 			})
 		})
 
@@ -111,6 +121,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectErr:      true,
 					ExpectedOutput: "Error: image source must be one of git, blob, or local-path\n",
 				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 		})
 	})
@@ -169,6 +181,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						expectedImage,
 					},
 				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 		})
 
@@ -184,6 +198,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectErr:      true,
 					ExpectedOutput: "Error: image source must be one of git, blob, or local-path\n",
 				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 		})
 	})
@@ -239,6 +255,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					expectedImage,
 				},
 			}.TestKpack(t, cmdFunc)
+
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 	})
 
@@ -285,6 +303,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					expectedImage,
 				},
 			}.TestKpack(t, cmdFunc)
+
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 	})
 
@@ -330,6 +350,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					expectedImage,
 				},
 			}.TestKpack(t, cmdFunc)
+
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 	})
 }

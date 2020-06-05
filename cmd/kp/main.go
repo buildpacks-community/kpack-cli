@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pivotal/kpack/pkg/logs"
 	"github.com/spf13/cobra"
 
 	"github.com/pivotal/build-service-cli/pkg/buildpackage"
@@ -82,9 +83,12 @@ func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Use:   "image",
 		Short: "Image commands",
 	}
+	newImageWaiter := func(clientSet k8s.ClientSet) imgcmds.ImageWaiter {
+		return logs.NewImageWaiter(clientSet.KpackClient, logs.NewBuildLogsClient(clientSet.K8sClient))
+	}
 	imageRootCmd.AddCommand(
-		imgcmds.NewCreateCommand(clientSetProvider, imageFactory),
-		imgcmds.NewPatchCommand(clientSetProvider, imagePatchFactory),
+		imgcmds.NewCreateCommand(clientSetProvider, imageFactory, newImageWaiter),
+		imgcmds.NewPatchCommand(clientSetProvider, imagePatchFactory, newImageWaiter),
 		imgcmds.NewListCommand(clientSetProvider),
 		imgcmds.NewDeleteCommand(clientSetProvider),
 		imgcmds.NewTriggerCommand(clientSetProvider),
