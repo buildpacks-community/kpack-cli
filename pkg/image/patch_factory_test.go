@@ -108,4 +108,12 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			require.EqualError(t, err, "delete-env parameter 'bar' not found in existing image configuration")
 		})
 	})
+
+	when("the image.spec.build is nil", func() {
+		it("does not panic", func() {
+			img.Spec.Build = nil
+			_, err := factory.MakePatch(img)
+			require.NoError(t, err)
+		})
+	})
 }

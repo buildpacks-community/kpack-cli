@@ -26,6 +26,10 @@ type PatchFactory struct {
 }
 
 func (f *PatchFactory) MakePatch(img *v1alpha1.Image) ([]byte, error) {
+	if img.Spec.Build == nil {
+		img.Spec.Build = &v1alpha1.ImageBuild{}
+	}
+
 	err := f.validate(img)
 	if err != nil {
 		return nil, err
