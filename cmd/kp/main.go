@@ -32,8 +32,8 @@ func main() {
 	var clientSetProvider k8s.DefaultClientSetProvider
 
 	rootCmd := &cobra.Command{
-		Use: "tbctl",
-		Long: `tbctl controls the kpack installation on Kubernetes.
+		Use: "kp",
+		Long: `kp controls the kpack installation on Kubernetes.
 
 kpack extends Kubernetes and utilizes unprivileged kubernetes primitives to provide 
 builds of OCI images as a platform implementation of Cloud Native Buildpacks (CNB).
@@ -59,7 +59,7 @@ Learn more about kpack @ https://github.com/pivotal/kpack`,
 func getVersionCommand() *cobra.Command {
 	versionCmd := &cobra.Command{
 		Use:   "version",
-		Short: "Display tbctl version",
+		Short: "Display kp version",
 		Run: func(cmd *cobra.Command, _ []string) {
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), Version+" "+CommitSHA)
 		},

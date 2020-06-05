@@ -14,7 +14,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Use:     "delete <name>",
 		Short:   "Delete a stack",
 		Long:    "Delete a specific stack from the cluster.",
-		Example: "tbctl stack delete my-stack",
+		Example: "kp stack delete my-stack",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")

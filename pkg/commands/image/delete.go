@@ -20,7 +20,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Delete an image and its associated image builds in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
-		Example: "tbctl image delete my-image",
+		Example: "kp image delete my-image",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)

@@ -41,11 +41,11 @@ For example, "--env key1=value1 --env key2=value2 ...".
 Existing environment variables may be deleted by using the "--delete-env" flag.
 For each environment variable, supply the "--delete-env" flag followed by the variable name.
 For example, "--delete-env key1 --delete-env key2 ...".`,
-		Example: `tbctl image patch my-image --git-revision my-other-branch
-tbctl image patch my-image --blob https://my-blob-host.com/my-blob
-tbctl image patch my-image --local-path /path/to/local/source/code
-tbctl image patch my-image --local-path /path/to/local/source/code --builder my-builder
-tbctl image patch my-image --env foo=bar --env color=red --delete-env apple --delete-env potato`,
+		Example: `kp image patch my-image --git-revision my-other-branch
+kp image patch my-image --blob https://my-blob-host.com/my-blob
+kp image patch my-image --local-path /path/to/local/source/code
+kp image patch my-image --local-path /path/to/local/source/code --builder my-builder
+kp image patch my-image --env foo=bar --env color=red --delete-env apple --delete-env potato`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

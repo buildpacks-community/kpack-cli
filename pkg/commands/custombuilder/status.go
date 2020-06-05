@@ -25,7 +25,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Prints detailed information about the status of a specific custom builder in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
-		Example:      "tbctl cb status my-builder\ntbctl cb status -n my-namespace other-builder",
+		Example:      "kp cb status my-builder\nkp cb status -n my-namespace other-builder",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

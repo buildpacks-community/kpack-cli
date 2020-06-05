@@ -40,11 +40,11 @@ The flags for this command determine the type of secret that will be created:
 
   "--git" and "--git-user" to create Basic Auth based git credentials.
   Use the "GIT_PASSWORD" env var to bypass the password prompt.`,
-		Example: `tbctl secret create my-docker-hub-creds --dockerhub dockerhub-id
-tbctl secret create my-gcr-creds --gcr /path/to/gcr/service-account.json
-tbctl secret create my-registry-cred --registry example-registry.io/my-repo --registry-user my-registry-user
-tbctl secret create my-git-ssh-cred --git git@github.com --git-ssh-key /path/to/git/ssh-private-key.pem
-tbctl secret create my-git-cred --git https://github.com --git-user my-git-user`,
+		Example: `kp secret create my-docker-hub-creds --dockerhub dockerhub-id
+kp secret create my-gcr-creds --gcr /path/to/gcr/service-account.json
+kp secret create my-registry-cred --registry example-registry.io/my-repo --registry-user my-registry-user
+kp secret create my-git-ssh-cred --git git@github.com --git-ssh-key /path/to/git/ssh-private-key.pem
+kp secret create my-git-cred --git https://github.com --git-user my-git-user`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

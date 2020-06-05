@@ -19,7 +19,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Prints a table of the most important information about stores in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
-		Example: "tbctl store list\ntbctl store list -n my-namespace",
+		Example: "kp store list\nkp store list -n my-namespace",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {

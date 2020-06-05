@@ -3,10 +3,10 @@
 ### Building Locally
 
 ```
-go install ./cmd/tbctl
+go install ./cmd/kp
 ```
 
 ### Getting Started
 ```
-tbctl --help
+kp --help
 ```

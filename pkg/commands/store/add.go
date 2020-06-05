@@ -19,9 +19,9 @@ func NewAddCommand(clientSetProvider k8s.ClientSetProvider, factory *store.Facto
 
 Buildpackages will be uploaded to the the registry configured on your store.
 Therefore, you must have credentials to access the registry on your machine.`,
-		Example: `tbctl store add my-store my-registry.com/my-buildpackage
-tbctl store add my-store my-registry.com/my-buildpackage my-registry.com/my-other-buildpackage my-registry.com/my-third-buildpackage
-tbctl store add my-store ../path/to/my-local-buildpackage.cnb`,
+		Example: `kp store add my-store my-registry.com/my-buildpackage
+kp store add my-store my-registry.com/my-buildpackage my-registry.com/my-other-buildpackage my-registry.com/my-third-buildpackage
+kp store add my-store ../path/to/my-local-buildpackage.cnb`,
 		Args:         cobra.MinimumNArgs(2),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -25,7 +25,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 namespace defaults to the kubernetes current-context namespace.`,
 
-		Example:      "tbctl build list my-image\ntbctl build list my-image -n my-namespace",
+		Example:      "kp build list my-image\nkp build list my-image -n my-namespace",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

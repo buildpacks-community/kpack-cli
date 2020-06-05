@@ -27,7 +27,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 build defaults to the latest build number.
 namespace defaults to the kubernetes current-context namespace.`,
-		Example:      "tbctl build status my-image\ntbctl build status my-image -b 2 -n my-namespace",
+		Example:      "kp build status my-image\nkp build status my-image -b 2 -n my-namespace",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

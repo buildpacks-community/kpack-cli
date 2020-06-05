@@ -18,9 +18,9 @@ Buildpackages will be uploaded to the the default registry configured on your st
 Therefore, you must have credentials to access the registry on your machine.
 
 This store will be created only if it does not exist.`,
-		Example: `tbctl store create my-store my-registry.com/my-buildpackage --default-repository some-registry.io/some-repo
-tbctl store create my-store my-registry.com/my-buildpackage my-registry.com/my-other-buildpackage --default-repository some-registry.io/some-repo
-tbctl store create my-store ../path/to/my-local-buildpackage.cnb --default-repository some-registry.io/some-repo`,
+		Example: `kp store create my-store my-registry.com/my-buildpackage --default-repository some-registry.io/some-repo
+kp store create my-store my-registry.com/my-buildpackage my-registry.com/my-other-buildpackage --default-repository some-registry.io/some-repo
+kp store create my-store ../path/to/my-local-buildpackage.cnb --default-repository some-registry.io/some-repo`,
 		Args:         cobra.MinimumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

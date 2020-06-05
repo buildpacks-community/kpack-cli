@@ -31,8 +31,8 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short: "Create a custom cluster builder",
 		Long: `Create a custom cluster builder by providing command line arguments.
 This custom cluster builder will be created only if it does not exist.`,
-		Example: `tbctl ccb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
-tbctl ccb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml`,
+		Example: `kp ccb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
+kp ccb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml`,
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

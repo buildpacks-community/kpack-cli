@@ -28,7 +28,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvi
 		Use:          "delete <store>",
 		Short:        "Delete a store",
 		Long:         fmt.Sprintf("Delete a specific buildpack store.\n\n%s", warningMessage),
-		Example:      `tbctl store delete my-store`,
+		Example:      `kp store delete my-store`,
 		Args:         cobra.MinimumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

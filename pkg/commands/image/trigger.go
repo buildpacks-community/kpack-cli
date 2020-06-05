@@ -27,7 +27,7 @@ func NewTriggerCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Trigger a build using current inputs for a specific image in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
-		Example: "tbctl image trigger my-image",
+		Example: "kp image trigger my-image",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)

@@ -23,7 +23,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Use:          "status <name>",
 		Short:        "Display stack status",
 		Long:         `Prints detailed information about the status of a specific stack.`,
-		Example:      "tbctl stack status my-stack",
+		Example:      "kp stack status my-stack",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

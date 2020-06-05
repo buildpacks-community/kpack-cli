@@ -19,7 +19,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Use:          "list",
 		Short:        "List available custom cluster builders",
 		Long:         `Prints a table of the most important information about the available custom cluster builders.`,
-		Example:      "tbctl ccb list",
+		Example:      "kp ccb list",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")

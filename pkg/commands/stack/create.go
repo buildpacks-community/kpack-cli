@@ -18,8 +18,8 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *stack.Fa
 The run and build images will be uploaded to the the registry provided by "--default-repository".
 Therefore, you must have credentials to access the registry on your machine.
 Additionally, your cluster must have read access to the registry.`,
-		Example: `tbctl stack create my-stack --default-repository some-registry.io/some-repo --build-image my-registry.com/build --run-image my-registry.com/run
-tbctl stack create my-stack --default-repository some-registry.io/some-repo --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
+		Example: `kp stack create my-stack --default-repository some-registry.io/some-repo --build-image my-registry.com/build --run-image my-registry.com/run
+kp stack create my-stack --default-repository some-registry.io/some-repo --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

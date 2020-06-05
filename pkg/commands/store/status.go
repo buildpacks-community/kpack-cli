@@ -22,7 +22,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Use:          "status <store-name>",
 		Short:        "Display store status",
 		Long:         `Prints information about the status of a specific store.`,
-		Example:      "tbctl store status my-store",
+		Example:      "kp store status my-store",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

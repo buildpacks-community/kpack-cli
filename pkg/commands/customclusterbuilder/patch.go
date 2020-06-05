@@ -22,7 +22,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Use:          "patch <name>",
 		Short:        "Patch an existing custom cluster builder configuration",
 		Long:         ` `,
-		Example:      `tbctl ccb patch my-builder`,
+		Example:      `kp ccb patch my-builder`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -35,11 +35,11 @@ Therefore, you must have credentials to access the registry on your machine.
 Environment variables may be provided by using the "--env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
 For example, "--env key1=value1 --env key2=value2 ...".`,
-		Example: `tbctl image create my-image my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
-tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host.com/my-blob
-tbctl image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code
-tbctl image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code --custom-builder my-builder -n my-namespace
-tbctl image create my-image my-registry.com/my-repo  --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple`,
+		Example: `kp image create my-image my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
+kp image create my-image my-registry.com/my-repo  --blob https://my-blob-host.com/my-blob
+kp image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code
+kp image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code --custom-builder my-builder -n my-namespace
+kp image create my-image my-registry.com/my-repo  --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple`,
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

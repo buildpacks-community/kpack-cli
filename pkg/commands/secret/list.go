@@ -23,7 +23,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Prints a table of the most important information about secrets in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
-		Example:      "tbctl secret list\ntbctl secret list -n my-namespace",
+		Example:      "kp secret list\nkp secret list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)
