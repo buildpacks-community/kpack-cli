@@ -1,9 +1,6 @@
 package image_test
 
 import (
-	"context"
-	"github.com/stretchr/testify/assert"
-	"io"
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -11,12 +8,14 @@ import (
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	"github.com/pivotal/build-service-cli/pkg/image"
+	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	srcfakes "github.com/pivotal/build-service-cli/pkg/source/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
@@ -36,7 +35,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 	patchFactory := &image.PatchFactory{
 		SourceUploader: sourceUploader,
 	}
-	fakeImageWaiter := &FakeImageWaiter{}
+	fakeImageWaiter := &fakes.FakeImageWaiter{}
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
@@ -89,7 +88,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "nothing to patch\n",
 			}.TestKpack(t, cmdFunc)
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 	})
 
@@ -109,7 +108,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 						`{"spec":{"source":{"subPath":null}}}`,
 					},
 				}.TestKpack(t, cmdFunc)
-				assert.Len(t, fakeImageWaiter.calls, 0)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 
 			it("can patch it with a non-empty string", func() {
@@ -126,7 +125,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 						`{"spec":{"source":{"subPath":"a-new-path"}}}`,
 					},
 				}.TestKpack(t, cmdFunc)
-				assert.Len(t, fakeImageWaiter.calls, 0)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 		})
 
@@ -144,7 +143,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 
 		it("can change git revision if existing source is git", func() {
@@ -161,7 +160,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 
 		it("git revision defaults to master if not provided with git", func() {
@@ -184,7 +183,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"source":{"blob":null,"git":{"revision":"master","url":"some-new-git-url"}}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 
 	})
@@ -204,7 +203,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"builder":{"kind":"CustomBuilder","name":"some-builder","namespace":"some-default-namespace"}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 	})
 
@@ -223,7 +222,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"build":{"env":[{"name":"key1","value":"value1"}]}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 
 		it("can update existing env vars", func() {
@@ -240,7 +239,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					`{"spec":{"build":{"env":[{"name":"key1","value":"some-other-value"},{"name":"key2","value":"value2"}]}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 
 		it("can add new env vars", func() {
@@ -258,7 +257,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}.TestKpack(t, cmdFunc)
 
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 	})
 
@@ -281,16 +280,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 		expectedWaitImage := img.DeepCopy()
 		expectedWaitImage.Spec.Source.Git.Revision = "some-new-revision"
 
-		assert.Len(t, fakeImageWaiter.calls, 1)
-		assert.Equal(t, fakeImageWaiter.calls[0], expectedWaitImage)
+		assert.Len(t, fakeImageWaiter.Calls, 1)
+		assert.Equal(t, fakeImageWaiter.Calls[0], expectedWaitImage)
 	})
-}
-
-type FakeImageWaiter struct {
-	calls []*v1alpha1.Image
-}
-
-func (f *FakeImageWaiter) Wait(ctx context.Context, writer io.Writer, image *v1alpha1.Image) (string, error) {
-	f.calls = append(f.calls, image)
-	return "", nil
 }

@@ -73,6 +73,7 @@ kp image create my-image my-registry.com/my-repo  --blob https://my-blob-host.co
 			if err != nil {
 				return err
 			}
+
 			if wait {
 				_, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 				if err != nil {

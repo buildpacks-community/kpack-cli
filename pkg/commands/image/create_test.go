@@ -1,6 +1,7 @@
 package image_test
 
 import (
+	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"testing"
 
 	"github.com/pivotal/build-service-cli/pkg/k8s"
@@ -34,7 +35,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	imageFactory := &image.Factory{
 		SourceUploader: sourceUploader,
 	}
-	fakeImageWaiter := &FakeImageWaiter{}
+	fakeImageWaiter := &fakes.FakeImageWaiter{}
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
@@ -102,8 +103,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				}.TestKpack(t, cmdFunc)
 
-				assert.Len(t, fakeImageWaiter.calls, 1)
-				assert.Equal(t, fakeImageWaiter.calls[0], expectedImage)
+				assert.Len(t, fakeImageWaiter.Calls, 1)
+				assert.Equal(t, fakeImageWaiter.Calls[0], expectedImage)
 			})
 		})
 
@@ -121,7 +122,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectedOutput: "Error: image source must be one of git, blob, or local-path\n",
 				}.TestKpack(t, cmdFunc)
 
-				assert.Len(t, fakeImageWaiter.calls, 0)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 		})
 	})
@@ -181,7 +182,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				}.TestKpack(t, cmdFunc)
 
-				assert.Len(t, fakeImageWaiter.calls, 0)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 		})
 
@@ -198,7 +199,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectedOutput: "Error: image source must be one of git, blob, or local-path\n",
 				}.TestKpack(t, cmdFunc)
 
-				assert.Len(t, fakeImageWaiter.calls, 0)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 		})
 	})
@@ -255,7 +256,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}.TestKpack(t, cmdFunc)
 
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 	})
 
@@ -303,7 +304,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}.TestKpack(t, cmdFunc)
 
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 	})
 
@@ -350,7 +351,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}.TestKpack(t, cmdFunc)
 
-			assert.Len(t, fakeImageWaiter.calls, 0)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 	})
 }
