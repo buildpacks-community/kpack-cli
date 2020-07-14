@@ -43,15 +43,15 @@ func NewImportCommand(provider k8s.ClientSetProvider, storeFactory *storepkg.Fac
 	)
 
 	cmd := &cobra.Command{
-		Use:   "import -f <filename>",
+		Use:   "import -f <filename> -r <repository>",
 		Short: "Import dependencies for stores, stacks, and custom cluster builders",
 		Long:  `Bootstrap an installation from a dependency descriptor configuration.
 
 This operation will create stores, stacks, and custom cluster builders defined in the dependency descriptor.
-Images defined in the descriptor will be uploaded to the the registry defined with the '--registry' flag.
-Therefore, you must have credentials to access the registry on your machine.
+Images defined in the descriptor will be uploaded to the the registry defined with the '--repository' flag.
+Therefore, you must have credentials to access the repository on your machine.
 
-To allow the cluster to interact with a private registry, please provide both a username and password for the target registry.
+To allow the cluster to interact with a private repository, please provide both a username and password for the target registry.
 `,
 		Example: `kp import -f dependencies.yaml -r my-registry.com/my-project
 cat dependencies.yaml | kp import -f - -r my-registry.com/my-project
