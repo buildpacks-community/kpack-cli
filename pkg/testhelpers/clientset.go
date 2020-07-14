@@ -46,3 +46,12 @@ func GetFakeK8sProvider(k8sClient *k8sfakes.Clientset, namespace string) FakeCli
 		},
 	}
 }
+
+func GetFakeClusterProvider(k8sClient *k8sfakes.Clientset, kpackClient *kpackfakes.Clientset) FakeClientSetProvider {
+	return FakeClientSetProvider{
+		clientSet: k8s.ClientSet{
+			K8sClient:   k8sClient,
+			KpackClient: kpackClient,
+		},
+	}
+}

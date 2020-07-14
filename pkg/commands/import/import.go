@@ -45,7 +45,7 @@ func NewImportCommand(provider k8s.ClientSetProvider, storeFactory *storepkg.Fac
 	cmd := &cobra.Command{
 		Use:   "import -f <filename> -r <repository>",
 		Short: "Import dependencies for stores, stacks, and custom cluster builders",
-		Long:  `Bootstrap an installation from a dependency descriptor configuration.
+		Long: `Bootstrap an installation from a dependency descriptor configuration.
 
 This operation will create stores, stacks, and custom cluster builders defined in the dependency descriptor.
 Images defined in the descriptor will be uploaded to the the registry defined with the '--repository' flag.

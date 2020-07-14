@@ -29,6 +29,28 @@ type CommandTest struct {
 	ExpectPatches  []string
 }
 
+func (c CommandTest) TestK8sAndKpack(t *testing.T, cmdFactory func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command) {
+	t.Helper()
+	k8sClient := k8sfakes.NewSimpleClientset(c.Objects...)
+	kpackClient := kpackfakes.NewSimpleClientset(c.Objects...)
+
+	cmd := cmdFactory(k8sClient, kpackClient)
+	cmd.SetArgs(c.Args)
+
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+
+	err := cmd.Execute()
+	if !c.ExpectErr {
+		require.NoError(t, err)
+	} else {
+		require.Error(t, err)
+	}
+
+	require.Equal(t, c.ExpectedOutput, out.String())
+	TestK8sAndKpackActions(t, k8sClient, kpackClient, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes, c.ExpectPatches)
+}
+
 func (c CommandTest) TestKpack(t *testing.T, cmdFactory func(clientSet *kpackfakes.Clientset) *cobra.Command) {
 	t.Helper()
 	client := kpackfakes.NewSimpleClientset(c.Objects...)

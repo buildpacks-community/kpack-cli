@@ -264,3 +264,116 @@ func TestKpackActions(
 		t.Errorf("Extra delete-collection: %#v", extra)
 	}
 }
+
+func TestK8sAndKpackActions(
+	t *testing.T,
+	k8sClientSet *k8sfakes.Clientset,
+	kpackClientSet *kpackfakes.Clientset,
+	expectUpdates []clientgotesting.UpdateActionImpl,
+	expectCreates []runtime.Object,
+	expectDeletes []clientgotesting.DeleteActionImpl,
+	expectPatches []string,
+) {
+	t.Helper()
+
+	k8sActions, err := ActionRecorderList{k8sClientSet}.ActionsByVerb()
+	require.NoError(t, err)
+
+	kpackActions, err := ActionRecorderList{kpackClientSet}.ActionsByVerb()
+	require.NoError(t, err)
+
+	creates := append(k8sActions.Creates, kpackActions.Creates...)
+
+	for i, want := range expectCreates {
+		if i >= len(creates) {
+			t.Errorf("Missing create: %#v", want)
+			continue
+		}
+
+		got := creates[i].GetObject()
+
+		if diff := cmp.Diff(want, got, cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("Unexpected create (-want, +got): %s", diff)
+		}
+	}
+
+	if got, want := len(creates), len(expectCreates); got > want {
+		for _, extra := range creates[want:] {
+			t.Errorf("Extra create: %#v", extra.GetObject())
+		}
+	}
+
+	deletes := append(k8sActions.Deletes, kpackActions.Deletes...)
+
+	for i, want := range expectDeletes {
+		if i >= len(deletes) {
+			wo := want.GetName()
+			t.Errorf("Missing delete for %#v", wo)
+			continue
+		}
+
+		gotNamespace := deletes[i].GetNamespace()
+		if diff := cmp.Diff(want.GetNamespace(), gotNamespace, cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("Unexpected delete (-want, +got): %s", diff)
+		}
+
+		gotName := deletes[i].GetName()
+		if diff := cmp.Diff(want.GetName(), gotName, cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("Unexpected delete (-want, +got): %s", diff)
+		}
+	}
+
+	if got, want := len(deletes), len(expectDeletes); got > want {
+		for _, extra := range deletes[want:] {
+			t.Errorf("Extra delete: %s/%s", extra.GetNamespace(), extra.GetName())
+		}
+	}
+
+	updates := append(k8sActions.Updates, kpackActions.Updates...)
+
+	for i, want := range expectUpdates {
+		if i >= len(updates) {
+			wo := want.GetObject()
+			t.Errorf("Missing update for %#v", wo)
+			continue
+		}
+
+		got := updates[i].GetObject()
+
+		if diff := cmp.Diff(want.GetObject(), got, cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("Unexpected update (-want, +got): %s", diff)
+		}
+	}
+
+	if got, want := len(updates), len(expectUpdates); got > want {
+		for _, extra := range updates[want:] {
+			t.Errorf("Extra update: %#v", extra.GetObject())
+		}
+	}
+
+	patches := append(k8sActions.Patches, kpackActions.Patches...)
+
+	actualPatches := map[string]interface{}{}
+	for _, patchObj := range patches {
+		actualPatches[string(patchObj.GetPatch())] = nil
+	}
+
+	for _, want := range expectPatches {
+		if _, ok := actualPatches[want]; !ok {
+			t.Errorf("Missing patch: %s", want)
+			continue
+		}
+
+		delete(actualPatches, want)
+	}
+
+	for p := range actualPatches {
+		t.Errorf("Extra patch: %s", p)
+	}
+
+	deleteCols := append(k8sActions.DeleteCollections, kpackActions.DeleteCollections...)
+
+	for _, extra := range deleteCols {
+		t.Errorf("Extra delete-collection: %#v", extra)
+	}
+}
