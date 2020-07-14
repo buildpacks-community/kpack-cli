@@ -136,7 +136,7 @@ func (f *Factory) makeDockerhubSecret(name, namespace string) (*corev1.Secret, s
 		return nil, "", err
 	}
 
-	configJson := dockerConfigJson{Auths: dockerCreds{
+	configJson := DockerConfigJson{Auths: DockerCredentials{
 		DockerhubUrl: authn.AuthConfig{
 			Username: f.DockerhubId,
 			Password: password,
@@ -165,7 +165,7 @@ func (f *Factory) makeGcrSecret(name string, namespace string) (*corev1.Secret, 
 		return nil, "", err
 	}
 
-	configJson := dockerConfigJson{Auths: dockerCreds{
+	configJson := DockerConfigJson{Auths: DockerCredentials{
 		GcrUrl: authn.AuthConfig{
 			Username: GcrUser,
 			Password: string(password),
@@ -194,7 +194,7 @@ func (f *Factory) makeRegistrySecret(name string, namespace string) (*corev1.Sec
 		return nil, "", err
 	}
 
-	configJson := dockerConfigJson{Auths: dockerCreds{
+	configJson := DockerConfigJson{Auths: DockerCredentials{
 		f.Registry: authn.AuthConfig{
 			Username: f.RegistryUser,
 			Password: password,
@@ -293,10 +293,4 @@ func (p paramSet) getExtraParamsError(keys ...string) error {
 	}
 	sort.Strings(v)
 	return errors.Errorf("extraneous parameters: %s", strings.Join(v, ", "))
-}
-
-type dockerCreds map[string]authn.AuthConfig
-
-type dockerConfigJson struct {
-	Auths dockerCreds `json:"auths"`
 }

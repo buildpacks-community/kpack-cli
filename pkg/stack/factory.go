@@ -4,7 +4,7 @@
 package stack
 
 import (
-	"fmt"
+	"path"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -60,12 +60,12 @@ func (f *Factory) MakeStack(name string) (*expv1alpha1.Stack, error) {
 		return nil, errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
 	}
 
-	relocatedBuildImageRef, err := f.Relocator.Relocate(buildImage, fmt.Sprintf("%s/%s", f.DefaultRepository, BuildImageName))
+	relocatedBuildImageRef, err := f.Relocator.Relocate(buildImage, path.Join(f.DefaultRepository, BuildImageName))
 	if err != nil {
 		return nil, err
 	}
 
-	relocatedRunImageRef, err := f.Relocator.Relocate(runImage, fmt.Sprintf("%s/%s", f.DefaultRepository, RunImageName))
+	relocatedRunImageRef, err := f.Relocator.Relocate(runImage, path.Join(f.DefaultRepository, RunImageName))
 	if err != nil {
 		return nil, err
 	}

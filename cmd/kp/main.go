@@ -16,6 +16,7 @@ import (
 	buildercmds "github.com/pivotal/build-service-cli/pkg/commands/custombuilder"
 	clusterbuildercmds "github.com/pivotal/build-service-cli/pkg/commands/customclusterbuilder"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
+	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
 	stackcmds "github.com/pivotal/build-service-cli/pkg/commands/stack"
 	storecmds "github.com/pivotal/build-service-cli/pkg/commands/store"
@@ -52,6 +53,7 @@ Learn more about kpack @ https://github.com/pivotal/kpack`,
 		getBuilderCommand(clientSetProvider),
 		getStackCommand(clientSetProvider),
 		getStoreCommand(clientSetProvider),
+		getImportCommand(clientSetProvider),
 	)
 
 	err := rootCmd.Execute()
@@ -204,4 +206,20 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		storecmds.NewListCommand(clientSetProvider),
 	)
 	return storeRootCommand
+}
+
+func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	stackFactory := &stack.Factory{
+		Fetcher:   &image.Fetcher{},
+		Relocator: &image.Relocator{},
+	}
+
+	bpUploader := &buildpackage.Uploader{
+		Fetcher:   &image.Fetcher{},
+		Relocator: &image.Relocator{},
+	}
+
+	storeFactory := &store.Factory{Uploader: bpUploader}
+
+	return importcmds.NewImportCommand(clientSetProvider, storeFactory, stackFactory)
 }

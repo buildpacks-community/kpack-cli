@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	defaultStore             = "default"
 	kubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
 )
 
