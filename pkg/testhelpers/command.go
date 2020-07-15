@@ -16,8 +16,8 @@ import (
 )
 
 type CommandTest struct {
-	Objects []runtime.Object
-	K8sObjects []runtime.Object
+	Objects      []runtime.Object
+	K8sObjects   []runtime.Object
 	KpackObjects []runtime.Object
 
 	StdIn string

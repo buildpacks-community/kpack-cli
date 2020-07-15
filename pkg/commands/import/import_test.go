@@ -361,7 +361,6 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				}
 				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null,"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"CustomClusterBuilder\",\"apiVersion\":\"experimental.kpack.pivotal.io/v1alpha1\",\"metadata\":{\"name\":\"some-ccb\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"new-registry.io/new-project/some-ccb\",\"stack\":\"some-stack\",\"store\":\"some-store\",\"order\":[{\"group\":[{\"id\":\"some-registry.io/some-project/buildpackage\"}]}],\"serviceAccountRef\":{}},\"status\":{\"stack\":{}}}"}},"spec":{"tag":"new-registry.io/new-project/default","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"some-registry.io/some-project/buildpackage"}]}],"serviceAccountRef":{}},"status":{"stack":{}}}`
 
-
 				it("creates stores, stacks, and ccbs defined in the dependency descriptor", func() {
 					testhelpers.CommandTest{
 						K8sObjects: []runtime.Object{
