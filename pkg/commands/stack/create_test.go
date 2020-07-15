@@ -44,6 +44,10 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	it("creates a stack", func() {
 		expectedStack := &expv1alpha1.Stack{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       expv1alpha1.StackKind,
+				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "some-stack",
 				Annotations: map[string]string{
