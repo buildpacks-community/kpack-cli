@@ -1,6 +1,7 @@
 package _import_test
 
 import (
+	"fmt"
 	"testing"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -30,7 +31,8 @@ func TestImportCommand(t *testing.T) {
 
 func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	fakeBuildpackageUploader := storefakes.FakeBuildpackageUploader{
-		"some-registry.io/some-project/store-image": "new-registry.io/new-project/store-image",
+		"some-registry.io/some-project/store-image":   "new-registry.io/new-project/store-image@sha256:123abc",
+		"some-registry.io/some-project/store-image-2": "new-registry.io/new-project/store-image-2@sha256:456def",
 	}
 
 	storeFactory := &storepkg.Factory{
@@ -38,10 +40,13 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	buildImage, buildImageId, runImage, runImageId := makeStackImages(t, "some-stack-id")
+	buildImage2, buildImage2Id, runImage2, runImage2Id := makeStackImages(t, "some-other-stack-id")
 
 	fetcher := &fakes.Fetcher{}
 	fetcher.AddImage("some-registry.io/some-project/build-image", buildImage)
 	fetcher.AddImage("some-registry.io/some-project/run-image", runImage)
+	fetcher.AddImage("some-registry.io/some-project/build-image-2", buildImage2)
+	fetcher.AddImage("some-registry.io/some-project/run-image-2", runImage2)
 
 	relocator := &fakes.Relocator{}
 
@@ -50,7 +55,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		Relocator: relocator,
 	}
 
-	expectedStore := &expv1alpha1.Store{
+	store := &expv1alpha1.Store{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       expv1alpha1.StoreKind,
 			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
@@ -59,17 +64,21 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			Name: "some-store",
 			Annotations: map[string]string{
 				"buildservice.pivotal.io/defaultRepository":        "new-registry.io/new-project",
-				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Store","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-store","creationTimestamp":null,"annotations":{"buildservice.pivotal.io/defaultRepository":"new-registry.io/new-project"}},"spec":{"sources":[{"image":"new-registry.io/new-project/store-image"}]},"status":{}}`,
+				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Store","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-store","creationTimestamp":null,"annotations":{"buildservice.pivotal.io/defaultRepository":"new-registry.io/new-project"}},"spec":{"sources":[{"image":"new-registry.io/new-project/store-image@sha256:123abc"}]},"status":{}}`,
 			},
 		},
 		Spec: expv1alpha1.StoreSpec{
 			Sources: []expv1alpha1.StoreImage{
-				{Image: "new-registry.io/new-project/store-image"},
+				{Image: "new-registry.io/new-project/store-image@sha256:123abc"},
 			},
 		},
 	}
 
-	expectedStack := &expv1alpha1.Stack{
+	stack := &expv1alpha1.Stack{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       expv1alpha1.StackKind,
+			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-stack",
 			Annotations: map[string]string{
@@ -87,10 +96,10 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
-	defaultStack := expectedStack.DeepCopy()
+	defaultStack := stack.DeepCopy()
 	defaultStack.Name = "default"
 
-	expectedSecret := &corev1.Secret{
+	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "ccb-secret-",
 			Namespace:    "kpack",
@@ -101,7 +110,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		Type: "kubernetes.io/dockerconfigjson",
 	}
 
-	expectedServiceAccount := &corev1.ServiceAccount{
+	serviceAccount := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "ccb-serviceaccount-",
 			Namespace:    "kpack",
@@ -119,7 +128,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
-	expectedBuilder := &expv1alpha1.CustomClusterBuilder{
+	builder := &expv1alpha1.CustomClusterBuilder{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       expv1alpha1.CustomClusterBuilderKind,
 			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
@@ -138,7 +147,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 						Group: []expv1alpha1.BuildpackRef{
 							{
 								BuildpackInfo: expv1alpha1.BuildpackInfo{
-									Id: "some-registry.io/some-project/buildpackage",
+									Id: "buildpack-1",
 								},
 							},
 						},
@@ -148,19 +157,19 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
-	defaultBuilder := expectedBuilder.DeepCopy()
+	defaultBuilder := builder.DeepCopy()
 	defaultBuilder.Name = "default"
 	defaultBuilder.Spec.Tag = "new-registry.io/new-project/default"
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		k8sClientSet.PrependReactor("create", "secrets", func(action clientgotesting.Action) (handled bool, ret runtime.Object, err error) {
-			secret := expectedSecret.DeepCopy()
+			secret := secret.DeepCopy()
 			secret.Name = secret.GenerateName + "test"
 			return true, secret, nil
 		})
 
 		k8sClientSet.PrependReactor("create", "serviceaccounts", func(action clientgotesting.Action) (handled bool, ret runtime.Object, err error) {
-			sa := expectedServiceAccount.DeepCopy()
+			sa := serviceAccount.DeepCopy()
 			sa.Name = sa.GenerateName + "test"
 			return true, sa, nil
 		})
@@ -171,19 +180,19 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("there are no stores, stacks, or ccbs", func() {
 		when("a username and password are provided", func() {
-			expectedBuilder.Spec.ServiceAccountRef = corev1.ObjectReference{
-				Namespace: "kpack",
-				Name:      "ccb-serviceaccount-test",
-			}
-			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"some-registry.io/some-project/buildpackage"}]}],"serviceAccountRef":{"namespace":"kpack","name":"ccb-serviceaccount-test"}},"status":{"stack":{}}}`
-
-			defaultBuilder.Spec.ServiceAccountRef = corev1.ObjectReference{
-				Namespace: "kpack",
-				Name:      "ccb-serviceaccount-test",
-			}
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null,"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"CustomClusterBuilder\",\"apiVersion\":\"experimental.kpack.pivotal.io/v1alpha1\",\"metadata\":{\"name\":\"some-ccb\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"new-registry.io/new-project/some-ccb\",\"stack\":\"some-stack\",\"store\":\"some-store\",\"order\":[{\"group\":[{\"id\":\"some-registry.io/some-project/buildpackage\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"ccb-serviceaccount-test\"}},\"status\":{\"stack\":{}}}"}},"spec":{"tag":"new-registry.io/new-project/default","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"some-registry.io/some-project/buildpackage"}]}],"serviceAccountRef":{"namespace":"kpack","name":"ccb-serviceaccount-test"}},"status":{"stack":{}}}`
-
 			it("creates stores, stacks, and ccbs defined in the dependency descriptor", func() {
+				builder.Spec.ServiceAccountRef = corev1.ObjectReference{
+					Namespace: "kpack",
+					Name:      "ccb-serviceaccount-test",
+				}
+				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"ccb-serviceaccount-test"}},"status":{"stack":{}}}`
+
+				defaultBuilder.Spec.ServiceAccountRef = corev1.ObjectReference{
+					Namespace: "kpack",
+					Name:      "ccb-serviceaccount-test",
+				}
+				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"ccb-serviceaccount-test"}},"status":{"stack":{}}}`
+
 				testhelpers.CommandTest{
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
@@ -193,12 +202,12 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 					ExpectedOutput: "Uploading to 'new-registry.io/new-project'...\n",
 					ExpectCreates: []runtime.Object{
-						expectedSecret,
-						expectedServiceAccount,
-						expectedStore,
-						expectedStack,
+						secret,
+						serviceAccount,
+						store,
+						stack,
 						defaultStack,
-						expectedBuilder,
+						builder,
 						defaultBuilder,
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -206,10 +215,10 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		when("a username and password are not provided", func() {
-			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"some-registry.io/some-project/buildpackage"}]}],"serviceAccountRef":{}},"status":{"stack":{}}}`
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null,"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"CustomClusterBuilder\",\"apiVersion\":\"experimental.kpack.pivotal.io/v1alpha1\",\"metadata\":{\"name\":\"some-ccb\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"new-registry.io/new-project/some-ccb\",\"stack\":\"some-stack\",\"store\":\"some-store\",\"order\":[{\"group\":[{\"id\":\"some-registry.io/some-project/buildpackage\"}]}],\"serviceAccountRef\":{}},\"status\":{\"stack\":{}}}"}},"spec":{"tag":"new-registry.io/new-project/default","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"some-registry.io/some-project/buildpackage"}]}],"serviceAccountRef":{}},"status":{"stack":{}}}`
-
 			it("creates stores, stacks, and ccbs defined in the dependency descriptor", func() {
+				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{}},"status":{"stack":{}}}`
+				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{}},"status":{"stack":{}}}`
+
 				testhelpers.CommandTest{
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
@@ -217,13 +226,185 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 					ExpectedOutput: "Uploading to 'new-registry.io/new-project'...\n",
 					ExpectCreates: []runtime.Object{
-						expectedStore,
-						expectedStack,
+						store,
+						stack,
 						defaultStack,
-						expectedBuilder,
+						builder,
 						defaultBuilder,
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+	})
+
+	when("there are existing stores, stacks, or ccbs", func() {
+		when("the dependency descriptor and the store have the exact same objects", func() {
+			it("does not change any of the existing resources", func() {
+				stack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImageId)
+				stack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImageId)
+
+				defaultStack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImageId)
+				defaultStack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImageId)
+
+				testhelpers.CommandTest{
+					KpackObjects: []runtime.Object{
+						store,
+						stack,
+						defaultStack,
+						builder,
+						defaultBuilder,
+					},
+					Args: []string{
+						"-f", "./testdata/deps.yaml",
+						"-r", "new-registry.io/new-project",
+					},
+					ExpectedOutput: "Uploading to 'new-registry.io/new-project'...\nBuildpackage 'new-registry.io/new-project/store-image@sha256:123abc' already exists in the store\n",
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+
+		when("the dependency descriptor has different resources", func() {
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"some-registry.io/some-project/buildpackage"}]}],"serviceAccountRef":{}},"status":{"stack":{}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null,"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"CustomClusterBuilder\",\"apiVersion\":\"experimental.kpack.pivotal.io/v1alpha1\",\"metadata\":{\"name\":\"some-ccb\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"new-registry.io/new-project/some-ccb\",\"stack\":\"some-stack\",\"store\":\"some-store\",\"order\":[{\"group\":[{\"id\":\"some-registry.io/some-project/buildpackage\"}]}],\"serviceAccountRef\":{}},\"status\":{\"stack\":{}}}"}},"spec":{"tag":"new-registry.io/new-project/default","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"some-registry.io/some-project/buildpackage"}]}],"serviceAccountRef":{}},"status":{"stack":{}}}`
+
+			expectedStore := store.DeepCopy()
+			expectedStore.Spec.Sources = append(expectedStore.Spec.Sources, expv1alpha1.StoreImage{
+				Image: "new-registry.io/new-project/store-image-2@sha256:456def",
+			})
+
+			expectedStack := stack.DeepCopy()
+			expectedStack.Spec.Id = "some-other-stack-id"
+			expectedStack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImage2Id)
+			expectedStack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImage2Id)
+
+			expectedDefaultStack := defaultStack.DeepCopy()
+			expectedDefaultStack.Spec.Id = "some-other-stack-id"
+			expectedDefaultStack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImage2Id)
+			expectedDefaultStack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImage2Id)
+
+			expectedBuilder := builder.DeepCopy()
+			expectedBuilder.Spec.Order = []expv1alpha1.OrderEntry{
+				{
+					Group: []expv1alpha1.BuildpackRef{
+						{
+							BuildpackInfo: expv1alpha1.BuildpackInfo{
+								Id: "buildpack-2",
+							},
+						},
+					},
+				},
+			}
+
+			expectedDefaultBuilder := defaultBuilder.DeepCopy()
+			expectedDefaultBuilder.Spec.Order = []expv1alpha1.OrderEntry{
+				{
+					Group: []expv1alpha1.BuildpackRef{
+						{
+							BuildpackInfo: expv1alpha1.BuildpackInfo{
+								Id: "buildpack-2",
+							},
+						},
+					},
+				},
+			}
+
+			when("a username and password are not provided", func() {
+				it("creates stores, stacks, and ccbs defined in the dependency descriptor", func() {
+					testhelpers.CommandTest{
+						KpackObjects: []runtime.Object{
+							store,
+							stack,
+							defaultStack,
+							builder,
+							defaultBuilder,
+						},
+						Args: []string{
+							"-f", "./testdata/updated-deps.yaml",
+							"-r", "new-registry.io/new-project",
+						},
+						ExpectedOutput: "Uploading to 'new-registry.io/new-project'...\nAdded Buildpackage 'new-registry.io/new-project/store-image-2@sha256:456def'\n",
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedStore,
+							},
+							{
+								Object: expectedStack,
+							},
+							{
+								Object: expectedDefaultStack,
+							},
+							{
+								Object: expectedBuilder,
+							},
+							{
+								Object: expectedDefaultBuilder,
+							},
+						},
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
+			})
+
+			when("a username and password are provided", func() {
+				expectedSecret := secret.DeepCopy()
+
+				exepectedServiceAccount := serviceAccount.DeepCopy()
+
+				expectedBuilder.Spec.ServiceAccountRef = corev1.ObjectReference{
+					Namespace: "kpack",
+					Name:      "ccb-serviceaccount-test",
+				}
+				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"some-registry.io/some-project/buildpackage"}]}],"serviceAccountRef":{}},"status":{"stack":{}}}`
+
+				expectedDefaultBuilder.Spec.ServiceAccountRef = corev1.ObjectReference{
+					Namespace: "kpack",
+					Name:      "ccb-serviceaccount-test",
+				}
+				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null,"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"CustomClusterBuilder\",\"apiVersion\":\"experimental.kpack.pivotal.io/v1alpha1\",\"metadata\":{\"name\":\"some-ccb\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"new-registry.io/new-project/some-ccb\",\"stack\":\"some-stack\",\"store\":\"some-store\",\"order\":[{\"group\":[{\"id\":\"some-registry.io/some-project/buildpackage\"}]}],\"serviceAccountRef\":{}},\"status\":{\"stack\":{}}}"}},"spec":{"tag":"new-registry.io/new-project/default","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"some-registry.io/some-project/buildpackage"}]}],"serviceAccountRef":{}},"status":{"stack":{}}}`
+
+
+				it("creates stores, stacks, and ccbs defined in the dependency descriptor", func() {
+					testhelpers.CommandTest{
+						K8sObjects: []runtime.Object{
+							secret,
+							serviceAccount,
+						},
+						KpackObjects: []runtime.Object{
+							store,
+							stack,
+							defaultStack,
+							builder,
+							defaultBuilder,
+						},
+						Args: []string{
+							"-f", "./testdata/updated-deps.yaml",
+							"-r", "new-registry.io/new-project",
+							"-u", "some-user",
+							"-p", "some-password",
+						},
+						ExpectedOutput: "Uploading to 'new-registry.io/new-project'...\nAdded Buildpackage 'new-registry.io/new-project/store-image-2@sha256:456def'\n",
+						ExpectCreates: []runtime.Object{
+							expectedSecret,
+							exepectedServiceAccount,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedStore,
+							},
+							{
+								Object: expectedStack,
+							},
+							{
+								Object: expectedDefaultStack,
+							},
+							{
+								Object: expectedBuilder,
+							},
+							{
+								Object: expectedDefaultBuilder,
+							},
+						},
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
 			})
 		})
 	})

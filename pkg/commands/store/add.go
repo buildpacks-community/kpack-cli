@@ -44,7 +44,12 @@ kp store add my-store ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			updatedStore, storeUpdated, err := factory.AddToStore(s, buildpackages...)
+			repo, ok := s.Annotations[store.DefaultRepositoryAnnotation]
+			if !ok || repo == "" {
+				return errors.Errorf("Unable to find default registry for store: %s", s.Name)
+			}
+
+			updatedStore, storeUpdated, err := factory.AddToStore(s, repo, buildpackages...)
 			if err != nil {
 				return err
 			}

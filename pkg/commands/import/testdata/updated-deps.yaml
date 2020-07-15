@@ -5,17 +5,17 @@ defaultStack: some-stack
 stores:
 - name: some-store
   sources:
-  - image: some-registry.io/some-project/store-image
+  - image: some-registry.io/some-project/store-image-2
 stacks:
 - name: some-stack
   buildImage:
-    image: some-registry.io/some-project/build-image
+    image: some-registry.io/some-project/build-image-2
   runImage:
-    image: some-registry.io/some-project/run-image
+    image: some-registry.io/some-project/run-image-2
 customClusterBuilders:
 - name: some-ccb
   stack: some-stack
   store: some-store
   order:
   - group:
-    - id: buildpack-1
+    - id: buildpack-2

@@ -18,6 +18,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
@@ -82,7 +84,7 @@ kp import -f dependencies.yaml -r my-registry.com/my-project -u my-user -p my-pa
 				return err
 			}
 
-			if err := importStores(descriptor, cs.KpackClient, storeFactory); err != nil {
+			if err := importStores(descriptor, cs.KpackClient, storeFactory, repository); err != nil {
 				return err
 			}
 
@@ -143,27 +145,57 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 	return deps, nil
 }
 
-func importStores(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *storepkg.Factory) error {
+func importStores(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *storepkg.Factory, repository string) error {
 	for _, store := range desc.Stores {
 		var buildpackages []string
 		for _, s := range store.Sources {
 			buildpackages = append(buildpackages, s.Image)
 		}
 
-		newStore, err := factory.MakeStore(store.Name, buildpackages...)
-		if err != nil {
+		curStore, err := client.ExperimentalV1alpha1().Stores().Get(store.Name, metav1.GetOptions{})
+		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
 
-		_, err = client.ExperimentalV1alpha1().Stores().Create(newStore)
-		if err != nil {
-			return err
+		if k8serrors.IsNotFound(err) {
+			newStore, err := factory.MakeStore(store.Name, buildpackages...)
+			if err != nil {
+				return err
+			}
+
+			_, err = client.ExperimentalV1alpha1().Stores().Create(newStore)
+			if err != nil {
+				return err
+			}
+		} else {
+			updatedStore, storeUpdated, err := factory.AddToStore(curStore, repository, buildpackages...)
+			if err != nil {
+				return err
+			}
+
+			if storeUpdated {
+				_, err = client.ExperimentalV1alpha1().Stores().Update(updatedStore)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 	return nil
 }
 
 func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *stackpkg.Factory) error {
+	for _, stack := range desc.Stacks {
+		if stack.Name == desc.DefaultStack {
+			desc.Stacks = append(desc.Stacks, importpkg.Stack{
+				Name:       "default",
+				BuildImage: stack.BuildImage,
+				RunImage:   stack.RunImage,
+			})
+			break
+		}
+	}
+
 	for _, stack := range desc.Stacks {
 		factory.BuildImageRef = stack.BuildImage.Image // FIXME
 		factory.RunImageRef = stack.RunImage.Image     // FIXME
@@ -173,16 +205,25 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 			return err
 		}
 
-		_, err = client.ExperimentalV1alpha1().Stacks().Create(newStack)
-		if err != nil {
+		curStack, err := client.ExperimentalV1alpha1().Stacks().Get(stack.Name, metav1.GetOptions{})
+		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
 
-		if stack.Name == desc.DefaultStack {
-			newStack = newStack.DeepCopy()
-			newStack.Name = "default"
-
+		if k8serrors.IsNotFound(err) {
 			_, err = client.ExperimentalV1alpha1().Stacks().Create(newStack)
+			if err != nil {
+				return err
+			}
+		} else {
+			if equality.Semantic.DeepEqual(curStack.Spec, newStack.Spec) {
+				continue
+			}
+
+			updateStack := curStack.DeepCopy()
+			updateStack.Spec = newStack.Spec
+
+			_, err = client.ExperimentalV1alpha1().Stacks().Update(updateStack)
 			if err != nil {
 				return err
 			}
@@ -252,61 +293,82 @@ func genCCBSecretAndServiceAccount(client kubernetes.Interface, registry, userna
 
 func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface, repository string, sa string) error {
 	for _, ccb := range desc.CustomClusterBuilders {
-		newCCB := &expv1alpha1.CustomClusterBuilder{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.CustomClusterBuilderKind,
-				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        ccb.Name,
-				Annotations: map[string]string{},
-			},
-			Spec: expv1alpha1.CustomClusterBuilderSpec{
-				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-					Tag:   path.Join(repository, ccb.Name),
-					Stack: ccb.Stack,
-					Store: ccb.Store,
-					Order: ccb.Order,
-				},
-			},
-		}
-
-		if sa != "" {
-			newCCB.Spec.ServiceAccountRef = corev1.ObjectReference{
-				Namespace: importNamespace,
-				Name:      sa,
-			}
-		}
-
-		marshal, err := json.Marshal(newCCB)
-		if err != nil {
-			return err
-		}
-
-		newCCB.Annotations[kubectlLastAppliedConfig] = string(marshal)
-
-		_, err = client.ExperimentalV1alpha1().CustomClusterBuilders().Create(newCCB)
-		if err != nil {
-			return err
-		}
-
 		if ccb.Name == desc.DefaultCustomClusterBuilder {
-			newCCB = newCCB.DeepCopy()
-			newCCB.Name = "default"
-			newCCB.Spec.Tag = path.Join(repository, newCCB.Name)
+			desc.CustomClusterBuilders = append(desc.CustomClusterBuilders, importpkg.CustomClusterBuilder{
+				Name:  "default",
+				Stack: ccb.Stack,
+				Store: ccb.Store,
+				Order: ccb.Order,
+			})
+			break
+		}
+	}
 
-			marshal, err := json.Marshal(newCCB)
+	for _, ccb := range desc.CustomClusterBuilders {
+		newCCB, err := makeCCB(ccb, repository, sa)
+		if err != nil {
+			return err
+		}
+
+		curCCB, err := client.ExperimentalV1alpha1().CustomClusterBuilders().Get(ccb.Name, metav1.GetOptions{})
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return err
+		}
+
+		if k8serrors.IsNotFound(err) {
+			_, err = client.ExperimentalV1alpha1().CustomClusterBuilders().Create(newCCB)
 			if err != nil {
 				return err
 			}
+		} else {
+			if equality.Semantic.DeepEqual(curCCB.Spec, newCCB.Spec) {
+				continue
+			}
 
-			newCCB.Annotations[kubectlLastAppliedConfig] = string(marshal)
+			updateCCB := curCCB.DeepCopy()
+			updateCCB.Spec = newCCB.Spec
 
-			_, err = client.ExperimentalV1alpha1().CustomClusterBuilders().Create(newCCB)
+			_, err = client.ExperimentalV1alpha1().CustomClusterBuilders().Update(updateCCB)
 			if err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+func makeCCB(ccb importpkg.CustomClusterBuilder, repository string, sa string) (*expv1alpha1.CustomClusterBuilder, error) {
+	newCCB := &expv1alpha1.CustomClusterBuilder{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       expv1alpha1.CustomClusterBuilderKind,
+			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        ccb.Name,
+			Annotations: map[string]string{},
+		},
+		Spec: expv1alpha1.CustomClusterBuilderSpec{
+			CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
+				Tag:   path.Join(repository, ccb.Name),
+				Stack: ccb.Stack,
+				Store: ccb.Store,
+				Order: ccb.Order,
+			},
+		},
+	}
+
+	if sa != "" {
+		newCCB.Spec.ServiceAccountRef = corev1.ObjectReference{
+			Namespace: importNamespace,
+			Name:      sa,
+		}
+	}
+
+	marshal, err := json.Marshal(newCCB)
+	if err != nil {
+		return nil, err
+	}
+	newCCB.Annotations[kubectlLastAppliedConfig] = string(marshal)
+
+	return newCCB, nil
 }

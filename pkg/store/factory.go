@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	defaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
-	kubectlLastAppliedConfig    = "kubectl.kubernetes.io/last-applied-configuration"
+	DefaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
+	KubectlLastAppliedConfig    = "kubectl.kubernetes.io/last-applied-configuration"
 )
 
 type BuildpackageUploader interface {
@@ -43,7 +43,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Sto
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 			Annotations: map[string]string{
-				defaultRepositoryAnnotation: f.DefaultRepository,
+				DefaultRepositoryAnnotation: f.DefaultRepository,
 			},
 		},
 		Spec: v1alpha1.StoreSpec{},
@@ -51,7 +51,6 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Sto
 
 	f.Printer.Printf("Uploading to '%s'...", f.DefaultRepository)
 
-	var uploaded []string
 	for _, buildpackage := range buildpackages {
 		uploadedBp, err := f.Uploader.Upload(f.DefaultRepository, buildpackage)
 		if err != nil {
@@ -61,8 +60,6 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Sto
 		newStore.Spec.Sources = append(newStore.Spec.Sources, v1alpha1.StoreImage{
 			Image: uploadedBp,
 		})
-
-		uploaded = append(uploaded, uploadedBp)
 	}
 
 	marshal, err := json.Marshal(newStore)
@@ -70,17 +67,12 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Sto
 		return nil, err
 	}
 
-	newStore.Annotations[kubectlLastAppliedConfig] = string(marshal)
+	newStore.Annotations[KubectlLastAppliedConfig] = string(marshal)
 
 	return newStore, nil
 }
 
-func (f *Factory) AddToStore(store *v1alpha1.Store, buildpackages ...string) (*v1alpha1.Store, bool, error) {
-	repository, ok := store.Annotations[defaultRepositoryAnnotation]
-	if !ok || repository == "" {
-		return nil, false, errors.Errorf("Unable to find default registry for store: %s", store.Name)
-	}
-
+func (f *Factory) AddToStore(store *v1alpha1.Store, repository string, buildpackages ...string) (*v1alpha1.Store, bool, error) {
 	f.Printer.Printf("Uploading to '%s'...", repository)
 
 	var uploaded []string

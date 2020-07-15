@@ -71,6 +71,10 @@ func (f *Factory) MakeStack(name string) (*expv1alpha1.Stack, error) {
 	}
 
 	return &expv1alpha1.Stack{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       expv1alpha1.StackKind,
+			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 			Annotations: map[string]string{

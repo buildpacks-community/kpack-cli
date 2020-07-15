@@ -17,6 +17,8 @@ import (
 
 type CommandTest struct {
 	Objects []runtime.Object
+	K8sObjects []runtime.Object
+	KpackObjects []runtime.Object
 
 	StdIn string
 	Args  []string
@@ -31,8 +33,8 @@ type CommandTest struct {
 
 func (c CommandTest) TestK8sAndKpack(t *testing.T, cmdFactory func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command) {
 	t.Helper()
-	k8sClient := k8sfakes.NewSimpleClientset(c.Objects...)
-	kpackClient := kpackfakes.NewSimpleClientset(c.Objects...)
+	k8sClient := k8sfakes.NewSimpleClientset(c.K8sObjects...)
+	kpackClient := kpackfakes.NewSimpleClientset(c.KpackObjects...)
 
 	cmd := cmdFactory(k8sClient, kpackClient)
 	cmd.SetArgs(c.Args)
