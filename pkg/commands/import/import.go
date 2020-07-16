@@ -11,8 +11,6 @@ import (
 	"path"
 
 	"github.com/ghodss/yaml"
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
@@ -21,63 +19,59 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
-	secretpkg "github.com/pivotal/build-service-cli/pkg/secret"
 	stackpkg "github.com/pivotal/build-service-cli/pkg/stack"
 	storepkg "github.com/pivotal/build-service-cli/pkg/store"
 )
 
 const (
-	importNamespace          = "kpack"
-	kubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
+	importNamespace            = "kpack"
+	kpConfigMapName            = "kp-config"
+	canonicalRepositoryKey     = "canonical.repository"
+	canonicalServiceAccountKey = "canonical.repository.serviceaccount"
+	kubectlLastAppliedConfig   = "kubectl.kubernetes.io/last-applied-configuration"
 )
 
 func NewImportCommand(provider k8s.ClientSetProvider, storeFactory *storepkg.Factory, stackFactory *stackpkg.Factory) *cobra.Command {
 	var (
-		filename   string
-		repository string
-		username   string
-		password   string
+		filename string
 	)
 
 	cmd := &cobra.Command{
-		Use:   "import -f <filename> -r <repository>",
+		Use:   "import -f <filename>",
 		Short: "Import dependencies for stores, stacks, and custom cluster builders",
-		Long: `Import dependencies for stores, stacks, and custom cluster builders from a dependency descriptor configuration.
-
-This operation will create or update stores, stacks, and custom cluster builders defined in the dependency descriptor.
-Images defined in the descriptor will be uploaded to the the registry defined with the '--repository' flag.
-Therefore, you must have credentials to access the repository on your machine.
-
-To allow resources imported into the cluster to interact with a private repository, please provide both a username and password for the target registry.
-`,
-		Example: `kp import -f dependencies.yaml -r my-registry.com/my-project
-cat dependencies.yaml | kp import -f - -r my-registry.com/my-project
-kp import -f dependencies.yaml -r my-registry.com/my-project -u my-user -p my-password`,
+		Long:  `This operation will create or update stores, stacks, and custom cluster builders defined in the dependency descriptor.`,
+		Example: `kp import -f dependencies.yaml
+cat dependencies.yaml | kp import -f -`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			storeFactory.DefaultRepository = repository // FIXME
-			storeFactory.Printer = commands.NewPrinter(cmd)
-
-			stackFactory.DefaultRepository = repository // FIXME
-
-			ref, err := name.ParseReference(repository, name.WeakValidation)
-			if err != nil {
-				return err
-			}
-
-			if username != "" && password == "" || username == "" && password != "" {
-				return errors.Errorf("please provide both '--repository-user' and '--repository-password'")
-			}
-
 			cs, err := provider.GetClientSet("")
 			if err != nil {
 				return err
 			}
+
+			kpConfig, err := cs.K8sClient.CoreV1().ConfigMaps(importNamespace).Get(kpConfigMapName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			repository, ok := kpConfig.Data[canonicalRepositoryKey]
+			if !ok || repository == "" {
+				return errors.Errorf("failed to get canonical repository")
+			}
+
+			serviceAccount, ok := kpConfig.Data[canonicalServiceAccountKey]
+			if !ok || serviceAccount == "" {
+				return errors.Errorf("failed to get canonical service account")
+			}
+
+			storeFactory.DefaultRepository = repository // FIXME
+			storeFactory.Printer = commands.NewPrinter(cmd)
+
+			stackFactory.DefaultRepository = repository // FIXME
 
 			descriptor, err := getDependencyDescriptor(cmd, filename)
 			if err != nil {
@@ -92,12 +86,7 @@ kp import -f dependencies.yaml -r my-registry.com/my-project -u my-user -p my-pa
 				return err
 			}
 
-			sa, err := genCCBSecretAndServiceAccount(cs.K8sClient, ref.Context().RegistryStr(), username, password)
-			if err != nil {
-				return err
-			}
-
-			if err := importCCBs(descriptor, cs.KpackClient, repository, sa); err != nil {
+			if err := importCCBs(descriptor, cs.KpackClient, repository, serviceAccount); err != nil {
 				return err
 			}
 
@@ -105,11 +94,7 @@ kp import -f dependencies.yaml -r my-registry.com/my-project -u my-user -p my-pa
 		},
 	}
 	cmd.Flags().StringVarP(&filename, "filename", "f", "", "dependency descriptor filename")
-	cmd.Flags().StringVarP(&repository, "repository", "r", "", "")
-	cmd.Flags().StringVarP(&username, "repository-user", "u", "", "")
-	cmd.Flags().StringVarP(&password, "repository-password", "p", "", "")
 	_ = cmd.MarkFlagRequired("filename")
-	_ = cmd.MarkFlagRequired("repository")
 	return cmd
 }
 
@@ -230,65 +215,6 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 		}
 	}
 	return nil
-}
-
-func genCCBSecretAndServiceAccount(client kubernetes.Interface, registry, username, password string) (string, error) {
-	if username == "" && password == "" {
-		return "", nil
-	}
-
-	configJson := secretpkg.DockerConfigJson{Auths: secretpkg.DockerCredentials{
-		registry: authn.AuthConfig{
-			Username: username,
-			Password: password,
-		},
-	}}
-
-	dockerCfgJson, err := json.Marshal(configJson)
-	if err != nil {
-		return "", err
-	}
-
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "ccb-secret-",
-			Namespace:    importNamespace,
-		},
-		Data: map[string][]byte{
-			corev1.DockerConfigJsonKey: dockerCfgJson,
-		},
-		Type: corev1.SecretTypeDockerConfigJson,
-	}
-
-	newSecret, err := client.CoreV1().Secrets(importNamespace).Create(secret)
-	if err != nil {
-		return "", err
-	}
-
-	sa := &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "ccb-serviceaccount-",
-			Namespace:    importNamespace,
-		},
-		Secrets: []corev1.ObjectReference{
-			{
-				Name:      newSecret.Name,
-				Namespace: importNamespace,
-			},
-		},
-		ImagePullSecrets: []corev1.LocalObjectReference{
-			{
-				Name: newSecret.Name,
-			},
-		},
-	}
-
-	newSA, err := client.CoreV1().ServiceAccounts(importNamespace).Create(sa)
-	if err != nil {
-		return "", err
-	}
-
-	return newSA.Name, nil
 }
 
 func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface, repository string, sa string) error {
