@@ -42,12 +42,12 @@ type CustomClusterBuilder struct {
 }
 
 func (d DependencyDescriptor) Validate() error {
-	set := map[string]interface{}{}
+	storeSet := map[string]interface{}{}
 	for _, store := range d.Stores {
-		if name, ok := set[store.Name]; ok {
+		if name, ok := storeSet[store.Name]; ok {
 			return errors.Errorf("duplicate store name '%s'", name)
 		}
-		set[store.Name] = nil
+		storeSet[store.Name] = nil
 
 		for _, src := range store.Sources {
 			_, err := name.ParseReference(src.Image, name.WeakValidation)
@@ -57,12 +57,12 @@ func (d DependencyDescriptor) Validate() error {
 		}
 	}
 
-	set = map[string]interface{}{}
+	stackSet := map[string]interface{}{}
 	for _, stack := range d.Stacks {
-		if name, ok := set[stack.Name]; ok {
+		if name, ok := stackSet[stack.Name]; ok {
 			return errors.Errorf("duplicate stack name '%s'", name)
 		}
-		set[stack.Name] = nil
+		stackSet[stack.Name] = nil
 
 		_, err := name.ParseReference(stack.BuildImage.Image, name.WeakValidation)
 		if err != nil {
@@ -75,19 +75,27 @@ func (d DependencyDescriptor) Validate() error {
 		}
 	}
 
-	if _, ok := set[d.DefaultStack]; !ok {
+	if _, ok := stackSet[d.DefaultStack]; !ok {
 		return errors.Errorf("default stack '%s' not found", d.DefaultStack)
 	}
 
-	set = map[string]interface{}{}
+	ccbSet := map[string]interface{}{}
 	for _, ccb := range d.CustomClusterBuilders {
-		if name, ok := set[ccb.Name]; ok {
+		if name, ok := ccbSet[ccb.Name]; ok {
 			return errors.Errorf("duplicate custom cluster builder name '%s'", name)
 		}
-		set[ccb.Name] = nil
+		ccbSet[ccb.Name] = nil
+
+		if _, ok := storeSet[ccb.Store]; !ok {
+			return errors.Errorf("custom cluster builder '%s' references unknown store '%s'", ccb.Name, ccb.Store)
+		}
+
+		if _, ok := stackSet[ccb.Stack]; !ok {
+			return errors.Errorf("custom cluster builder '%s' references unknown stack '%s'", ccb.Name, ccb.Stack)
+		}
 	}
 
-	if _, ok := set[d.DefaultCustomClusterBuilder]; !ok {
+	if _, ok := ccbSet[d.DefaultCustomClusterBuilder]; !ok {
 		return errors.Errorf("default custom cluster builder '%s' not found", d.DefaultCustomClusterBuilder)
 	}
 
