@@ -68,8 +68,10 @@ cat dependencies.yaml | kp import -f -`,
 				return errors.Errorf("failed to get canonical service account")
 			}
 
+			logger := commands.NewPrinter(cmd)
+
 			storeFactory.DefaultRepository = repository // FIXME
-			storeFactory.Printer = commands.NewPrinter(cmd)
+			storeFactory.Printer = logger
 
 			stackFactory.DefaultRepository = repository // FIXME
 
@@ -78,15 +80,15 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			if err := importStores(descriptor, cs.KpackClient, storeFactory, repository); err != nil {
+			if err := importStores(descriptor, cs.KpackClient, storeFactory, repository, logger); err != nil {
 				return err
 			}
 
-			if err := importStacks(descriptor, cs.KpackClient, stackFactory); err != nil {
+			if err := importStacks(descriptor, cs.KpackClient, stackFactory, logger); err != nil {
 				return err
 			}
 
-			if err := importCCBs(descriptor, cs.KpackClient, repository, serviceAccount); err != nil {
+			if err := importCCBs(descriptor, cs.KpackClient, repository, serviceAccount, logger); err != nil {
 				return err
 			}
 
@@ -130,8 +132,10 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 	return deps, nil
 }
 
-func importStores(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *storepkg.Factory, repository string) error {
+func importStores(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *storepkg.Factory, repository string, logger *commands.Logger) error {
 	for _, store := range desc.Stores {
+		logger.Printf("Importing Store '%s'...", store.Name)
+
 		var buildpackages []string
 		for _, s := range store.Sources {
 			buildpackages = append(buildpackages, s.Image)
@@ -169,7 +173,7 @@ func importStores(desc importpkg.DependencyDescriptor, client versioned.Interfac
 	return nil
 }
 
-func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *stackpkg.Factory) error {
+func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *stackpkg.Factory, logger *commands.Logger) error {
 	for _, stack := range desc.Stacks {
 		if stack.Name == desc.DefaultStack {
 			desc.Stacks = append(desc.Stacks, importpkg.Stack{
@@ -182,6 +186,8 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 	}
 
 	for _, stack := range desc.Stacks {
+		logger.Printf("Importing Stack '%s'...", stack.Name)
+
 		factory.BuildImageRef = stack.BuildImage.Image // FIXME
 		factory.RunImageRef = stack.RunImage.Image     // FIXME
 
@@ -217,7 +223,7 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 	return nil
 }
 
-func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface, repository string, sa string) error {
+func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface, repository string, sa string, logger *commands.Logger) error {
 	for _, ccb := range desc.CustomClusterBuilders {
 		if ccb.Name == desc.DefaultCustomClusterBuilder {
 			desc.CustomClusterBuilders = append(desc.CustomClusterBuilders, importpkg.CustomClusterBuilder{
@@ -231,6 +237,8 @@ func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface,
 	}
 
 	for _, ccb := range desc.CustomClusterBuilders {
+		logger.Printf("Importing Custom Cluster Builder '%s'...", ccb.Name)
+
 		newCCB, err := makeCCB(ccb, repository, sa)
 		if err != nil {
 			return err

@@ -164,7 +164,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				Args: []string{
 					"-f", "./testdata/deps.yaml",
 				},
-				ExpectedOutput: "Uploading to 'new-registry.io/new-project'...\n",
+				ExpectedOutput: "Importing Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nImporting Stack 'some-stack'...\nImporting Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
 				ExpectCreates: []runtime.Object{
 					store,
 					stack,
@@ -199,7 +199,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: "Uploading to 'new-registry.io/new-project'...\nBuildpackage 'new-registry.io/new-project/store-image@sha256:123abc' already exists in the store\n",
+					ExpectedOutput: "Importing Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nBuildpackage 'new-registry.io/new-project/store-image@sha256:123abc' already exists in the store\nImporting Stack 'some-stack'...\nImporting Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
 		})
@@ -261,7 +261,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					Args: []string{
 						"-f", "./testdata/updated-deps.yaml",
 					},
-					ExpectedOutput: "Uploading to 'new-registry.io/new-project'...\nAdded Buildpackage 'new-registry.io/new-project/store-image-2@sha256:456def'\n",
+					ExpectedOutput: "Importing Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nAdded Buildpackage 'new-registry.io/new-project/store-image-2@sha256:456def'\nImporting Stack 'some-stack'...\nImporting Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{
 							Object: expectedStore,
