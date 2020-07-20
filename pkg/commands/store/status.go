@@ -60,8 +60,7 @@ func getBuildpackageInfos(store *expv1alpha1.Store) []buildpackageInfo {
 	buildpackagesMap := make(map[string]buildpackageInfo)
 
 	for _, buildpack := range store.Status.Buildpacks {
-		if buildpack.Buildpackage.Id == "" &&
-			buildpack.Buildpackage.Version == "" {
+		if buildpack.Buildpackage.Id == "" && buildpack.Buildpackage.Version == "" {
 			continue
 		}
 
@@ -78,6 +77,10 @@ func getBuildpackageInfos(store *expv1alpha1.Store) []buildpackageInfo {
 	for _, buildpackageInfo := range buildpackagesMap {
 		buildpackageInfos = append(buildpackageInfos, buildpackageInfo)
 	}
+
+	sort.Slice(buildpackageInfos, func(i, j int) bool {
+		return buildpackageInfos[i].id < buildpackageInfos[j].id
+	})
 
 	return buildpackageInfos
 }
