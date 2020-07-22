@@ -39,14 +39,14 @@ kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd
 
 			store, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Get(storeName, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return errors.Errorf("Store '%s' does not exist", storeName)
+				return errors.Errorf("ClusterStore '%s' does not exist", storeName)
 			} else if err != nil {
 				return err
 			}
 
 			for _, bpToRemove := range buildPackages {
 				if !storeContainsBuildpackage(store, bpToRemove) {
-					return errors.Errorf("Buildpackage '%s' does not exist in the store", bpToRemove)
+					return errors.Errorf("Buildpackage '%s' does not exist in the clusterstore", bpToRemove)
 				}
 			}
 			var updatedStoreSources = []v1alpha1.StoreImage{}
@@ -71,7 +71,7 @@ kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd
 				return err
 			}
 
-			printer.Printf("Store Updated")
+			printer.Printf("ClusterStore Updated")
 			return nil
 		},
 	}

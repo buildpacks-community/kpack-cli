@@ -102,7 +102,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nStack Updated\n",
+			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nClusterStack Updated\n",
 		}.TestKpack(t, cmdFunc)
 	})
 
@@ -113,7 +113,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args:           []string{"some-stack", "--build-image", "some-old-build-image", "--run-image", "some-old-run-image"},
 			ExpectErr:      false,
-			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nBuild and Run images already exist in stack\nStack Unchanged\n",
+			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nBuild and Run images already exist in stack\nClusterStack Unchanged\n",
 		}.TestKpack(t, cmdFunc)
 	})
 
@@ -126,7 +126,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args:           []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
 			ExpectErr:      true,
-			ExpectedOutput: "Error: Unable to find default registry for stack: some-stack\n",
+			ExpectedOutput: "Error: Unable to find default registry for clusterstack: some-stack\n",
 		}.TestKpack(t, cmdFunc)
 	})
 

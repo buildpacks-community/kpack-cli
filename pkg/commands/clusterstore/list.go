@@ -35,7 +35,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 			}
 
 			if len(storeList.Items) == 0 {
-				return errors.New("no stores found")
+				return errors.New("no clusterstores found")
 			} else {
 				return displayStoresTable(cmd, storeList)
 			}

@@ -55,7 +55,7 @@ kp clusterstore add my-store ../path/to/my-local-buildpackage.cnb`,
 			}
 
 			if !storeUpdated {
-				factory.Printer.Printf("Store Unchanged")
+				factory.Printer.Printf("ClusterStore Unchanged")
 				return nil
 			}
 
@@ -64,7 +64,7 @@ kp clusterstore add my-store ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			factory.Printer.Printf("Store Updated")
+			factory.Printer.Printf("ClusterStore Updated")
 			return nil
 		},
 	}

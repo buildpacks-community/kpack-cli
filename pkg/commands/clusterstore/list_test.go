@@ -99,7 +99,7 @@ test-store-3    True
 			it("returns a message that there are no stores", func() {
 				testhelpers.CommandTest{
 					ExpectErr:      true,
-					ExpectedOutput: "Error: no stores found\n",
+					ExpectedOutput: "Error: no clusterstores found\n",
 				}.TestKpack(t, cmdFunc)
 			})
 		})

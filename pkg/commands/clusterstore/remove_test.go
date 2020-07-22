@@ -74,7 +74,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: "Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore\nStore Updated\n",
+			ExpectedOutput: "Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore\nClusterStore Updated\n",
 		}.TestKpack(t, cmdFunc)
 	})
 
@@ -95,7 +95,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: "Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore\nRemoving buildpackage some/imageinStore2@sha256:1232alreadyInStore\nStore Updated\n",
+			ExpectedOutput: "Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore\nRemoving buildpackage some/imageinStore2@sha256:1232alreadyInStore\nClusterStore Updated\n",
 		}.TestKpack(t, cmdFunc)
 	})
 
@@ -106,7 +106,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args:           []string{"invalid-store", "some/imageinStore1@sha256:1231alreadyInStore", "some/imageNotinStore@sha256:1232notInStore"},
 			ExpectErr:      true,
-			ExpectedOutput: "Error: Store 'invalid-store' does not exist\n",
+			ExpectedOutput: "Error: ClusterStore 'invalid-store' does not exist\n",
 		}.TestKpack(t, cmdFunc)
 	})
 
@@ -117,7 +117,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args:           []string{storeName, "some/imageinStore1@sha256:1231alreadyInStore", "some/imageNotinStore@sha256:1232notInStore"},
 			ExpectErr:      true,
-			ExpectedOutput: "Error: Buildpackage 'some/imageNotinStore@sha256:1232notInStore' does not exist in the store\n",
+			ExpectedOutput: "Error: Buildpackage 'some/imageNotinStore@sha256:1232notInStore' does not exist in the clusterstore\n",
 		}.TestKpack(t, cmdFunc)
 	})
 
@@ -128,7 +128,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args:           []string{storeName, "some/imageNotinStore@sha256:1233alreadyInStore"},
 			ExpectErr:      true,
-			ExpectedOutput: "Error: Buildpackage 'some/imageNotinStore@sha256:1233alreadyInStore' does not exist in the store\n",
+			ExpectedOutput: "Error: Buildpackage 'some/imageNotinStore@sha256:1233alreadyInStore' does not exist in the clusterstore\n",
 		}.TestKpack(t, cmdFunc)
 	})
 }

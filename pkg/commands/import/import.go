@@ -134,7 +134,7 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 
 func importStores(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *clusterstore.Factory, repository string, logger *commands.Logger) error {
 	for _, store := range desc.Stores {
-		logger.Printf("Importing Store '%s'...", store.Name)
+		logger.Printf("Importing Cluster Store '%s'...", store.Name)
 
 		var buildpackages []string
 		for _, s := range store.Sources {
@@ -186,7 +186,7 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 	}
 
 	for _, stack := range desc.Stacks {
-		logger.Printf("Importing Stack '%s'...", stack.Name)
+		logger.Printf("Importing Cluster Stack '%s'...", stack.Name)
 
 		factory.BuildImageRef = stack.BuildImage.Image // FIXME
 		factory.RunImageRef = stack.RunImage.Image     // FIXME

@@ -33,7 +33,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 			}
 
 			if len(stackList.Items) == 0 {
-				return errors.New("no stacks found")
+				return errors.New("no clusterstacks found")
 			} else {
 				return displayStacksTable(cmd, stackList)
 			}

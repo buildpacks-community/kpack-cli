@@ -57,7 +57,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 
 			repository, ok := stack.Annotations[clusterstack.DefaultRepositoryAnnotation]
 			if !ok || repository == "" {
-				return errors.Errorf("Unable to find default registry for stack: %s", args[0])
+				return errors.Errorf("Unable to find default registry for clusterstack: %s", args[0])
 			}
 
 			printer.Printf("Uploading to '%s'...", repository)
@@ -99,7 +99,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 			if wasUpdated, err := updateStack(stack, relocatedBuildImageRef, relocatedRunImageRef, buildStackId); err != nil {
 				return err
 			} else if !wasUpdated {
-				printer.Printf("Build and Run images already exist in stack\nStack Unchanged")
+				printer.Printf("Build and Run images already exist in stack\nClusterStack Unchanged")
 				return nil
 			}
 
@@ -108,7 +108,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			printer.Printf("Stack Updated")
+			printer.Printf("ClusterStack Updated")
 			return nil
 		},
 	}

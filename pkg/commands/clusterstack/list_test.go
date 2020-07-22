@@ -105,7 +105,7 @@ test-stack-3    Unknown    stack-id-3
 			it("returns a message that no stacks were found", func() {
 				testhelpers.CommandTest{
 					ExpectErr:      true,
-					ExpectedOutput: "Error: no stacks found\n",
+					ExpectedOutput: "Error: no clusterstacks found\n",
 				}.TestKpack(t, cmdFunc)
 
 			})
