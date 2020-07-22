@@ -92,13 +92,13 @@ func printBuilderReadyStatus(bldr *expv1alpha1.CustomClusterBuilder, writer io.W
 		return err
 	}
 
-	bpTableWriter, err := commands.NewTableWriter(writer, "buildpack id", "version")
+	bpTableWriter, err := commands.NewTableWriter(writer, "buildpack id", "version", "homepage")
 	if err != nil {
 		return nil
 	}
 
 	for _, bpMD := range bldr.Status.BuilderMetadata {
-		err := bpTableWriter.AddRow(bpMD.Id, bpMD.Version)
+		err := bpTableWriter.AddRow(bpMD.Id, bpMD.Version, bpMD.Homepage)
 		if err != nil {
 			return err
 		}

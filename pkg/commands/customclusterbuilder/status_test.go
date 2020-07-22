@@ -31,9 +31,9 @@ Image:        some-registry.com/test-builder-1:tag
 Stack:        io.buildpacks.stacks.centos
 Run Image:    gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234
 
-BUILDPACK ID               VERSION
-org.cloudfoundry.nodejs    v0.2.1
-org.cloudfoundry.go        v0.0.3
+BUILDPACK ID               VERSION    HOMEPAGE
+org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
+org.cloudfoundry.go        v0.0.3     https://github.com/paketo-buildpacks/go
 
 
 DETECTION ORDER              
@@ -106,10 +106,12 @@ Reason:    this builder is not ready for the purpose of a test
 						{
 							Id:      "org.cloudfoundry.nodejs",
 							Version: "v0.2.1",
+							Homepage: "https://github.com/paketo-buildpacks/nodejs",
 						},
 						{
 							Id:      "org.cloudfoundry.go",
 							Version: "v0.0.3",
+							Homepage: "https://github.com/paketo-buildpacks/go",
 						},
 					},
 					Stack: v1alpha1.BuildStack{

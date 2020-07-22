@@ -54,6 +54,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 type buildpackageInfo struct {
 	id      string
 	version string
+	homepage string
 }
 
 func getBuildpackageInfos(store *expv1alpha1.Store) []buildpackageInfo {
@@ -69,6 +70,7 @@ func getBuildpackageInfos(store *expv1alpha1.Store) []buildpackageInfo {
 			buildpackagesMap[buildpackageKey] = buildpackageInfo{
 				id:      buildpack.Buildpackage.Id,
 				version: buildpack.Buildpackage.Version,
+				homepage: buildpack.Buildpackage.Homepage,
 			}
 		}
 	}
@@ -90,13 +92,13 @@ func displayBuildpackagesTable(out io.Writer, buildpackages []buildpackageInfo) 
 		return nil
 	}
 
-	writer, err := commands.NewTableWriter(out, "BUILDPACKAGE ID", "VERSION")
+	writer, err := commands.NewTableWriter(out, "BUILDPACKAGE ID", "VERSION", "HOMEPAGE")
 	if err != nil {
 		return err
 	}
 
 	for _, buildpackage := range buildpackages {
-		if err := writer.AddRow(buildpackage.id, buildpackage.version); err != nil {
+		if err := writer.AddRow(buildpackage.id, buildpackage.version, buildpackage.homepage); err != nil {
 			return err
 		}
 	}
@@ -153,13 +155,13 @@ func displayBuildpacks(out io.Writer, buildpackage map[string]expv1alpha1.StoreB
 			return err
 		}
 
-		tbWriter, err := commands.NewTableWriter(out, "Buildpack id", "version")
+		tbWriter, err := commands.NewTableWriter(out, "Buildpack id", "version", "homepage")
 		if err != nil {
 			return err
 		}
 
 		for _, bp := range buildpacks[k] {
-			err = tbWriter.AddRow(bp.Id, bp.Version)
+			err = tbWriter.AddRow(bp.Id, bp.Version, bp.Homepage)
 			if err != nil {
 				return err
 			}

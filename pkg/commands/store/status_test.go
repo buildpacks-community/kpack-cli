@@ -44,6 +44,7 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 						Buildpackage: expv1alpha1.BuildpackageInfo{
 							Id:      "meta",
 							Version: "1",
+							Homepage: "meta-1-buildpackage-homepage",
 						},
 						StoreImage: expv1alpha1.StoreImage{
 							Image: "some-meta-image",
@@ -71,6 +72,7 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 						Buildpackage: expv1alpha1.BuildpackageInfo{
 							Id:      "meta",
 							Version: "1",
+							Homepage: "meta-1-buildpackage-homepage",
 						},
 						StoreImage: expv1alpha1.StoreImage{
 							Image: "some-meta-image",
@@ -85,6 +87,7 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 						Buildpackage: expv1alpha1.BuildpackageInfo{
 							Id:      "simple-buildpack",
 							Version: "3",
+							Homepage: "simple-3-buildpackage-homepage",
 						},
 						StoreImage: expv1alpha1.StoreImage{
 							Image: "simple-buildpackage",
@@ -96,9 +99,9 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		it("returns store details", func() {
-			const expectedOutput = `BUILDPACKAGE ID     VERSION
-meta                1
-simple-buildpack    3
+			const expectedOutput = `BUILDPACKAGE ID     VERSION    HOMEPAGE
+meta                1          meta-1-buildpackage-homepage
+simple-buildpack    3          simple-3-buildpackage-homepage
 
 `
 			testhelpers.CommandTest{
@@ -113,8 +116,8 @@ simple-buildpack    3
 Image:           some-meta-image
 Homepage:        meta-homepage
 
-BUILDPACK ID        VERSION
-nested-buildpack    2
+BUILDPACK ID        VERSION    HOMEPAGE
+nested-buildpack    2          nested-buildpack-homepage
 
 DETECTION ORDER       
 Group #1              
@@ -125,7 +128,7 @@ Buildpackage:    simple-buildpack@3
 Image:           simple-buildpackage
 Homepage:        simple-buildpack-homepage
 
-BUILDPACK ID    VERSION
+BUILDPACK ID    VERSION    HOMEPAGE
 
 DETECTION ORDER    
 
