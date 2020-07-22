@@ -4,10 +4,8 @@
 package image_test
 
 import (
-	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"testing"
 
-	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
@@ -20,6 +18,8 @@ import (
 
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	"github.com/pivotal/build-service-cli/pkg/image"
+	"github.com/pivotal/build-service-cli/pkg/image/fakes"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 	srcfakes "github.com/pivotal/build-service-cli/pkg/source/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )

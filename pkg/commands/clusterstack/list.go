@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package stack
+package clusterstack
 
 import (
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
@@ -17,9 +17,9 @@ import (
 func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "list",
-		Short:        "List stacks",
-		Long:         `Prints a table of the most important information about stacks in the cluster.`,
-		Example:      "kp stack list",
+		Short:        "List cluster stacks",
+		Long:         `Prints a table of the most important information about cluster-scoped stacks in the cluster.`,
+		Example:      "kp clusterstack list",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
@@ -27,7 +27,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			stackList, err := cs.KpackClient.ExperimentalV1alpha1().Stacks().List(metav1.ListOptions{})
+			stackList, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -44,7 +44,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	return cmd
 }
 
-func displayStacksTable(cmd *cobra.Command, stackList *expv1alpha1.StackList) error {
+func displayStacksTable(cmd *cobra.Command, stackList *expv1alpha1.ClusterStackList) error {
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY", "ID")
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func displayStacksTable(cmd *cobra.Command, stackList *expv1alpha1.StackList) er
 	return writer.Write()
 }
 
-func getReadyText(s expv1alpha1.Stack) string {
+func getReadyText(s expv1alpha1.ClusterStack) string {
 	cond := s.Status.GetCondition(corev1alpha1.ConditionReady)
 	if cond == nil {
 		return "Unknown"

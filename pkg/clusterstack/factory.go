@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package stack
+package clusterstack
 
 import (
 	"path"
@@ -31,7 +31,7 @@ type Factory struct {
 	RunImageRef       string
 }
 
-func (f *Factory) MakeStack(name string) (*expv1alpha1.Stack, error) {
+func (f *Factory) MakeStack(name string) (*expv1alpha1.ClusterStack, error) {
 	if err := f.validate(); err != nil {
 		return nil, err
 	}
@@ -70,9 +70,9 @@ func (f *Factory) MakeStack(name string) (*expv1alpha1.Stack, error) {
 		return nil, err
 	}
 
-	return &expv1alpha1.Stack{
+	return &expv1alpha1.ClusterStack{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       expv1alpha1.StackKind,
+			Kind:       expv1alpha1.ClusterStackKind,
 			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -81,12 +81,12 @@ func (f *Factory) MakeStack(name string) (*expv1alpha1.Stack, error) {
 				defaultRepositoryAnnotation: f.DefaultRepository,
 			},
 		},
-		Spec: expv1alpha1.StackSpec{
+		Spec: expv1alpha1.ClusterStackSpec{
 			Id: buildStackId,
-			BuildImage: expv1alpha1.StackSpecImage{
+			BuildImage: expv1alpha1.ClusterStackSpecImage{
 				Image: relocatedBuildImageRef,
 			},
-			RunImage: expv1alpha1.StackSpecImage{
+			RunImage: expv1alpha1.ClusterStackSpecImage{
 				Image: relocatedRunImageRef,
 			},
 		},

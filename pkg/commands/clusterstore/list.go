@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store
+package clusterstore
 
 import (
 	"errors"
@@ -18,18 +18,18 @@ import (
 func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List stores",
-		Long: `Prints a table of the most important information about stores in the provided namespace.
+		Short: "List cluster stores",
+		Long: `Prints a table of the most important information about cluster-scoped stores in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
-		Example: "kp store list\nkp store list -n my-namespace",
+		Example: "kp clusterstore list\nkp clusterstore list -n my-namespace",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			storeList, err := cs.KpackClient.ExperimentalV1alpha1().Stores().List(metav1.ListOptions{})
+			storeList, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStores().List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -47,7 +47,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 	return cmd
 }
 
-func displayStoresTable(cmd *cobra.Command, storeList *expv1alpha1.StoreList) error {
+func displayStoresTable(cmd *cobra.Command, storeList *expv1alpha1.ClusterStoreList) error {
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY")
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func displayStoresTable(cmd *cobra.Command, storeList *expv1alpha1.StoreList) er
 	return writer.Write()
 }
 
-func getReadyText(s expv1alpha1.Store) string {
+func getReadyText(s expv1alpha1.ClusterStore) string {
 	cond := s.Status.GetCondition(corev1alpha1.ConditionReady)
 	if cond == nil {
 		return "Unknown"

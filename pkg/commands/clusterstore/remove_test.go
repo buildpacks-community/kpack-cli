@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store_test
+package clusterstore_test
 
 import (
 	"testing"
@@ -14,15 +14,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/store"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestStoreRemoveCommand(t *testing.T) {
-	spec.Run(t, "TestStoreRemoveCommand", testStoreRemoveCommand)
+func TestClusterStoreRemoveCommand(t *testing.T) {
+	spec.Run(t, "TestClusterStoreRemoveCommand", testClusterStoreRemoveCommand)
 }
 
-func testStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
+func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		storeName     = "some-store"
 		image1InStore = "some/imageinStore1@sha256:1231alreadyInStore"
@@ -31,17 +31,17 @@ func testStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return store.NewRemoveCommand(clientSetProvider)
+		return clusterstore.NewRemoveCommand(clientSetProvider)
 	}
 
-	st := &expv1alpha1.Store{
+	st := &expv1alpha1.ClusterStore{
 		ObjectMeta: v1.ObjectMeta{
 			Name: storeName,
 			Annotations: map[string]string{
 				"buildservice.pivotal.io/defaultRepository": "some/path",
 			},
 		},
-		Spec: expv1alpha1.StoreSpec{
+		Spec: expv1alpha1.ClusterStoreSpec{
 			Sources: []expv1alpha1.StoreImage{
 				{
 					Image: image1InStore,
@@ -62,9 +62,9 @@ func testStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
-					Object: &expv1alpha1.Store{
+					Object: &expv1alpha1.ClusterStore{
 						ObjectMeta: st.ObjectMeta,
-						Spec: expv1alpha1.StoreSpec{
+						Spec: expv1alpha1.ClusterStoreSpec{
 							Sources: []expv1alpha1.StoreImage{
 								{
 									Image: image2InStore,
@@ -87,9 +87,9 @@ func testStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
-					Object: &expv1alpha1.Store{
+					Object: &expv1alpha1.ClusterStore{
 						ObjectMeta: st.ObjectMeta,
-						Spec: expv1alpha1.StoreSpec{
+						Spec: expv1alpha1.ClusterStoreSpec{
 							Sources: []expv1alpha1.StoreImage{},
 						},
 					},

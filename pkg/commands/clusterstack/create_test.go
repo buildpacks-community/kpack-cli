@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package stack_test
+package clusterstack_test
 
 import (
 	"testing"
@@ -13,9 +13,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	stackcmds "github.com/pivotal/build-service-cli/pkg/commands/stack"
+	"github.com/pivotal/build-service-cli/pkg/clusterstack"
+	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/image/fakes"
-	"github.com/pivotal/build-service-cli/pkg/stack"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -32,34 +32,34 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	relocator := &fakes.Relocator{}
 
-	stackFactory := &stack.Factory{
+	stackFactory := &clusterstack.Factory{
 		Fetcher:   fetcher,
 		Relocator: relocator,
 	}
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return stackcmds.NewCreateCommand(clientSetProvider, stackFactory)
+		return clusterstackcmds.NewCreateCommand(clientSetProvider, stackFactory)
 	}
 
 	it("creates a stack", func() {
-		expectedStack := &expv1alpha1.Stack{
+		expectedStack := &expv1alpha1.ClusterStack{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.StackKind,
+				Kind:       expv1alpha1.ClusterStackKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "some-stack",
 				Annotations: map[string]string{
-					stack.DefaultRepositoryAnnotation: "some-registry.io/some-repo",
+					clusterstack.DefaultRepositoryAnnotation: "some-registry.io/some-repo",
 				},
 			},
-			Spec: expv1alpha1.StackSpec{
+			Spec: expv1alpha1.ClusterStackSpec{
 				Id: "some-stack-id",
-				BuildImage: expv1alpha1.StackSpecImage{
+				BuildImage: expv1alpha1.ClusterStackSpecImage{
 					Image: "some-registry.io/some-repo/build@" + buildImageId,
 				},
-				RunImage: expv1alpha1.StackSpecImage{
+				RunImage: expv1alpha1.ClusterStackSpecImage{
 					Image: "some-registry.io/some-repo/run@" + runImageId,
 				},
 			},

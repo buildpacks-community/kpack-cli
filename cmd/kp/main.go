@@ -11,21 +11,21 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pivotal/build-service-cli/pkg/buildpackage"
+	"github.com/pivotal/build-service-cli/pkg/clusterstack"
+	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	buildcmds "github.com/pivotal/build-service-cli/pkg/commands/build"
+	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
+	storecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	buildercmds "github.com/pivotal/build-service-cli/pkg/commands/custombuilder"
 	clusterbuildercmds "github.com/pivotal/build-service-cli/pkg/commands/customclusterbuilder"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
-	stackcmds "github.com/pivotal/build-service-cli/pkg/commands/stack"
-	storecmds "github.com/pivotal/build-service-cli/pkg/commands/store"
 	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/secret"
 	"github.com/pivotal/build-service-cli/pkg/source"
-	"github.com/pivotal/build-service-cli/pkg/stack"
-	"github.com/pivotal/build-service-cli/pkg/store"
 )
 
 var (
@@ -166,21 +166,22 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	stackFactory := &stack.Factory{
+	stackFactory := &clusterstack.Factory{
 		Fetcher:   &image.Fetcher{},
 		Relocator: &image.Relocator{},
 	}
 
 	stackRootCmd := &cobra.Command{
-		Use:   "stack",
-		Short: "Stack Commands",
+		Use:     "clusterstack",
+		Aliases: []string{"csk"},
+		Short:   "Cluster Stack Commands",
 	}
 	stackRootCmd.AddCommand(
-		stackcmds.NewCreateCommand(clientSetProvider, stackFactory),
-		stackcmds.NewListCommand(clientSetProvider),
-		stackcmds.NewStatusCommand(clientSetProvider),
-		stackcmds.NewUpdateCommand(clientSetProvider, &image.Fetcher{}, &image.Relocator{}),
-		stackcmds.NewDeleteCommand(clientSetProvider),
+		clusterstackcmds.NewCreateCommand(clientSetProvider, stackFactory),
+		clusterstackcmds.NewListCommand(clientSetProvider),
+		clusterstackcmds.NewStatusCommand(clientSetProvider),
+		clusterstackcmds.NewUpdateCommand(clientSetProvider, &image.Fetcher{}, &image.Relocator{}),
+		clusterstackcmds.NewDeleteCommand(clientSetProvider),
 	)
 	return stackRootCmd
 }
@@ -191,11 +192,12 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Relocator: &image.Relocator{},
 	}
 
-	factory := &store.Factory{Uploader: bpUploader}
+	factory := &clusterstore.Factory{Uploader: bpUploader}
 
 	storeRootCommand := &cobra.Command{
-		Use:   "store",
-		Short: "Store Commands",
+		Use:     "clusterstore",
+		Aliases: []string{"csr"},
+		Short:   "Cluster Store Commands",
 	}
 	storeRootCommand.AddCommand(
 		storecmds.NewCreateCommand(clientSetProvider, factory),
@@ -209,7 +211,7 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	stackFactory := &stack.Factory{
+	stackFactory := &clusterstack.Factory{
 		Fetcher:   &image.Fetcher{},
 		Relocator: &image.Relocator{},
 	}
@@ -219,7 +221,7 @@ func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Relocator: &image.Relocator{},
 	}
 
-	storeFactory := &store.Factory{Uploader: bpUploader}
+	storeFactory := &clusterstore.Factory{Uploader: bpUploader}
 
 	return importcmds.NewImportCommand(clientSetProvider, storeFactory, stackFactory)
 }

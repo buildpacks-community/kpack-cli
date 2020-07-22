@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/spf13/cobra"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,9 +64,15 @@ kp cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.ya
 				},
 				Spec: expv1alpha1.CustomNamespacedBuilderSpec{
 					CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-						Tag:   tag,
-						Stack: stack,
-						Store: store,
+						Tag: tag,
+						Stack: corev1.ObjectReference{
+							Name: stack,
+							Kind: expv1alpha1.ClusterStackKind,
+						},
+						Store: corev1.ObjectReference{
+							Name: store,
+							Kind: expv1alpha1.ClusterStoreKind,
+						},
 					},
 					ServiceAccount: "default",
 				},

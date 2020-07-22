@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store
+package clusterstore
 
 import (
 	"fmt"
@@ -23,9 +23,9 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:          "status <store-name>",
-		Short:        "Display store status",
-		Long:         `Prints information about the status of a specific store.`,
-		Example:      "kp store status my-store",
+		Short:        "Display cluster store status",
+		Long:         `Prints information about the status of a specific cluster-scoped store.`,
+		Example:      "kp clusterstore status my-store",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -34,7 +34,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(args[0], v1.GetOptions{})
+			store, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Get(args[0], v1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -57,7 +57,7 @@ type buildpackageInfo struct {
 	homepage string
 }
 
-func getBuildpackageInfos(store *expv1alpha1.Store) []buildpackageInfo {
+func getBuildpackageInfos(store *expv1alpha1.ClusterStore) []buildpackageInfo {
 	buildpackagesMap := make(map[string]buildpackageInfo)
 
 	for _, buildpack := range store.Status.Buildpacks {
@@ -106,7 +106,7 @@ func displayBuildpackagesTable(out io.Writer, buildpackages []buildpackageInfo) 
 	return writer.Write()
 }
 
-func displayStoreStatus(out io.Writer, s *expv1alpha1.Store) error {
+func displayStoreStatus(out io.Writer, s *expv1alpha1.ClusterStore) error {
 	buildpackages := map[string]expv1alpha1.StoreBuildpack{}
 	buildpackageBps := map[string][]expv1alpha1.StoreBuildpack{}
 

@@ -57,9 +57,15 @@ kp ccb create my-builder my-registry.com/my-builder-tag --order /path/to/order.y
 				},
 				Spec: expv1alpha1.CustomClusterBuilderSpec{
 					CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-						Tag:   tag,
-						Stack: stack,
-						Store: store,
+						Tag: tag,
+						Stack: corev1.ObjectReference{
+							Name: stack,
+							Kind: expv1alpha1.ClusterStackKind,
+						},
+						Store: corev1.ObjectReference{
+							Name: store,
+							Kind: expv1alpha1.ClusterStoreKind,
+						},
 					},
 					ServiceAccountRef: corev1.ObjectReference{
 						Namespace: "build-service",

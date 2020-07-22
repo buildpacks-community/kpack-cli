@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store
+package clusterstore
 
 import (
 	"github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
@@ -17,13 +17,13 @@ import (
 func NewRemoveCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "remove <store> <buildpackage> [<buildpackage>...]",
-		Short: "Remove buildpackage(s) from store",
-		Long: `Removes existing buildpackage(s) from a specific buildpack store.
+		Short: "Remove buildpackage(s) from cluster store",
+		Long: `Removes existing buildpackage(s) from a specific cluster-scoped buildpack store.
 
 This relies on the image(s) specified to exist in the store and removes the associated buildpackage(s)
 `,
-		Example: `kp store remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271
-kp store remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271 my-registry.com/my-buildpackage/buildpacks_nginx@sha256:eacecf914a57e4f5d6c4459226f6133ecaccb5c462717a09cfeae4763207b9ef
+		Example: `kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271
+kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271 my-registry.com/my-buildpackage/buildpacks_nginx@sha256:eacecf914a57e4f5d6c4459226f6133ecaccb5c462717a09cfeae4763207b9ef
 `,
 		Args:         cobra.MinimumNArgs(2),
 		SilenceUsage: true,
@@ -37,7 +37,7 @@ kp store remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256
 
 			storeName, buildPackages := args[0], args[1:]
 
-			store, err := cs.KpackClient.ExperimentalV1alpha1().Stores().Get(storeName, v1.GetOptions{})
+			store, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Get(storeName, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				return errors.Errorf("Store '%s' does not exist", storeName)
 			} else if err != nil {
@@ -66,7 +66,7 @@ kp store remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256
 
 			store.Spec.Sources = updatedStoreSources
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().Stores().Update(store)
+			_, err = cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Update(store)
 			if err != nil {
 				return err
 			}
@@ -78,7 +78,7 @@ kp store remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256
 	return cmd
 }
 
-func storeContainsBuildpackage(store *v1alpha1.Store, buildpackage string) bool {
+func storeContainsBuildpackage(store *v1alpha1.ClusterStore, buildpackage string) bool {
 	for _, source := range store.Spec.Sources {
 		if source.Image == buildpackage {
 			return true

@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store_test
+package clusterstore_test
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/store"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -25,16 +25,16 @@ func TestStatusCommand(t *testing.T) {
 func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return store.NewStatusCommand(clientSetProvider)
+		return clusterstore.NewStatusCommand(clientSetProvider)
 	}
 
 	when("the store exists", func() {
 		const storeName = "some-store-name"
-		store := &expv1alpha1.Store{
+		store := &expv1alpha1.ClusterStore{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: storeName,
 			},
-			Status: expv1alpha1.StoreStatus{
+			Status: expv1alpha1.ClusterStoreStatus{
 				Buildpacks: []expv1alpha1.StoreBuildpack{
 					{
 						BuildpackInfo: expv1alpha1.BuildpackInfo{
@@ -147,7 +147,7 @@ DETECTION ORDER
 			testhelpers.CommandTest{
 				Args:           []string{storeName},
 				ExpectErr:      true,
-				ExpectedOutput: fmt.Sprintf("Error: stores.experimental.kpack.pivotal.io %q not found\n", storeName),
+				ExpectedOutput: fmt.Sprintf("Error: clusterstores.experimental.kpack.pivotal.io %q not found\n", storeName),
 			}.TestKpack(t, cmdFunc)
 		})
 	})

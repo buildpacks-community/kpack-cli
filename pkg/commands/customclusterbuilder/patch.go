@@ -42,11 +42,11 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 			patchedCcb := ccb.DeepCopy()
 
 			if stack != "" {
-				patchedCcb.Spec.Stack = stack
+				patchedCcb.Spec.Stack.Name = stack
 			}
 
 			if store != "" {
-				patchedCcb.Spec.Store = store
+				patchedCcb.Spec.Store.Name = store
 			}
 
 			if order != "" {

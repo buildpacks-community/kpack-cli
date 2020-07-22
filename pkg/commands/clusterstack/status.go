@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package stack
+package clusterstack
 
 import (
 	"io"
@@ -24,9 +24,9 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:          "status <name>",
-		Short:        "Display stack status",
-		Long:         `Prints detailed information about the status of a specific stack.`,
-		Example:      "kp stack status my-stack",
+		Short:        "Display cluster stack status",
+		Long:         `Prints detailed information about the status of a specific cluster-scoped stack.`,
+		Example:      "kp clusterstack status my-stack",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -35,7 +35,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			stack, err := cs.KpackClient.ExperimentalV1alpha1().Stacks().Get(args[0], metav1.GetOptions{})
+			stack, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -49,7 +49,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	return cmd
 }
 
-func displayStackStatus(out io.Writer, s *expv1alpha1.Stack, verbose bool) error {
+func displayStackStatus(out io.Writer, s *expv1alpha1.ClusterStack, verbose bool) error {
 	writer := commands.NewStatusWriter(out)
 
 	items := []string{
@@ -70,7 +70,7 @@ func displayStackStatus(out io.Writer, s *expv1alpha1.Stack, verbose bool) error
 	return writer.Write()
 }
 
-func getStatusText(s *expv1alpha1.Stack) string {
+func getStatusText(s *expv1alpha1.ClusterStack) string {
 	if cond := s.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
 		if cond.Status == corev1.ConditionTrue {
 			return "Ready"

@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package stack_test
+package clusterstack_test
 
 import (
 	"testing"
@@ -14,24 +14,24 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/stack"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestStackDeleteCommand(t *testing.T) {
-	spec.Run(t, "TestStackDeleteCommand", testStackDeleteCommand)
+func TestClusterStackDeleteCommand(t *testing.T) {
+	spec.Run(t, "TestClusterStackDeleteCommand", testClusterStackDeleteCommand)
 }
 
-func testStackDeleteCommand(t *testing.T, when spec.G, it spec.S) {
+func testClusterStackDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return stack.NewDeleteCommand(clientSetProvider)
+		return clusterstack.NewDeleteCommand(clientSetProvider)
 	}
 
 	when("a stack is available", func() {
 		it("deletes the stack", func() {
-			stack := &expv1alpha1.Stack{
+			stack := &expv1alpha1.ClusterStack{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "some-stack",
 				},
@@ -61,7 +61,7 @@ func testStackDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						Name: "some-stack",
 					},
 				},
-				ExpectedOutput: "Error: stacks.experimental.kpack.pivotal.io \"some-stack\" not found\n",
+				ExpectedOutput: "Error: clusterstacks.experimental.kpack.pivotal.io \"some-stack\" not found\n",
 				ExpectErr:      true,
 			}.TestKpack(t, cmdFunc)
 		})

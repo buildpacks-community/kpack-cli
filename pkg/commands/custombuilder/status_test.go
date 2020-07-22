@@ -65,9 +65,15 @@ Reason:    this builder is not ready for the purpose of a test
 			},
 			Spec: expv1alpha1.CustomNamespacedBuilderSpec{
 				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-					Tag:   "some-registry.com/test-builder-1",
-					Stack: "test-stack",
-					Store: "test-store",
+					Tag: "some-registry.com/test-builder-1",
+					Stack: corev1.ObjectReference{
+						Name: "test-stack",
+						Kind: expv1alpha1.ClusterStackKind,
+					},
+					Store: corev1.ObjectReference{
+						Name: "test-store",
+						Kind: expv1alpha1.ClusterStoreKind,
+					},
 					Order: []expv1alpha1.OrderEntry{
 						{
 							Group: []expv1alpha1.BuildpackRef{
@@ -131,9 +137,15 @@ Reason:    this builder is not ready for the purpose of a test
 			},
 			Spec: expv1alpha1.CustomNamespacedBuilderSpec{
 				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-					Tag:   "some-registry.com/test-builder-2",
-					Stack: "test-stack",
-					Store: "test-store",
+					Tag: "some-registry.com/test-builder-2",
+					Stack: corev1.ObjectReference{
+						Name: "test-stack",
+						Kind: expv1alpha1.ClusterStackKind,
+					},
+					Store: corev1.ObjectReference{
+						Name: "test-store",
+						Kind: expv1alpha1.ClusterStoreKind,
+					},
 					Order: []expv1alpha1.OrderEntry{
 						{
 							Group: []expv1alpha1.BuildpackRef{
@@ -181,9 +193,15 @@ Reason:    this builder is not ready for the purpose of a test
 			},
 			Spec: expv1alpha1.CustomNamespacedBuilderSpec{
 				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-					Tag:   "some-registry.com/test-builder-3",
-					Stack: "test-stack",
-					Store: "test-store",
+					Tag: "some-registry.com/test-builder-3",
+					Stack: corev1.ObjectReference{
+						Name: "test-stack",
+						Kind: expv1alpha1.ClusterStackKind,
+					},
+					Store: corev1.ObjectReference{
+						Name: "test-store",
+						Kind: expv1alpha1.ClusterStoreKind,
+					},
 					Order: []expv1alpha1.OrderEntry{
 						{
 							Group: []expv1alpha1.BuildpackRef{
@@ -222,9 +240,15 @@ Reason:    this builder is not ready for the purpose of a test
 			},
 			Spec: expv1alpha1.CustomNamespacedBuilderSpec{
 				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-					Tag:   "some-registry.com/test-builder-1",
-					Stack: "test-stack",
-					Store: "test-store",
+					Tag: "some-registry.com/test-builder-1",
+					Stack: corev1.ObjectReference{
+						Name: "test-stack",
+						Kind: expv1alpha1.ClusterStackKind,
+					},
+					Store: corev1.ObjectReference{
+						Name: "test-store",
+						Kind: expv1alpha1.ClusterStoreKind,
+					},
 					Order: []expv1alpha1.OrderEntry{
 						{
 							Group: []expv1alpha1.BuildpackRef{
@@ -288,9 +312,15 @@ Reason:    this builder is not ready for the purpose of a test
 			},
 			Spec: expv1alpha1.CustomNamespacedBuilderSpec{
 				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-					Tag:   "some-registry.com/test-builder-2",
-					Stack: "test-stack",
-					Store: "test-store",
+					Tag: "some-registry.com/test-builder-2",
+					Stack: corev1.ObjectReference{
+						Name: "test-stack",
+						Kind: expv1alpha1.ClusterStackKind,
+					},
+					Store: corev1.ObjectReference{
+						Name: "test-store",
+						Kind: expv1alpha1.ClusterStoreKind,
+					},
 					Order: []expv1alpha1.OrderEntry{
 						{
 							Group: []expv1alpha1.BuildpackRef{
@@ -338,9 +368,15 @@ Reason:    this builder is not ready for the purpose of a test
 			},
 			Spec: expv1alpha1.CustomNamespacedBuilderSpec{
 				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-					Tag:   "some-registry.com/test-builder-3",
-					Stack: "test-stack",
-					Store: "test-store",
+					Tag: "some-registry.com/test-builder-3",
+					Stack: corev1.ObjectReference{
+						Name: "test-stack",
+						Kind: expv1alpha1.ClusterStackKind,
+					},
+					Store: corev1.ObjectReference{
+						Name: "test-store",
+						Kind: expv1alpha1.ClusterStoreKind,
+					},
 					Order: []expv1alpha1.OrderEntry{
 						{
 							Group: []expv1alpha1.BuildpackRef{

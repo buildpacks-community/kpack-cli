@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store_test
+package clusterstore_test
 
 import (
 	"fmt"
@@ -15,17 +15,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	storecmds "github.com/pivotal/build-service-cli/pkg/commands/store"
-	"github.com/pivotal/build-service-cli/pkg/store"
-	"github.com/pivotal/build-service-cli/pkg/store/fakes"
+	"github.com/pivotal/build-service-cli/pkg/clusterstore"
+	"github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
+	storecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestStoreAddCommand(t *testing.T) {
-	spec.Run(t, "TestStoreAddCommand", testStoreAddCommand)
+func TestClusterStoreAddCommand(t *testing.T) {
+	spec.Run(t, "TestClusterStoreAddCommand", testClusterStoreAddCommand)
 }
 
-func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
+func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		imageAlreadyInStore = "some/imageinStore@sha256:123alreadyInStore"
 		storeName           = "some-store-name"
@@ -38,7 +38,7 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 		"some/imageAlreadyInStore": "some/path/imageInStoreDifferentPath@sha256:123alreadyInStore",
 	}
 
-	factory := &store.Factory{
+	factory := &clusterstore.Factory{
 		Uploader: fakeBuildpackageUploader,
 	}
 
@@ -47,14 +47,14 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 		return storecmds.NewAddCommand(clientSetProvider, factory)
 	}
 
-	store := &expv1alpha1.Store{
+	store := &expv1alpha1.ClusterStore{
 		ObjectMeta: v1.ObjectMeta{
 			Name: storeName,
 			Annotations: map[string]string{
 				"buildservice.pivotal.io/defaultRepository": "some/path",
 			},
 		},
-		Spec: expv1alpha1.StoreSpec{
+		Spec: expv1alpha1.ClusterStoreSpec{
 			Sources: []expv1alpha1.StoreImage{
 				{
 					Image: imageAlreadyInStore,
@@ -72,9 +72,9 @@ func testStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
-					Object: &expv1alpha1.Store{
+					Object: &expv1alpha1.ClusterStore{
 						ObjectMeta: store.ObjectMeta,
-						Spec: expv1alpha1.StoreSpec{
+						Spec: expv1alpha1.ClusterStoreSpec{
 							Sources: []expv1alpha1.StoreImage{
 								{
 									Image: imageAlreadyInStore,

@@ -6,6 +6,8 @@ package custombuilder_test
 import (
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
+
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -35,14 +37,20 @@ func testCustomBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				Name:      "test-builder",
 				Namespace: "some-namespace",
 				Annotations: map[string]string{
-					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"CustomBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccount":"default"},"status":{"stack":{}}}`,
+					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"CustomBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccount":"default"},"status":{"stack":{}}}`,
 				},
 			},
 			Spec: expv1alpha1.CustomNamespacedBuilderSpec{
 				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-					Tag:   "some-registry.com/test-builder",
-					Stack: "some-stack",
-					Store: "some-store",
+					Tag: "some-registry.com/test-builder",
+					Stack: corev1.ObjectReference{
+						Name: "some-stack",
+						Kind: expv1alpha1.ClusterStackKind,
+					},
+					Store: corev1.ObjectReference{
+						Name: "some-store",
+						Kind: expv1alpha1.ClusterStoreKind,
+					},
 					Order: []expv1alpha1.OrderEntry{
 						{
 							Group: []expv1alpha1.BuildpackRef{
@@ -79,8 +87,8 @@ func testCustomBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			Args: []string{
 				expectedBuilder.Name,
 				expectedBuilder.Spec.Tag,
-				"--stack", expectedBuilder.Spec.Stack,
-				"--store", expectedBuilder.Spec.Store,
+				"--stack", expectedBuilder.Spec.Stack.Name,
+				"--store", expectedBuilder.Spec.Store.Name,
 				"--order", "./testdata/order.yaml",
 				"-n", expectedBuilder.Namespace,
 			},
@@ -94,9 +102,9 @@ func testCustomBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	it("creates a CustomBuilder with the default namespace, store, and stack", func() {
 		expectedBuilder.Namespace = defaultNamespace
-		expectedBuilder.Spec.Stack = "default"
-		expectedBuilder.Spec.Store = "default"
-		expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":"default","store":"default","order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccount":"default"},"status":{"stack":{}}}`
+		expectedBuilder.Spec.Stack.Name = "default"
+		expectedBuilder.Spec.Store.Name = "default"
+		expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{"kind":"ClusterStore","name":"default"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccount":"default"},"status":{"stack":{}}}`
 
 		testhelpers.CommandTest{
 			Args: []string{
