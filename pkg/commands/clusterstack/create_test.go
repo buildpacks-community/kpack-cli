@@ -63,9 +63,6 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "some-stack",
-				Annotations: map[string]string{
-					clusterstack.DefaultRepositoryAnnotation: "some-registry.io/some-repo",
-				},
 			},
 			Spec: expv1alpha1.ClusterStackSpec{
 				Id: "some-stack-id",

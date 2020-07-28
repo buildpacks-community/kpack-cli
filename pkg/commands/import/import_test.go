@@ -74,8 +74,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-store",
 			Annotations: map[string]string{
-				"buildservice.pivotal.io/defaultRepository":        "new-registry.io/new-project",
-				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-store","creationTimestamp":null,"annotations":{"buildservice.pivotal.io/defaultRepository":"new-registry.io/new-project"}},"spec":{"sources":[{"image":"new-registry.io/new-project/store-image@sha256:123abc"}]},"status":{}}`,
+				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-store","creationTimestamp":null},"spec":{"sources":[{"image":"new-registry.io/new-project/store-image@sha256:123abc"}]},"status":{}}`,
 			},
 		},
 		Spec: expv1alpha1.ClusterStoreSpec{
@@ -92,9 +91,6 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-stack",
-			Annotations: map[string]string{
-				clusterstack.DefaultRepositoryAnnotation: "new-registry.io/new-project",
-			},
 		},
 		Spec: expv1alpha1.ClusterStackSpec{
 			Id: "some-stack-id",

@@ -34,7 +34,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			factory.DefaultRepository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 			if err != nil {
 				return err
 			}

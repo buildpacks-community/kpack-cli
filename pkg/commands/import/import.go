@@ -63,10 +63,10 @@ cat dependencies.yaml | kp import -f -`,
 
 			logger := commands.NewPrinter(cmd)
 
-			storeFactory.DefaultRepository = repository // FIXME
+			storeFactory.Repository = repository // FIXME
 			storeFactory.Printer = logger
 
-			stackFactory.DefaultRepository = repository // FIXME
+			stackFactory.Repository = repository // FIXME
 
 			descriptor, err := getDependencyDescriptor(cmd, filename)
 			if err != nil {

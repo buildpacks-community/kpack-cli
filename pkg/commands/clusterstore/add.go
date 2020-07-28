@@ -44,9 +44,9 @@ kp clusterstore add my-store ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			repo, ok := s.Annotations[clusterstore.DefaultRepositoryAnnotation]
-			if !ok || repo == "" {
-				return errors.Errorf("Unable to find default registry for store: %s", s.Name)
+			repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			if err != nil {
+				return err
 			}
 
 			updatedStore, storeUpdated, err := factory.AddToStore(s, repo, buildpackages...)

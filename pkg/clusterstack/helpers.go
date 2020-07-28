@@ -11,10 +11,9 @@ import (
 )
 
 const (
-	IdLabel                     = "io.buildpacks.stack.id"
-	RunImageName                = "run"
-	BuildImageName              = "build"
-	DefaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
+	IdLabel        = "io.buildpacks.stack.id"
+	RunImageName   = "run"
+	BuildImageName = "build"
 )
 
 func GetStackId(img v1.Image) (string, error) {

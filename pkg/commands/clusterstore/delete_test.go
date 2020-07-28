@@ -47,9 +47,6 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 			store := &expv1alpha1.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: storeName,
-					Annotations: map[string]string{
-						"buildservice.pivotal.io/defaultRepository": "some/path",
-					},
 				},
 				Spec: expv1alpha1.ClusterStoreSpec{
 					Sources: []expv1alpha1.StoreImage{
@@ -146,9 +143,6 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 			store := &expv1alpha1.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: storeName,
-					Annotations: map[string]string{
-						"buildservice.pivotal.io/defaultRepository": "some/path",
-					},
 				},
 				Spec: expv1alpha1.ClusterStoreSpec{
 					Sources: []expv1alpha1.StoreImage{

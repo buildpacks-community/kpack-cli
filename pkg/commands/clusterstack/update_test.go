@@ -13,8 +13,10 @@ import (
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
 	stackpkg "github.com/pivotal/build-service-cli/pkg/clusterstack"
@@ -22,8 +24,6 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
-
-const expectedRepository = "some-registry.com/some-repo"
 
 func TestUpdateCommand(t *testing.T) {
 	spec.Run(t, "TestUpdateCommand", testUpdateCommand)
@@ -42,17 +42,9 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	relocator := &fakes.Relocator{}
 
-	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
-		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return clusterstack.NewUpdateCommand(clientSetProvider, fetcher, relocator)
-	}
-
-	stck := &expv1alpha1.ClusterStack{
+	stack := &expv1alpha1.ClusterStack{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-stack",
-			Annotations: map[string]string{
-				stackpkg.DefaultRepositoryAnnotation: expectedRepository,
-			},
 		},
 		Spec: expv1alpha1.ClusterStackSpec{
 			Id: "some-old-id",
@@ -78,17 +70,36 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
+	config := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kp-config",
+			Namespace: "kpack",
+		},
+		Data: map[string]string{
+			"canonical.repository":                "some-registry.com/some-repo",
+			"canonical.repository.serviceaccount": "some-serviceaccount",
+		},
+	}
+
+	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
+		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
+		return clusterstack.NewUpdateCommand(clientSetProvider, fetcher, relocator)
+	}
+
 	it("updates the stack id, run image, and build image", func() {
 		testhelpers.CommandTest{
-			Objects: []runtime.Object{
-				stck,
+			K8sObjects: []runtime.Object{
+				config,
+			},
+			KpackObjects: []runtime.Object{
+				stack,
 			},
 			Args:      []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
 					Object: &expv1alpha1.ClusterStack{
-						ObjectMeta: stck.ObjectMeta,
+						ObjectMeta: stack.ObjectMeta,
 						Spec: expv1alpha1.ClusterStackSpec{
 							Id: "some-new-id",
 							BuildImage: expv1alpha1.ClusterStackSpecImage{
@@ -98,36 +109,61 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 								Image: "some-registry.com/some-repo/run@" + newRunImageId,
 							},
 						},
-						Status: stck.Status,
+						Status: stack.Status,
 					},
 				},
 			},
 			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nClusterStack Updated\n",
-		}.TestKpack(t, cmdFunc)
+		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
 	it("does not add stack images with the same digest", func() {
 		testhelpers.CommandTest{
-			Objects: []runtime.Object{
-				stck,
+			K8sObjects: []runtime.Object{
+				config,
+			},
+			KpackObjects: []runtime.Object{
+				stack,
 			},
 			Args:           []string{"some-stack", "--build-image", "some-old-build-image", "--run-image", "some-old-run-image"},
 			ExpectErr:      false,
 			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nBuild and Run images already exist in stack\nClusterStack Unchanged\n",
-		}.TestKpack(t, cmdFunc)
+		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
-	it("returns error on invalid registry annotation", func() {
-		stck.Annotations[stackpkg.DefaultRepositoryAnnotation] = ""
-
+	it("returns error when kp-config configmap is not found", func() {
 		testhelpers.CommandTest{
-			Objects: []runtime.Object{
-				stck,
+			KpackObjects: []runtime.Object{
+				stack,
 			},
 			Args:           []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
 			ExpectErr:      true,
-			ExpectedOutput: "Error: Unable to find default registry for clusterstack: some-stack\n",
-		}.TestKpack(t, cmdFunc)
+			ExpectedOutput: `Error: failed to get canonical repository: configmaps "kp-config" not found
+`,
+		}.TestK8sAndKpack(t, cmdFunc)
+	})
+
+	it("returns error when canonical.repository key is not found in kp-config configmap", func() {
+		badConfig := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kp-config",
+				Namespace: "kpack",
+			},
+			Data: map[string]string{},
+		}
+
+		testhelpers.CommandTest{
+			K8sObjects: []runtime.Object{
+				badConfig,
+			},
+			KpackObjects: []runtime.Object{
+				stack,
+			},
+			Args:           []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
+			ExpectErr:      true,
+			ExpectedOutput: `Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
+`,
+		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
 	it("returns error when build image and run image have different stack Ids", func() {
@@ -136,13 +172,16 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 		fetcher.AddImage("some-new-run-image", runImage)
 
 		testhelpers.CommandTest{
-			Objects: []runtime.Object{
-				stck,
+			K8sObjects: []runtime.Object{
+				config,
+			},
+			KpackObjects: []runtime.Object{
+				stack,
 			},
 			Args:           []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
 			ExpectErr:      true,
 			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nError: build stack 'some-new-id' does not match run stack 'other-stack-id'\n",
-		}.TestKpack(t, cmdFunc)
+		}.TestK8sAndKpack(t, cmdFunc)
 	})
 }
 

@@ -13,8 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const defaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
-
 type ImageFetcher interface {
 	Fetch(src string) (v1.Image, error)
 }
@@ -24,11 +22,11 @@ type ImageRelocator interface {
 }
 
 type Factory struct {
-	Fetcher           ImageFetcher
-	Relocator         ImageRelocator
-	DefaultRepository string
-	BuildImageRef     string
-	RunImageRef       string
+	Fetcher       ImageFetcher
+	Relocator     ImageRelocator
+	Repository    string
+	BuildImageRef string
+	RunImageRef   string
 }
 
 func (f *Factory) MakeStack(name string) (*expv1alpha1.ClusterStack, error) {
@@ -60,12 +58,12 @@ func (f *Factory) MakeStack(name string) (*expv1alpha1.ClusterStack, error) {
 		return nil, errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
 	}
 
-	relocatedBuildImageRef, err := f.Relocator.Relocate(buildImage, path.Join(f.DefaultRepository, BuildImageName))
+	relocatedBuildImageRef, err := f.Relocator.Relocate(buildImage, path.Join(f.Repository, BuildImageName))
 	if err != nil {
 		return nil, err
 	}
 
-	relocatedRunImageRef, err := f.Relocator.Relocate(runImage, path.Join(f.DefaultRepository, RunImageName))
+	relocatedRunImageRef, err := f.Relocator.Relocate(runImage, path.Join(f.Repository, RunImageName))
 	if err != nil {
 		return nil, err
 	}
@@ -77,9 +75,7 @@ func (f *Factory) MakeStack(name string) (*expv1alpha1.ClusterStack, error) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
-			Annotations: map[string]string{
-				defaultRepositoryAnnotation: f.DefaultRepository,
-			},
+			Annotations: map[string]string{},
 		},
 		Spec: expv1alpha1.ClusterStackSpec{
 			Id: buildStackId,
@@ -94,6 +90,6 @@ func (f *Factory) MakeStack(name string) (*expv1alpha1.ClusterStack, error) {
 }
 
 func (f *Factory) validate() error {
-	_, err := name.ParseReference(f.DefaultRepository, name.WeakValidation)
+	_, err := name.ParseReference(f.Repository, name.WeakValidation)
 	return err
 }

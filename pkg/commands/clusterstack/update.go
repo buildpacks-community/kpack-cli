@@ -55,9 +55,9 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			repository, ok := stack.Annotations[clusterstack.DefaultRepositoryAnnotation]
-			if !ok || repository == "" {
-				return errors.Errorf("Unable to find default registry for clusterstack: %s", args[0])
+			repository, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			if err != nil {
+				return err
 			}
 
 			printer.Printf("Uploading to '%s'...", repository)
