@@ -19,10 +19,8 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List cluster stores",
-		Long: `Prints a table of the most important information about cluster-scoped stores in the provided namespace.
-
-namespace defaults to the kubernetes current-context namespace.`,
-		Example: "kp clusterstore list\nkp clusterstore list -n my-namespace",
+		Long: "Prints a table of the most important information about cluster-scoped stores",
+		Example: "kp clusterstore list",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
