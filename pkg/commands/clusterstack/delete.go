@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package stack
+package clusterstack
 
 import (
 	"fmt"
@@ -15,9 +15,9 @@ import (
 func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <name>",
-		Short:   "Delete a stack",
-		Long:    "Delete a specific stack from the cluster.",
-		Example: "kp stack delete my-stack",
+		Short:   "Delete a cluster stack",
+		Long:    "Delete a specific cluster-scoped stack from the cluster.",
+		Example: "kp clusterstack delete my-stack",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
@@ -25,7 +25,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			err = cs.KpackClient.ExperimentalV1alpha1().Stacks().Delete(args[0], &metav1.DeleteOptions{})
+			err = cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

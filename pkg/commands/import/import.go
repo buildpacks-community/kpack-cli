@@ -20,11 +20,11 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/clusterstack"
+	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
-	stackpkg "github.com/pivotal/build-service-cli/pkg/stack"
-	storepkg "github.com/pivotal/build-service-cli/pkg/store"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 	kubectlLastAppliedConfig   = "kubectl.kubernetes.io/last-applied-configuration"
 )
 
-func NewImportCommand(provider k8s.ClientSetProvider, storeFactory *storepkg.Factory, stackFactory *stackpkg.Factory) *cobra.Command {
+func NewImportCommand(provider k8s.ClientSetProvider, storeFactory *clusterstore.Factory, stackFactory *clusterstack.Factory) *cobra.Command {
 	var (
 		filename string
 	)
@@ -132,16 +132,16 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 	return deps, nil
 }
 
-func importStores(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *storepkg.Factory, repository string, logger *commands.Logger) error {
+func importStores(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *clusterstore.Factory, repository string, logger *commands.Logger) error {
 	for _, store := range desc.Stores {
-		logger.Printf("Importing Store '%s'...", store.Name)
+		logger.Printf("Importing Cluster Store '%s'...", store.Name)
 
 		var buildpackages []string
 		for _, s := range store.Sources {
 			buildpackages = append(buildpackages, s.Image)
 		}
 
-		curStore, err := client.ExperimentalV1alpha1().Stores().Get(store.Name, metav1.GetOptions{})
+		curStore, err := client.ExperimentalV1alpha1().ClusterStores().Get(store.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
@@ -152,7 +152,7 @@ func importStores(desc importpkg.DependencyDescriptor, client versioned.Interfac
 				return err
 			}
 
-			_, err = client.ExperimentalV1alpha1().Stores().Create(newStore)
+			_, err = client.ExperimentalV1alpha1().ClusterStores().Create(newStore)
 			if err != nil {
 				return err
 			}
@@ -163,7 +163,7 @@ func importStores(desc importpkg.DependencyDescriptor, client versioned.Interfac
 			}
 
 			if storeUpdated {
-				_, err = client.ExperimentalV1alpha1().Stores().Update(updatedStore)
+				_, err = client.ExperimentalV1alpha1().ClusterStores().Update(updatedStore)
 				if err != nil {
 					return err
 				}
@@ -173,7 +173,7 @@ func importStores(desc importpkg.DependencyDescriptor, client versioned.Interfac
 	return nil
 }
 
-func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *stackpkg.Factory, logger *commands.Logger) error {
+func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interface, factory *clusterstack.Factory, logger *commands.Logger) error {
 	for _, stack := range desc.Stacks {
 		if stack.Name == desc.DefaultStack {
 			desc.Stacks = append(desc.Stacks, importpkg.Stack{
@@ -186,7 +186,7 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 	}
 
 	for _, stack := range desc.Stacks {
-		logger.Printf("Importing Stack '%s'...", stack.Name)
+		logger.Printf("Importing Cluster Stack '%s'...", stack.Name)
 
 		factory.BuildImageRef = stack.BuildImage.Image // FIXME
 		factory.RunImageRef = stack.RunImage.Image     // FIXME
@@ -196,13 +196,13 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 			return err
 		}
 
-		curStack, err := client.ExperimentalV1alpha1().Stacks().Get(stack.Name, metav1.GetOptions{})
+		curStack, err := client.ExperimentalV1alpha1().ClusterStacks().Get(stack.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
 
 		if k8serrors.IsNotFound(err) {
-			_, err = client.ExperimentalV1alpha1().Stacks().Create(newStack)
+			_, err = client.ExperimentalV1alpha1().ClusterStacks().Create(newStack)
 			if err != nil {
 				return err
 			}
@@ -214,7 +214,7 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 			updateStack := curStack.DeepCopy()
 			updateStack.Spec = newStack.Spec
 
-			_, err = client.ExperimentalV1alpha1().Stacks().Update(updateStack)
+			_, err = client.ExperimentalV1alpha1().ClusterStacks().Update(updateStack)
 			if err != nil {
 				return err
 			}
@@ -283,9 +283,15 @@ func makeCCB(ccb importpkg.CustomClusterBuilder, repository string, sa string) (
 		},
 		Spec: expv1alpha1.CustomClusterBuilderSpec{
 			CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-				Tag:   path.Join(repository, ccb.Name),
-				Stack: ccb.Stack,
-				Store: ccb.Store,
+				Tag: path.Join(repository, ccb.Name),
+				Stack: corev1.ObjectReference{
+					Name: ccb.Stack,
+					Kind: expv1alpha1.ClusterStackKind,
+				},
+				Store: corev1.ObjectReference{
+					Name: ccb.Store,
+					Kind: expv1alpha1.ClusterStoreKind,
+				},
 				Order: ccb.Order,
 			},
 		},

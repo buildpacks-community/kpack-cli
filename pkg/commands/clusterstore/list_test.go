@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package stack_test
+package clusterstore_test
 
 import (
 	"testing"
@@ -15,27 +15,28 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/stack"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestStackListCommand(t *testing.T) {
-	spec.Run(t, "TestStackListCommand", testStackListCommand)
+func TestClusterStoreListCommand(t *testing.T) {
+	spec.Run(t, "TestClusterStoreListCommand", testClusterStoreListCommand)
 }
 
-func testStackListCommand(t *testing.T, when spec.G, it spec.S) {
+func testClusterStoreListCommand(t *testing.T, when spec.G, it spec.S) {
+
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return stack.NewListCommand(clientSetProvider)
+		return clusterstore.NewListCommand(clientSetProvider)
 	}
 
-	when("the namespaces has images", func() {
-		it("returns a table of image details", func() {
-			stack1 := &expv1alpha1.Stack{
+	when("stores exist", func() {
+		it("returns a table of store details", func() {
+			store1 := &expv1alpha1.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
-					Name: "test-stack-1",
+					Name: "test-store-1",
 				},
-				Status: expv1alpha1.StackStatus{
+				Status: expv1alpha1.ClusterStoreStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
@@ -44,34 +45,14 @@ func testStackListCommand(t *testing.T, when spec.G, it spec.S) {
 							},
 						},
 					},
-					ResolvedStack: expv1alpha1.ResolvedStack{
-						Id: "stack-id-1",
-					},
 				},
 			}
-			stack2 := &expv1alpha1.Stack{
+
+			store2 := &expv1alpha1.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
-					Name: "test-stack-2",
+					Name: "test-store-2",
 				},
-				Status: expv1alpha1.StackStatus{
-					Status: corev1alpha1.Status{
-						Conditions: []corev1alpha1.Condition{
-							{
-								Type:   corev1alpha1.ConditionReady,
-								Status: corev1.ConditionTrue,
-							},
-						},
-					},
-					ResolvedStack: expv1alpha1.ResolvedStack{
-						Id: "stack-id-2",
-					},
-				},
-			}
-			stack3 := &expv1alpha1.Stack{
-				ObjectMeta: v1.ObjectMeta{
-					Name: "test-stack-3",
-				},
-				Status: expv1alpha1.StackStatus{
+				Status: expv1alpha1.ClusterStoreStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
@@ -80,34 +61,46 @@ func testStackListCommand(t *testing.T, when spec.G, it spec.S) {
 							},
 						},
 					},
-					ResolvedStack: expv1alpha1.ResolvedStack{
-						Id: "stack-id-3",
+				},
+			}
+
+			store3 := &expv1alpha1.ClusterStore{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "test-store-3",
+				},
+				Status: expv1alpha1.ClusterStoreStatus{
+					Status: corev1alpha1.Status{
+						Conditions: []corev1alpha1.Condition{
+							{
+								Type:   corev1alpha1.ConditionReady,
+								Status: corev1.ConditionTrue,
+							},
+						},
 					},
 				},
 			}
 
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
-					stack1,
-					stack2,
-					stack3,
+					store1,
+					store2,
+					store3,
 				},
-				ExpectedOutput: `NAME            READY      ID
-test-stack-1    False      stack-id-1
-test-stack-2    True       stack-id-2
-test-stack-3    Unknown    stack-id-3
+				ExpectedOutput: `NAME            READY
+test-store-1    False
+test-store-2    Unknown
+test-store-3    True
 
 `,
 			}.TestKpack(t, cmdFunc)
 		})
 
-		when("there are no stacks", func() {
-			it("returns a message that no stacks were found", func() {
+		when("no stores exist", func() {
+			it("returns a message that there are no stores", func() {
 				testhelpers.CommandTest{
 					ExpectErr:      true,
-					ExpectedOutput: "Error: no stacks found\n",
+					ExpectedOutput: "Error: no clusterstores found\n",
 				}.TestKpack(t, cmdFunc)
-
 			})
 		})
 	})

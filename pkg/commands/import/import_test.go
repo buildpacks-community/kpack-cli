@@ -17,11 +17,11 @@ import (
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
+	"github.com/pivotal/build-service-cli/pkg/clusterstack"
+	"github.com/pivotal/build-service-cli/pkg/clusterstore"
+	storefakes "github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
 	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
 	"github.com/pivotal/build-service-cli/pkg/image/fakes"
-	stackpkg "github.com/pivotal/build-service-cli/pkg/stack"
-	storepkg "github.com/pivotal/build-service-cli/pkg/store"
-	storefakes "github.com/pivotal/build-service-cli/pkg/store/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -35,7 +35,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		"some-registry.io/some-project/store-image-2": "new-registry.io/new-project/store-image-2@sha256:456def",
 	}
 
-	storeFactory := &storepkg.Factory{
+	storeFactory := &clusterstore.Factory{
 		Uploader: fakeBuildpackageUploader,
 	}
 
@@ -50,7 +50,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 
 	relocator := &fakes.Relocator{}
 
-	stackFactory := &stackpkg.Factory{
+	stackFactory := &clusterstack.Factory{
 		Fetcher:   fetcher,
 		Relocator: relocator,
 	}
@@ -66,42 +66,42 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
-	store := &expv1alpha1.Store{
+	store := &expv1alpha1.ClusterStore{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       expv1alpha1.StoreKind,
+			Kind:       expv1alpha1.ClusterStoreKind,
 			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-store",
 			Annotations: map[string]string{
 				"buildservice.pivotal.io/defaultRepository":        "new-registry.io/new-project",
-				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Store","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-store","creationTimestamp":null,"annotations":{"buildservice.pivotal.io/defaultRepository":"new-registry.io/new-project"}},"spec":{"sources":[{"image":"new-registry.io/new-project/store-image@sha256:123abc"}]},"status":{}}`,
+				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-store","creationTimestamp":null,"annotations":{"buildservice.pivotal.io/defaultRepository":"new-registry.io/new-project"}},"spec":{"sources":[{"image":"new-registry.io/new-project/store-image@sha256:123abc"}]},"status":{}}`,
 			},
 		},
-		Spec: expv1alpha1.StoreSpec{
+		Spec: expv1alpha1.ClusterStoreSpec{
 			Sources: []expv1alpha1.StoreImage{
 				{Image: "new-registry.io/new-project/store-image@sha256:123abc"},
 			},
 		},
 	}
 
-	stack := &expv1alpha1.Stack{
+	stack := &expv1alpha1.ClusterStack{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       expv1alpha1.StackKind,
+			Kind:       expv1alpha1.ClusterStackKind,
 			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-stack",
 			Annotations: map[string]string{
-				stackpkg.DefaultRepositoryAnnotation: "new-registry.io/new-project",
+				clusterstack.DefaultRepositoryAnnotation: "new-registry.io/new-project",
 			},
 		},
-		Spec: expv1alpha1.StackSpec{
+		Spec: expv1alpha1.ClusterStackSpec{
 			Id: "some-stack-id",
-			BuildImage: expv1alpha1.StackSpecImage{
+			BuildImage: expv1alpha1.ClusterStackSpecImage{
 				Image: "new-registry.io/new-project/build@" + buildImageId,
 			},
-			RunImage: expv1alpha1.StackSpecImage{
+			RunImage: expv1alpha1.ClusterStackSpecImage{
 				Image: "new-registry.io/new-project/run@" + runImageId,
 			},
 		},
@@ -121,9 +121,15 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 		Spec: expv1alpha1.CustomClusterBuilderSpec{
 			CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-				Tag:   "new-registry.io/new-project/some-ccb",
-				Stack: "some-stack",
-				Store: "some-store",
+				Tag: "new-registry.io/new-project/some-ccb",
+				Stack: corev1.ObjectReference{
+					Name: "some-stack",
+					Kind: expv1alpha1.ClusterStackKind,
+				},
+				Store: corev1.ObjectReference{
+					Name: "some-store",
+					Kind: expv1alpha1.ClusterStoreKind,
+				},
 				Order: []expv1alpha1.OrderEntry{
 					{
 						Group: []expv1alpha1.BuildpackRef{
@@ -154,8 +160,8 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("there are no stores, stacks, or ccbs", func() {
 		it("creates stores, stacks, and ccbs defined in the dependency descriptor", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":"some-stack","store":"some-store","order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
@@ -164,7 +170,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				Args: []string{
 					"-f", "./testdata/deps.yaml",
 				},
-				ExpectedOutput: "Importing Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nImporting Stack 'some-stack'...\nImporting Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
+				ExpectedOutput: "Importing Cluster Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'some-stack'...\nImporting Cluster Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
 				ExpectCreates: []runtime.Object{
 					store,
 					stack,
@@ -199,7 +205,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: "Importing Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nBuildpackage 'new-registry.io/new-project/store-image@sha256:123abc' already exists in the store\nImporting Stack 'some-stack'...\nImporting Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
+					ExpectedOutput: "Importing Cluster Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nBuildpackage 'new-registry.io/new-project/store-image@sha256:123abc' already exists in the store\nImporting Cluster Stack 'some-stack'...\nImporting Cluster Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
 		})
@@ -261,7 +267,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					Args: []string{
 						"-f", "./testdata/updated-deps.yaml",
 					},
-					ExpectedOutput: "Importing Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nAdded Buildpackage 'new-registry.io/new-project/store-image-2@sha256:456def'\nImporting Stack 'some-stack'...\nImporting Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
+					ExpectedOutput: "Importing Cluster Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nAdded Buildpackage 'new-registry.io/new-project/store-image-2@sha256:456def'\nImporting Cluster Stack 'some-stack'...\nImporting Cluster Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{
 							Object: expectedStore,
@@ -291,7 +297,7 @@ func makeStackImages(t *testing.T, stackId string) (v1.Image, string, v1.Image, 
 		t.Fatal(err)
 	}
 
-	buildImage, err = imagehelpers.SetStringLabel(buildImage, stackpkg.IdLabel, stackId)
+	buildImage, err = imagehelpers.SetStringLabel(buildImage, clusterstack.IdLabel, stackId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -301,7 +307,7 @@ func makeStackImages(t *testing.T, stackId string) (v1.Image, string, v1.Image, 
 		t.Fatal(err)
 	}
 
-	runImage, err = imagehelpers.SetStringLabel(runImage, stackpkg.IdLabel, stackId)
+	runImage, err = imagehelpers.SetStringLabel(runImage, clusterstack.IdLabel, stackId)
 	if err != nil {
 		t.Fatal(err)
 	}

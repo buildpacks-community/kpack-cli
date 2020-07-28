@@ -1,28 +1,28 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package stack
+package clusterstack
 
 import (
 	"fmt"
 
 	"github.com/spf13/cobra"
 
+	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
-	"github.com/pivotal/build-service-cli/pkg/stack"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *stack.Factory) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create <name>",
-		Short: "Create a stack",
-		Long: `Create a stack by providing command line arguments.
+		Short: "Create a cluster stack",
+		Long: `Create a cluster-scoped stack by providing command line arguments.
 
 The run and build images will be uploaded to the the registry provided by "--default-repository".
 Therefore, you must have credentials to access the registry on your machine.
 Additionally, your cluster must have read access to the registry.`,
-		Example: `kp stack create my-stack --default-repository some-registry.io/some-repo --build-image my-registry.com/build --run-image my-registry.com/run
-kp stack create my-stack --default-repository some-registry.io/some-repo --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
+		Example: `kp clusterstack create my-stack --default-repository some-registry.io/some-repo --build-image my-registry.com/build --run-image my-registry.com/run
+kp clusterstack create my-stack --default-repository some-registry.io/some-repo --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -36,7 +36,7 @@ kp stack create my-stack --default-repository some-registry.io/some-repo --build
 				return err
 			}
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().Stacks().Create(stk)
+			_, err = cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().Create(stk)
 			if err != nil {
 				return err
 			}

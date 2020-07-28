@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store_test
+package clusterstack_test
 
 import (
 	"testing"
@@ -15,28 +15,27 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/store"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestStoreListCommand(t *testing.T) {
-	spec.Run(t, "TestStoreListCommand", testStoreListCommand)
+func TestClusterStackListCommand(t *testing.T) {
+	spec.Run(t, "TestClusterStackListCommand", testClusterStackListCommand)
 }
 
-func testStoreListCommand(t *testing.T, when spec.G, it spec.S) {
-
+func testClusterStackListCommand(t *testing.T, when spec.G, it spec.S) {
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return store.NewListCommand(clientSetProvider)
+		return clusterstack.NewListCommand(clientSetProvider)
 	}
 
-	when("stores exist", func() {
-		it("returns a table of store details", func() {
-			store1 := &expv1alpha1.Store{
+	when("the namespaces has images", func() {
+		it("returns a table of image details", func() {
+			stack1 := &expv1alpha1.ClusterStack{
 				ObjectMeta: v1.ObjectMeta{
-					Name: "test-store-1",
+					Name: "test-stack-1",
 				},
-				Status: expv1alpha1.StoreStatus{
+				Status: expv1alpha1.ClusterStackStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
@@ -45,30 +44,16 @@ func testStoreListCommand(t *testing.T, when spec.G, it spec.S) {
 							},
 						},
 					},
-				},
-			}
-
-			store2 := &expv1alpha1.Store{
-				ObjectMeta: v1.ObjectMeta{
-					Name: "test-store-2",
-				},
-				Status: expv1alpha1.StoreStatus{
-					Status: corev1alpha1.Status{
-						Conditions: []corev1alpha1.Condition{
-							{
-								Type:   corev1alpha1.ConditionReady,
-								Status: corev1.ConditionUnknown,
-							},
-						},
+					ResolvedClusterStack: expv1alpha1.ResolvedClusterStack{
+						Id: "stack-id-1",
 					},
 				},
 			}
-
-			store3 := &expv1alpha1.Store{
+			stack2 := &expv1alpha1.ClusterStack{
 				ObjectMeta: v1.ObjectMeta{
-					Name: "test-store-3",
+					Name: "test-stack-2",
 				},
-				Status: expv1alpha1.StoreStatus{
+				Status: expv1alpha1.ClusterStackStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
@@ -77,30 +62,52 @@ func testStoreListCommand(t *testing.T, when spec.G, it spec.S) {
 							},
 						},
 					},
+					ResolvedClusterStack: expv1alpha1.ResolvedClusterStack{
+						Id: "stack-id-2",
+					},
+				},
+			}
+			stack3 := &expv1alpha1.ClusterStack{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "test-stack-3",
+				},
+				Status: expv1alpha1.ClusterStackStatus{
+					Status: corev1alpha1.Status{
+						Conditions: []corev1alpha1.Condition{
+							{
+								Type:   corev1alpha1.ConditionReady,
+								Status: corev1.ConditionUnknown,
+							},
+						},
+					},
+					ResolvedClusterStack: expv1alpha1.ResolvedClusterStack{
+						Id: "stack-id-3",
+					},
 				},
 			}
 
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
-					store1,
-					store2,
-					store3,
+					stack1,
+					stack2,
+					stack3,
 				},
-				ExpectedOutput: `NAME            READY
-test-store-1    False
-test-store-2    Unknown
-test-store-3    True
+				ExpectedOutput: `NAME            READY      ID
+test-stack-1    False      stack-id-1
+test-stack-2    True       stack-id-2
+test-stack-3    Unknown    stack-id-3
 
 `,
 			}.TestKpack(t, cmdFunc)
 		})
 
-		when("no stores exist", func() {
-			it("returns a message that there are no stores", func() {
+		when("there are no stacks", func() {
+			it("returns a message that no stacks were found", func() {
 				testhelpers.CommandTest{
 					ExpectErr:      true,
-					ExpectedOutput: "Error: no stores found\n",
+					ExpectedOutput: "Error: no clusterstacks found\n",
 				}.TestKpack(t, cmdFunc)
+
 			})
 		})
 	})

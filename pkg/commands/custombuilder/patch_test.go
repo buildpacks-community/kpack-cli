@@ -6,6 +6,8 @@ package custombuilder_test
 import (
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
+
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -36,9 +38,15 @@ func testCustomBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Spec: expv1alpha1.CustomNamespacedBuilderSpec{
 				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
-					Tag:   "some-registry.com/test-builder",
-					Stack: "some-stack",
-					Store: "some-store",
+					Tag: "some-registry.com/test-builder",
+					Stack: corev1.ObjectReference{
+						Name: "some-stack",
+						Kind: expv1alpha1.ClusterStackKind,
+					},
+					Store: corev1.ObjectReference{
+						Name: "some-store",
+						Kind: expv1alpha1.ClusterStoreKind,
+					},
 					Order: []expv1alpha1.OrderEntry{
 						{
 							Group: []expv1alpha1.BuildpackRef{
@@ -84,7 +92,7 @@ func testCustomBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			ExpectedOutput: "\"test-builder\" patched\n",
 			ExpectPatches: []string{
-				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":"some-other-stack","store":"some-other-store"}}`,
+				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"}}}`,
 			},
 		}.TestKpack(t, cmdFunc)
 	})
@@ -104,7 +112,7 @@ func testCustomBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			ExpectedOutput: "\"test-builder\" patched\n",
 			ExpectPatches: []string{
-				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":"some-other-stack","store":"some-other-store"}}`,
+				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"}}}`,
 			},
 		}.TestKpack(t, cmdFunc)
 	})

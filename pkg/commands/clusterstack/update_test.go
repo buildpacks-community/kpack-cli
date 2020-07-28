@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package stack_test
+package clusterstack_test
 
 import (
 	"testing"
@@ -17,9 +17,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/stack"
+	stackpkg "github.com/pivotal/build-service-cli/pkg/clusterstack"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/image/fakes"
-	stackpkg "github.com/pivotal/build-service-cli/pkg/stack"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -44,33 +44,33 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return stack.NewUpdateCommand(clientSetProvider, fetcher, relocator)
+		return clusterstack.NewUpdateCommand(clientSetProvider, fetcher, relocator)
 	}
 
-	stck := &expv1alpha1.Stack{
+	stck := &expv1alpha1.ClusterStack{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-stack",
 			Annotations: map[string]string{
 				stackpkg.DefaultRepositoryAnnotation: expectedRepository,
 			},
 		},
-		Spec: expv1alpha1.StackSpec{
+		Spec: expv1alpha1.ClusterStackSpec{
 			Id: "some-old-id",
-			BuildImage: expv1alpha1.StackSpecImage{
+			BuildImage: expv1alpha1.ClusterStackSpecImage{
 				Image: "some-old-build-image",
 			},
-			RunImage: expv1alpha1.StackSpecImage{
+			RunImage: expv1alpha1.ClusterStackSpecImage{
 				Image: "some-old-run-image",
 			},
 		},
-		Status: expv1alpha1.StackStatus{
-			ResolvedStack: expv1alpha1.ResolvedStack{
+		Status: expv1alpha1.ClusterStackStatus{
+			ResolvedClusterStack: expv1alpha1.ResolvedClusterStack{
 				Id: "some-old-id",
-				BuildImage: expv1alpha1.StackStatusImage{
+				BuildImage: expv1alpha1.ClusterStackStatusImage{
 					LatestImage: "some-registry.com/old-repo/build@" + oldBuildImageId,
 					Image:       "some-old-build-image",
 				},
-				RunImage: expv1alpha1.StackStatusImage{
+				RunImage: expv1alpha1.ClusterStackStatusImage{
 					LatestImage: "some-registry.com/old-repo/run@" + oldRunImageId,
 					Image:       "some-old-run-image",
 				},
@@ -87,14 +87,14 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
-					Object: &expv1alpha1.Stack{
+					Object: &expv1alpha1.ClusterStack{
 						ObjectMeta: stck.ObjectMeta,
-						Spec: expv1alpha1.StackSpec{
+						Spec: expv1alpha1.ClusterStackSpec{
 							Id: "some-new-id",
-							BuildImage: expv1alpha1.StackSpecImage{
+							BuildImage: expv1alpha1.ClusterStackSpecImage{
 								Image: "some-registry.com/some-repo/build@" + newBuildImageId,
 							},
-							RunImage: expv1alpha1.StackSpecImage{
+							RunImage: expv1alpha1.ClusterStackSpecImage{
 								Image: "some-registry.com/some-repo/run@" + newRunImageId,
 							},
 						},
@@ -102,7 +102,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nStack Updated\n",
+			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nClusterStack Updated\n",
 		}.TestKpack(t, cmdFunc)
 	})
 
@@ -113,7 +113,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args:           []string{"some-stack", "--build-image", "some-old-build-image", "--run-image", "some-old-run-image"},
 			ExpectErr:      false,
-			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nBuild and Run images already exist in stack\nStack Unchanged\n",
+			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nBuild and Run images already exist in stack\nClusterStack Unchanged\n",
 		}.TestKpack(t, cmdFunc)
 	})
 
@@ -126,7 +126,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args:           []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
 			ExpectErr:      true,
-			ExpectedOutput: "Error: Unable to find default registry for stack: some-stack\n",
+			ExpectedOutput: "Error: Unable to find default registry for clusterstack: some-stack\n",
 		}.TestKpack(t, cmdFunc)
 	})
 

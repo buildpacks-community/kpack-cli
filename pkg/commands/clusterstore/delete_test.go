@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store_test
+package clusterstore_test
 
 import (
 	"fmt"
@@ -17,15 +17,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/store"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestStoreDeleteCommand(t *testing.T) {
-	spec.Run(t, "TestStoreDeleteCommand", testStoreDeleteCommand)
+func TestClusterStoreDeleteCommand(t *testing.T) {
+	spec.Run(t, "TestClusterStoreDeleteCommand", testClusterStoreDeleteCommand)
 }
 
-func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
+func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		storeName = "some-store-name"
 	)
@@ -34,7 +34,7 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return store.NewDeleteCommand(clientSetProvider, &confirmationProvider)
+		return clusterstore.NewDeleteCommand(clientSetProvider, &confirmationProvider)
 	}
 
 	when("confirmation is given by user", func() {
@@ -44,14 +44,14 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		when("store exists", func() {
-			store := &expv1alpha1.Store{
+			store := &expv1alpha1.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: storeName,
 					Annotations: map[string]string{
 						"buildservice.pivotal.io/defaultRepository": "some/path",
 					},
 				},
-				Spec: expv1alpha1.StoreSpec{
+				Spec: expv1alpha1.ClusterStoreSpec{
 					Sources: []expv1alpha1.StoreImage{
 						{
 							Image: "some/imageInStore",
@@ -116,7 +116,7 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 				Objects:        nil,
 				Args:           []string{storeName},
 				ExpectErr:      false,
-				ExpectedOutput: "Skipping store deletion\n",
+				ExpectedOutput: "Skipping clusterstore deletion\n",
 			}.TestKpack(t, cmdFunc)
 			assert.True(t, confirmationProvider.requested)
 		})
@@ -143,14 +143,14 @@ func testStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("force deletion flag is used", func() {
 		when("store exists", func() {
-			store := &expv1alpha1.Store{
+			store := &expv1alpha1.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: storeName,
 					Annotations: map[string]string{
 						"buildservice.pivotal.io/defaultRepository": "some/path",
 					},
 				},
-				Spec: expv1alpha1.StoreSpec{
+				Spec: expv1alpha1.ClusterStoreSpec{
 					Sources: []expv1alpha1.StoreImage{
 						{
 							Image: "some/imageInStore",

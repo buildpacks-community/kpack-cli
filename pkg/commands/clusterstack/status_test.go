@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package stack_test
+package clusterstack_test
 
 import (
 	"testing"
@@ -13,32 +13,32 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/stack"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestStackStatusCommand(t *testing.T) {
-	spec.Run(t, "TestStackStatusCommand", testStackStatusCommand)
+func TestClusterStackStatusCommand(t *testing.T) {
+	spec.Run(t, "TestClusterStackStatusCommand", testClusterStackStatusCommand)
 }
 
-func testStackStatusCommand(t *testing.T, when spec.G, it spec.S) {
+func testClusterStackStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return stack.NewStatusCommand(clientSetProvider)
+		return clusterstack.NewStatusCommand(clientSetProvider)
 	}
 
 	when("the stack exists", func() {
-		stck := &expv1alpha1.Stack{
+		stck := &expv1alpha1.ClusterStack{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "some-stack",
 			},
-			Status: expv1alpha1.StackStatus{
-				ResolvedStack: expv1alpha1.ResolvedStack{
+			Status: expv1alpha1.ClusterStackStatus{
+				ResolvedClusterStack: expv1alpha1.ResolvedClusterStack{
 					Id: "some-stack-id",
-					BuildImage: expv1alpha1.StackStatusImage{
+					BuildImage: expv1alpha1.ClusterStackStatusImage{
 						LatestImage: "some-run-image",
 					},
-					RunImage: expv1alpha1.StackStatusImage{
+					RunImage: expv1alpha1.ClusterStackStatusImage{
 						LatestImage: "some-build-image",
 					},
 					Mixins: []string{"mixin1", "mixin2"},
@@ -82,7 +82,7 @@ Mixins:         mixin1, mixin2
 			testhelpers.CommandTest{
 				Args:           []string{"stack-does-not-exist"},
 				ExpectErr:      true,
-				ExpectedOutput: "Error: stacks.experimental.kpack.pivotal.io \"stack-does-not-exist\" not found\n",
+				ExpectedOutput: "Error: clusterstacks.experimental.kpack.pivotal.io \"stack-does-not-exist\" not found\n",
 			}.TestKpack(t, cmdFunc)
 
 		})

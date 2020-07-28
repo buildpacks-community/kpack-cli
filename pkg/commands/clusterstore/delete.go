@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store
+package clusterstore
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
@@ -29,9 +29,9 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvi
 
 	cmd := &cobra.Command{
 		Use:          "delete <store>",
-		Short:        "Delete a store",
-		Long:         fmt.Sprintf("Delete a specific buildpack store.\n\n%s", warningMessage),
-		Example:      `kp store delete my-store`,
+		Short:        "Delete a cluster store",
+		Long:         fmt.Sprintf("Delete a specific cluster-scoped buildpack store.\n\n%s", warningMessage),
+		Example:      `kp clusterstore delete my-store`,
 		Args:         cobra.MinimumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -52,7 +52,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvi
 			}
 
 			if !confirmed {
-				_, err = fmt.Fprintln(cmd.OutOrStdout(), "Skipping store deletion")
+				_, err = fmt.Fprintln(cmd.OutOrStdout(), "Skipping clusterstore deletion")
 				return err
 			}
 
@@ -65,7 +65,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvi
 }
 
 func deleteStore(cmd *cobra.Command, cs k8s.ClientSet, storeName string) error {
-	err := cs.KpackClient.ExperimentalV1alpha1().Stores().Delete(storeName, &v1.DeleteOptions{})
+	err := cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Delete(storeName, &v1.DeleteOptions{})
 	if k8serrors.IsNotFound(err) {
 		return errors.Errorf("Store %q does not exist", storeName)
 	} else if err != nil {

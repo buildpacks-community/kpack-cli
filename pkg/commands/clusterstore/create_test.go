@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store_test
+package clusterstore_test
 
 import (
 	"testing"
@@ -13,17 +13,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	storecmds "github.com/pivotal/build-service-cli/pkg/commands/store"
-	"github.com/pivotal/build-service-cli/pkg/store"
-	"github.com/pivotal/build-service-cli/pkg/store/fakes"
+	"github.com/pivotal/build-service-cli/pkg/clusterstore"
+	"github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
+	storecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestStoreCreateCommand(t *testing.T) {
-	spec.Run(t, "TestStoreCreateCommand", testStoreCreateCommand)
+func TestClusterStoreCreateCommand(t *testing.T) {
+	spec.Run(t, "TestClusterStoreCreateCommand", testClusterStoreCreateCommand)
 }
 
-func testStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
+func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	var (
 		buildpackage1 = "some/newbp"
 		uploadedBp1   = "some/path/newbp@sha256:123newbp"
@@ -35,23 +35,23 @@ func testStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			buildpackage2: uploadedBp2,
 		}
 
-		factory = &store.Factory{
+		factory = &clusterstore.Factory{
 			Uploader: fakeBuildpackageUploader,
 		}
 
-		expectedStore = &expv1alpha1.Store{
+		expectedStore = &expv1alpha1.ClusterStore{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.StoreKind,
+				Kind:       expv1alpha1.ClusterStoreKind,
 				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-store",
 				Annotations: map[string]string{
 					"buildservice.pivotal.io/defaultRepository":        "some-registry.io/some-repo",
-					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Store","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-store","creationTimestamp":null,"annotations":{"buildservice.pivotal.io/defaultRepository":"some-registry.io/some-repo"}},"spec":{"sources":[{"image":"some/path/newbp@sha256:123newbp"},{"image":"some/path/bpfromcnb@sha256:123imagefromcnb"}]},"status":{}}`,
+					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-store","creationTimestamp":null,"annotations":{"buildservice.pivotal.io/defaultRepository":"some-registry.io/some-repo"}},"spec":{"sources":[{"image":"some/path/newbp@sha256:123newbp"},{"image":"some/path/bpfromcnb@sha256:123imagefromcnb"}]},"status":{}}`,
 				},
 			},
-			Spec: expv1alpha1.StoreSpec{
+			Spec: expv1alpha1.ClusterStoreSpec{
 				Sources: []expv1alpha1.StoreImage{
 					{Image: uploadedBp1},
 					{Image: uploadedBp2},
@@ -65,7 +65,7 @@ func testStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		return storecmds.NewCreateCommand(clientSetProvider, factory)
 	}
 
-	it("creates a store", func() {
+	it("creates a cluster store", func() {
 		testhelpers.CommandTest{
 			Args: []string{
 				expectedStore.Name,

@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store
+package clusterstore
 
 import (
 	"encoding/json"
@@ -30,14 +30,14 @@ type Factory struct {
 	Printer           *commands.Logger
 }
 
-func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Store, error) {
+func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.ClusterStore, error) {
 	if err := f.validate(buildpackages); err != nil {
 		return nil, err
 	}
 
-	newStore := &v1alpha1.Store{
+	newStore := &v1alpha1.ClusterStore{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha1.StoreKind,
+			Kind:       v1alpha1.ClusterStoreKind,
 			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -46,7 +46,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Sto
 				DefaultRepositoryAnnotation: f.DefaultRepository,
 			},
 		},
-		Spec: v1alpha1.StoreSpec{},
+		Spec: v1alpha1.ClusterStoreSpec{},
 	}
 
 	f.Printer.Printf("Uploading to '%s'...", f.DefaultRepository)
@@ -72,7 +72,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Sto
 	return newStore, nil
 }
 
-func (f *Factory) AddToStore(store *v1alpha1.Store, repository string, buildpackages ...string) (*v1alpha1.Store, bool, error) {
+func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
 	f.Printer.Printf("Uploading to '%s'...", repository)
 
 	var uploaded []string
@@ -111,7 +111,7 @@ func (f *Factory) validate(buildpackages []string) error {
 	return err
 }
 
-func storeContains(store *v1alpha1.Store, buildpackage string) bool {
+func storeContains(store *v1alpha1.ClusterStore, buildpackage string) bool {
 	digest := strings.Split(buildpackage, "@")[1]
 
 	for _, image := range store.Spec.Sources {

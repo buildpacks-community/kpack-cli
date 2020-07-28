@@ -1,13 +1,12 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package store
+package clusterstack
 
 import (
-	"errors"
-
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -17,44 +16,42 @@ import (
 
 func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "List stores",
-		Long: `Prints a table of the most important information about stores in the provided namespace.
-
-namespace defaults to the kubernetes current-context namespace.`,
-		Example: "kp store list\nkp store list -n my-namespace",
+		Use:          "list",
+		Short:        "List cluster stacks",
+		Long:         `Prints a table of the most important information about cluster-scoped stacks in the cluster.`,
+		Example:      "kp clusterstack list",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			storeList, err := cs.KpackClient.ExperimentalV1alpha1().Stores().List(metav1.ListOptions{})
+			stackList, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
 
-			if len(storeList.Items) == 0 {
-				return errors.New("no stores found")
+			if len(stackList.Items) == 0 {
+				return errors.New("no clusterstacks found")
 			} else {
-				return displayStoresTable(cmd, storeList)
+				return displayStacksTable(cmd, stackList)
 			}
 
 		},
-		SilenceUsage: true,
 	}
 
 	return cmd
 }
 
-func displayStoresTable(cmd *cobra.Command, storeList *expv1alpha1.StoreList) error {
-	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY")
+func displayStacksTable(cmd *cobra.Command, stackList *expv1alpha1.ClusterStackList) error {
+	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY", "ID")
 	if err != nil {
 		return err
 	}
 
-	for _, s := range storeList.Items {
-		err := writer.AddRow(s.Name, getReadyText(s))
+	for _, s := range stackList.Items {
+		err := writer.AddRow(s.Name, getReadyText(s), s.Status.Id)
 		if err != nil {
 			return err
 		}
@@ -63,7 +60,7 @@ func displayStoresTable(cmd *cobra.Command, storeList *expv1alpha1.StoreList) er
 	return writer.Write()
 }
 
-func getReadyText(s expv1alpha1.Store) string {
+func getReadyText(s expv1alpha1.ClusterStack) string {
 	cond := s.Status.GetCondition(corev1alpha1.ConditionReady)
 	if cond == nil {
 		return "Unknown"
