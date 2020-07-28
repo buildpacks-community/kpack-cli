@@ -7,11 +7,13 @@ import (
 	"testing"
 
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
+	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
@@ -37,8 +39,19 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		Relocator: relocator,
 	}
 
-	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
+	config := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kp-config",
+			Namespace: "kpack",
+		},
+		Data: map[string]string{
+			"canonical.repository":                "some-registry.io/some-repo",
+			"canonical.repository.serviceaccount": "some-serviceaccount",
+		},
+	}
+
+	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
+		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
 		return clusterstackcmds.NewCreateCommand(clientSetProvider, stackFactory)
 	}
 
@@ -66,9 +79,11 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		testhelpers.CommandTest{
+			K8sObjects: []runtime.Object{
+				config,
+			},
 			Args: []string{
 				"some-stack",
-				"--default-repository", "some-registry.io/some-repo",
 				"--build-image", "some-build-image",
 				"--run-image", "some-run-image",
 			},
@@ -76,7 +91,44 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectCreates: []runtime.Object{
 				expectedStack,
 			},
-		}.TestKpack(t, cmdFunc)
+		}.TestK8sAndKpack(t, cmdFunc)
+	})
+
+	it("fails when kp-config configmap is not found", func() {
+		testhelpers.CommandTest{
+			Args: []string{
+				"some-stack",
+				"--build-image", "some-build-image",
+				"--run-image", "some-run-image",
+			},
+			ExpectErr: true,
+			ExpectedOutput: `Error: failed to get canonical repository: configmaps "kp-config" not found
+`,
+		}.TestK8sAndKpack(t, cmdFunc)
+	})
+
+	it("fails when canonical.repository key is not found in kp-config configmap", func() {
+		badConfig := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kp-config",
+				Namespace: "kpack",
+			},
+			Data: map[string]string{},
+		}
+
+		testhelpers.CommandTest{
+			K8sObjects: []runtime.Object{
+				badConfig,
+			},
+			Args: []string{
+				"some-stack",
+				"--build-image", "some-build-image",
+				"--run-image", "some-run-image",
+			},
+			ExpectErr: true,
+			ExpectedOutput: `Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
+`,
+		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
 	it("validates build stack ID is equal to run stack ID", func() {
@@ -85,14 +137,16 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		fetcher.AddImage("some-other-run-image", runImage)
 
 		testhelpers.CommandTest{
+			K8sObjects: []runtime.Object{
+				config,
+			},
 			Args: []string{
 				"some-stack",
-				"--default-repository", "a-bad-repo",
 				"--build-image", "some-build-image",
 				"--run-image", "some-other-run-image",
 			},
 			ExpectErr:      true,
 			ExpectedOutput: "Error: build stack 'some-stack-id' does not match run stack 'some-other-stack-id'\n",
-		}.TestKpack(t, cmdFunc)
+		}.TestK8sAndKpack(t, cmdFunc)
 	})
 }

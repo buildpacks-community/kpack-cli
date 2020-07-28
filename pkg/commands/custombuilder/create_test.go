@@ -86,7 +86,7 @@ func testCustomBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		testhelpers.CommandTest{
 			Args: []string{
 				expectedBuilder.Name,
-				expectedBuilder.Spec.Tag,
+				"--tag", expectedBuilder.Spec.Tag,
 				"--stack", expectedBuilder.Spec.Stack.Name,
 				"--store", expectedBuilder.Spec.Store.Name,
 				"--order", "./testdata/order.yaml",
@@ -109,7 +109,7 @@ func testCustomBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		testhelpers.CommandTest{
 			Args: []string{
 				expectedBuilder.Name,
-				expectedBuilder.Spec.Tag,
+				"--tag", expectedBuilder.Spec.Tag,
 				"--order", "./testdata/order.yaml",
 			},
 			ExpectedOutput: "\"test-builder\" created\n",
@@ -118,5 +118,4 @@ func testCustomBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 		}.TestKpack(t, cmdFunc)
 	})
-
 }

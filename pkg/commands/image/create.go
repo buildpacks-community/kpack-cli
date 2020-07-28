@@ -15,12 +15,13 @@ import (
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
+		tag       string
 		namespace string
 		wait      bool
 	)
 
 	cmd := &cobra.Command{
-		Use:   "create <name> <tag>",
+		Use:   "create <name> --tag <tag>",
 		Short: "Create an image configuration",
 		Long: `Create an image configuration by providing command line arguments.
 This image will be created only if it does not exist in the provided namespace.
@@ -40,11 +41,11 @@ Environment variables may be provided by using the "--env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
 For example, "--env key1=value1 --env key2=value2 ...".`,
 		Example: `kp image create my-image my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
-kp image create my-image my-registry.com/my-repo  --blob https://my-blob-host.com/my-blob
-kp image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code
-kp image create my-image my-registry.com/my-repo  --local-path /path/to/local/source/code --custom-builder my-builder -n my-namespace
-kp image create my-image my-registry.com/my-repo  --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple`,
-		Args:         cobra.ExactArgs(2),
+kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob
+kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code
+kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code --custom-builder my-builder -n my-namespace
+kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple`,
+		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)
@@ -52,7 +53,7 @@ kp image create my-image my-registry.com/my-repo  --blob https://my-blob-host.co
 				return err
 			}
 
-			img, err := factory.MakeImage(args[0], cs.Namespace, args[1])
+			img, err := factory.MakeImage(args[0], cs.Namespace, tag)
 			if err != nil {
 				return err
 			}
@@ -88,6 +89,7 @@ kp image create my-image my-registry.com/my-repo  --blob https://my-blob-host.co
 			return nil
 		},
 	}
+	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the image will be created")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVar(&factory.GitRepo, "git", "", "git repository url")
 	cmd.Flags().StringVar(&factory.GitRevision, "git-revision", "master", "git revision")
@@ -97,8 +99,8 @@ kp image create my-image my-registry.com/my-repo  --blob https://my-blob-host.co
 	cmd.Flags().StringVarP(&factory.Builder, "custom-builder", "b", "", "custom builder name")
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "custom-cluster-builder", "c", "", "custom cluster builder name")
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
-
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
 
+	cmd.MarkFlagRequired("tag")
 	return cmd
 }
