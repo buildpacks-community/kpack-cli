@@ -136,8 +136,8 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			KpackObjects: []runtime.Object{
 				stack,
 			},
-			Args:           []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
-			ExpectErr:      true,
+			Args:      []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
+			ExpectErr: true,
 			ExpectedOutput: `Error: failed to get canonical repository: configmaps "kp-config" not found
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
@@ -159,8 +159,8 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			KpackObjects: []runtime.Object{
 				stack,
 			},
-			Args:           []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
-			ExpectErr:      true,
+			Args:      []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
+			ExpectErr: true,
 			ExpectedOutput: `Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
 `,
 		}.TestK8sAndKpack(t, cmdFunc)

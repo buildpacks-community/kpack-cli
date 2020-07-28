@@ -40,7 +40,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:        name,
 			Annotations: map[string]string{},
 		},
 		Spec: v1alpha1.ClusterStoreSpec{},

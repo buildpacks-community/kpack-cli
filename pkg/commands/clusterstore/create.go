@@ -22,7 +22,7 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusters
 		Short: "Create a cluster store",
 		Long: `Create a cluster-scoped buildpack store by providing command line arguments.
 
-Buildpackages will be uploaded to the canonical registry.
+Buildpackages will be uploaded to the canonical repository.
 Therefore, you must have credentials to access the registry on your machine.
 
 This store will be created only if it does not exist.
@@ -31,7 +31,7 @@ The canonical repository is read from the "canonical.repository" key in the "kp-
 		Example: `kp store create my-store my-registry.com/my-buildpackage
 kp clusterstore create my-store --buildpackage my-registry.com/my-buildpackage --buildpackage my-registry.com/my-other-buildpackage
 kp clusterstore create my-store --buildpackage ../path/to/my-local-buildpackage.cnb`,
-		Args:         cobra.MinimumNArgs(1),
+		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]

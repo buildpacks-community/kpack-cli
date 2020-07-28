@@ -18,7 +18,7 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusters
 		Short: "Create a cluster stack",
 		Long: `Create a cluster-scoped stack by providing command line arguments.
 
-The run and build images will be uploaded to the canonical registry.
+The run and build images will be uploaded to the canonical repository.
 Therefore, you must have credentials to access the registry on your machine.
 Additionally, your cluster must have read access to the registry.
 

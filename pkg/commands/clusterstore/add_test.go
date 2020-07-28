@@ -77,10 +77,14 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			K8sObjects: []runtime.Object{
 				config,
 			},
-			KpackObjects:  []runtime.Object{
+			KpackObjects: []runtime.Object{
 				store,
 			},
-			Args:      []string{storeName, "some/newbp", "bpfromcnb.cnb"},
+			Args: []string{
+				storeName,
+				"--buildpackage", "some/newbp",
+				"-b", "bpfromcnb.cnb",
+			},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
@@ -111,10 +115,13 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			K8sObjects: []runtime.Object{
 				config,
 			},
-			KpackObjects:  []runtime.Object{
+			KpackObjects: []runtime.Object{
 				store,
 			},
-			Args:           []string{storeName, "some/imageAlreadyInStore"},
+			Args: []string{
+				storeName,
+				"-b", "some/imageAlreadyInStore",
+			},
 			ExpectErr:      false,
 			ExpectedOutput: "Uploading to 'some-registry.io/some-repo'...\nBuildpackage 'some/path/imageInStoreDifferentPath@sha256:123alreadyInStore' already exists in the store\nClusterStore Unchanged\n",
 		}.TestK8sAndKpack(t, cmdFunc)
@@ -125,10 +132,13 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			K8sObjects: []runtime.Object{
 				config,
 			},
-			KpackObjects:  []runtime.Object{
+			KpackObjects: []runtime.Object{
 				store,
 			},
-			Args:           []string{"invalid-store", "some/image"},
+			Args: []string{
+				"invalid-store",
+				"-b", "some/image",
+			},
 			ExpectErr:      true,
 			ExpectedOutput: "Error: Store 'invalid-store' does not exist\n",
 		}.TestK8sAndKpack(t, cmdFunc)
@@ -136,17 +146,20 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 
 	it("errors when kp-config configmap is not found", func() {
 		testhelpers.CommandTest{
-			KpackObjects:  []runtime.Object{
+			KpackObjects: []runtime.Object{
 				store,
 			},
-			Args:           []string{storeName, "some/someimage"},
-			ExpectErr:      true,
+			Args: []string{
+				storeName,
+				"-b", "some/someimage",
+			},
+			ExpectErr: true,
 			ExpectedOutput: `Error: failed to get canonical repository: configmaps "kp-config" not found
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
-	it("errors when kp-config configmap is not found", func() {
+	it("errors when canonical.repository key is not found in kp-config configmap", func() {
 		badConfig := &corev1.ConfigMap{
 			ObjectMeta: v1.ObjectMeta{
 				Name:      "kp-config",
@@ -159,11 +172,14 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			K8sObjects: []runtime.Object{
 				badConfig,
 			},
-			KpackObjects:  []runtime.Object{
+			KpackObjects: []runtime.Object{
 				store,
 			},
-			Args:           []string{storeName, "some/someimage"},
-			ExpectErr:      true,
+			Args: []string{
+				storeName,
+				"-b", "some/someimage",
+			},
+			ExpectErr: true,
 			ExpectedOutput: `Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
 `,
 		}.TestK8sAndKpack(t, cmdFunc)

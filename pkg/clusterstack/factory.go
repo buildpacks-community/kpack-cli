@@ -74,7 +74,7 @@ func (f *Factory) MakeStack(name string) (*expv1alpha1.ClusterStack, error) {
 			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:        name,
 			Annotations: map[string]string{},
 		},
 		Spec: expv1alpha1.ClusterStackSpec{
