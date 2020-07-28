@@ -67,4 +67,16 @@ func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 			require.EqualError(t, err, "must provide one of builder or cluster-builder")
 		})
 	})
+
+	when("an env var has an equal sign in the value", func() {
+		it("handles the env var", func() {
+			factory.Blob = "some-blob"
+			factory.Env = append(factory.Env, `BP_MAVEN_BUILD_ARGUMENTS="-Dmaven.test.skip=true -Pk8s package"`)
+			img, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+			require.NoError(t, err)
+			require.Len(t, img.Env(), 1)
+			require.Equal(t, "BP_MAVEN_BUILD_ARGUMENTS", img.Env()[0].Name)
+			require.Equal(t, `"-Dmaven.test.skip=true -Pk8s package"`, img.Env()[0].Value)
+		})
+	})
 }

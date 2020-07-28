@@ -52,8 +52,8 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 type buildpackageInfo struct {
-	id      string
-	version string
+	id       string
+	version  string
 	homepage string
 }
 
@@ -68,8 +68,8 @@ func getBuildpackageInfos(store *expv1alpha1.ClusterStore) []buildpackageInfo {
 		buildpackageKey := fmt.Sprintf("%s@%s", buildpack.Buildpackage.Id, buildpack.Buildpackage.Version)
 		if _, ok := buildpackagesMap[buildpackageKey]; !ok {
 			buildpackagesMap[buildpackageKey] = buildpackageInfo{
-				id:      buildpack.Buildpackage.Id,
-				version: buildpack.Buildpackage.Version,
+				id:       buildpack.Buildpackage.Id,
+				version:  buildpack.Buildpackage.Version,
 				homepage: buildpack.Buildpackage.Homepage,
 			}
 		}

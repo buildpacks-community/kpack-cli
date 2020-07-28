@@ -110,13 +110,13 @@ Reason:    this builder is not ready for the purpose of a test
 					},
 					BuilderMetadata: v1alpha1.BuildpackMetadataList{
 						{
-							Id:      "org.cloudfoundry.nodejs",
-							Version: "v0.2.1",
+							Id:       "org.cloudfoundry.nodejs",
+							Version:  "v0.2.1",
 							Homepage: "https://github.com/paketo-buildpacks/nodejs",
 						},
 						{
-							Id:      "org.cloudfoundry.go",
-							Version: "v0.0.3",
+							Id:       "org.cloudfoundry.go",
+							Version:  "v0.0.3",
 							Homepage: "https://github.com/paketo-buildpacks/go",
 						},
 					},

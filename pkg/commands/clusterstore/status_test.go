@@ -42,8 +42,8 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 							Version: "1",
 						},
 						Buildpackage: expv1alpha1.BuildpackageInfo{
-							Id:      "meta",
-							Version: "1",
+							Id:       "meta",
+							Version:  "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
 						StoreImage: expv1alpha1.StoreImage{
@@ -70,8 +70,8 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 							Version: "2",
 						},
 						Buildpackage: expv1alpha1.BuildpackageInfo{
-							Id:      "meta",
-							Version: "1",
+							Id:       "meta",
+							Version:  "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
 						StoreImage: expv1alpha1.StoreImage{
@@ -85,8 +85,8 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 							Version: "3",
 						},
 						Buildpackage: expv1alpha1.BuildpackageInfo{
-							Id:      "simple-buildpack",
-							Version: "3",
+							Id:       "simple-buildpack",
+							Version:  "3",
 							Homepage: "simple-3-buildpackage-homepage",
 						},
 						StoreImage: expv1alpha1.StoreImage{

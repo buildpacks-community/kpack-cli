@@ -210,13 +210,13 @@ func (f *PatchFactory) setBuilder(image *v1alpha1.Image) {
 func (f *PatchFactory) makeEnvVars() ([]corev1.EnvVar, error) {
 	var envVars []corev1.EnvVar
 	for _, e := range f.Env {
-		item := strings.Split(e, "=")
-		if len(item) != 2 {
+		idx := strings.Index(e, "=")
+		if idx == -1 {
 			return nil, errors.Errorf("env vars are improperly formatted")
 		}
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  item[0],
-			Value: item[1],
+			Name:  e[:idx],
+			Value: e[idx+1:],
 		})
 	}
 	return envVars, nil

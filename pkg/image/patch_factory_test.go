@@ -119,4 +119,13 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			require.NoError(t, err)
 		})
 	})
+
+	when("an env var has an equal sign in the value", func() {
+		it("handles the env var", func() {
+			factory.Env = append(factory.Env, `BP_MAVEN_BUILD_ARGUMENTS="-Dmaven.test.skip=true -Pk8s package"`)
+			patch, err := factory.MakePatch(img)
+			require.NoError(t, err)
+				require.Equal(t, `{"spec":{"build":{"env":[{"name":"foo"},{"name":"BP_MAVEN_BUILD_ARGUMENTS","value":"\"-Dmaven.test.skip=true -Pk8s package\""}]}}}`, string(patch))
+		})
+	})
 }
