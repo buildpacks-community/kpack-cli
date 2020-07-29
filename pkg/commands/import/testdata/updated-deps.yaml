@@ -1,6 +1,6 @@
 apiVersion: kp.kpack.io/v1alpha1
 kind: DependencyDescriptor
-defaultCustomClusterBuilder: some-ccb
+defaultClusterBuilder: some-ccb
 defaultStack: some-stack
 stores:
 - name: some-store
@@ -12,7 +12,7 @@ stacks:
     image: some-registry.io/some-project/build-image-2
   runImage:
     image: some-registry.io/some-project/run-image-2
-customClusterBuilders:
+clusterBuilders:
 - name: some-ccb
   stack: some-stack
   store: some-store

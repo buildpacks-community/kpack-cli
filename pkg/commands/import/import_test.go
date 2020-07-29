@@ -6,7 +6,7 @@ import (
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/random"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/sclevine/spec"
@@ -66,38 +66,38 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
-	store := &expv1alpha1.ClusterStore{
+	store := &v1alpha1.ClusterStore{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       expv1alpha1.ClusterStoreKind,
-			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+			Kind:       v1alpha1.ClusterStoreKind,
+			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-store",
 			Annotations: map[string]string{
-				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-store","creationTimestamp":null},"spec":{"sources":[{"image":"new-registry.io/new-project/store-image@sha256:123abc"}]},"status":{}}`,
+				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-store","creationTimestamp":null},"spec":{"sources":[{"image":"new-registry.io/new-project/store-image@sha256:123abc"}]},"status":{}}`,
 			},
 		},
-		Spec: expv1alpha1.ClusterStoreSpec{
-			Sources: []expv1alpha1.StoreImage{
+		Spec: v1alpha1.ClusterStoreSpec{
+			Sources: []v1alpha1.StoreImage{
 				{Image: "new-registry.io/new-project/store-image@sha256:123abc"},
 			},
 		},
 	}
 
-	stack := &expv1alpha1.ClusterStack{
+	stack := &v1alpha1.ClusterStack{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       expv1alpha1.ClusterStackKind,
-			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+			Kind:       v1alpha1.ClusterStackKind,
+			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-stack",
 		},
-		Spec: expv1alpha1.ClusterStackSpec{
+		Spec: v1alpha1.ClusterStackSpec{
 			Id: "some-stack-id",
-			BuildImage: expv1alpha1.ClusterStackSpecImage{
+			BuildImage: v1alpha1.ClusterStackSpecImage{
 				Image: "new-registry.io/new-project/build@" + buildImageId,
 			},
-			RunImage: expv1alpha1.ClusterStackSpecImage{
+			RunImage: v1alpha1.ClusterStackSpecImage{
 				Image: "new-registry.io/new-project/run@" + runImageId,
 			},
 		},
@@ -106,31 +106,31 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	defaultStack := stack.DeepCopy()
 	defaultStack.Name = "default"
 
-	builder := &expv1alpha1.CustomClusterBuilder{
+	builder := &v1alpha1.ClusterBuilder{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       expv1alpha1.CustomClusterBuilderKind,
-			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+			Kind:       v1alpha1.ClusterBuilderKind,
+			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "some-ccb",
 			Annotations: map[string]string{},
 		},
-		Spec: expv1alpha1.CustomClusterBuilderSpec{
-			CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
+		Spec: v1alpha1.ClusterBuilderSpec{
+			BuilderSpec: v1alpha1.BuilderSpec{
 				Tag: "new-registry.io/new-project/some-ccb",
 				Stack: corev1.ObjectReference{
 					Name: "some-stack",
-					Kind: expv1alpha1.ClusterStackKind,
+					Kind: v1alpha1.ClusterStackKind,
 				},
 				Store: corev1.ObjectReference{
 					Name: "some-store",
-					Kind: expv1alpha1.ClusterStoreKind,
+					Kind: v1alpha1.ClusterStoreKind,
 				},
-				Order: []expv1alpha1.OrderEntry{
+				Order: []v1alpha1.OrderEntry{
 					{
-						Group: []expv1alpha1.BuildpackRef{
+						Group: []v1alpha1.BuildpackRef{
 							{
-								BuildpackInfo: expv1alpha1.BuildpackInfo{
+								BuildpackInfo: v1alpha1.BuildpackInfo{
 									Id: "buildpack-1",
 								},
 							},
@@ -156,8 +156,8 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("there are no stores, stacks, or ccbs", func() {
 		it("creates stores, stacks, and ccbs defined in the dependency descriptor", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
@@ -208,7 +208,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 
 		when("the dependency descriptor has different resources", func() {
 			expectedStore := store.DeepCopy()
-			expectedStore.Spec.Sources = append(expectedStore.Spec.Sources, expv1alpha1.StoreImage{
+			expectedStore.Spec.Sources = append(expectedStore.Spec.Sources, v1alpha1.StoreImage{
 				Image: "new-registry.io/new-project/store-image-2@sha256:456def",
 			})
 
@@ -223,11 +223,11 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			expectedDefaultStack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImage2Id)
 
 			expectedBuilder := builder.DeepCopy()
-			expectedBuilder.Spec.Order = []expv1alpha1.OrderEntry{
+			expectedBuilder.Spec.Order = []v1alpha1.OrderEntry{
 				{
-					Group: []expv1alpha1.BuildpackRef{
+					Group: []v1alpha1.BuildpackRef{
 						{
-							BuildpackInfo: expv1alpha1.BuildpackInfo{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
 								Id: "buildpack-2",
 							},
 						},
@@ -236,11 +236,11 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			expectedDefaultBuilder := defaultBuilder.DeepCopy()
-			expectedDefaultBuilder.Spec.Order = []expv1alpha1.OrderEntry{
+			expectedDefaultBuilder.Spec.Order = []v1alpha1.OrderEntry{
 				{
-					Group: []expv1alpha1.BuildpackRef{
+					Group: []v1alpha1.BuildpackRef{
 						{
-							BuildpackInfo: expv1alpha1.BuildpackInfo{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
 								Id: "buildpack-2",
 							},
 						},

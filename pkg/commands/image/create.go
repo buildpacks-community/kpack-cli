@@ -68,7 +68,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 			}
 			img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(originalImageCfg)
 
-			img, err = cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Create(img)
+			img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Create(img)
 			if err != nil {
 				return err
 			}

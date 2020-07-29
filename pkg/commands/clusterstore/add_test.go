@@ -6,7 +6,7 @@ package clusterstore_test
 import (
 	"testing"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -54,12 +54,12 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
-	store := &expv1alpha1.ClusterStore{
+	store := &v1alpha1.ClusterStore{
 		ObjectMeta: v1.ObjectMeta{
 			Name: storeName,
 		},
-		Spec: expv1alpha1.ClusterStoreSpec{
-			Sources: []expv1alpha1.StoreImage{
+		Spec: v1alpha1.ClusterStoreSpec{
+			Sources: []v1alpha1.StoreImage{
 				{
 					Image: imageAlreadyInStore,
 				},
@@ -88,10 +88,10 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
-					Object: &expv1alpha1.ClusterStore{
+					Object: &v1alpha1.ClusterStore{
 						ObjectMeta: store.ObjectMeta,
-						Spec: expv1alpha1.ClusterStoreSpec{
-							Sources: []expv1alpha1.StoreImage{
+						Spec: v1alpha1.ClusterStoreSpec{
+							Sources: []v1alpha1.StoreImage{
 								{
 									Image: imageAlreadyInStore,
 								},

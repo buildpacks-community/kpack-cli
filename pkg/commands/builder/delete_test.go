@@ -1,12 +1,12 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package custombuilder_test
+package builder_test
 
 import (
 	"testing"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/custombuilder"
+	"github.com/pivotal/build-service-cli/pkg/commands/builder"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -27,13 +27,13 @@ func testBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-		return custombuilder.NewDeleteCommand(clientSetProvider)
+		return builder.NewDeleteCommand(clientSetProvider)
 	}
 
 	when("a namespace has been provided", func() {
 		when("a builder is available", func() {
 			it("deletes the builder", func() {
-				builder := &expv1alpha1.CustomBuilder{
+				builder := &v1alpha1.Builder{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "some-builder",
 						Namespace: "test-namespace",
@@ -70,7 +70,7 @@ func testBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							Name: "some-builder",
 						},
 					},
-					ExpectedOutput: "Error: custombuilders.experimental.kpack.pivotal.io \"some-builder\" not found\n",
+					ExpectedOutput: "Error: builders.kpack.io \"some-builder\" not found\n",
 					ExpectErr:      true,
 				}.TestKpack(t, cmdFunc)
 			})
@@ -80,7 +80,7 @@ func testBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace has not been provided", func() {
 		when("a builder is available", func() {
 			it("deletes the builder", func() {
-				builder := &expv1alpha1.CustomBuilder{
+				builder := &v1alpha1.Builder{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "some-builder",
 						Namespace: defaultNamespace,
@@ -118,7 +118,7 @@ func testBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							Name: "some-builder",
 						},
 					},
-					ExpectedOutput: "Error: custombuilders.experimental.kpack.pivotal.io \"some-builder\" not found\n",
+					ExpectedOutput: "Error: builders.kpack.io \"some-builder\" not found\n",
 					ExpectErr:      true,
 				}.TestKpack(t, cmdFunc)
 			})

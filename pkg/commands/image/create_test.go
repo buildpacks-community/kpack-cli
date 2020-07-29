@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -55,19 +54,19 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				expectedImage := &v1alpha1.Image{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Image",
-						APIVersion: "build.pivotal.io/v1alpha1",
+						APIVersion: "kpack.io/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "some-image",
 						Namespace: namespace,
 						Annotations: map[string]string{
-							"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"build.pivotal.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"CustomClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
+							"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
 						},
 					},
 					Spec: v1alpha1.ImageSpec{
 						Tag: "some-registry.io/some-repo",
 						Builder: corev1.ObjectReference{
-							Kind: expv1alpha1.CustomClusterBuilderKind,
+							Kind: v1alpha1.ClusterBuilderKind,
 							Name: "default",
 						},
 						ServiceAccount: "default",
@@ -136,19 +135,19 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				expectedImage := &v1alpha1.Image{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Image",
-						APIVersion: "build.pivotal.io/v1alpha1",
+						APIVersion: "kpack.io/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "some-image",
 						Namespace: defaultNamespace,
 						Annotations: map[string]string{
-							"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"build.pivotal.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"CustomClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
+							"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
 						},
 					},
 					Spec: v1alpha1.ImageSpec{
 						Tag: "some-registry.io/some-repo",
 						Builder: corev1.ObjectReference{
-							Kind: expv1alpha1.CustomClusterBuilderKind,
+							Kind: v1alpha1.ClusterBuilderKind,
 							Name: "default",
 						},
 						ServiceAccount: "default",
@@ -212,19 +211,19 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			expectedImage := &v1alpha1.Image{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Image",
-					APIVersion: "build.pivotal.io/v1alpha1",
+					APIVersion: "kpack.io/v1alpha1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "some-image",
 					Namespace: defaultNamespace,
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"build.pivotal.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"CustomClusterBuilder","name":"default"},"serviceAccount":"default","source":{"registry":{"image":"some-registry.io/some-repo-source:source-id"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
+						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"registry":{"image":"some-registry.io/some-repo-source:source-id"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
 					},
 				},
 				Spec: v1alpha1.ImageSpec{
 					Tag: "some-registry.io/some-repo",
 					Builder: corev1.ObjectReference{
-						Kind: expv1alpha1.CustomClusterBuilderKind,
+						Kind: v1alpha1.ClusterBuilderKind,
 						Name: "default",
 					},
 					ServiceAccount: "default",
@@ -268,19 +267,19 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			expectedImage := &v1alpha1.Image{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Image",
-					APIVersion: "build.pivotal.io/v1alpha1",
+					APIVersion: "kpack.io/v1alpha1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "some-image",
 					Namespace: defaultNamespace,
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"build.pivotal.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"CustomBuilder","namespace":"some-default-namespace","name":"some-builder"},"serviceAccount":"default","source":{"blob":{"url":"some-blob"}},"build":{"resources":{}}},"status":{}}`,
+						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"Builder","namespace":"some-default-namespace","name":"some-builder"},"serviceAccount":"default","source":{"blob":{"url":"some-blob"}},"build":{"resources":{}}},"status":{}}`,
 					},
 				},
 				Spec: v1alpha1.ImageSpec{
 					Tag: "some-registry.io/some-repo",
 					Builder: corev1.ObjectReference{
-						Kind:      expv1alpha1.CustomBuilderKind,
+						Kind:      v1alpha1.BuilderKind,
 						Namespace: defaultNamespace,
 						Name:      "some-builder",
 					},
@@ -316,19 +315,19 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			expectedImage := &v1alpha1.Image{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Image",
-					APIVersion: "build.pivotal.io/v1alpha1",
+					APIVersion: "kpack.io/v1alpha1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "some-image",
 					Namespace: defaultNamespace,
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"build.pivotal.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"CustomClusterBuilder","name":"some-builder"},"serviceAccount":"default","source":{"blob":{"url":"some-blob"}},"build":{"resources":{}}},"status":{}}`,
+						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"some-builder"},"serviceAccount":"default","source":{"blob":{"url":"some-blob"}},"build":{"resources":{}}},"status":{}}`,
 					},
 				},
 				Spec: v1alpha1.ImageSpec{
 					Tag: "some-registry.io/some-repo",
 					Builder: corev1.ObjectReference{
-						Kind: expv1alpha1.CustomClusterBuilderKind,
+						Kind: v1alpha1.ClusterBuilderKind,
 						Name: "some-builder",
 					},
 					ServiceAccount: "default",

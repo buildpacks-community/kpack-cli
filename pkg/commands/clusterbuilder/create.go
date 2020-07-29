@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package customclusterbuilder
+package clusterbuilder
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
@@ -20,7 +20,7 @@ import (
 
 const (
 	kpNamespace              = "kpack"
-	apiVersion               = "experimental.kpack.pivotal.io/v1alpha1"
+	apiVersion               = "kpack.io/v1alpha1"
 	kubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
 )
 
@@ -34,17 +34,17 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "create <name>",
-		Short: "Create a custom cluster builder",
-		Long: `Create a custom cluster builder by providing command line arguments.
-This custom cluster builder will be created only if it does not exist.
+		Short: "Create a cluster builder",
+		Long: `Create a cluster builder by providing command line arguments.
+The cluster builder will be created only if it does not exist.
 
 Tag when not specified, defaults to a combination of the canonical repository and specified builder name.
 The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
-		Example: `kp ccb create my-builder --order /path/to/order.yaml --stack tiny --store my-store
-kp ccb create my-builder --order /path/to/order.yaml
-kp ccb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
-kp ccb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml`,
+		Example: `kp cb create my-builder --order /path/to/order.yaml --stack tiny --store my-store
+kp cb create my-builder --order /path/to/order.yaml
+kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
+kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -71,25 +71,25 @@ kp ccb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/o
 				return err
 			}
 
-			ccb := &expv1alpha1.CustomClusterBuilder{
+			ccb := &v1alpha1.ClusterBuilder{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       expv1alpha1.CustomClusterBuilderKind,
+					Kind:       v1alpha1.ClusterBuilderKind,
 					APIVersion: apiVersion,
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        name,
 					Annotations: map[string]string{},
 				},
-				Spec: expv1alpha1.CustomClusterBuilderSpec{
-					CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
+				Spec: v1alpha1.ClusterBuilderSpec{
+					BuilderSpec: v1alpha1.BuilderSpec{
 						Tag: tag,
 						Stack: corev1.ObjectReference{
 							Name: stack,
-							Kind: expv1alpha1.ClusterStackKind,
+							Kind: v1alpha1.ClusterStackKind,
 						},
 						Store: corev1.ObjectReference{
 							Name: store,
-							Kind: expv1alpha1.ClusterStoreKind,
+							Kind: v1alpha1.ClusterStoreKind,
 						},
 					},
 					ServiceAccountRef: corev1.ObjectReference{
@@ -111,7 +111,7 @@ kp ccb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/o
 
 			ccb.Annotations[kubectlLastAppliedConfig] = string(marshal)
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Create(ccb)
+			_, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(ccb)
 			if err != nil {
 				return err
 			}

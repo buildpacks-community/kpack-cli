@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package custombuilder
+package builder
 
 import (
 	"fmt"
@@ -19,11 +19,11 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "delete <name>",
-		Short: "Delete a custom builder",
-		Long: `Delete a custom builder in the provided namespace.
+		Short: "Delete a builder",
+		Long: `Delete a builder in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.`,
-		Example: "kp cb delete my-builder\nkp cb delete -n my-namespace other-builder",
+The namespace defaults to the kubernetes current-context namespace.`,
+		Example: "kp builder delete my-builder\nkp builder delete -n my-namespace other-builder",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)
@@ -31,7 +31,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			err = cs.KpackClient.ExperimentalV1alpha1().CustomBuilders(cs.Namespace).Delete(args[0], &metav1.DeleteOptions{})
+			err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

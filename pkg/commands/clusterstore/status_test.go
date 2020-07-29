@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -30,31 +30,31 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("the store exists", func() {
 		const storeName = "some-store-name"
-		store := &expv1alpha1.ClusterStore{
+		store := &v1alpha1.ClusterStore{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: storeName,
 			},
-			Status: expv1alpha1.ClusterStoreStatus{
-				Buildpacks: []expv1alpha1.StoreBuildpack{
+			Status: v1alpha1.ClusterStoreStatus{
+				Buildpacks: []v1alpha1.StoreBuildpack{
 					{
-						BuildpackInfo: expv1alpha1.BuildpackInfo{
+						BuildpackInfo: v1alpha1.BuildpackInfo{
 							Id:      "meta",
 							Version: "1",
 						},
-						Buildpackage: expv1alpha1.BuildpackageInfo{
+						Buildpackage: v1alpha1.BuildpackageInfo{
 							Id:       "meta",
 							Version:  "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
-						StoreImage: expv1alpha1.StoreImage{
+						StoreImage: v1alpha1.StoreImage{
 							Image: "some-meta-image",
 						},
 						Homepage: "meta-homepage",
-						Order: []expv1alpha1.OrderEntry{
+						Order: []v1alpha1.OrderEntry{
 							{
-								Group: []expv1alpha1.BuildpackRef{
+								Group: []v1alpha1.BuildpackRef{
 									{
-										BuildpackInfo: expv1alpha1.BuildpackInfo{
+										BuildpackInfo: v1alpha1.BuildpackInfo{
 											Id:      "nested-buildpack",
 											Version: "2",
 										},
@@ -65,31 +65,31 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 					{
-						BuildpackInfo: expv1alpha1.BuildpackInfo{
+						BuildpackInfo: v1alpha1.BuildpackInfo{
 							Id:      "nested-buildpack",
 							Version: "2",
 						},
-						Buildpackage: expv1alpha1.BuildpackageInfo{
+						Buildpackage: v1alpha1.BuildpackageInfo{
 							Id:       "meta",
 							Version:  "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
-						StoreImage: expv1alpha1.StoreImage{
+						StoreImage: v1alpha1.StoreImage{
 							Image: "some-meta-image",
 						},
 						Homepage: "nested-buildpack-homepage",
 					},
 					{
-						BuildpackInfo: expv1alpha1.BuildpackInfo{
+						BuildpackInfo: v1alpha1.BuildpackInfo{
 							Id:      "simple-buildpack",
 							Version: "3",
 						},
-						Buildpackage: expv1alpha1.BuildpackageInfo{
+						Buildpackage: v1alpha1.BuildpackageInfo{
 							Id:       "simple-buildpack",
 							Version:  "3",
 							Homepage: "simple-3-buildpackage-homepage",
 						},
-						StoreImage: expv1alpha1.StoreImage{
+						StoreImage: v1alpha1.StoreImage{
 							Image: "simple-buildpackage",
 						},
 						Homepage: "simple-buildpack-homepage",
@@ -147,7 +147,7 @@ DETECTION ORDER
 			testhelpers.CommandTest{
 				Args:           []string{storeName},
 				ExpectErr:      true,
-				ExpectedOutput: fmt.Sprintf("Error: clusterstores.experimental.kpack.pivotal.io %q not found\n", storeName),
+				ExpectedOutput: fmt.Sprintf("Error: clusterstores.kpack.io %q not found\n", storeName),
 			}.TestKpack(t, cmdFunc)
 		})
 	})

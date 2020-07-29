@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -149,18 +148,18 @@ func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
 func (f *Factory) makeBuilder(namespace string) corev1.ObjectReference {
 	if f.Builder != "" {
 		return corev1.ObjectReference{
-			Kind:      expv1alpha1.CustomBuilderKind,
+			Kind:      v1alpha1.BuilderKind,
 			Namespace: namespace,
 			Name:      f.Builder,
 		}
 	} else if f.ClusterBuilder != "" {
 		return corev1.ObjectReference{
-			Kind: expv1alpha1.CustomClusterBuilderKind,
+			Kind: v1alpha1.ClusterBuilderKind,
 			Name: f.ClusterBuilder,
 		}
 	} else {
 		return corev1.ObjectReference{
-			Kind: expv1alpha1.CustomClusterBuilderKind,
+			Kind: v1alpha1.ClusterBuilderKind,
 			Name: "default",
 		}
 	}

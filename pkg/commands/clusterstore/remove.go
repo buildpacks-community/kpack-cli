@@ -4,7 +4,7 @@
 package clusterstore
 
 import (
-	"github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -37,7 +37,7 @@ kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd
 
 			storeName, buildPackages := args[0], args[1:]
 
-			store, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Get(storeName, v1.GetOptions{})
+			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(storeName, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				return errors.Errorf("ClusterStore '%s' does not exist", storeName)
 			} else if err != nil {
@@ -66,7 +66,7 @@ kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd
 
 			store.Spec.Sources = updatedStoreSources
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Update(store)
+			_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(store)
 			if err != nil {
 				return err
 			}

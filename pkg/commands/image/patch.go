@@ -58,7 +58,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
-			img, err := cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Get(args[0], metav1.GetOptions{})
+			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -77,7 +77,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
-			img, err = cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Patch(args[0], types.MergePatchType, patch)
+			img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(args[0], types.MergePatchType, patch)
 			if err != nil {
 				return err
 			}

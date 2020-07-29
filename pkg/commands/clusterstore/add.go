@@ -39,7 +39,7 @@ kp clusterstore add my-store --buildpackage ../path/to/my-local-buildpackage.cnb
 				return err
 			}
 
-			s, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Get(storeName, v1.GetOptions{})
+			s, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(storeName, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				return errors.Errorf("Store '%s' does not exist", storeName)
 			} else if err != nil {
@@ -61,7 +61,7 @@ kp clusterstore add my-store --buildpackage ../path/to/my-local-buildpackage.cnb
 				return nil
 			}
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Update(updatedStore)
+			_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(updatedStore)
 			if err != nil {
 				return err
 			}

@@ -9,7 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const ManagedSecretAnnotationKey = "build.pivotal.io/managedSecret"
+const ManagedSecretAnnotationKey = "kpack.io/managedSecret"
 
 func readManagedSecrets(sa *corev1.ServiceAccount) (map[string]string, error) {
 	if sa.Annotations == nil {

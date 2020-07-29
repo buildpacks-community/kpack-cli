@@ -6,8 +6,8 @@ package clusterstore
 import (
 	"errors"
 
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -29,7 +29,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			storeList, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStores().List(metav1.ListOptions{})
+			storeList, err := cs.KpackClient.KpackV1alpha1().ClusterStores().List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -47,7 +47,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 	return cmd
 }
 
-func displayStoresTable(cmd *cobra.Command, storeList *expv1alpha1.ClusterStoreList) error {
+func displayStoresTable(cmd *cobra.Command, storeList *v1alpha1.ClusterStoreList) error {
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY")
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func displayStoresTable(cmd *cobra.Command, storeList *expv1alpha1.ClusterStoreL
 	return writer.Write()
 }
 
-func getReadyText(s expv1alpha1.ClusterStore) string {
+func getReadyText(s v1alpha1.ClusterStore) string {
 	cond := s.Status.GetCondition(corev1alpha1.ConditionReady)
 	if cond == nil {
 		return "Unknown"

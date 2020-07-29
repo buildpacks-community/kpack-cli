@@ -1,12 +1,12 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package customclusterbuilder_test
+package clusterbuilder_test
 
 import (
 	"testing"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -16,15 +16,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/customclusterbuilder"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestCustomClusterBuilderCreateCommand(t *testing.T) {
-	spec.Run(t, "TestCustomBuilderCreateCommand", testCustomClusterBuilderCreateCommand)
+func TestClusterBuilderCreateCommand(t *testing.T) {
+	spec.Run(t, "TestBuilderCreateCommand", testClusterBuilderCreateCommand)
 }
 
-func testCustomClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
+func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	var (
 		config = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
@@ -37,42 +37,42 @@ func testCustomClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S)
 			},
 		}
 
-		expectedBuilder = &expv1alpha1.CustomClusterBuilder{
+		expectedBuilder = &v1alpha1.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.CustomClusterBuilderKind,
-				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+				Kind:       v1alpha1.ClusterBuilderKind,
+				APIVersion: "kpack.io/v1alpha1",
 			},
 			ObjectMeta: v1.ObjectMeta{
 				Name: "test-builder",
 				Annotations: map[string]string{
-					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`,
+					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`,
 				},
 			},
-			Spec: expv1alpha1.CustomClusterBuilderSpec{
-				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
+			Spec: v1alpha1.ClusterBuilderSpec{
+				BuilderSpec: v1alpha1.BuilderSpec{
 					Tag: "some-registry/some-project/test-builder",
 					Stack: corev1.ObjectReference{
 						Name: "some-stack",
-						Kind: expv1alpha1.ClusterStackKind,
+						Kind: v1alpha1.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "some-store",
-						Kind: expv1alpha1.ClusterStoreKind,
+						Kind: v1alpha1.ClusterStoreKind,
 					},
-					Order: []expv1alpha1.OrderEntry{
+					Order: []v1alpha1.OrderEntry{
 						{
-							Group: []expv1alpha1.BuildpackRef{
+							Group: []v1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: expv1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []expv1alpha1.BuildpackRef{
+							Group: []v1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: expv1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -90,10 +90,10 @@ func testCustomClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S)
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return customclusterbuilder.NewCreateCommand(clientSetProvider)
+		return clusterbuilder.NewCreateCommand(clientSetProvider)
 	}
 
-	it("creates a CustomClusterBuilder", func() {
+	it("creates a ClusterBuilder", func() {
 		testhelpers.CommandTest{
 			K8sObjects: []runtime.Object{
 				config,
@@ -113,10 +113,10 @@ func testCustomClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S)
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
-	it("creates a CustomClusterBuilder with the default stack", func() {
+	it("creates a ClusterBuilder with the default stack", func() {
 		expectedBuilder.Spec.Stack.Name = "default"
 		expectedBuilder.Spec.Store.Name = "default"
-		expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"CustomClusterBuilder","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{"kind":"ClusterStore","name":"default"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+		expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{"kind":"ClusterStore","name":"default"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		testhelpers.CommandTest{
 			K8sObjects: []runtime.Object{
@@ -134,7 +134,7 @@ func testCustomClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S)
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
-	it("creates a CustomClusterBuilder with the canonical tag when tag is not specified", func() {
+	it("creates a ClusterBuilder with the canonical tag when tag is not specified", func() {
 		testhelpers.CommandTest{
 			K8sObjects: []runtime.Object{
 				config,

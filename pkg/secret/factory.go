@@ -19,7 +19,7 @@ const (
 	DockerhubUrl  = "https://index.docker.io/v1/"
 	GcrUrl        = "gcr.io"
 	GcrUser       = "_json_key"
-	GitAnnotation = "build.pivotal.io/git"
+	GitAnnotation = "kpack.io/git"
 )
 
 type CredentialFetcher interface {

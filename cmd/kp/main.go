@@ -15,10 +15,10 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	buildcmds "github.com/pivotal/build-service-cli/pkg/commands/build"
+	buildercmds "github.com/pivotal/build-service-cli/pkg/commands/builder"
+	clusterbuildercmds "github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
 	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
 	storecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
-	buildercmds "github.com/pivotal/build-service-cli/pkg/commands/custombuilder"
-	clusterbuildercmds "github.com/pivotal/build-service-cli/pkg/commands/customclusterbuilder"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
@@ -136,9 +136,9 @@ func getSecretCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 func getClusterBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	clusterBuilderRootCmd := &cobra.Command{
-		Use:     "custom-cluster-builder",
-		Short:   "Custom Cluster Builder Commands",
-		Aliases: []string{"ccb"},
+		Use:     "clusterbuilder",
+		Short:   "Cluster Builder Commands",
+		Aliases: []string{"cb"},
 	}
 	clusterBuilderRootCmd.AddCommand(
 		clusterbuildercmds.NewCreateCommand(clientSetProvider),
@@ -152,9 +152,8 @@ func getClusterBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Co
 
 func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	builderRootCmd := &cobra.Command{
-		Use:     "custom-builder",
-		Short:   "Custom Builder Commands",
-		Aliases: []string{"cb"},
+		Use:   "builder",
+		Short: "Builder Commands",
 	}
 	builderRootCmd.AddCommand(
 		buildercmds.NewCreateCommand(clientSetProvider),

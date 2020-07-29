@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
-	v1alpha12 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	v1alpha12 "github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
@@ -195,13 +195,13 @@ func (f *PatchFactory) setBuild(image *v1alpha1.Image) error {
 func (f *PatchFactory) setBuilder(image *v1alpha1.Image) {
 	if f.Builder != "" {
 		image.Spec.Builder = corev1.ObjectReference{
-			Kind:      v1alpha12.CustomBuilderKind,
+			Kind:      v1alpha12.BuilderKind,
 			Namespace: image.Namespace,
 			Name:      f.Builder,
 		}
 	} else if f.ClusterBuilder != "" {
 		image.Spec.Builder = corev1.ObjectReference{
-			Kind: v1alpha12.CustomClusterBuilderKind,
+			Kind: v1alpha12.ClusterBuilderKind,
 			Name: f.ClusterBuilder,
 		}
 	}

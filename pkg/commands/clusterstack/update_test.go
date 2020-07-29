@@ -8,7 +8,7 @@ import (
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/random"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/sclevine/spec"
@@ -42,27 +42,27 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	relocator := &fakes.Relocator{}
 
-	stack := &expv1alpha1.ClusterStack{
+	stack := &v1alpha1.ClusterStack{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-stack",
 		},
-		Spec: expv1alpha1.ClusterStackSpec{
+		Spec: v1alpha1.ClusterStackSpec{
 			Id: "some-old-id",
-			BuildImage: expv1alpha1.ClusterStackSpecImage{
+			BuildImage: v1alpha1.ClusterStackSpecImage{
 				Image: "some-old-build-image",
 			},
-			RunImage: expv1alpha1.ClusterStackSpecImage{
+			RunImage: v1alpha1.ClusterStackSpecImage{
 				Image: "some-old-run-image",
 			},
 		},
-		Status: expv1alpha1.ClusterStackStatus{
-			ResolvedClusterStack: expv1alpha1.ResolvedClusterStack{
+		Status: v1alpha1.ClusterStackStatus{
+			ResolvedClusterStack: v1alpha1.ResolvedClusterStack{
 				Id: "some-old-id",
-				BuildImage: expv1alpha1.ClusterStackStatusImage{
+				BuildImage: v1alpha1.ClusterStackStatusImage{
 					LatestImage: "some-registry.com/old-repo/build@" + oldBuildImageId,
 					Image:       "some-old-build-image",
 				},
-				RunImage: expv1alpha1.ClusterStackStatusImage{
+				RunImage: v1alpha1.ClusterStackStatusImage{
 					LatestImage: "some-registry.com/old-repo/run@" + oldRunImageId,
 					Image:       "some-old-run-image",
 				},
@@ -98,14 +98,14 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
-					Object: &expv1alpha1.ClusterStack{
+					Object: &v1alpha1.ClusterStack{
 						ObjectMeta: stack.ObjectMeta,
-						Spec: expv1alpha1.ClusterStackSpec{
+						Spec: v1alpha1.ClusterStackSpec{
 							Id: "some-new-id",
-							BuildImage: expv1alpha1.ClusterStackSpecImage{
+							BuildImage: v1alpha1.ClusterStackSpecImage{
 								Image: "some-registry.com/some-repo/build@" + newBuildImageId,
 							},
-							RunImage: expv1alpha1.ClusterStackSpecImage{
+							RunImage: v1alpha1.ClusterStackSpecImage{
 								Image: "some-registry.com/some-repo/run@" + newRunImageId,
 							},
 						},

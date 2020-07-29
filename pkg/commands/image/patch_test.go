@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -55,7 +54,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 		Spec: v1alpha1.ImageSpec{
 			Tag: "some-tag",
 			Builder: corev1.ObjectReference{
-				Kind: expv1alpha1.CustomClusterBuilderKind,
+				Kind: v1alpha1.ClusterBuilderKind,
 				Name: "some-ccb",
 			},
 			Source: v1alpha1.SourceConfig{
@@ -203,7 +202,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "\"some-image\" patched\n",
 				ExpectPatches: []string{
-					`{"spec":{"builder":{"kind":"CustomBuilder","name":"some-builder","namespace":"some-default-namespace"}}}`,
+					`{"spec":{"builder":{"kind":"Builder","name":"some-builder","namespace":"some-default-namespace"}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 			assert.Len(t, fakeImageWaiter.Calls, 0)

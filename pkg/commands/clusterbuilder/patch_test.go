@@ -1,12 +1,12 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package customclusterbuilder_test
+package clusterbuilder_test
 
 import (
 	"testing"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -14,49 +14,49 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/customclusterbuilder"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
-func TestCustomClusterBuilderPatchCommand(t *testing.T) {
-	spec.Run(t, "TestCustomClusterBuilderPatchCommand", testCustomClusterBuilderPatchCommand)
+func TestClusterBuilderPatchCommand(t *testing.T) {
+	spec.Run(t, "TestClusterBuilderPatchCommand", testClusterBuilderPatchCommand)
 }
 
-func testCustomClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
+func testClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 	var (
-		builder = &expv1alpha1.CustomClusterBuilder{
+		builder = &v1alpha1.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.CustomBuilderKind,
-				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+				Kind:       v1alpha1.BuilderKind,
+				APIVersion: "kpack.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-builder",
 			},
-			Spec: expv1alpha1.CustomClusterBuilderSpec{
-				CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
+			Spec: v1alpha1.ClusterBuilderSpec{
+				BuilderSpec: v1alpha1.BuilderSpec{
 					Tag: "some-registry.com/test-builder",
 					Stack: corev1.ObjectReference{
 						Name: "some-stack",
-						Kind: expv1alpha1.ClusterStackKind,
+						Kind: v1alpha1.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "some-store",
-						Kind: expv1alpha1.ClusterStoreKind,
+						Kind: v1alpha1.ClusterStoreKind,
 					},
-					Order: []expv1alpha1.OrderEntry{
+					Order: []v1alpha1.OrderEntry{
 						{
-							Group: []expv1alpha1.BuildpackRef{
+							Group: []v1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: expv1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []expv1alpha1.BuildpackRef{
+							Group: []v1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: expv1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -74,10 +74,10 @@ func testCustomClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) 
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return customclusterbuilder.NewPatchCommand(clientSetProvider)
+		return clusterbuilder.NewPatchCommand(clientSetProvider)
 	}
 
-	it("patches a CustomClusterBuilder", func() {
+	it("patches a ClusterBuilder", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
 				builder,

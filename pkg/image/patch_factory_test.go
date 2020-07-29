@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +37,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		Spec: v1alpha1.ImageSpec{
 			Tag: "some-tag",
 			Builder: corev1.ObjectReference{
-				Kind: expv1alpha1.CustomClusterBuilderKind,
+				Kind: v1alpha1.ClusterBuilderKind,
 				Name: "some-ccb",
 			},
 			ServiceAccount: "some-service-account",

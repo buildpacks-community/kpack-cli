@@ -38,12 +38,12 @@ namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			image, err := cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Get(args[0], metav1.GetOptions{})
+			image, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			buildList, err := cs.KpackClient.BuildV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
+			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {

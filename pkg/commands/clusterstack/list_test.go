@@ -6,8 +6,8 @@ package clusterstack_test
 import (
 	"testing"
 
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -31,11 +31,11 @@ func testClusterStackListCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("the namespaces has images", func() {
 		it("returns a table of image details", func() {
-			stack1 := &expv1alpha1.ClusterStack{
+			stack1 := &v1alpha1.ClusterStack{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "test-stack-1",
 				},
-				Status: expv1alpha1.ClusterStackStatus{
+				Status: v1alpha1.ClusterStackStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
@@ -44,16 +44,16 @@ func testClusterStackListCommand(t *testing.T, when spec.G, it spec.S) {
 							},
 						},
 					},
-					ResolvedClusterStack: expv1alpha1.ResolvedClusterStack{
+					ResolvedClusterStack: v1alpha1.ResolvedClusterStack{
 						Id: "stack-id-1",
 					},
 				},
 			}
-			stack2 := &expv1alpha1.ClusterStack{
+			stack2 := &v1alpha1.ClusterStack{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "test-stack-2",
 				},
-				Status: expv1alpha1.ClusterStackStatus{
+				Status: v1alpha1.ClusterStackStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
@@ -62,16 +62,16 @@ func testClusterStackListCommand(t *testing.T, when spec.G, it spec.S) {
 							},
 						},
 					},
-					ResolvedClusterStack: expv1alpha1.ResolvedClusterStack{
+					ResolvedClusterStack: v1alpha1.ResolvedClusterStack{
 						Id: "stack-id-2",
 					},
 				},
 			}
-			stack3 := &expv1alpha1.ClusterStack{
+			stack3 := &v1alpha1.ClusterStack{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "test-stack-3",
 				},
-				Status: expv1alpha1.ClusterStackStatus{
+				Status: v1alpha1.ClusterStackStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
@@ -80,7 +80,7 @@ func testClusterStackListCommand(t *testing.T, when spec.G, it spec.S) {
 							},
 						},
 					},
-					ResolvedClusterStack: expv1alpha1.ResolvedClusterStack{
+					ResolvedClusterStack: v1alpha1.ResolvedClusterStack{
 						Id: "stack-id-3",
 					},
 				},
