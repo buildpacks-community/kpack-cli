@@ -34,12 +34,9 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 		return clusterstore.NewRemoveCommand(clientSetProvider)
 	}
 
-	st := &expv1alpha1.ClusterStore{
+	store := &expv1alpha1.ClusterStore{
 		ObjectMeta: v1.ObjectMeta{
 			Name: storeName,
-			Annotations: map[string]string{
-				"buildservice.pivotal.io/defaultRepository": "some/path",
-			},
 		},
 		Spec: expv1alpha1.ClusterStoreSpec{
 			Sources: []expv1alpha1.StoreImage{
@@ -56,14 +53,14 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 	it("removes a single buildpackage from the store", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
-				st,
+				store,
 			},
 			Args:      []string{storeName, "some/imageinStore1@sha256:1231alreadyInStore"},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
 					Object: &expv1alpha1.ClusterStore{
-						ObjectMeta: st.ObjectMeta,
+						ObjectMeta: store.ObjectMeta,
 						Spec: expv1alpha1.ClusterStoreSpec{
 							Sources: []expv1alpha1.StoreImage{
 								{
@@ -81,14 +78,14 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 	it("removes multiple buildpackages from the store", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
-				st,
+				store,
 			},
 			Args:      []string{storeName, "some/imageinStore1@sha256:1231alreadyInStore", "some/imageinStore2@sha256:1232alreadyInStore"},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
 					Object: &expv1alpha1.ClusterStore{
-						ObjectMeta: st.ObjectMeta,
+						ObjectMeta: store.ObjectMeta,
 						Spec: expv1alpha1.ClusterStoreSpec{
 							Sources: []expv1alpha1.StoreImage{},
 						},
@@ -102,7 +99,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 	it("fails if the provided store does not exist", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
-				st,
+				store,
 			},
 			Args:           []string{"invalid-store", "some/imageinStore1@sha256:1231alreadyInStore", "some/imageNotinStore@sha256:1232notInStore"},
 			ExpectErr:      true,
@@ -113,7 +110,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 	it("fails if even one buildpackage is not in the store but the rest are", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
-				st,
+				store,
 			},
 			Args:           []string{storeName, "some/imageinStore1@sha256:1231alreadyInStore", "some/imageNotinStore@sha256:1232notInStore"},
 			ExpectErr:      true,
@@ -124,7 +121,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 	it("returns error if buildpackage does not exist in store", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
-				st,
+				store,
 			},
 			Args:           []string{storeName, "some/imageNotinStore@sha256:1233alreadyInStore"},
 			ExpectErr:      true,

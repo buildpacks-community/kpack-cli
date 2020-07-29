@@ -18,11 +18,14 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusters
 		Short: "Create a cluster stack",
 		Long: `Create a cluster-scoped stack by providing command line arguments.
 
-The run and build images will be uploaded to the the registry provided by "--default-repository".
+The run and build images will be uploaded to the canonical repository.
 Therefore, you must have credentials to access the registry on your machine.
-Additionally, your cluster must have read access to the registry.`,
-		Example: `kp clusterstack create my-stack --default-repository some-registry.io/some-repo --build-image my-registry.com/build --run-image my-registry.com/run
-kp clusterstack create my-stack --default-repository some-registry.io/some-repo --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
+Additionally, your cluster must have read access to the registry.
+
+The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
+`,
+		Example: `kp clusterstack create my-stack --build-image my-registry.com/build --run-image my-registry.com/run
+kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -31,21 +34,25 @@ kp clusterstack create my-stack --default-repository some-registry.io/some-repo 
 				return err
 			}
 
-			stk, err := factory.MakeStack(args[0])
+			factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 			if err != nil {
 				return err
 			}
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().Create(stk)
+			stack, err := factory.MakeStack(args[0])
 			if err != nil {
 				return err
 			}
 
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", stk.Name)
+			_, err = cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().Create(stack)
+			if err != nil {
+				return err
+			}
+
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", stack.Name)
 			return err
 		},
 	}
-	cmd.Flags().StringVarP(&factory.DefaultRepository, "default-repository", "", "", "the repository where the stack images will be relocated")
 	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "", "", "build image tag or local tar file path")
 	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "", "", "run image tag or local tar file path")
 	_ = cmd.MarkFlagRequired("default-repository")

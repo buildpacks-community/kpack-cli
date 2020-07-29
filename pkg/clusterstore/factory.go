@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	DefaultRepositoryAnnotation = "buildservice.pivotal.io/defaultRepository"
-	KubectlLastAppliedConfig    = "kubectl.kubernetes.io/last-applied-configuration"
+	KubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
 )
 
 type BuildpackageUploader interface {
@@ -25,9 +24,9 @@ type BuildpackageUploader interface {
 }
 
 type Factory struct {
-	Uploader          BuildpackageUploader
-	DefaultRepository string
-	Printer           *commands.Logger
+	Uploader   BuildpackageUploader
+	Repository string
+	Printer    *commands.Logger
 }
 
 func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.ClusterStore, error) {
@@ -41,18 +40,16 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Annotations: map[string]string{
-				DefaultRepositoryAnnotation: f.DefaultRepository,
-			},
+			Name:        name,
+			Annotations: map[string]string{},
 		},
 		Spec: v1alpha1.ClusterStoreSpec{},
 	}
 
-	f.Printer.Printf("Uploading to '%s'...", f.DefaultRepository)
+	f.Printer.Printf("Uploading to '%s'...", f.Repository)
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.Upload(f.DefaultRepository, buildpackage)
+		uploadedBp, err := f.Uploader.Upload(f.Repository, buildpackage)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +103,7 @@ func (f *Factory) validate(buildpackages []string) error {
 		return errors.New("At least one buildpackage must be provided")
 	}
 
-	_, err := name.ParseReference(f.DefaultRepository, name.WeakValidation)
+	_, err := name.ParseReference(f.Repository, name.WeakValidation)
 
 	return err
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/ghodss/yaml"
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -28,11 +27,8 @@ import (
 )
 
 const (
-	importNamespace            = "kpack"
-	kpConfigMapName            = "kp-config"
-	canonicalRepositoryKey     = "canonical.repository"
-	canonicalServiceAccountKey = "canonical.repository.serviceaccount"
-	kubectlLastAppliedConfig   = "kubectl.kubernetes.io/last-applied-configuration"
+	importNamespace          = "kpack"
+	kubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
 )
 
 func NewImportCommand(provider k8s.ClientSetProvider, storeFactory *clusterstore.Factory, stackFactory *clusterstack.Factory) *cobra.Command {
@@ -53,27 +49,24 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			kpConfig, err := cs.K8sClient.CoreV1().ConfigMaps(importNamespace).Get(kpConfigMapName, metav1.GetOptions{})
+			configHelper := k8s.DefaultConfigHelper(cs)
+
+			repository, err := configHelper.GetCanonicalRepository()
 			if err != nil {
 				return err
 			}
 
-			repository, ok := kpConfig.Data[canonicalRepositoryKey]
-			if !ok || repository == "" {
-				return errors.Errorf("failed to get canonical repository")
-			}
-
-			serviceAccount, ok := kpConfig.Data[canonicalServiceAccountKey]
-			if !ok || serviceAccount == "" {
-				return errors.Errorf("failed to get canonical service account")
+			serviceAccount, err := configHelper.GetCanonicalServiceAccount()
+			if err != nil {
+				return err
 			}
 
 			logger := commands.NewPrinter(cmd)
 
-			storeFactory.DefaultRepository = repository // FIXME
+			storeFactory.Repository = repository // FIXME
 			storeFactory.Printer = logger
 
-			stackFactory.DefaultRepository = repository // FIXME
+			stackFactory.Repository = repository // FIXME
 
 			descriptor, err := getDependencyDescriptor(cmd, filename)
 			if err != nil {

@@ -20,16 +20,18 @@ func NewAddCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstor
 		Short: "Add buildpackage(s) to cluster store",
 		Long: `Upload buildpackage(s) to a specific cluster-scoped buildpack store.
 
-Buildpackages will be uploaded to the the registry configured on your store.
-Therefore, you must have credentials to access the registry on your machine.`,
+Buildpackages will be uploaded to the canonical repository.
+Therefore, you must have credentials to access the registry on your machine.
+
+The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
+`,
 		Example: `kp clusterstore add my-store my-registry.com/my-buildpackage
-kp clusterstore add my-store my-registry.com/my-buildpackage my-registry.com/my-other-buildpackage my-registry.com/my-third-buildpackage
-kp clusterstore add my-store ../path/to/my-local-buildpackage.cnb`,
-		Args:         cobra.MinimumNArgs(2),
+kp clusterstore add my-store my-registry.com/my-buildpackage --buildpackage my-registry.com/my-other-buildpackage --buildpackage my-registry.com/my-third-buildpackage
+kp clusterstore add my-store --buildpackage ../path/to/my-local-buildpackage.cnb`,
+		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			storeName := args[0]
-			buildpackages := args[1:]
 			factory.Printer = commands.NewPrinter(cmd)
 
 			cs, err := clientSetProvider.GetClientSet("")
@@ -44,9 +46,9 @@ kp clusterstore add my-store ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			repo, ok := s.Annotations[clusterstore.DefaultRepositoryAnnotation]
-			if !ok || repo == "" {
-				return errors.Errorf("Unable to find default registry for store: %s", s.Name)
+			repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			if err != nil {
+				return err
 			}
 
 			updatedStore, storeUpdated, err := factory.AddToStore(s, repo, buildpackages...)
@@ -68,5 +70,7 @@ kp clusterstore add my-store ../path/to/my-local-buildpackage.cnb`,
 			return nil
 		},
 	}
+
+	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
 	return cmd
 }

@@ -7,11 +7,13 @@ import (
 	"testing"
 
 	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
-	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
+	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
@@ -26,9 +28,9 @@ func TestClusterStoreCreateCommand(t *testing.T) {
 func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	var (
 		buildpackage1 = "some/newbp"
-		uploadedBp1   = "some/path/newbp@sha256:123newbp"
+		uploadedBp1   = "some-registry.io/some-repo/newbp@sha256:123newbp"
 		buildpackage2 = "bpfromcnb.cnb"
-		uploadedBp2   = "some/path/bpfromcnb@sha256:123imagefromcnb"
+		uploadedBp2   = "some-registry.io/some-repo/bpfromcnb@sha256:123imagefromcnb"
 
 		fakeBuildpackageUploader = fakes.FakeBuildpackageUploader{
 			buildpackage1: uploadedBp1,
@@ -39,6 +41,17 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			Uploader: fakeBuildpackageUploader,
 		}
 
+		config = &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kp-config",
+				Namespace: "kpack",
+			},
+			Data: map[string]string{
+				"canonical.repository":                "some-registry.io/some-repo",
+				"canonical.repository.serviceaccount": "some-serviceaccount",
+			},
+		}
+
 		expectedStore = &expv1alpha1.ClusterStore{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       expv1alpha1.ClusterStoreKind,
@@ -47,8 +60,7 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-store",
 				Annotations: map[string]string{
-					"buildservice.pivotal.io/defaultRepository":        "some-registry.io/some-repo",
-					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-store","creationTimestamp":null,"annotations":{"buildservice.pivotal.io/defaultRepository":"some-registry.io/some-repo"}},"spec":{"sources":[{"image":"some/path/newbp@sha256:123newbp"},{"image":"some/path/bpfromcnb@sha256:123imagefromcnb"}]},"status":{}}`,
+					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-store","creationTimestamp":null},"spec":{"sources":[{"image":"some-registry.io/some-repo/newbp@sha256:123newbp"},{"image":"some-registry.io/some-repo/bpfromcnb@sha256:123imagefromcnb"}]},"status":{}}`,
 				},
 			},
 			Spec: expv1alpha1.ClusterStoreSpec{
@@ -60,46 +72,75 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 	)
 
-	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
-		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
+	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
+		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
 		return storecmds.NewCreateCommand(clientSetProvider, factory)
 	}
 
 	it("creates a cluster store", func() {
 		testhelpers.CommandTest{
+			K8sObjects: []runtime.Object{
+				config,
+			},
 			Args: []string{
 				expectedStore.Name,
-				buildpackage1,
-				buildpackage2,
-				"--default-repository", "some-registry.io/some-repo",
+				"--buildpackage", buildpackage1,
+				"-b", buildpackage2,
 			},
 			ExpectedOutput: "Uploading to 'some-registry.io/some-repo'...\n\"test-store\" created\n",
 			ExpectCreates: []runtime.Object{
 				expectedStore,
 			},
-		}.TestKpack(t, cmdFunc)
+		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
-	it("fails if a buildpackage is not provided", func() {
+	it("fails when kp-config configmap is not found", func() {
 		testhelpers.CommandTest{
 			Args: []string{
 				expectedStore.Name,
-				"--default-repository", "some-registry.io/some-repo",
+				"--buildpackage", buildpackage1,
+				"-b", buildpackage2,
+			},
+			ExpectErr: true,
+			ExpectedOutput: `Error: failed to get canonical repository: configmaps "kp-config" not found
+`,
+		}.TestK8sAndKpack(t, cmdFunc)
+	})
+
+	it("fails when canonical.repository key is not found in kp-config configmap", func() {
+		badConfig := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kp-config",
+				Namespace: "kpack",
+			},
+			Data: map[string]string{},
+		}
+
+		testhelpers.CommandTest{
+			K8sObjects: []runtime.Object{
+				badConfig,
+			},
+			Args: []string{
+				expectedStore.Name,
+				"--buildpackage", buildpackage1,
+				"-b", buildpackage2,
+			},
+			ExpectErr: true,
+			ExpectedOutput: `Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
+`,
+		}.TestK8sAndKpack(t, cmdFunc)
+	})
+
+	it("fails when a buildpackage is not provided", func() {
+		testhelpers.CommandTest{
+			K8sObjects: []runtime.Object{
+				config,
+			},
+			Args: []string{
+				expectedStore.Name,
 			},
 			ExpectErr:      true,
 			ExpectedOutput: "Error: At least one buildpackage must be provided\n",
-		}.TestKpack(t, cmdFunc)
-	})
-
-	it("validates the default repository", func() {
-		testhelpers.CommandTest{
-			Args: []string{
-				expectedStore.Name,
-				buildpackage1,
-				"--default-repository", "bad-repo@",
-			},
-			ExpectErr:      true,
-			ExpectedOutput: "Error: could not parse reference: bad-repo@\n",
-		}.TestKpack(t, cmdFunc)
+		}.TestK8sAndKpack(t, cmdFunc)
 	})
 }

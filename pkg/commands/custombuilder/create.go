@@ -26,6 +26,7 @@ const (
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
+		tag       string
 		namespace string
 		stack     string
 		store     string
@@ -33,19 +34,18 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "create <name> <tag>",
+		Use:   "create <name> --tag <tag>",
 		Short: "Create a custom builder",
 		Long: `Create a custom builder by providing command line arguments.
 This custom builder will be created only if it does not exist in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.`,
-		Example: `kp cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
-kp cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.yaml`,
-		Args:         cobra.ExactArgs(2),
+		Example: `kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
+kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml`,
+		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
-			tag := args[1]
 
 			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
@@ -99,10 +99,12 @@ kp cb create my-builder my-registry.com/my-builder-tag --order /path/to/order.ya
 			return err
 		},
 	}
+	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&stack, "stack", "s", defaultStack, "stack resource to use")
 	cmd.Flags().StringVar(&store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
+	cmd.MarkFlagRequired("tag")
 	return cmd
 }

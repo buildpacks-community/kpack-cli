@@ -92,7 +92,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				testhelpers.CommandTest{
 					Args: []string{
 						"some-image",
-						"some-registry.io/some-repo",
+						"--tag", "some-registry.io/some-repo",
 						"--git", "some-git-url",
 						"--git-revision", "some-git-rev",
 						"--sub-path", "some-sub-path",
@@ -116,7 +116,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				testhelpers.CommandTest{
 					Args: []string{
 						"some-image",
-						"some-registry.io/some-repo",
+						"--tag", "some-registry.io/some-repo",
 						"--blob", "some-blob",
 						"--git", "some-git-url",
 						"-n", namespace,
@@ -173,7 +173,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				testhelpers.CommandTest{
 					Args: []string{
 						"some-image",
-						"some-registry.io/some-repo",
+						"--tag", "some-registry.io/some-repo",
 						"--git", "some-git-url",
 						"--git-revision", "some-git-rev",
 						"--sub-path", "some-sub-path",
@@ -194,7 +194,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				testhelpers.CommandTest{
 					Args: []string{
 						"some-image",
-						"some-registry.io/some-repo",
+						"--tag", "some-registry.io/some-repo",
 						"--blob", "some-blob",
 						"--git", "some-git-url",
 					},
@@ -248,7 +248,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Args: []string{
 					"some-image",
-					"some-registry.io/some-repo",
+					"--tag", "some-registry.io/some-repo",
 					"--local-path", "some-local-path",
 					"--sub-path", "some-sub-path",
 					"--env", "some-key=some-val",
@@ -297,7 +297,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Args: []string{
 					"some-image",
-					"some-registry.io/some-repo",
+					"--tag", "some-registry.io/some-repo",
 					"--blob", "some-blob",
 					"--custom-builder", "some-builder",
 				},
@@ -344,7 +344,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Args: []string{
 					"some-image",
-					"some-registry.io/some-repo",
+					"--tag", "some-registry.io/some-repo",
 					"--blob", "some-blob",
 					"--custom-cluster-builder", "some-builder",
 				},
