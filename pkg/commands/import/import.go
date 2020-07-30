@@ -81,7 +81,7 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			if err := importCCBs(descriptor, cs.KpackClient, repository, serviceAccount, logger); err != nil {
+			if err := importClusterBuilders(descriptor, cs.KpackClient, repository, serviceAccount, logger); err != nil {
 				return err
 			}
 
@@ -216,7 +216,7 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 	return nil
 }
 
-func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface, repository string, sa string, logger *commands.Logger) error {
+func importClusterBuilders(desc importpkg.DependencyDescriptor, client versioned.Interface, repository string, sa string, logger *commands.Logger) error {
 	for _, ccb := range desc.ClusterBuilders {
 		if ccb.Name == desc.DefaultClusterBuilder {
 			desc.ClusterBuilders = append(desc.ClusterBuilders, importpkg.ClusterBuilder{
@@ -230,7 +230,7 @@ func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface,
 	}
 
 	for _, ccb := range desc.ClusterBuilders {
-		logger.Printf("Importing Custom Cluster Builder '%s'...", ccb.Name)
+		logger.Printf("Importing Cluster Builder '%s'...", ccb.Name)
 
 		newCCB, err := makeCCB(ccb, repository, sa)
 		if err != nil {
