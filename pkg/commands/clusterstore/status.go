@@ -8,7 +8,7 @@ import (
 	"io"
 	"sort"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -34,7 +34,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			store, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Get(args[0], v1.GetOptions{})
+			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(args[0], v1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -57,7 +57,7 @@ type buildpackageInfo struct {
 	homepage string
 }
 
-func getBuildpackageInfos(store *expv1alpha1.ClusterStore) []buildpackageInfo {
+func getBuildpackageInfos(store *v1alpha1.ClusterStore) []buildpackageInfo {
 	buildpackagesMap := make(map[string]buildpackageInfo)
 
 	for _, buildpack := range store.Status.Buildpacks {
@@ -106,9 +106,9 @@ func displayBuildpackagesTable(out io.Writer, buildpackages []buildpackageInfo) 
 	return writer.Write()
 }
 
-func displayStoreStatus(out io.Writer, s *expv1alpha1.ClusterStore) error {
-	buildpackages := map[string]expv1alpha1.StoreBuildpack{}
-	buildpackageBps := map[string][]expv1alpha1.StoreBuildpack{}
+func displayStoreStatus(out io.Writer, s *v1alpha1.ClusterStore) error {
+	buildpackages := map[string]v1alpha1.StoreBuildpack{}
+	buildpackageBps := map[string][]v1alpha1.StoreBuildpack{}
 
 	for _, b := range s.Status.Buildpacks {
 		if b.Buildpackage.Id == "" && b.Buildpackage.Version == "" {
@@ -127,7 +127,7 @@ func displayStoreStatus(out io.Writer, s *expv1alpha1.ClusterStore) error {
 	return displayBuildpacks(out, buildpackages, buildpackageBps)
 }
 
-func displayBuildpacks(out io.Writer, buildpackage map[string]expv1alpha1.StoreBuildpack, buildpacks map[string][]expv1alpha1.StoreBuildpack) error {
+func displayBuildpacks(out io.Writer, buildpackage map[string]v1alpha1.StoreBuildpack, buildpacks map[string][]v1alpha1.StoreBuildpack) error {
 	var keys []string
 	for k := range buildpackage {
 		keys = append(keys, k)

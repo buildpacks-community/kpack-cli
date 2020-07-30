@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package custombuilder
+package builder
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,13 +35,13 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "create <name> --tag <tag>",
-		Short: "Create a custom builder",
-		Long: `Create a custom builder by providing command line arguments.
-This custom builder will be created only if it does not exist in the provided namespace.
+		Short: "Create a builder",
+		Long: `Create a builder by providing command line arguments.
+The builder will be created only if it does not exist in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.`,
-		Example: `kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
-kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml`,
+The namespace defaults to the kubernetes current-context namespace.`,
+		Example: `kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
+kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -52,26 +52,26 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 				return err
 			}
 
-			cb := &expv1alpha1.CustomBuilder{
+			cb := &v1alpha1.Builder{
 				TypeMeta: metaV1.TypeMeta{
-					Kind:       expv1alpha1.CustomBuilderKind,
-					APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+					Kind:       v1alpha1.BuilderKind,
+					APIVersion: "kpack.io/v1alpha1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        name,
 					Namespace:   cs.Namespace,
 					Annotations: map[string]string{},
 				},
-				Spec: expv1alpha1.CustomNamespacedBuilderSpec{
-					CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
+				Spec: v1alpha1.NamespacedBuilderSpec{
+					BuilderSpec: v1alpha1.BuilderSpec{
 						Tag: tag,
 						Stack: corev1.ObjectReference{
 							Name: stack,
-							Kind: expv1alpha1.ClusterStackKind,
+							Kind: v1alpha1.ClusterStackKind,
 						},
 						Store: corev1.ObjectReference{
 							Name: store,
-							Kind: expv1alpha1.ClusterStoreKind,
+							Kind: v1alpha1.ClusterStoreKind,
 						},
 					},
 					ServiceAccount: "default",
@@ -90,7 +90,7 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 
 			cb.Annotations[kubectlLastAppliedConfig] = string(marshal)
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().CustomBuilders(cs.Namespace).Create(cb)
+			_, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(cb)
 			if err != nil {
 				return err
 			}
@@ -104,7 +104,7 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 	cmd.Flags().StringVarP(&stack, "stack", "s", defaultStack, "stack resource to use")
 	cmd.Flags().StringVar(&store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
+	_ = cmd.MarkFlagRequired("tag")
 
-	cmd.MarkFlagRequired("tag")
 	return cmd
 }

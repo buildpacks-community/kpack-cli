@@ -32,7 +32,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			imageList, err := cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).List(metav1.ListOptions{})
+			imageList, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

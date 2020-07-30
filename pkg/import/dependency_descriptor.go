@@ -5,18 +5,18 @@ package _import
 
 import (
 	"github.com/google/go-containerregistry/pkg/name"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 )
 
 type DependencyDescriptor struct {
-	APIVersion                  string                 `yaml:"apiVersion"`
-	Kind                        string                 `yaml:"kind"`
-	DefaultStack                string                 `yaml:"defaultStack"`
-	DefaultCustomClusterBuilder string                 `yaml:"defaultCustomClusterBuilder"`
-	Stores                      []Store                `yaml:"stores"`
-	Stacks                      []Stack                `yaml:"stacks"`
-	CustomClusterBuilders       []CustomClusterBuilder `yaml:"customClusterBuilders"`
+	APIVersion            string           `yaml:"apiVersion"`
+	Kind                  string           `yaml:"kind"`
+	DefaultStack          string           `yaml:"defaultStack"`
+	DefaultClusterBuilder string           `yaml:"defaultClusterBuilder"`
+	Stores                []Store          `yaml:"stores"`
+	Stacks                []Stack          `yaml:"stacks"`
+	ClusterBuilders       []ClusterBuilder `yaml:"clusterBuilders"`
 }
 
 type Store struct {
@@ -34,11 +34,11 @@ type Stack struct {
 	RunImage   Source `yaml:"runImage"`
 }
 
-type CustomClusterBuilder struct {
-	Name  string                   `yaml:"name"`
-	Stack string                   `yaml:"stack"`
-	Store string                   `yaml:"store"`
-	Order []expv1alpha1.OrderEntry `yaml:"order"`
+type ClusterBuilder struct {
+	Name  string                `yaml:"name"`
+	Stack string                `yaml:"stack"`
+	Store string                `yaml:"store"`
+	Order []v1alpha1.OrderEntry `yaml:"order"`
 }
 
 func (d DependencyDescriptor) Validate() error {
@@ -80,23 +80,23 @@ func (d DependencyDescriptor) Validate() error {
 	}
 
 	ccbSet := map[string]interface{}{}
-	for _, ccb := range d.CustomClusterBuilders {
+	for _, ccb := range d.ClusterBuilders {
 		if name, ok := ccbSet[ccb.Name]; ok {
-			return errors.Errorf("duplicate custom cluster builder name '%s'", name)
+			return errors.Errorf("duplicate cluster builder name '%s'", name)
 		}
 		ccbSet[ccb.Name] = nil
 
 		if _, ok := storeSet[ccb.Store]; !ok {
-			return errors.Errorf("custom cluster builder '%s' references unknown store '%s'", ccb.Name, ccb.Store)
+			return errors.Errorf("cluster builder '%s' references unknown store '%s'", ccb.Name, ccb.Store)
 		}
 
 		if _, ok := stackSet[ccb.Stack]; !ok {
-			return errors.Errorf("custom cluster builder '%s' references unknown stack '%s'", ccb.Name, ccb.Stack)
+			return errors.Errorf("cluster builder '%s' references unknown stack '%s'", ccb.Name, ccb.Stack)
 		}
 	}
 
-	if _, ok := ccbSet[d.DefaultCustomClusterBuilder]; !ok {
-		return errors.Errorf("default custom cluster builder '%s' not found", d.DefaultCustomClusterBuilder)
+	if _, ok := ccbSet[d.DefaultClusterBuilder]; !ok {
+		return errors.Errorf("default cluster builder '%s' not found", d.DefaultClusterBuilder)
 	}
 
 	return nil

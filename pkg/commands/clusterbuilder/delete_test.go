@@ -1,12 +1,12 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package customclusterbuilder_test
+package clusterbuilder_test
 
 import (
 	"testing"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/customclusterbuilder"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -26,12 +26,12 @@ func testClusterBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return customclusterbuilder.NewDeleteCommand(clientSetProvider)
+		return clusterbuilder.NewDeleteCommand(clientSetProvider)
 	}
 
 	when("a clusterbuilder is available", func() {
 		it("deletes the clusterbuilder", func() {
-			clusterBuilder := &expv1alpha1.CustomClusterBuilder{
+			clusterBuilder := &v1alpha1.ClusterBuilder{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "some-clusterbuilder",
 				},
@@ -61,7 +61,7 @@ func testClusterBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						Name: "some-clusterbuilder",
 					},
 				},
-				ExpectedOutput: "Error: customclusterbuilders.experimental.kpack.pivotal.io \"some-clusterbuilder\" not found\n",
+				ExpectedOutput: "Error: clusterbuilders.kpack.io \"some-clusterbuilder\" not found\n",
 				ExpectErr:      true,
 			}.TestKpack(t, cmdFunc)
 		})

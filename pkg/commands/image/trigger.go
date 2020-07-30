@@ -17,7 +17,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-const BuildNeededAnnotation = "image.build.pivotal.io/additionalBuildNeeded"
+const BuildNeededAnnotation = "image.kpack.io/additionalBuildNeeded"
 
 func NewTriggerCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
@@ -38,7 +38,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			buildList, err := cs.KpackClient.BuildV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
+			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
@@ -52,7 +52,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 
 				build := buildList.Items[len(buildList.Items)-1].DeepCopy()
 				build.Annotations[BuildNeededAnnotation] = time.Now().String()
-				_, err := cs.KpackClient.BuildV1alpha1().Builds(cs.Namespace).Update(build)
+				_, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).Update(build)
 				if err != nil {
 					return err
 				}

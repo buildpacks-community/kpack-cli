@@ -11,7 +11,7 @@ import (
 	"path"
 
 	"github.com/ghodss/yaml"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -38,8 +38,8 @@ func NewImportCommand(provider k8s.ClientSetProvider, storeFactory *clusterstore
 
 	cmd := &cobra.Command{
 		Use:   "import -f <filename>",
-		Short: "Import dependencies for stores, stacks, and custom cluster builders",
-		Long:  `This operation will create or update stores, stacks, and custom cluster builders defined in the dependency descriptor.`,
+		Short: "Import dependencies for stores, stacks, and cluster builders",
+		Long:  `This operation will create or update stores, stacks, and cluster builders defined in the dependency descriptor.`,
 		Example: `kp import -f dependencies.yaml
 cat dependencies.yaml | kp import -f -`,
 		SilenceUsage: true,
@@ -81,7 +81,7 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			if err := importCCBs(descriptor, cs.KpackClient, repository, serviceAccount, logger); err != nil {
+			if err := importClusterBuilders(descriptor, cs.KpackClient, repository, serviceAccount, logger); err != nil {
 				return err
 			}
 
@@ -134,7 +134,7 @@ func importStores(desc importpkg.DependencyDescriptor, client versioned.Interfac
 			buildpackages = append(buildpackages, s.Image)
 		}
 
-		curStore, err := client.ExperimentalV1alpha1().ClusterStores().Get(store.Name, metav1.GetOptions{})
+		curStore, err := client.KpackV1alpha1().ClusterStores().Get(store.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
@@ -145,7 +145,7 @@ func importStores(desc importpkg.DependencyDescriptor, client versioned.Interfac
 				return err
 			}
 
-			_, err = client.ExperimentalV1alpha1().ClusterStores().Create(newStore)
+			_, err = client.KpackV1alpha1().ClusterStores().Create(newStore)
 			if err != nil {
 				return err
 			}
@@ -156,7 +156,7 @@ func importStores(desc importpkg.DependencyDescriptor, client versioned.Interfac
 			}
 
 			if storeUpdated {
-				_, err = client.ExperimentalV1alpha1().ClusterStores().Update(updatedStore)
+				_, err = client.KpackV1alpha1().ClusterStores().Update(updatedStore)
 				if err != nil {
 					return err
 				}
@@ -189,13 +189,13 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 			return err
 		}
 
-		curStack, err := client.ExperimentalV1alpha1().ClusterStacks().Get(stack.Name, metav1.GetOptions{})
+		curStack, err := client.KpackV1alpha1().ClusterStacks().Get(stack.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
 
 		if k8serrors.IsNotFound(err) {
-			_, err = client.ExperimentalV1alpha1().ClusterStacks().Create(newStack)
+			_, err = client.KpackV1alpha1().ClusterStacks().Create(newStack)
 			if err != nil {
 				return err
 			}
@@ -207,7 +207,7 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 			updateStack := curStack.DeepCopy()
 			updateStack.Spec = newStack.Spec
 
-			_, err = client.ExperimentalV1alpha1().ClusterStacks().Update(updateStack)
+			_, err = client.KpackV1alpha1().ClusterStacks().Update(updateStack)
 			if err != nil {
 				return err
 			}
@@ -216,10 +216,10 @@ func importStacks(desc importpkg.DependencyDescriptor, client versioned.Interfac
 	return nil
 }
 
-func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface, repository string, sa string, logger *commands.Logger) error {
-	for _, ccb := range desc.CustomClusterBuilders {
-		if ccb.Name == desc.DefaultCustomClusterBuilder {
-			desc.CustomClusterBuilders = append(desc.CustomClusterBuilders, importpkg.CustomClusterBuilder{
+func importClusterBuilders(desc importpkg.DependencyDescriptor, client versioned.Interface, repository string, sa string, logger *commands.Logger) error {
+	for _, ccb := range desc.ClusterBuilders {
+		if ccb.Name == desc.DefaultClusterBuilder {
+			desc.ClusterBuilders = append(desc.ClusterBuilders, importpkg.ClusterBuilder{
 				Name:  "default",
 				Stack: ccb.Stack,
 				Store: ccb.Store,
@@ -229,21 +229,21 @@ func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface,
 		}
 	}
 
-	for _, ccb := range desc.CustomClusterBuilders {
-		logger.Printf("Importing Custom Cluster Builder '%s'...", ccb.Name)
+	for _, ccb := range desc.ClusterBuilders {
+		logger.Printf("Importing Cluster Builder '%s'...", ccb.Name)
 
 		newCCB, err := makeCCB(ccb, repository, sa)
 		if err != nil {
 			return err
 		}
 
-		curCCB, err := client.ExperimentalV1alpha1().CustomClusterBuilders().Get(ccb.Name, metav1.GetOptions{})
+		curCCB, err := client.KpackV1alpha1().ClusterBuilders().Get(ccb.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
 
 		if k8serrors.IsNotFound(err) {
-			_, err = client.ExperimentalV1alpha1().CustomClusterBuilders().Create(newCCB)
+			_, err = client.KpackV1alpha1().ClusterBuilders().Create(newCCB)
 			if err != nil {
 				return err
 			}
@@ -255,7 +255,7 @@ func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface,
 			updateCCB := curCCB.DeepCopy()
 			updateCCB.Spec = newCCB.Spec
 
-			_, err = client.ExperimentalV1alpha1().CustomClusterBuilders().Update(updateCCB)
+			_, err = client.KpackV1alpha1().ClusterBuilders().Update(updateCCB)
 			if err != nil {
 				return err
 			}
@@ -264,26 +264,26 @@ func importCCBs(desc importpkg.DependencyDescriptor, client versioned.Interface,
 	return nil
 }
 
-func makeCCB(ccb importpkg.CustomClusterBuilder, repository string, sa string) (*expv1alpha1.CustomClusterBuilder, error) {
-	newCCB := &expv1alpha1.CustomClusterBuilder{
+func makeCCB(ccb importpkg.ClusterBuilder, repository string, sa string) (*v1alpha1.ClusterBuilder, error) {
+	newCCB := &v1alpha1.ClusterBuilder{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       expv1alpha1.CustomClusterBuilderKind,
-			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+			Kind:       v1alpha1.ClusterBuilderKind,
+			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        ccb.Name,
 			Annotations: map[string]string{},
 		},
-		Spec: expv1alpha1.CustomClusterBuilderSpec{
-			CustomBuilderSpec: expv1alpha1.CustomBuilderSpec{
+		Spec: v1alpha1.ClusterBuilderSpec{
+			BuilderSpec: v1alpha1.BuilderSpec{
 				Tag: path.Join(repository, ccb.Name),
 				Stack: corev1.ObjectReference{
 					Name: ccb.Stack,
-					Kind: expv1alpha1.ClusterStackKind,
+					Kind: v1alpha1.ClusterStackKind,
 				},
 				Store: corev1.ObjectReference{
 					Name: ccb.Store,
-					Kind: expv1alpha1.ClusterStoreKind,
+					Kind: v1alpha1.ClusterStoreKind,
 				},
 				Order: ccb.Order,
 			},

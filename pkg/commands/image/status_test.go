@@ -85,7 +85,7 @@ Reason:    COMMIT,BUILDPACK
 					testhelpers.CommandTest{
 						Args:           []string{imageName, "-n", namespace},
 						ExpectErr:      true,
-						ExpectedOutput: "Error: images.build.pivotal.io \"test-image\" not found\n",
+						ExpectedOutput: "Error: images.kpack.io \"test-image\" not found\n",
 					}.TestKpack(t, cmdFunc)
 
 				})
@@ -140,7 +140,7 @@ Reason:    COMMIT,BUILDPACK
 					testhelpers.CommandTest{
 						Args:           []string{imageName},
 						ExpectErr:      true,
-						ExpectedOutput: "Error: images.build.pivotal.io \"test-image\" not found\n",
+						ExpectedOutput: "Error: images.kpack.io \"test-image\" not found\n",
 					}.TestKpack(t, cmdFunc)
 
 				})

@@ -44,7 +44,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().Create(stack)
+			_, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Create(stack)
 			if err != nil {
 				return err
 			}

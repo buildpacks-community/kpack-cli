@@ -25,7 +25,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			err = cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().Delete(args[0], &metav1.DeleteOptions{})
+			err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

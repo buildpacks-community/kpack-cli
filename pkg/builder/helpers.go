@@ -9,10 +9,10 @@ import (
 	"os"
 
 	"github.com/ghodss/yaml"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 )
 
-func ReadOrder(path string) ([]expv1alpha1.OrderEntry, error) {
+func ReadOrder(path string) ([]v1alpha1.OrderEntry, error) {
 	var (
 		file io.ReadCloser
 		err  error
@@ -33,6 +33,6 @@ func ReadOrder(path string) ([]expv1alpha1.OrderEntry, error) {
 		return nil, err
 	}
 
-	var order []expv1alpha1.OrderEntry
+	var order []v1alpha1.OrderEntry
 	return order, yaml.Unmarshal(buf, &order)
 }

@@ -3,7 +3,7 @@ package _import_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
@@ -16,8 +16,8 @@ func TestDescriptorValidate(t *testing.T) {
 
 func testDescriptorValidate(t *testing.T, when spec.G, it spec.S) {
 	desc := importpkg.DependencyDescriptor{
-		DefaultStack:                "some-stack",
-		DefaultCustomClusterBuilder: "some-ccb",
+		DefaultStack:          "some-stack",
+		DefaultClusterBuilder: "some-ccb",
 		Stores: []importpkg.Store{
 			{
 				Name: "some-store",
@@ -39,7 +39,7 @@ func testDescriptorValidate(t *testing.T, when spec.G, it spec.S) {
 				},
 			},
 		},
-		CustomClusterBuilders: []importpkg.CustomClusterBuilder{
+		ClusterBuilders: []importpkg.ClusterBuilder{
 			{
 				Name:  "some-ccb",
 				Stack: "some-stack",
@@ -86,7 +86,7 @@ func testDescriptorValidate(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("there is a duplicate ccb name", func() {
-		desc.CustomClusterBuilders = append(desc.CustomClusterBuilders, importpkg.CustomClusterBuilder{
+		desc.ClusterBuilders = append(desc.ClusterBuilders, importpkg.ClusterBuilder{
 			Name:  "some-ccb",
 			Stack: "some-stack",
 			Store: "some-store",
@@ -114,7 +114,7 @@ func testDescriptorValidate(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("the ccb uses a stack that does not exist", func() {
-		desc.CustomClusterBuilders[0].Stack = "does-not-exist"
+		desc.ClusterBuilders[0].Stack = "does-not-exist"
 
 		it("fails validation", func() {
 			require.Error(t, desc.Validate())
@@ -122,7 +122,7 @@ func testDescriptorValidate(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("the ccb uses a store that does not exist", func() {
-		desc.CustomClusterBuilders[0].Store = "does-not-exist"
+		desc.ClusterBuilders[0].Store = "does-not-exist"
 
 		it("fails validation", func() {
 			require.Error(t, desc.Validate())

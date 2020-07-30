@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,7 +50,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 
 			printer := commands.NewPrinter(cmd)
 
-			stack, err := cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().Get(args[0], metav1.GetOptions{})
+			stack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -103,7 +103,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return nil
 			}
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().ClusterStacks().Update(stack)
+			_, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(stack)
 			if err != nil {
 				return err
 			}
@@ -121,7 +121,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func updateStack(stack *expv1alpha1.ClusterStack, buildImageRef, runImageRef, stackId string) (bool, error) {
+func updateStack(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef, stackId string) (bool, error) {
 	oldBuildDigest, err := clusterstack.GetDigest(stack.Status.BuildImage.LatestImage)
 	if err != nil {
 		return false, err

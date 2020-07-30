@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package customclusterbuilder
+package builder
 
 import (
 	"fmt"
@@ -16,37 +16,38 @@ import (
 
 func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
-		stack string
-		store string
-		order string
+		namespace string
+		stack     string
+		store     string
+		order     string
 	)
 
 	cmd := &cobra.Command{
 		Use:          "patch <name>",
-		Short:        "Patch an existing custom cluster builder configuration",
+		Short:        "Patch an existing builder configuration",
 		Long:         ` `,
-		Example:      `kp ccb patch my-builder`,
+		Example:      `kp builder patch my-builder`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cs, err := clientSetProvider.GetClientSet("")
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			ccb, err := cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Get(args[0], metav1.GetOptions{})
+			cb, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			patchedCcb := ccb.DeepCopy()
+			patchedCb := cb.DeepCopy()
 
 			if stack != "" {
-				patchedCcb.Spec.Stack.Name = stack
+				patchedCb.Spec.Stack.Name = stack
 			}
 
 			if store != "" {
-				patchedCcb.Spec.Store.Name = store
+				patchedCb.Spec.Store.Name = store
 			}
 
 			if order != "" {
@@ -55,10 +56,10 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 					return err
 				}
 
-				patchedCcb.Spec.Order = orderEntries
+				patchedCb.Spec.Order = orderEntries
 			}
 
-			patch, err := k8s.CreatePatch(ccb, patchedCcb)
+			patch, err := k8s.CreatePatch(cb, patchedCb)
 			if err != nil {
 				return err
 			}
@@ -68,15 +69,16 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Patch(args[0], types.MergePatchType, patch)
+			_, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Patch(args[0], types.MergePatchType, patch)
 			if err != nil {
 				return err
 			}
 
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" patched\n", ccb.Name)
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" patched\n", cb.Name)
 			return err
 		},
 	}
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&stack, "stack", "s", "", "stack resource to use")
 	cmd.Flags().StringVar(&store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")

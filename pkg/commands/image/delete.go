@@ -31,7 +31,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			err = cs.KpackClient.BuildV1alpha1().Images(cs.Namespace).Delete(args[0], &metav1.DeleteOptions{})
+			err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

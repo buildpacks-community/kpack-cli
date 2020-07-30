@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,7 +29,7 @@ type Factory struct {
 	RunImageRef   string
 }
 
-func (f *Factory) MakeStack(name string) (*expv1alpha1.ClusterStack, error) {
+func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
 	if err := f.validate(); err != nil {
 		return nil, err
 	}
@@ -68,21 +68,21 @@ func (f *Factory) MakeStack(name string) (*expv1alpha1.ClusterStack, error) {
 		return nil, err
 	}
 
-	return &expv1alpha1.ClusterStack{
+	return &v1alpha1.ClusterStack{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       expv1alpha1.ClusterStackKind,
-			APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+			Kind:       v1alpha1.ClusterStackKind,
+			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Annotations: map[string]string{},
 		},
-		Spec: expv1alpha1.ClusterStackSpec{
+		Spec: v1alpha1.ClusterStackSpec{
 			Id: buildStackId,
-			BuildImage: expv1alpha1.ClusterStackSpecImage{
+			BuildImage: v1alpha1.ClusterStackSpecImage{
 				Image: relocatedBuildImageRef,
 			},
-			RunImage: expv1alpha1.ClusterStackSpecImage{
+			RunImage: v1alpha1.ClusterStackSpecImage{
 				Image: relocatedRunImageRef,
 			},
 		},

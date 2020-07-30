@@ -1,14 +1,14 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package customclusterbuilder
+package builder
 
 import (
 	"fmt"
 	"io"
 
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,21 +18,26 @@ import (
 )
 
 func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	var (
+		namespace string
+	)
 
 	cmd := &cobra.Command{
-		Use:          "status <name>",
-		Short:        "Display custom cluster builder status",
-		Long:         `Prints detailed information about the status of a specific custom cluster builder.`,
-		Example:      "kp ccb status my-builder",
+		Use:   "status <name>",
+		Short: "Display status of a builder",
+		Long: `Prints detailed information about the status of a specific builder in the provided namespace.
+
+The namespace defaults to the kubernetes current-context namespace.`,
+		Example:      "kp builder status my-builder\nkp builder status -n my-namespace other-builder",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cs, err := clientSetProvider.GetClientSet("")
+			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			bldr, err := cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Get(args[0], metav1.GetOptions{})
+			bldr, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -41,10 +46,12 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
+
 	return cmd
 }
 
-func displayBuilderStatus(bldr *expv1alpha1.CustomClusterBuilder, writer io.Writer) error {
+func displayBuilderStatus(bldr *v1alpha1.Builder, writer io.Writer) error {
 	if cond := bldr.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
 		if cond.Status == corev1.ConditionTrue {
 			return printBuilderReadyStatus(bldr, writer)
@@ -56,7 +63,7 @@ func displayBuilderStatus(bldr *expv1alpha1.CustomClusterBuilder, writer io.Writ
 	}
 }
 
-func printBuilderConditionUnknownStatus(_ *expv1alpha1.CustomClusterBuilder, writer io.Writer) error {
+func printBuilderConditionUnknownStatus(_ *v1alpha1.Builder, writer io.Writer) error {
 	statusWriter := commands.NewStatusWriter(writer)
 
 	return statusWriter.AddBlock(
@@ -65,7 +72,7 @@ func printBuilderConditionUnknownStatus(_ *expv1alpha1.CustomClusterBuilder, wri
 	)
 }
 
-func printBuilderNotReadyStatus(bldr *expv1alpha1.CustomClusterBuilder, writer io.Writer) error {
+func printBuilderNotReadyStatus(bldr *v1alpha1.Builder, writer io.Writer) error {
 	statusWriter := commands.NewStatusWriter(writer)
 
 	condReady := bldr.Status.GetCondition(corev1alpha1.ConditionReady)
@@ -77,7 +84,7 @@ func printBuilderNotReadyStatus(bldr *expv1alpha1.CustomClusterBuilder, writer i
 	)
 }
 
-func printBuilderReadyStatus(bldr *expv1alpha1.CustomClusterBuilder, writer io.Writer) error {
+func printBuilderReadyStatus(bldr *v1alpha1.Builder, writer io.Writer) error {
 	statusWriter := commands.NewStatusWriter(writer)
 
 	err := statusWriter.AddBlock(

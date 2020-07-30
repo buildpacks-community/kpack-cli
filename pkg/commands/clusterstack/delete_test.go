@@ -6,7 +6,7 @@ package clusterstack_test
 import (
 	"testing"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -31,7 +31,7 @@ func testClusterStackDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("a stack is available", func() {
 		it("deletes the stack", func() {
-			stack := &expv1alpha1.ClusterStack{
+			stack := &v1alpha1.ClusterStack{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "some-stack",
 				},
@@ -61,7 +61,7 @@ func testClusterStackDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						Name: "some-stack",
 					},
 				},
-				ExpectedOutput: "Error: clusterstacks.experimental.kpack.pivotal.io \"some-stack\" not found\n",
+				ExpectedOutput: "Error: clusterstacks.kpack.io \"some-stack\" not found\n",
 				ExpectErr:      true,
 			}.TestKpack(t, cmdFunc)
 		})

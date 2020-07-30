@@ -52,7 +52,7 @@ kp clusterstore create my-store --buildpackage ../path/to/my-local-buildpackage.
 				return err
 			}
 
-			_, err = cs.KpackClient.ExperimentalV1alpha1().ClusterStores().Create(newStore)
+			_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Create(newStore)
 			if err != nil {
 				return err
 			}

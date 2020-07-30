@@ -1,7 +1,7 @@
 // Copyright 2020-2020 VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package customclusterbuilder
+package clusterbuilder
 
 import (
 	"fmt"
@@ -15,9 +15,9 @@ import (
 func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <name>",
-		Short:   "Delete a custom cluster builder",
-		Long:    "Delete a custom cluster builder from the cluster.",
-		Example: "kp ccb delete my-builder",
+		Short:   "Delete a cluster builder",
+		Long:    "Delete a cluster builder from the cluster.",
+		Example: "kp cb delete my-builder",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
@@ -25,7 +25,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			err = cs.KpackClient.ExperimentalV1alpha1().CustomClusterBuilders().Delete(args[0], &metav1.DeleteOptions{})
+			err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Delete(args[0], &metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

@@ -6,7 +6,7 @@ package clusterstore_test
 import (
 	"testing"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -52,19 +52,19 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 		}
 
-		expectedStore = &expv1alpha1.ClusterStore{
+		expectedStore = &v1alpha1.ClusterStore{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.ClusterStoreKind,
-				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+				Kind:       v1alpha1.ClusterStoreKind,
+				APIVersion: "kpack.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-store",
 				Annotations: map[string]string{
-					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"experimental.kpack.pivotal.io/v1alpha1","metadata":{"name":"test-store","creationTimestamp":null},"spec":{"sources":[{"image":"some-registry.io/some-repo/newbp@sha256:123newbp"},{"image":"some-registry.io/some-repo/bpfromcnb@sha256:123imagefromcnb"}]},"status":{}}`,
+					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-store","creationTimestamp":null},"spec":{"sources":[{"image":"some-registry.io/some-repo/newbp@sha256:123newbp"},{"image":"some-registry.io/some-repo/bpfromcnb@sha256:123imagefromcnb"}]},"status":{}}`,
 				},
 			},
-			Spec: expv1alpha1.ClusterStoreSpec{
-				Sources: []expv1alpha1.StoreImage{
+			Spec: v1alpha1.ClusterStoreSpec{
+				Sources: []v1alpha1.StoreImage{
 					{Image: uploadedBp1},
 					{Image: uploadedBp2},
 				},

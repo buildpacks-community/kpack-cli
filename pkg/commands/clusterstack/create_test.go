@@ -6,7 +6,7 @@ package clusterstack_test
 import (
 	"testing"
 
-	expv1alpha1 "github.com/pivotal/kpack/pkg/apis/experimental/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -56,20 +56,20 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	it("creates a stack", func() {
-		expectedStack := &expv1alpha1.ClusterStack{
+		expectedStack := &v1alpha1.ClusterStack{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       expv1alpha1.ClusterStackKind,
-				APIVersion: "experimental.kpack.pivotal.io/v1alpha1",
+				Kind:       v1alpha1.ClusterStackKind,
+				APIVersion: "kpack.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "some-stack",
 			},
-			Spec: expv1alpha1.ClusterStackSpec{
+			Spec: v1alpha1.ClusterStackSpec{
 				Id: "some-stack-id",
-				BuildImage: expv1alpha1.ClusterStackSpecImage{
+				BuildImage: v1alpha1.ClusterStackSpecImage{
 					Image: "some-registry.io/some-repo/build@" + buildImageId,
 				},
-				RunImage: expv1alpha1.ClusterStackSpecImage{
+				RunImage: v1alpha1.ClusterStackSpecImage{
 					Image: "some-registry.io/some-repo/run@" + runImageId,
 				},
 			},
