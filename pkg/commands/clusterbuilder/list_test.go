@@ -34,7 +34,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 	)
 
 	var (
-		customClusterBuilder1 = &v1alpha1.ClusterBuilder{
+		clusterBuilder1 = &v1alpha1.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       v1alpha1.ClusterBuilderKind,
 				APIVersion: "kpack.io/v1alpha1",
@@ -95,7 +95,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 				LatestImage: "some-registry.com/test-builder-1:tag",
 			},
 		}
-		customClusterBuilder2 = &v1alpha1.ClusterBuilder{
+		clusterBuilder2 = &v1alpha1.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       v1alpha1.ClusterBuilderKind,
 				APIVersion: "kpack.io/v1alpha1",
@@ -151,7 +151,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 				},
 			},
 		}
-		customClusterBuilder3 = &v1alpha1.ClusterBuilder{
+		clusterBuilder3 = &v1alpha1.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       v1alpha1.ClusterBuilderKind,
 				APIVersion: "kpack.io/v1alpha1",
@@ -224,9 +224,9 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 			it("lists the builders", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						customClusterBuilder1,
-						customClusterBuilder2,
-						customClusterBuilder3,
+						clusterBuilder1,
+						clusterBuilder2,
+						clusterBuilder3,
 					},
 					ExpectedOutput: expectedOutput,
 				}.TestKpack(t, cmdFunc)

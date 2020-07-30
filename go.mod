@@ -5,9 +5,9 @@ go 1.14
 require (
 	github.com/evanphx/json-patch v4.5.0+incompatible
 	github.com/ghodss/yaml v1.0.0
-	github.com/google/go-cmp v0.5.0
+	github.com/google/go-cmp v0.5.1
 	github.com/google/go-containerregistry v0.1.1
-	github.com/pivotal/kpack v0.0.10-0.20200722163504-5ec122f0d526
+	github.com/pivotal/kpack v0.0.10-0.20200730163525-f4aba175f503
 	github.com/pkg/errors v0.9.1
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.0.0

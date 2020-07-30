@@ -166,7 +166,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				Args: []string{
 					"-f", "./testdata/deps.yaml",
 				},
-				ExpectedOutput: "Importing Cluster Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'some-stack'...\nImporting Cluster Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
+				ExpectedOutput: "Importing Cluster Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'some-stack'...\nImporting Cluster Stack 'default'...\nImporting Cluster Builder 'some-ccb'...\nImporting Cluster Builder 'default'...\n",
 				ExpectCreates: []runtime.Object{
 					store,
 					stack,
@@ -201,7 +201,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: "Importing Cluster Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nBuildpackage 'new-registry.io/new-project/store-image@sha256:123abc' already exists in the store\nImporting Cluster Stack 'some-stack'...\nImporting Cluster Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
+					ExpectedOutput: "Importing Cluster Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nBuildpackage 'new-registry.io/new-project/store-image@sha256:123abc' already exists in the store\nImporting Cluster Stack 'some-stack'...\nImporting Cluster Stack 'default'...\nImporting Cluster Builder 'some-ccb'...\nImporting Cluster Builder 'default'...\n",
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
 		})
@@ -263,7 +263,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					Args: []string{
 						"-f", "./testdata/updated-deps.yaml",
 					},
-					ExpectedOutput: "Importing Cluster Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nAdded Buildpackage 'new-registry.io/new-project/store-image-2@sha256:456def'\nImporting Cluster Stack 'some-stack'...\nImporting Cluster Stack 'default'...\nImporting Custom Cluster Builder 'some-ccb'...\nImporting Custom Cluster Builder 'default'...\n",
+					ExpectedOutput: "Importing Cluster Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nAdded Buildpackage 'new-registry.io/new-project/store-image-2@sha256:456def'\nImporting Cluster Stack 'some-stack'...\nImporting Cluster Stack 'default'...\nImporting Cluster Builder 'some-ccb'...\nImporting Cluster Builder 'default'...\n",
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{
 							Object: expectedStore,
