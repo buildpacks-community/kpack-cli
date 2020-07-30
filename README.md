@@ -11,3 +11,5 @@ go install ./cmd/kp
 ```
 kp --help
 ```
+
+### [Documentation](docs/kp.md)
