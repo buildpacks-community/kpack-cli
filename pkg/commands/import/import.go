@@ -38,8 +38,8 @@ func NewImportCommand(provider k8s.ClientSetProvider, storeFactory *clusterstore
 
 	cmd := &cobra.Command{
 		Use:   "import -f <filename>",
-		Short: "Import dependencies for stores, stacks, and custom cluster builders",
-		Long:  `This operation will create or update stores, stacks, and custom cluster builders defined in the dependency descriptor.`,
+		Short: "Import dependencies for stores, stacks, and cluster builders",
+		Long:  `This operation will create or update stores, stacks, and cluster builders defined in the dependency descriptor.`,
 		Example: `kp import -f dependencies.yaml
 cat dependencies.yaml | kp import -f -`,
 		SilenceUsage: true,

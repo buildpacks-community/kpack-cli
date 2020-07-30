@@ -82,21 +82,21 @@ func (d DependencyDescriptor) Validate() error {
 	ccbSet := map[string]interface{}{}
 	for _, ccb := range d.ClusterBuilders {
 		if name, ok := ccbSet[ccb.Name]; ok {
-			return errors.Errorf("duplicate custom cluster builder name '%s'", name)
+			return errors.Errorf("duplicate cluster builder name '%s'", name)
 		}
 		ccbSet[ccb.Name] = nil
 
 		if _, ok := storeSet[ccb.Store]; !ok {
-			return errors.Errorf("custom cluster builder '%s' references unknown store '%s'", ccb.Name, ccb.Store)
+			return errors.Errorf("cluster builder '%s' references unknown store '%s'", ccb.Name, ccb.Store)
 		}
 
 		if _, ok := stackSet[ccb.Stack]; !ok {
-			return errors.Errorf("custom cluster builder '%s' references unknown stack '%s'", ccb.Name, ccb.Stack)
+			return errors.Errorf("cluster builder '%s' references unknown stack '%s'", ccb.Name, ccb.Stack)
 		}
 	}
 
 	if _, ok := ccbSet[d.DefaultClusterBuilder]; !ok {
-		return errors.Errorf("default custom cluster builder '%s' not found", d.DefaultClusterBuilder)
+		return errors.Errorf("default cluster builder '%s' not found", d.DefaultClusterBuilder)
 	}
 
 	return nil

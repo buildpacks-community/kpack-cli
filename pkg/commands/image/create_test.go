@@ -298,7 +298,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					"some-image",
 					"--tag", "some-registry.io/some-repo",
 					"--blob", "some-blob",
-					"--custom-builder", "some-builder",
+					"--builder", "some-builder",
 				},
 				ExpectedOutput: "\"some-image\" created\n",
 				ExpectCreates: []runtime.Object{
@@ -345,7 +345,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					"some-image",
 					"--tag", "some-registry.io/some-repo",
 					"--blob", "some-blob",
-					"--custom-cluster-builder", "some-builder",
+					"--cluster-builder", "some-builder",
 				},
 				ExpectedOutput: "\"some-image\" created\n",
 				ExpectCreates: []runtime.Object{
