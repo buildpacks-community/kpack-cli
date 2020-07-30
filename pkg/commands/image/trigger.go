@@ -29,7 +29,7 @@ func NewTriggerCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short: "Trigger an image build",
 		Long: `Trigger a build using current inputs for a specific image in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.`,
+The namespace defaults to the kubernetes current-context namespace.`,
 		Example: "kp image trigger my-image",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

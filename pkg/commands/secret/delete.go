@@ -23,7 +23,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short: "Delete secret",
 		Long: `Deletes a specific secret in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.`,
+The namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "kp secret delete my-secret",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,

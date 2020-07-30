@@ -26,7 +26,7 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Fa
 		Long: `Create an image configuration by providing command line arguments.
 This image will be created only if it does not exist in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.
+The namespace defaults to the kubernetes current-context namespace.
 
 The flags for this command determine how the build will retrieve source code:
 

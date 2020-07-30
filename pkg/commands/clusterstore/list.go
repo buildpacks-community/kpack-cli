@@ -21,7 +21,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short: "List cluster stores",
 		Long: `Prints a table of the most important information about cluster-scoped stores in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.`,
+The namespace defaults to the kubernetes current-context namespace.`,
 		Example: "kp clusterstore list\nkp clusterstore list -n my-namespace",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
