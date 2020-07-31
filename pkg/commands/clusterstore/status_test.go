@@ -42,8 +42,8 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 							Version: "1",
 						},
 						Buildpackage: v1alpha1.BuildpackageInfo{
-							Id:       "meta",
-							Version:  "1",
+							Id:      "meta",
+							Version: "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
 						StoreImage: v1alpha1.StoreImage{
@@ -70,8 +70,8 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 							Version: "2",
 						},
 						Buildpackage: v1alpha1.BuildpackageInfo{
-							Id:       "meta",
-							Version:  "1",
+							Id:      "meta",
+							Version: "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
 						StoreImage: v1alpha1.StoreImage{
@@ -85,8 +85,8 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 							Version: "3",
 						},
 						Buildpackage: v1alpha1.BuildpackageInfo{
-							Id:       "simple-buildpack",
-							Version:  "3",
+							Id:      "simple-buildpack",
+							Version: "3",
 							Homepage: "simple-3-buildpackage-homepage",
 						},
 						StoreImage: v1alpha1.StoreImage{
@@ -99,7 +99,9 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		it("returns store details", func() {
-			const expectedOutput = `BUILDPACKAGE ID     VERSION    HOMEPAGE
+			const expectedOutput = `Status:    Unknown
+
+BUILDPACKAGE ID     VERSION    HOMEPAGE
 meta                1          meta-1-buildpackage-homepage
 simple-buildpack    3          simple-3-buildpackage-homepage
 
@@ -112,7 +114,9 @@ simple-buildpack    3          simple-3-buildpackage-homepage
 		})
 
 		it("includes buildpacks and detection order when --verbose flag is used", func() {
-			const expectedOutput = `Buildpackage:    meta@1
+			const expectedOutput = `Status:    Unknown
+
+Buildpackage:    meta@1
 Image:           some-meta-image
 Homepage:        meta-homepage
 

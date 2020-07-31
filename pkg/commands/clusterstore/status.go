@@ -9,8 +9,10 @@ import (
 	"sort"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
@@ -34,15 +36,15 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(args[0], v1.GetOptions{})
+			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
 			if verbose {
-				return displayStoreStatus(cmd.OutOrStdout(), store)
+				return displayBuildpackagesDetailed(cmd.OutOrStdout(), store)
 			} else {
-				return displayBuildpackagesTable(cmd.OutOrStdout(), getBuildpackageInfos(store))
+				return displayBuildpackages(cmd.OutOrStdout(), store)
 			}
 		},
 	}
@@ -55,6 +57,76 @@ type buildpackageInfo struct {
 	id       string
 	version  string
 	homepage string
+}
+
+func displayStatus(out io.Writer, s *v1alpha1.ClusterStore) error {
+	statusWriter := commands.NewStatusWriter(out)
+	status := getStatusText(s)
+	if err := statusWriter.AddBlock("", "Status", status); err != nil {
+		return err
+	}
+	return statusWriter.Write()
+}
+
+func getStatusText(s *v1alpha1.ClusterStore) string {
+	if cond := s.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
+		if cond.Status == corev1.ConditionTrue {
+			return "Ready"
+		} else if cond.Status == corev1.ConditionFalse {
+			return "Not Ready"
+		}
+	}
+	return "Unknown"
+}
+
+func displayBuildpackages(out io.Writer, s *v1alpha1.ClusterStore) error {
+	if err := displayStatus(out, s); err != nil {
+		return err
+	}
+
+	buildpackages := getBuildpackageInfos(s)
+
+	if len(buildpackages) <= 0 {
+		return nil
+	}
+
+	writer, err := commands.NewTableWriter(out, "BUILDPACKAGE ID", "VERSION", "HOMEPAGE")
+	if err != nil {
+		return err
+	}
+
+	for _, buildpackage := range buildpackages {
+		if err := writer.AddRow(buildpackage.id, buildpackage.version, buildpackage.homepage); err != nil {
+			return err
+		}
+	}
+
+	return writer.Write()
+}
+
+func displayBuildpackagesDetailed(out io.Writer, s *v1alpha1.ClusterStore) error {
+	if err := displayStatus(out, s); err != nil {
+		return err
+	}
+
+	buildpackages := map[string]v1alpha1.StoreBuildpack{}
+	buildpackageBps := map[string][]v1alpha1.StoreBuildpack{}
+
+	for _, b := range s.Status.Buildpacks {
+		if b.Buildpackage.Id == "" && b.Buildpackage.Version == "" {
+			continue
+		}
+
+		buildpackage := fmt.Sprintf("%s@%s", b.Buildpackage.Id, b.Buildpackage.Version)
+
+		if b.Buildpackage.Id == b.Id && b.Buildpackage.Version == b.Version {
+			buildpackages[buildpackage] = b
+		} else {
+			buildpackageBps[buildpackage] = append(buildpackageBps[buildpackage], b)
+		}
+	}
+
+	return displayBuildpacks(out, buildpackages, buildpackageBps)
 }
 
 func getBuildpackageInfos(store *v1alpha1.ClusterStore) []buildpackageInfo {
@@ -85,46 +157,6 @@ func getBuildpackageInfos(store *v1alpha1.ClusterStore) []buildpackageInfo {
 	})
 
 	return buildpackageInfos
-}
-
-func displayBuildpackagesTable(out io.Writer, buildpackages []buildpackageInfo) error {
-	if len(buildpackages) <= 0 {
-		return nil
-	}
-
-	writer, err := commands.NewTableWriter(out, "BUILDPACKAGE ID", "VERSION", "HOMEPAGE")
-	if err != nil {
-		return err
-	}
-
-	for _, buildpackage := range buildpackages {
-		if err := writer.AddRow(buildpackage.id, buildpackage.version, buildpackage.homepage); err != nil {
-			return err
-		}
-	}
-
-	return writer.Write()
-}
-
-func displayStoreStatus(out io.Writer, s *v1alpha1.ClusterStore) error {
-	buildpackages := map[string]v1alpha1.StoreBuildpack{}
-	buildpackageBps := map[string][]v1alpha1.StoreBuildpack{}
-
-	for _, b := range s.Status.Buildpacks {
-		if b.Buildpackage.Id == "" && b.Buildpackage.Version == "" {
-			continue
-		}
-
-		buildpackage := fmt.Sprintf("%s@%s", b.Buildpackage.Id, b.Buildpackage.Version)
-
-		if b.Buildpackage.Id == b.Id && b.Buildpackage.Version == b.Version {
-			buildpackages[buildpackage] = b
-		} else {
-			buildpackageBps[buildpackage] = append(buildpackageBps[buildpackage], b)
-		}
-	}
-
-	return displayBuildpacks(out, buildpackages, buildpackageBps)
 }
 
 func displayBuildpacks(out io.Writer, buildpackage map[string]v1alpha1.StoreBuildpack, buildpacks map[string][]v1alpha1.StoreBuildpack) error {
