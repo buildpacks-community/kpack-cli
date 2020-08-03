@@ -15,8 +15,10 @@ import (
 )
 
 func NewAddCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstore.Factory) *cobra.Command {
+	var buildpackages []string
+
 	cmd := &cobra.Command{
-		Use:   "add <store> <buildpackage> [<buildpackage>...]",
+		Use:   "add <store> -b <buildpackage> [-b <buildpackage>...]",
 		Short: "Add buildpackage(s) to cluster store",
 		Long: `Upload buildpackage(s) to a specific cluster-scoped buildpack store.
 
@@ -25,9 +27,9 @@ Therefore, you must have credentials to access the registry on your machine.
 
 The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
-		Example: `kp clusterstore add my-store my-registry.com/my-buildpackage
-kp clusterstore add my-store my-registry.com/my-buildpackage --buildpackage my-registry.com/my-other-buildpackage --buildpackage my-registry.com/my-third-buildpackage
-kp clusterstore add my-store --buildpackage ../path/to/my-local-buildpackage.cnb`,
+		Example: `kp clusterstore add my-store -b my-registry.com/my-buildpackage
+kp clusterstore add my-store -b my-registry.com/my-buildpackage -b my-registry.com/my-other-buildpackage -b my-registry.com/my-third-buildpackage
+kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

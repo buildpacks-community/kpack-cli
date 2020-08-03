@@ -55,7 +55,10 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			Objects: []runtime.Object{
 				store,
 			},
-			Args:      []string{storeName, "some/imageinStore1@sha256:1231alreadyInStore"},
+			Args: []string{
+				storeName,
+				"--buildpackage", "some/imageinStore1@sha256:1231alreadyInStore",
+			},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
@@ -80,7 +83,11 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			Objects: []runtime.Object{
 				store,
 			},
-			Args:      []string{storeName, "some/imageinStore1@sha256:1231alreadyInStore", "some/imageinStore2@sha256:1232alreadyInStore"},
+			Args: []string{
+				storeName,
+				"-b", "some/imageinStore1@sha256:1231alreadyInStore",
+				"-b", "some/imageinStore2@sha256:1232alreadyInStore",
+			},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
@@ -101,7 +108,11 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			Objects: []runtime.Object{
 				store,
 			},
-			Args:           []string{"invalid-store", "some/imageinStore1@sha256:1231alreadyInStore", "some/imageNotinStore@sha256:1232notInStore"},
+			Args: []string{
+				"invalid-store",
+				"-b", "some/imageinStore1@sha256:1231alreadyInStore",
+				"-b", "some/imageNotinStore@sha256:1232notInStore",
+			},
 			ExpectErr:      true,
 			ExpectedOutput: "Error: ClusterStore 'invalid-store' does not exist\n",
 		}.TestKpack(t, cmdFunc)
@@ -112,7 +123,11 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			Objects: []runtime.Object{
 				store,
 			},
-			Args:           []string{storeName, "some/imageinStore1@sha256:1231alreadyInStore", "some/imageNotinStore@sha256:1232notInStore"},
+			Args: []string{
+				storeName,
+				"-b", "some/imageinStore1@sha256:1231alreadyInStore",
+				"-b", "some/imageNotinStore@sha256:1232notInStore",
+			},
 			ExpectErr:      true,
 			ExpectedOutput: "Error: Buildpackage 'some/imageNotinStore@sha256:1232notInStore' does not exist in the clusterstore\n",
 		}.TestKpack(t, cmdFunc)
@@ -123,7 +138,11 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			Objects: []runtime.Object{
 				store,
 			},
-			Args:           []string{storeName, "some/imageNotinStore@sha256:1233alreadyInStore"},
+			Args: []string{
+				storeName,
+				"-b",
+				"some/imageNotinStore@sha256:1233alreadyInStore",
+			},
 			ExpectErr:      true,
 			ExpectedOutput: "Error: Buildpackage 'some/imageNotinStore@sha256:1233alreadyInStore' does not exist in the clusterstore\n",
 		}.TestKpack(t, cmdFunc)

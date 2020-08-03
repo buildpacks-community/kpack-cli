@@ -15,17 +15,19 @@ import (
 )
 
 func NewRemoveCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	var buildpackages []string
+
 	cmd := &cobra.Command{
-		Use:   "remove <store> <buildpackage> [<buildpackage>...]",
+		Use:   "remove <store> -b <buildpackage> [-b <buildpackage>...]",
 		Short: "Remove buildpackage(s) from cluster store",
 		Long: `Removes existing buildpackage(s) from a specific cluster-scoped buildpack store.
 
 This relies on the image(s) specified to exist in the store and removes the associated buildpackage(s)
 `,
-		Example: `kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271
-kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271 my-registry.com/my-buildpackage/buildpacks_nginx@sha256:eacecf914a57e4f5d6c4459226f6133ecaccb5c462717a09cfeae4763207b9ef
+		Example: `kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271
+kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271 -b my-registry.com/my-buildpackage/buildpacks_nginx@sha256:eacecf914a57e4f5d6c4459226f6133ecaccb5c462717a09cfeae4763207b9ef
 `,
-		Args:         cobra.MinimumNArgs(2),
+		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
@@ -35,7 +37,7 @@ kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd
 
 			printer := commands.NewPrinter(cmd)
 
-			storeName, buildPackages := args[0], args[1:]
+			storeName := args[0]
 
 			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(storeName, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
@@ -44,15 +46,15 @@ kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd
 				return err
 			}
 
-			for _, bpToRemove := range buildPackages {
+			for _, bpToRemove := range buildpackages {
 				if !storeContainsBuildpackage(store, bpToRemove) {
 					return errors.Errorf("Buildpackage '%s' does not exist in the clusterstore", bpToRemove)
 				}
 			}
-			var updatedStoreSources = []v1alpha1.StoreImage{}
+			var updatedStoreSources []v1alpha1.StoreImage
 			for _, storeImg := range store.Spec.Sources {
 				found := false
-				for _, bpToRemove := range args {
+				for _, bpToRemove := range buildpackages {
 					if storeImg.Image == bpToRemove {
 						found = true
 						printer.Printf("Removing buildpackage %s", bpToRemove)
@@ -75,6 +77,8 @@ kp clusterstore remove my-store my-registry.com/my-buildpackage/buildpacks_httpd
 			return nil
 		},
 	}
+	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "buildpackage to remove")
+
 	return cmd
 }
 
