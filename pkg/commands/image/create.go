@@ -40,7 +40,7 @@ Therefore, you must have credentials to access the registry on your machine.
 Environment variables may be provided by using the "--env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
 For example, "--env key1=value1 --env key2=value2 ...".`,
-		Example: `kp image create my-image my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
+		Example: `kp image create my-image --tag my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
 kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob
 kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code
 kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code --builder my-builder -n my-namespace
