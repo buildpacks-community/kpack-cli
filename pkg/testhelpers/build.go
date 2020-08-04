@@ -57,6 +57,7 @@ func MakeTestBuilds(image string, namespace string) []runtime.Object {
 				RunImage: "some-repo.com/run-image",
 			},
 			LatestImage: "repo.com/image-1:tag",
+			PodName: "pod-one",
 		},
 	}
 	buildTwo := &v1alpha1.Build{
@@ -85,6 +86,7 @@ func MakeTestBuilds(image string, namespace string) []runtime.Object {
 				},
 			},
 			LatestImage: "repo.com/image-2:tag",
+			PodName: "pod-two",
 		},
 	}
 	buildThree := &v1alpha1.Build{
@@ -128,6 +130,7 @@ func MakeTestBuilds(image string, namespace string) []runtime.Object {
 				RunImage: "some-repo.com/run-image",
 			},
 			LatestImage: "repo.com/image-3:tag",
+			PodName: "pod-three",
 		},
 	}
 	ignoredBuild := &v1alpha1.Build{

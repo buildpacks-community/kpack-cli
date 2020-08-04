@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -92,12 +93,26 @@ func findBuild(buildList *v1alpha1.BuildList, buildNumberString string, img, nam
 func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 	statusWriter := commands.NewStatusWriter(cmd.OutOrStdout())
 
-	err := statusWriter.AddBlock(
-		"",
+	statusItems := []string{
 		"Image", bld.Status.LatestImage,
 		"Status", getStatus(bld),
-		"Reasons", bld.Annotations[v1alpha1.BuildReasonAnnotation],
-	)
+		"Build Reasons", bld.Annotations[v1alpha1.BuildReasonAnnotation],
+	}
+
+	if cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded); cond.Reason != "" {
+		statusItems = append(statusItems, "Status Reason", cond.Reason)
+	}
+	if cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded); cond.Message != "" {
+		statusItems = append(statusItems, "Status Message", cond.Message)
+	}
+
+	err := statusWriter.AddBlock("", statusItems...)
+	if err != nil {
+		return err
+	}
+
+	err = statusWriter.AddBlock("",
+		"Pod Name", bld.Status.PodName)
 	if err != nil {
 		return err
 	}
