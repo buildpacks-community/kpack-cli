@@ -6,7 +6,7 @@ Delete secret
 
 Deletes a specific secret in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.
+The namespace defaults to the kubernetes current-context namespace.
 
 ```
 kp secret delete <name> [flags]

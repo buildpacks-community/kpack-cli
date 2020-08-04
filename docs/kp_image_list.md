@@ -6,7 +6,7 @@ List images
 
 Prints a table of the most important information about images in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.
+The namespace defaults to the kubernetes current-context namespace.
 
 ```
 kp image list [flags]

@@ -6,7 +6,7 @@ List secrets
 
 Prints a table of the most important information about secrets in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.
+The namespace defaults to the kubernetes current-context namespace.
 
 ```
 kp secret list [flags]

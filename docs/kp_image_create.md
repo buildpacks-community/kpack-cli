@@ -7,7 +7,7 @@ Create an image configuration
 Create an image configuration by providing command line arguments.
 This image will be created only if it does not exist in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.
+The namespace defaults to the kubernetes current-context namespace.
 
 The flags for this command determine how the build will retrieve source code:
 
@@ -29,7 +29,7 @@ kp image create <name> --tag <tag> [flags]
 ### Examples
 
 ```
-kp image create my-image my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
+kp image create my-image --tag my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
 kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob
 kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code
 kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code --builder my-builder -n my-namespace

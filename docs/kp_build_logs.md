@@ -6,8 +6,8 @@ Tails logs for an image build
 
 Tails logs from the containers of a specific build of an image in the provided namespace.
 
-build defaults to the latest build number.
-namespace defaults to the kubernetes current-context namespace.
+The build defaults to the latest build number.
+The namespace defaults to the kubernetes current-context namespace.
 
 ```
 kp build logs <image-name> [flags]

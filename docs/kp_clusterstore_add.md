@@ -13,15 +13,15 @@ The canonical repository is read from the "canonical.repository" key in the "kp-
 
 
 ```
-kp clusterstore add <store> <buildpackage> [<buildpackage>...] [flags]
+kp clusterstore add <store> -b <buildpackage> [-b <buildpackage>...] [flags]
 ```
 
 ### Examples
 
 ```
-kp clusterstore add my-store my-registry.com/my-buildpackage
-kp clusterstore add my-store my-registry.com/my-buildpackage --buildpackage my-registry.com/my-other-buildpackage --buildpackage my-registry.com/my-third-buildpackage
-kp clusterstore add my-store --buildpackage ../path/to/my-local-buildpackage.cnb
+kp clusterstore add my-store -b my-registry.com/my-buildpackage
+kp clusterstore add my-store -b my-registry.com/my-buildpackage -b my-registry.com/my-other-buildpackage -b my-registry.com/my-third-buildpackage
+kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb
 ```
 
 ### Options

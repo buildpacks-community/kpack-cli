@@ -6,7 +6,7 @@ Create a secret configuration
 
 Create a secret configuration using registry or git credentials in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.
+The namespace defaults to the kubernetes current-context namespace.
 
 The flags for this command determine the type of secret that will be created:
 

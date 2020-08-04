@@ -4,9 +4,7 @@ List cluster stores
 
 ### Synopsis
 
-Prints a table of the most important information about cluster-scoped stores in the provided namespace.
-
-namespace defaults to the kubernetes current-context namespace.
+Prints a table of the most important information about cluster-scoped stores
 
 ```
 kp clusterstore list [flags]
@@ -16,7 +14,6 @@ kp clusterstore list [flags]
 
 ```
 kp clusterstore list
-kp clusterstore list -n my-namespace
 ```
 
 ### Options

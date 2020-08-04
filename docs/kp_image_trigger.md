@@ -6,7 +6,7 @@ Trigger an image build
 
 Trigger a build using current inputs for a specific image in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.
+The namespace defaults to the kubernetes current-context namespace.
 
 ```
 kp image trigger <name> [flags]

@@ -6,7 +6,7 @@ List builds for an image
 
 Prints a table of the most important information about builds for an image in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.
+The namespace defaults to the kubernetes current-context namespace.
 
 ```
 kp build list <image-name> [flags]
