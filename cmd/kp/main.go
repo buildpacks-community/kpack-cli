@@ -62,6 +62,13 @@ Learn more about kpack @ https://github.com/pivotal/kpack`,
 	if err != nil {
 		os.Exit(1)
 	}
+
+	/* Generate Documentation /
+	rootCmd.DisableAutoGenTag = true
+	err := doc.GenMarkdownTree(rootCmd, "./docs")
+	if err != nil {
+		os.Exit(1)
+	} /**/
 }
 
 func getVersionCommand() *cobra.Command {

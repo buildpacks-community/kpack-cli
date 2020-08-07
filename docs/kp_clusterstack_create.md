@@ -27,9 +27,9 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 ### Options
 
 ```
-      --build-image string   build image tag or local tar file path
+  -b, --build-image string   build image tag or local tar file path
   -h, --help                 help for create
-      --run-image string     run image tag or local tar file path
+  -r, --run-image string     run image tag or local tar file path
 ```
 
 ### SEE ALSO
