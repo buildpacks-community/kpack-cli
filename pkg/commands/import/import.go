@@ -31,9 +31,13 @@ const (
 	importTimestampKey       = "kpack.io/import-timestamp"
 )
 
+type TimestampProvider interface {
+	GetTimestamp() string
+}
+
 func NewImportCommand(
 	clientSetProvider k8s.ClientSetProvider,
-	timestampProvider importpkg.TimestampProvider,
+	timestampProvider TimestampProvider,
 	storeFactory *clusterstore.Factory,
 	stackFactory *clusterstack.Factory) *cobra.Command {
 
@@ -135,7 +139,7 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 type importHelper struct {
 	descriptor        importpkg.DependencyDescriptor
 	client            kpack.Interface
-	timestampProvider importpkg.TimestampProvider
+	timestampProvider TimestampProvider
 	logger            *commands.Logger
 }
 
