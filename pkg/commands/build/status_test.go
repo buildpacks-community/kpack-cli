@@ -227,7 +227,7 @@ bp-id-2         bp-version-2
 							RunImage: "some-repo.com/run-image",
 						},
 						LatestImage: "repo.com/image-3:tag",
-						PodName: "some-pod",
+						PodName:     "some-pod",
 					},
 				}
 				testhelpers.CommandTest{

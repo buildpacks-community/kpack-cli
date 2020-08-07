@@ -23,6 +23,7 @@ import (
 	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
 	"github.com/pivotal/build-service-cli/pkg/image"
+	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/secret"
 	"github.com/pivotal/build-service-cli/pkg/source"
@@ -223,7 +224,7 @@ func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	storeFactory := &clusterstore.Factory{Uploader: bpUploader}
 
-	return importcmds.NewImportCommand(clientSetProvider, storeFactory, stackFactory)
+	return importcmds.NewImportCommand(clientSetProvider, importpkg.DefaultTimestampProvider(), storeFactory, stackFactory)
 }
 
 func getCompletionCommand() *cobra.Command {

@@ -30,6 +30,9 @@ func TestImportCommand(t *testing.T) {
 }
 
 func testImportCommand(t *testing.T, when spec.G, it spec.S) {
+	const (
+		importTimestampKey = "kpack.io/import-timestamp"
+	)
 	fakeBuildpackageUploader := storefakes.FakeBuildpackageUploader{
 		"some-registry.io/some-project/store-image":   "new-registry.io/new-project/store-image@sha256:123abc",
 		"some-registry.io/some-project/store-image-2": "new-registry.io/new-project/store-image-2@sha256:456def",
@@ -66,6 +69,8 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
+	timestampProvider := FakeTimestampProvider{timestamp: "2006-01-02T15:04:05Z"}
+
 	store := &v1alpha1.ClusterStore{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       v1alpha1.ClusterStoreKind,
@@ -75,6 +80,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			Name: "some-store",
 			Annotations: map[string]string{
 				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-store","creationTimestamp":null},"spec":{"sources":[{"image":"new-registry.io/new-project/store-image@sha256:123abc"}]},"status":{}}`,
+				importTimestampKey: timestampProvider.timestamp,
 			},
 		},
 		Spec: v1alpha1.ClusterStoreSpec{
@@ -91,6 +97,9 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-stack",
+			Annotations: map[string]string{
+				importTimestampKey: timestampProvider.timestamp,
+			},
 		},
 		Spec: v1alpha1.ClusterStackSpec{
 			Id: "some-stack-id",
@@ -112,8 +121,10 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "some-ccb",
-			Annotations: map[string]string{},
+			Name: "some-ccb",
+			Annotations: map[string]string{
+				importTimestampKey: timestampProvider.timestamp,
+			},
 		},
 		Spec: v1alpha1.ClusterBuilderSpec{
 			BuilderSpec: v1alpha1.BuilderSpec{
@@ -151,7 +162,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return importcmds.NewImportCommand(clientSetProvider, storeFactory, stackFactory)
+		return importcmds.NewImportCommand(clientSetProvider, timestampProvider, storeFactory, stackFactory)
 	}
 
 	when("there are no stores, stacks, or ccbs", func() {
@@ -180,7 +191,25 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("there are existing stores, stacks, or ccbs", func() {
 		when("the dependency descriptor and the store have the exact same objects", func() {
-			it("does not change any of the existing resources", func() {
+			const newTimestamp = "new-timestamp"
+			timestampProvider.timestamp = newTimestamp
+
+			expectedStore := store.DeepCopy()
+			expectedStore.Annotations[importTimestampKey] = newTimestamp
+
+			expectedStack := stack.DeepCopy()
+			expectedStack.Annotations[importTimestampKey] = newTimestamp
+
+			expectedDefaultStack := defaultStack.DeepCopy()
+			expectedDefaultStack.Annotations[importTimestampKey] = newTimestamp
+
+			expectedBuilder := builder.DeepCopy()
+			expectedBuilder.Annotations[importTimestampKey] = newTimestamp
+
+			expectedDefaultBuilder := defaultBuilder.DeepCopy()
+			expectedDefaultBuilder.Annotations[importTimestampKey] = newTimestamp
+
+			it("updates the import timestamp", func() {
 				stack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImageId)
 				stack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImageId)
 
@@ -202,27 +231,51 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 						"-f", "./testdata/deps.yaml",
 					},
 					ExpectedOutput: "Importing Cluster Store 'some-store'...\nUploading to 'new-registry.io/new-project'...\nBuildpackage 'new-registry.io/new-project/store-image@sha256:123abc' already exists in the store\nImporting Cluster Stack 'some-stack'...\nImporting Cluster Stack 'default'...\nImporting Cluster Builder 'some-ccb'...\nImporting Cluster Builder 'default'...\n",
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedStore,
+						},
+						{
+							Object: expectedStack,
+						},
+						{
+							Object: expectedDefaultStack,
+						},
+						{
+							Object: expectedBuilder,
+						},
+						{
+							Object: expectedDefaultBuilder,
+						},
+					},
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
 		})
 
 		when("the dependency descriptor has different resources", func() {
+			const newTimestamp = "new-timestamp"
+			timestampProvider.timestamp = newTimestamp
+
 			expectedStore := store.DeepCopy()
+			expectedStore.Annotations[importTimestampKey] = newTimestamp
 			expectedStore.Spec.Sources = append(expectedStore.Spec.Sources, v1alpha1.StoreImage{
 				Image: "new-registry.io/new-project/store-image-2@sha256:456def",
 			})
 
 			expectedStack := stack.DeepCopy()
+			expectedStack.Annotations[importTimestampKey] = newTimestamp
 			expectedStack.Spec.Id = "some-other-stack-id"
 			expectedStack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImage2Id)
 			expectedStack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImage2Id)
 
 			expectedDefaultStack := defaultStack.DeepCopy()
+			expectedDefaultStack.Annotations[importTimestampKey] = newTimestamp
 			expectedDefaultStack.Spec.Id = "some-other-stack-id"
 			expectedDefaultStack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImage2Id)
 			expectedDefaultStack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImage2Id)
 
 			expectedBuilder := builder.DeepCopy()
+			expectedBuilder.Annotations[importTimestampKey] = newTimestamp
 			expectedBuilder.Spec.Order = []v1alpha1.OrderEntry{
 				{
 					Group: []v1alpha1.BuildpackRef{
@@ -236,6 +289,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			expectedDefaultBuilder := defaultBuilder.DeepCopy()
+			expectedDefaultBuilder.Annotations[importTimestampKey] = newTimestamp
 			expectedDefaultBuilder.Spec.Order = []v1alpha1.OrderEntry{
 				{
 					Group: []v1alpha1.BuildpackRef{
@@ -248,7 +302,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}
 
-			it("creates stores, stacks, and ccbs defined in the dependency descriptor", func() {
+			it("creates stores, stacks, and ccbs defined in the dependency descriptor and updates the timestamp", func() {
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
 						config,
@@ -319,4 +373,12 @@ func makeStackImages(t *testing.T, stackId string) (v1.Image, string, v1.Image, 
 	}
 
 	return buildImage, buildImageHash.String(), runImage, runImageHash.String()
+}
+
+type FakeTimestampProvider struct {
+	timestamp string
+}
+
+func (f FakeTimestampProvider) GetTimestamp() string {
+	return f.timestamp
 }
