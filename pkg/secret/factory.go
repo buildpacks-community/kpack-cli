@@ -32,7 +32,7 @@ type Factory struct {
 	Registry              string
 	RegistryUser          string
 	GcrServiceAccountFile string
-	Git                   string
+	GitUrl                string
 	GitSshKeyFile         string
 	GitUser               string
 }
@@ -68,7 +68,7 @@ func (f *Factory) validate() error {
 	set.add("dockerhub", f.DockerhubId)
 	set.add("registry", f.Registry)
 	set.add("gcr", f.GcrServiceAccountFile)
-	set.add("git", f.Git)
+	set.add("git", f.GitUrl)
 
 	if len(set) != 1 {
 		return errors.Errorf("secret must be one of dockerhub, gcr, registry, or git")
@@ -104,11 +104,11 @@ func (f *Factory) validate() error {
 		}
 	}
 
-	if f.GitUser != "" && !(strings.HasPrefix(f.Git, "http://") || strings.HasPrefix(f.Git, "https://")) {
+	if f.GitUser != "" && !(strings.HasPrefix(f.GitUrl, "http://") || strings.HasPrefix(f.GitUrl, "https://")) {
 		return errors.Errorf("must provide a valid git url for basic auth (ex. https://github.com)")
 	}
 
-	if f.GitSshKeyFile != "" && !strings.HasPrefix(f.Git, "git@") {
+	if f.GitSshKeyFile != "" && !strings.HasPrefix(f.GitUrl, "git@") {
 		return errors.Errorf("must provide a valid git url for SSH (ex. git@github.com)")
 	}
 
@@ -122,9 +122,9 @@ func (f *Factory) getSecretKind() (secretKind, error) {
 		return registryKind, nil
 	} else if f.GcrServiceAccountFile != "" {
 		return gcrKind, nil
-	} else if f.Git != "" && f.GitSshKeyFile != "" {
+	} else if f.GitUrl != "" && f.GitSshKeyFile != "" {
 		return gitSshKind, nil
-	} else if f.Git != "" && f.GitUser != "" {
+	} else if f.GitUrl != "" && f.GitUser != "" {
 		return gitBasicAuthKind, nil
 	}
 	return "", errors.Errorf("received secret with unknown type")
@@ -228,14 +228,14 @@ func (f *Factory) makeGitSshSecret(name string, namespace string) (*corev1.Secre
 			Name:      name,
 			Namespace: namespace,
 			Annotations: map[string]string{
-				GitAnnotation: f.Git,
+				GitAnnotation: f.GitUrl,
 			},
 		},
 		Data: map[string][]byte{
 			corev1.SSHAuthPrivateKey: []byte(password),
 		},
 		Type: corev1.SecretTypeSSHAuth,
-	}, f.Git, nil
+	}, f.GitUrl, nil
 }
 
 func (f *Factory) makeGitBasicAuthSecret(name string, namespace string) (*corev1.Secret, string, error) {
@@ -249,7 +249,7 @@ func (f *Factory) makeGitBasicAuthSecret(name string, namespace string) (*corev1
 			Name:      name,
 			Namespace: namespace,
 			Annotations: map[string]string{
-				GitAnnotation: f.Git,
+				GitAnnotation: f.GitUrl,
 			},
 		},
 		Data: map[string][]byte{
@@ -257,7 +257,7 @@ func (f *Factory) makeGitBasicAuthSecret(name string, namespace string) (*corev1
 			corev1.BasicAuthPasswordKey: []byte(password),
 		},
 		Type: corev1.SecretTypeBasicAuth,
-	}, f.Git, nil
+	}, f.GitUrl, nil
 }
 
 type secretKind string
