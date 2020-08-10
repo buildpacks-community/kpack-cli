@@ -271,7 +271,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
 					},
-					Args: []string{secretName, "--git", gitRepo, "--git-ssh-key", gitSshFile, "-n", namespace},
+					Args: []string{secretName, "--git-url", gitRepo, "--git-ssh-key", gitSshFile, "-n", namespace},
 					ExpectedOutput: `"my-git-ssh-cred" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -329,7 +329,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
 					},
-					Args: []string{secretName, "--git", gitRepo, "--git-user", gitUser, "-n", namespace},
+					Args: []string{secretName, "--git-url", gitRepo, "--git-user", gitUser, "-n", namespace},
 					ExpectedOutput: `"my-git-basic-cred" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -558,7 +558,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						defaultServiceAccount,
 					},
-					Args: []string{secretName, "--git", gitRepo, "--git-ssh-key", gitSshFile},
+					Args: []string{secretName, "--git-url", gitRepo, "--git-ssh-key", gitSshFile},
 					ExpectedOutput: `"my-git-ssh-cred" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -616,7 +616,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						defaultServiceAccount,
 					},
-					Args: []string{secretName, "--git", gitRepo, "--git-user", gitUser},
+					Args: []string{secretName, "--git-url", gitRepo, "--git-user", gitUser},
 					ExpectedOutput: `"my-git-basic-cred" created
 `,
 					ExpectCreates: []runtime.Object{

@@ -38,16 +38,18 @@ The flags for this command determine the type of secret that will be created:
   "--registry" and "--registry-user" to create credentials for other registries.
   Use the "REGISTRY_PASSWORD" env var to bypass the password prompt.
 
-  "--git" and "--git-ssh-key" to create SSH based git credentials.
+  "--git-url" and "--git-ssh-key" to create SSH based git credentials.
+  "--git-url" should not contain the repository path (eg. git@github.com not git@github.com:my/repo)
   Alternatively, provided the credentials in the "GIT_SSH_KEY_PATH" env var instead of the "--git-ssh-key" flag.
 
-  "--git" and "--git-user" to create Basic Auth based git credentials.
+  "--git-url" and "--git-user" to create Basic Auth based git credentials.
+  "--git-url" should not contain the repository path (eg. https://github.com not https://github.com/my/repo) 
   Use the "GIT_PASSWORD" env var to bypass the password prompt.`,
 		Example: `kp secret create my-docker-hub-creds --dockerhub dockerhub-id
 kp secret create my-gcr-creds --gcr /path/to/gcr/service-account.json
 kp secret create my-registry-cred --registry example-registry.io/my-repo --registry-user my-registry-user
-kp secret create my-git-ssh-cred --git git@github.com --git-ssh-key /path/to/git/ssh-private-key.pem
-kp secret create my-git-cred --git https://github.com --git-user my-git-user`,
+kp secret create my-git-ssh-cred --git-url git@github.com --git-ssh-key /path/to/git/ssh-private-key.pem
+kp secret create my-git-cred --git-url https://github.com --git-user my-git-user`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -105,8 +107,8 @@ kp secret create my-git-cred --git https://github.com --git-user my-git-user`,
 	cmd.Flags().StringVarP(&secretFactory.Registry, "registry", "", "", "registry")
 	cmd.Flags().StringVarP(&secretFactory.RegistryUser, "registry-user", "", "", "registry user")
 	cmd.Flags().StringVarP(&secretFactory.GcrServiceAccountFile, "gcr", "", "", "path to a file containing the GCR service account")
-	cmd.Flags().StringVarP(&secretFactory.Git, "git", "", "", "git url")
-	cmd.Flags().StringVarP(&secretFactory.GitSshKeyFile, "git-ssh-key", "", "", "path to a file containing the Git SSH private key")
+	cmd.Flags().StringVarP(&secretFactory.GitUrl, "git-url", "", "", "git url")
+	cmd.Flags().StringVarP(&secretFactory.GitSshKeyFile, "git-ssh-key", "", "", "path to a file containing the GitUrl SSH private key")
 	cmd.Flags().StringVarP(&secretFactory.GitUser, "git-user", "", "", "git user")
 
 	return cmd

@@ -76,7 +76,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 	when("sub params are mixed with git", func() {
 		it("returns an error message", func() {
 			it("returns an error message", func() {
-				factory.Git = "some-git"
+				factory.GitUrl = "some-git"
 				factory.RegistryUser = "some-reg-user"
 				factory.GitUser = "some-git-user"
 				_, _, err := factory.MakeSecret("test-name", "test-namespace")
@@ -88,7 +88,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 	when("neither git basic auth nor git ssh are provided", func() {
 		it("returns an error message", func() {
 			it("returns an error message", func() {
-				factory.Git = "some-git"
+				factory.GitUrl = "some-git"
 				_, _, err := factory.MakeSecret("test-name", "test-namespace")
 				require.EqualError(t, err, "missing parameter git-user or git-ssh-key")
 			})
@@ -97,7 +97,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 
 	when("both git basic auth and git ssh are provided", func() {
 		it("returns an error message", func() {
-			factory.Git = "some-git"
+			factory.GitUrl = "some-git"
 			factory.GitUser = "some-git-user"
 			factory.GitSshKeyFile = "some-ssh-key"
 			_, _, err := factory.MakeSecret("test-name", "test-namespace")
@@ -107,7 +107,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 
 	when("using git basic auth", func() {
 		it("validates that the git url begins with http:// or https://", func() {
-			factory.Git = "some-git"
+			factory.GitUrl = "some-git"
 			factory.GitUser = "some-git-user"
 			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "must provide a valid git url for basic auth (ex. https://github.com)")
@@ -116,7 +116,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 
 	when("using git ssh keys", func() {
 		it("validates that the git url begins with git@", func() {
-			factory.Git = "some-git"
+			factory.GitUrl = "some-git"
 			factory.GitSshKeyFile = "some-ssh-key"
 			_, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.EqualError(t, err, "must provide a valid git url for SSH (ex. git@github.com)")

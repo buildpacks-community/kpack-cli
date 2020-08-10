@@ -129,7 +129,7 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 	if bld.Spec.Source.Git != nil {
 		err = statusWriter.AddBlock(
 			"",
-			"Source", "Git",
+			"Source", "GitUrl",
 			"Url", bld.Spec.Source.Git.URL,
 			"Revision", bld.Spec.Source.Git.Revision,
 		)
