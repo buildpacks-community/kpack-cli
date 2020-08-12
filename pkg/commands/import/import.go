@@ -159,21 +159,23 @@ func (i importHelper) ImportStores(factory *clusterstore.Factory, repository str
 
 		if k8serrors.IsNotFound(err) {
 			newStore, err := factory.MakeStore(store.Name, buildpackages...)
-			newStore.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 			if err != nil {
 				return err
 			}
+
+			newStore.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
 			_, err = i.client.KpackV1alpha1().ClusterStores().Create(newStore)
 			if err != nil {
 				return err
 			}
 		} else {
-			curStore.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 			updatedStore, _, err := factory.AddToStore(curStore, repository, buildpackages...)
 			if err != nil {
 				return err
 			}
+
+			curStore.Annotations = k8s.MergeAnnotations(curStore.Annotations, map[string]string{importTimestampKey: i.timestampProvider.GetTimestamp()})
 
 			_, err = i.client.KpackV1alpha1().ClusterStores().Update(updatedStore)
 			if err != nil {
@@ -207,21 +209,23 @@ func (i importHelper) ImportStacks(factory *clusterstack.Factory) error {
 			return err
 		}
 
+		newStack.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
+
 		curStack, err := i.client.KpackV1alpha1().ClusterStacks().Get(stack.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
 
 		if k8serrors.IsNotFound(err) {
-			newStack.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 			_, err = i.client.KpackV1alpha1().ClusterStacks().Create(newStack)
 			if err != nil {
 				return err
 			}
 		} else {
 			updateStack := curStack.DeepCopy()
-			updateStack.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
+
 			updateStack.Spec = newStack.Spec
+			updateStack.Annotations = k8s.MergeAnnotations(updateStack.Annotations, newStack.Annotations)
 
 			_, err = i.client.KpackV1alpha1().ClusterStacks().Update(updateStack)
 			if err != nil {
@@ -248,10 +252,12 @@ func (i importHelper) ImportClusterBuilders(repository string, sa string) error 
 	for _, ccb := range i.descriptor.ClusterBuilders {
 		i.logger.Printf("Importing Cluster Builder '%s'...", ccb.Name)
 
-		newCCB, err := i.makeCCB(ccb, repository, sa)
+		newCCB, err := i.makeClusterBuilder(ccb, repository, sa)
 		if err != nil {
 			return err
 		}
+
+		newCCB.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
 		curCCB, err := i.client.KpackV1alpha1().ClusterBuilders().Get(ccb.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
@@ -259,15 +265,14 @@ func (i importHelper) ImportClusterBuilders(repository string, sa string) error 
 		}
 
 		if k8serrors.IsNotFound(err) {
-			newCCB.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 			_, err = i.client.KpackV1alpha1().ClusterBuilders().Create(newCCB)
 			if err != nil {
 				return err
 			}
 		} else {
 			updateCCB := curCCB.DeepCopy()
-			updateCCB.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 			updateCCB.Spec = newCCB.Spec
+			updateCCB.Annotations = k8s.MergeAnnotations(updateCCB.Annotations, newCCB.Annotations)
 
 			_, err = i.client.KpackV1alpha1().ClusterBuilders().Update(updateCCB)
 			if err != nil {
@@ -278,7 +283,7 @@ func (i importHelper) ImportClusterBuilders(repository string, sa string) error 
 	return nil
 }
 
-func (i importHelper) makeCCB(ccb importpkg.ClusterBuilder, repository string, sa string) (*v1alpha1.ClusterBuilder, error) {
+func (i importHelper) makeClusterBuilder(ccb importpkg.ClusterBuilder, repository string, sa string) (*v1alpha1.ClusterBuilder, error) {
 	newCCB := &v1alpha1.ClusterBuilder{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       v1alpha1.ClusterBuilderKind,
