@@ -20,9 +20,11 @@ The flags for this command determine the type of secret that will be created:
   Use the "REGISTRY_PASSWORD" env var to bypass the password prompt.
 
   "--git-url" and "--git-ssh-key" to create SSH based git credentials.
+  "--git-url" should not contain the repository path (eg. git@github.com not git@github.com:my/repo)
   Alternatively, provided the credentials in the "GIT_SSH_KEY_PATH" env var instead of the "--git-ssh-key" flag.
 
   "--git-url" and "--git-user" to create Basic Auth based git credentials.
+  "--git-url" should not contain the repository path (eg. https://github.com not https://github.com/my/repo) 
   Use the "GIT_PASSWORD" env var to bypass the password prompt.
 
 ```
@@ -44,8 +46,8 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 ```
       --dockerhub string       dockerhub id
       --gcr string             path to a file containing the GCR service account
-      --git-url string             git url
-      --git-ssh-key string     path to a file containing the Git SSH private key
+      --git-ssh-key string     path to a file containing the GitUrl SSH private key
+      --git-url string         git url
       --git-user string        git user
   -h, --help                   help for create
   -n, --namespace string       kubernetes namespace
