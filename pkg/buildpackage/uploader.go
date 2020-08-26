@@ -4,6 +4,7 @@
 package buildpackage
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -22,7 +23,7 @@ const (
 )
 
 type Relocator interface {
-	Relocate(image v1.Image, dest string) (string, error)
+	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
 }
 
 type Fetcher interface {
@@ -34,7 +35,7 @@ type Uploader struct {
 	Fetcher   Fetcher
 }
 
-func (u *Uploader) Upload(repository, buildPackage string) (string, error) {
+func (u *Uploader) UploadBuildpackage(writer io.Writer, repository, buildPackage string) (string, error) {
 	tempDir, err := ioutil.TempDir("", "cnb-upload")
 	if err != nil {
 		return "", err
@@ -56,7 +57,7 @@ func (u *Uploader) Upload(repository, buildPackage string) (string, error) {
 		return "", err
 	}
 
-	return u.Relocator.Relocate(image, path.Join(repository, strings.ReplaceAll(metadata.Id, "/", "_")))
+	return u.Relocator.Relocate(writer, image, path.Join(repository, strings.ReplaceAll(metadata.Id, "/", "_")))
 }
 
 func (u *Uploader) read(buildPackage, tempDir string) (v1.Image, error) {

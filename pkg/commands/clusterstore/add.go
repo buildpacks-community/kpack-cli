@@ -53,6 +53,7 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
+			factory.Printer.Printf("Adding Buildpackages...")
 			updatedStore, storeUpdated, err := factory.AddToStore(s, repo, buildpackages...)
 			if err != nil {
 				return err

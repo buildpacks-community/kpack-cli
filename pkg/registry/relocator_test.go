@@ -1,10 +1,12 @@
 // Copyright 2020-Present VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package image_test
+package registry_test
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -17,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/image"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 func TestRelocateStackImages(t *testing.T) {
@@ -28,7 +30,7 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 	when("#Fetch", func() {
 		when("remote", func() {
 			it("it should fetch the image with the digest", func() {
-				fetcher := image.Fetcher{}
+				fetcher := registry.Fetcher{}
 
 				image, err := fetcher.Fetch("cloudfoundry/run:tiny-cnb")
 				require.NoError(t, err)
@@ -71,20 +73,25 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 			srcImageDigest, err := srcImage.Digest()
 			require.NoError(t, err)
 
-			relocator := image.Relocator{}
-			relocatedRef, err := relocator.Relocate(srcImage, dst)
+			relocator := registry.Relocator{}
+			output := &bytes.Buffer{}
+			relocatedRef, err := relocator.Relocate(output, srcImage, dst)
 			require.NoError(t, err)
+
 			require.Equal(t, 1, strings.Count(relocatedRef, "sha256:"))
 			relocatedHex := relocatedRef[len(relocatedRef)-64:]
 			require.Equal(t, srcImageDigest.Hex, relocatedHex)
 			require.Equal(t, 1, additionalTags)
+
+			require.Equal(t, output.String(), fmt.Sprintf("\tUploading '%s'", relocatedRef))
 		})
 
 		it("should error on invalid destination", func() {
 			srcImage, err := random.Image(int64(100), int64(5))
 			require.NoError(t, err)
-			relocator := image.Relocator{}
-			_, err = relocator.Relocate(srcImage, "notuser/notimage:tag")
+
+			relocator := registry.Relocator{}
+			_, err = relocator.Relocate(ioutil.Discard, srcImage, "notuser/notimage:tag")
 			require.Error(t, err)
 		})
 	})

@@ -5,6 +5,7 @@ package buildpackage
 
 import (
 	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/v1/random"
@@ -31,7 +32,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 	when("cnb file is provided", func() {
 		it("it uploads to registry", func() {
 
-			image, err := uploader.Upload("kpackcr.org/somepath", "testdata/sample-bp.cnb")
+			image, err := uploader.UploadBuildpackage(ioutil.Discard, "kpackcr.org/somepath", "testdata/sample-bp.cnb")
 			require.NoError(t, err)
 
 			const expectedFixture = "kpackcr.org/somepath/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
@@ -49,7 +50,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.AddImage("some/remote-bp", testImage)
 
-			image, err := uploader.Upload("kpackcr.org/somepath", "some/remote-bp")
+			image, err := uploader.UploadBuildpackage(ioutil.Discard, "kpackcr.org/somepath", "some/remote-bp")
 			require.NoError(t, err)
 
 			digest, err := testImage.Digest()
