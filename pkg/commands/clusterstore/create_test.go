@@ -87,7 +87,7 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--buildpackage", buildpackage1,
 				"-b", buildpackage2,
 			},
-			ExpectedOutput: "Uploading to 'some-registry.io/some-repo'...\n\"test-store\" created\n",
+			ExpectedOutput: "Creating Cluster Store...\n\"test-store\" created\n",
 			ExpectCreates: []runtime.Object{
 				expectedStore,
 			},
@@ -140,7 +140,7 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				expectedStore.Name,
 			},
 			ExpectErr:      true,
-			ExpectedOutput: "Error: At least one buildpackage must be provided\n",
+			ExpectedOutput: "Creating Cluster Store...\nError: At least one buildpackage must be provided\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 }

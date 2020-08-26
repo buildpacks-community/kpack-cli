@@ -12,16 +12,16 @@ import (
 
 func NewPrinter(cmd *cobra.Command) *Logger {
 	return &Logger{
-		Out: cmd.OutOrStdout(),
-		Err: cmd.OutOrStderr(),
+		Writer: cmd.OutOrStdout(),
+		Err:    cmd.OutOrStderr(),
 	}
 }
 
 type Logger struct {
-	Out io.Writer
+	io.Writer
 	Err io.Writer
 }
 
 func (l *Logger) Printf(format string, a ...interface{}) {
-	l.Out.Write([]byte(fmt.Sprintf(format+"\n", a...)))
+	l.Write([]byte(fmt.Sprintf(format+"\n", a...)))
 }

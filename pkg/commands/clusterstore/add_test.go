@@ -106,7 +106,7 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: "Uploading to 'some-registry.io/some-repo'...\nAdded Buildpackage 'some/path/newbp@sha256:123newbp'\nAdded Buildpackage 'some/path/bpfromcnb@sha256:123imagefromcnb'\nClusterStore Updated\n",
+			ExpectedOutput: "Adding Buildpackages...\n\tAdded Buildpackage\n\tAdded Buildpackage\nClusterStore Updated\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
@@ -123,7 +123,7 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 				"-b", "some/imageAlreadyInStore",
 			},
 			ExpectErr:      false,
-			ExpectedOutput: "Uploading to 'some-registry.io/some-repo'...\nBuildpackage 'some/path/imageInStoreDifferentPath@sha256:123alreadyInStore' already exists in the store\nClusterStore Unchanged\n",
+			ExpectedOutput: "Adding Buildpackages...\n\tBuildpackage already exists in the store\nClusterStore Unchanged\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 

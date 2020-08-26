@@ -45,6 +45,7 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
+			factory.Printer.Printf("Creating Cluster Store...")
 			newStore, err := factory.MakeStore(name, buildpackages...)
 			if err != nil {
 				return err

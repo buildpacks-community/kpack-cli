@@ -4,6 +4,7 @@
 package clusterstack
 
 import (
+	"io"
 	"path"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -11,6 +12,8 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
 type ImageFetcher interface {
@@ -18,10 +21,11 @@ type ImageFetcher interface {
 }
 
 type ImageRelocator interface {
-	Relocate(image v1.Image, dest string) (string, error)
+	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
 }
 
 type Factory struct {
+	Printer       *commands.Logger
 	Fetcher       ImageFetcher
 	Relocator     ImageRelocator
 	Repository    string
@@ -58,12 +62,12 @@ func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
 		return nil, errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
 	}
 
-	relocatedBuildImageRef, err := f.Relocator.Relocate(buildImage, path.Join(f.Repository, BuildImageName))
+	relocatedBuildImageRef, err := f.Relocator.Relocate(f.Printer, buildImage, path.Join(f.Repository, BuildImageName))
 	if err != nil {
 		return nil, err
 	}
 
-	relocatedRunImageRef, err := f.Relocator.Relocate(runImage, path.Join(f.Repository, RunImageName))
+	relocatedRunImageRef, err := f.Relocator.Relocate(f.Printer, runImage, path.Join(f.Repository, RunImageName))
 	if err != nil {
 		return nil, err
 	}

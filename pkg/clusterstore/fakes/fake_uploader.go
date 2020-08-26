@@ -3,11 +3,15 @@
 
 package fakes
 
-import "github.com/pkg/errors"
+import (
+	"io"
+
+	"github.com/pkg/errors"
+)
 
 type FakeBuildpackageUploader map[string]string
 
-func (f FakeBuildpackageUploader) Upload(_ string, buildpackage string) (string, error) {
+func (f FakeBuildpackageUploader) UploadBuildpackage(w io.Writer, _ string, buildpackage string) (string, error) {
 	uploadedImage, ok := f[buildpackage]
 	if !ok {
 		return "", errors.Errorf("could not upload %s", buildpackage)

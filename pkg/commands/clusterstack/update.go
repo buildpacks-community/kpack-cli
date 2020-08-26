@@ -5,6 +5,7 @@ package clusterstack
 
 import (
 	"fmt"
+	"io"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -22,7 +23,7 @@ type ImageFetcher interface {
 }
 
 type ImageRelocator interface {
-	Relocate(image v1.Image, dest string) (string, error)
+	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
 }
 
 func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, fetcher ImageFetcher, relocator ImageRelocator) *cobra.Command {
@@ -86,12 +87,12 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
 			}
 
-			relocatedBuildImageRef, err := relocator.Relocate(buildImage, fmt.Sprintf("%s/%s", repository, clusterstack.BuildImageName))
+			relocatedBuildImageRef, err := relocator.Relocate(cmd.OutOrStdout(), buildImage, fmt.Sprintf("%s/%s", repository, clusterstack.BuildImageName))
 			if err != nil {
 				return err
 			}
 
-			relocatedRunImageRef, err := relocator.Relocate(runImage, fmt.Sprintf("%s/%s", repository, clusterstack.RunImageName))
+			relocatedRunImageRef, err := relocator.Relocate(cmd.OutOrStdout(), runImage, fmt.Sprintf("%s/%s", repository, clusterstack.RunImageName))
 			if err != nil {
 				return err
 			}

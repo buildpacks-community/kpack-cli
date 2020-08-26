@@ -5,6 +5,7 @@ package clusterstore
 
 import (
 	"encoding/json"
+	"io"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -20,7 +21,7 @@ const (
 )
 
 type BuildpackageUploader interface {
-	Upload(repository, buildPackage string) (string, error)
+	UploadBuildpackage(writer io.Writer, repository, buildPackage string) (string, error)
 }
 
 type Factory struct {
@@ -46,10 +47,8 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 		Spec: v1alpha1.ClusterStoreSpec{},
 	}
 
-	f.Printer.Printf("Uploading to '%s'...", f.Repository)
-
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.Upload(f.Repository, buildpackage)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer, f.Repository, buildpackage)
 		if err != nil {
 			return nil, err
 		}
@@ -70,29 +69,23 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 }
 
 func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
-	f.Printer.Printf("Uploading to '%s'...", repository)
-
-	var uploaded []string
+	storeUpdated := false
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.Upload(repository, buildpackage)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer, repository, buildpackage)
 		if err != nil {
 			return nil, false, err
 		}
-		uploaded = append(uploaded, uploadedBp)
-	}
 
-	storeUpdated := false
-	for _, uploadedBp := range uploaded {
 		if storeContains(store, uploadedBp) {
-			f.Printer.Printf("Buildpackage '%s' already exists in the store", uploadedBp)
+			f.Printer.Printf("\tBuildpackage already exists in the store")
 			continue
 		}
 
 		store.Spec.Sources = append(store.Spec.Sources, v1alpha1.StoreImage{
 			Image: uploadedBp,
 		})
+		f.Printer.Printf("\tAdded Buildpackage")
 		storeUpdated = true
-		f.Printer.Printf("Added Buildpackage '%s'", uploadedBp)
 	}
 
 	return store, storeUpdated, nil

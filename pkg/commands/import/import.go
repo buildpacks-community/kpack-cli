@@ -201,6 +201,7 @@ func (i importHelper) ImportStacks(factory *clusterstack.Factory) error {
 	for _, stack := range i.descriptor.Stacks {
 		i.logger.Printf("Importing Cluster Stack '%s'...", stack.Name)
 
+		factory.Printer = i.logger
 		factory.BuildImageRef = stack.BuildImage.Image // FIXME
 		factory.RunImageRef = stack.RunImage.Image     // FIXME
 

@@ -5,6 +5,7 @@ package fakes
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -13,7 +14,7 @@ import (
 type Relocator struct {
 }
 
-func (r *Relocator) Relocate(image v1.Image, dest string) (string, error) {
+func (r *Relocator) Relocate(_ io.Writer, image v1.Image, dest string) (string, error) {
 	digest, err := image.Digest()
 	if err != nil {
 		return "", err

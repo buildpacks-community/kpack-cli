@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -39,6 +40,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
+			factory.Printer = commands.NewPrinter(cmd)
 			stack, err := factory.MakeStack(args[0])
 			if err != nil {
 				return err

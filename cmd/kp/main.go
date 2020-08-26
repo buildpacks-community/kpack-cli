@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/pivotal/kpack/pkg/logs"
@@ -25,6 +27,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/image"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 	"github.com/pivotal/build-service-cli/pkg/secret"
 	"github.com/pivotal/build-service-cli/pkg/source"
 )
@@ -35,6 +38,8 @@ var (
 )
 
 func main() {
+	log.SetOutput(ioutil.Discard)
+
 	var clientSetProvider k8s.DefaultClientSetProvider
 
 	rootCmd := &cobra.Command{
@@ -175,8 +180,8 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	stackFactory := &clusterstack.Factory{
-		Fetcher:   &image.Fetcher{},
-		Relocator: &image.Relocator{},
+		Fetcher:   &registry.Fetcher{},
+		Relocator: &registry.Relocator{},
 	}
 
 	stackRootCmd := &cobra.Command{
@@ -188,7 +193,7 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		clusterstackcmds.NewCreateCommand(clientSetProvider, stackFactory),
 		clusterstackcmds.NewListCommand(clientSetProvider),
 		clusterstackcmds.NewStatusCommand(clientSetProvider),
-		clusterstackcmds.NewUpdateCommand(clientSetProvider, &image.Fetcher{}, &image.Relocator{}),
+		clusterstackcmds.NewUpdateCommand(clientSetProvider, &registry.Fetcher{}, &registry.Relocator{}),
 		clusterstackcmds.NewDeleteCommand(clientSetProvider),
 	)
 	return stackRootCmd
@@ -196,8 +201,8 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	bpUploader := &buildpackage.Uploader{
-		Fetcher:   &image.Fetcher{},
-		Relocator: &image.Relocator{},
+		Fetcher:   &registry.Fetcher{},
+		Relocator: &registry.Relocator{},
 	}
 
 	factory := &clusterstore.Factory{Uploader: bpUploader}
@@ -220,13 +225,13 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	stackFactory := &clusterstack.Factory{
-		Fetcher:   &image.Fetcher{},
-		Relocator: &image.Relocator{},
+		Fetcher:   &registry.Fetcher{},
+		Relocator: &registry.Relocator{},
 	}
 
 	bpUploader := &buildpackage.Uploader{
-		Fetcher:   &image.Fetcher{},
-		Relocator: &image.Relocator{},
+		Fetcher:   &registry.Fetcher{},
+		Relocator: &registry.Relocator{},
 	}
 
 	storeFactory := &clusterstore.Factory{Uploader: bpUploader}
