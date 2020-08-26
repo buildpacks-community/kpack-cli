@@ -6,8 +6,8 @@ package registry
 import (
 	"fmt"
 	"io"
+	"os"
 	"strconv"
-	"syscall"
 	"time"
 
 	"golang.org/x/crypto/ssh/terminal"
@@ -31,7 +31,7 @@ func newUploadSpinner(writer io.Writer, size int64) *uploadSpinner {
 		stopChan: make(chan struct{}),
 		doneChan: make(chan struct{}),
 		Output:   writer,
-		NotTty:   !terminal.IsTerminal(syscall.Stdout),
+		NotTty:   !terminal.IsTerminal(int(os.Stdout.Fd())),
 	}
 	return sp
 }
