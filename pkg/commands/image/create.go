@@ -83,7 +83,6 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 				if err != nil {
 					return err
 				}
-
 			}
 
 			return nil

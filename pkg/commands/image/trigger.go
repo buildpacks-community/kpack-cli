@@ -19,9 +19,10 @@ import (
 
 const BuildNeededAnnotation = "image.kpack.io/additionalBuildNeeded"
 
-func NewTriggerCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+func NewTriggerCommand(clientSetProvider k8s.ClientSetProvider, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
 		namespace string
+		wait      bool
 	)
 
 	cmd := &cobra.Command{
@@ -38,8 +39,10 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
+			name := args[0]
+
 			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
-				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
+				LabelSelector: v1alpha1.ImageLabel + "=" + name,
 			})
 			if err != nil {
 				return err
@@ -47,24 +50,36 @@ The namespace defaults to the kubernetes current-context namespace.`,
 
 			if len(buildList.Items) == 0 {
 				return errors.New("no builds found")
-			} else {
-				sort.Slice(buildList.Items, build.Sort(buildList.Items))
+			}
 
-				build := buildList.Items[len(buildList.Items)-1].DeepCopy()
-				build.Annotations[BuildNeededAnnotation] = time.Now().String()
-				_, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).Update(build)
+			sort.Slice(buildList.Items, build.Sort(buildList.Items))
+			bld := buildList.Items[len(buildList.Items)-1].DeepCopy()
+			bld.Annotations[BuildNeededAnnotation] = time.Now().String()
+			_, err = cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).Update(bld)
+			if err != nil {
+				return err
+			}
+
+			_, err = fmt.Fprintf(cmd.OutOrStderr(), "\"%s\" triggered\n", name)
+			if err != nil {
+				return err
+			}
+
+			if wait {
+				img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
 				if err != nil {
 					return err
 				}
-
-				_, err = fmt.Fprintf(cmd.OutOrStderr(), "\"%s\" triggered\n", args[0])
-				return err
+				_, err = newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 			}
+
+			return err
 		},
 		SilenceUsage: true,
 	}
 
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
+	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image trigger to be reconciled and tail resulting build logs")
 
 	return cmd
 }
