@@ -110,7 +110,7 @@ func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		imgcmds.NewPatchCommand(clientSetProvider, imagePatchFactory, newImageWaiter),
 		imgcmds.NewListCommand(clientSetProvider),
 		imgcmds.NewDeleteCommand(clientSetProvider),
-		imgcmds.NewTriggerCommand(clientSetProvider),
+		imgcmds.NewTriggerCommand(clientSetProvider, newImageWaiter),
 		imgcmds.NewStatusCommand(clientSetProvider),
 	)
 	return imageRootCmd
