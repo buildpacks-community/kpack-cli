@@ -17,6 +17,7 @@ import (
 
 func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
+		tag   string
 		stack string
 		store string
 		order string
@@ -42,9 +43,10 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			return patch(cb, stack, store, order, cmd, cs)
+			return patch(cb, tag, stack, store, order, cmd, cs)
 		},
 	}
+	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
 	cmd.Flags().StringVarP(&stack, "stack", "s", "", "stack resource to use")
 	cmd.Flags().StringVar(&store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
@@ -52,8 +54,12 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	return cmd
 }
 
-func patch(cb *v1alpha1.ClusterBuilder, stack string, store string, order string, cmd *cobra.Command, cs k8s.ClientSet) error {
+func patch(cb *v1alpha1.ClusterBuilder, tag, stack, store, order string, cmd *cobra.Command, cs k8s.ClientSet) error {
 	patchedCb := cb.DeepCopy()
+
+	if tag != "" {
+		patchedCb.Spec.Tag = tag
+	}
 
 	if stack != "" {
 		patchedCb.Spec.Stack.Name = stack

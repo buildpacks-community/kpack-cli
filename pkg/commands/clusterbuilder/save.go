@@ -28,8 +28,6 @@ The cluster builder will be created only if it does not exist, otherwise it is p
 Tag when not specified, defaults to a combination of the canonical repository and specified builder name.
 The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 
-The --tag flag is immutable and will be ignored for a patch.
-
 No defaults will be assumed for patches.
 `,
 		Example: `kp cb save my-builder --order /path/to/order.yaml --stack tiny --store my-store
@@ -61,7 +59,7 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --order /path/to/orde
 				return err
 			}
 
-			return patch(cb, stack, store, order, cmd, cs)
+			return patch(cb, tag, stack, store, order, cmd, cs)
 		},
 	}
 	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")

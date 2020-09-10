@@ -17,6 +17,7 @@ import (
 
 func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
+		tag       string
 		namespace string
 		stack     string
 		store     string
@@ -43,9 +44,10 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			return patch(cb, stack, store, order, cmd, cs)
+			return patch(cb, tag, stack, store, order, cmd, cs)
 		},
 	}
+	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&stack, "stack", "s", "", "stack resource to use")
 	cmd.Flags().StringVar(&store, "store", "", "buildpack store to use")
@@ -54,8 +56,12 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	return cmd
 }
 
-func patch(bldr *v1alpha1.Builder, stack, store, order string, cmd *cobra.Command, cs k8s.ClientSet) error {
+func patch(bldr *v1alpha1.Builder, tag, stack, store, order string, cmd *cobra.Command, cs k8s.ClientSet) error {
 	patchedBldr := bldr.DeepCopy()
+
+	if tag != "" {
+		patchedBldr.Spec.Tag = tag
+	}
 
 	if stack != "" {
 		patchedBldr.Spec.Stack.Name = stack

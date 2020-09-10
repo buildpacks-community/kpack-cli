@@ -62,7 +62,7 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --order /path/to
 				return err
 			}
 
-			return patch(bldr, stack, store, order, cmd, cs)
+			return patch(bldr, tag, stack, store, order, cmd, cs)
 		},
 	}
 	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
