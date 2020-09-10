@@ -19,8 +19,8 @@ import (
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	stackpkg "github.com/pivotal/build-service-cli/pkg/clusterstack"
-	"github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
+	"github.com/pivotal/build-service-cli/pkg/clusterstack"
+	clstrstkcmd "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
@@ -41,6 +41,11 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 	fetcher.AddImage("some-new-run-image", newRunImage)
 
 	relocator := &fakes.Relocator{}
+
+	stackFactory := &clusterstack.Factory{
+		Fetcher:   fetcher,
+		Relocator: relocator,
+	}
 
 	stack := &v1alpha1.ClusterStack{
 		ObjectMeta: metav1.ObjectMeta{
@@ -83,7 +88,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return clusterstack.NewUpdateCommand(clientSetProvider, fetcher, relocator)
+		return clstrstkcmd.NewUpdateCommand(clientSetProvider, stackFactory)
 	}
 
 	it("updates the stack id, run image, and build image", func() {
@@ -113,7 +118,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nClusterStack Updated\n",
+			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nClusterStack \"some-stack\" Updated\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
@@ -180,7 +185,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args:           []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
 			ExpectErr:      true,
-			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nError: build stack 'some-new-id' does not match run stack 'other-stack-id'\n",
+			ExpectedOutput: "Error: build stack 'some-new-id' does not match run stack 'other-stack-id'\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 }
@@ -191,7 +196,7 @@ func makeStackImages(t *testing.T, stackId string) (v1.Image, string, v1.Image, 
 		t.Fatal(err)
 	}
 
-	buildImage, err = imagehelpers.SetStringLabel(buildImage, stackpkg.IdLabel, stackId)
+	buildImage, err = imagehelpers.SetStringLabel(buildImage, clusterstack.IdLabel, stackId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +206,7 @@ func makeStackImages(t *testing.T, stackId string) (v1.Image, string, v1.Image, 
 		t.Fatal(err)
 	}
 
-	runImage, err = imagehelpers.SetStringLabel(runImage, stackpkg.IdLabel, stackId)
+	runImage, err = imagehelpers.SetStringLabel(runImage, clusterstack.IdLabel, stackId)
 	if err != nil {
 		t.Fatal(err)
 	}

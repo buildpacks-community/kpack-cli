@@ -21,6 +21,8 @@ import (
 const (
 	kpNamespace              = "kpack"
 	apiVersion               = "kpack.io/v1alpha1"
+	defaultStack             = "default"
+	defaultStore             = "default"
 	kubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
 )
 
@@ -55,75 +57,79 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 				return err
 			}
 
-			configHelper := k8s.DefaultConfigHelper(cs)
-
-			if tag == "" {
-				repository, err := configHelper.GetCanonicalRepository()
-				if err != nil {
-					return err
-				}
-
-				tag = path.Join(repository, name)
-			}
-
-			serviceAccount, err := configHelper.GetCanonicalServiceAccount()
-			if err != nil {
-				return err
-			}
-
-			ccb := &v1alpha1.ClusterBuilder{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       v1alpha1.ClusterBuilderKind,
-					APIVersion: apiVersion,
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        name,
-					Annotations: map[string]string{},
-				},
-				Spec: v1alpha1.ClusterBuilderSpec{
-					BuilderSpec: v1alpha1.BuilderSpec{
-						Tag: tag,
-						Stack: corev1.ObjectReference{
-							Name: stack,
-							Kind: v1alpha1.ClusterStackKind,
-						},
-						Store: corev1.ObjectReference{
-							Name: store,
-							Kind: v1alpha1.ClusterStoreKind,
-						},
-					},
-					ServiceAccountRef: corev1.ObjectReference{
-						Namespace: kpNamespace,
-						Name:      serviceAccount,
-					},
-				},
-			}
-
-			ccb.Spec.Order, err = builder.ReadOrder(order)
-			if err != nil {
-				return err
-			}
-
-			marshal, err := json.Marshal(ccb)
-			if err != nil {
-				return err
-			}
-
-			ccb.Annotations[kubectlLastAppliedConfig] = string(marshal)
-
-			_, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(ccb)
-			if err != nil {
-				return err
-			}
-
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", ccb.Name)
-			return err
+			return create(name, tag, stack, store, order, cmd, cs)
 		},
 	}
 	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
-	cmd.Flags().StringVarP(&stack, "stack", "s", "default", "stack resource to use")
-	cmd.Flags().StringVar(&store, "store", "default", "buildpack store to use")
+	cmd.Flags().StringVarP(&stack, "stack", "s", defaultStack, "stack resource to use")
+	cmd.Flags().StringVar(&store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
 	return cmd
+}
+
+func create(name, tag, stack, store, order string, cmd *cobra.Command, cs k8s.ClientSet) error {
+	configHelper := k8s.DefaultConfigHelper(cs)
+
+	if tag == "" {
+		repository, err := configHelper.GetCanonicalRepository()
+		if err != nil {
+			return err
+		}
+
+		tag = path.Join(repository, name)
+	}
+
+	serviceAccount, err := configHelper.GetCanonicalServiceAccount()
+	if err != nil {
+		return err
+	}
+
+	cb := &v1alpha1.ClusterBuilder{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       v1alpha1.ClusterBuilderKind,
+			APIVersion: apiVersion,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Annotations: map[string]string{},
+		},
+		Spec: v1alpha1.ClusterBuilderSpec{
+			BuilderSpec: v1alpha1.BuilderSpec{
+				Tag: tag,
+				Stack: corev1.ObjectReference{
+					Name: stack,
+					Kind: v1alpha1.ClusterStackKind,
+				},
+				Store: corev1.ObjectReference{
+					Name: store,
+					Kind: v1alpha1.ClusterStoreKind,
+				},
+			},
+			ServiceAccountRef: corev1.ObjectReference{
+				Namespace: kpNamespace,
+				Name:      serviceAccount,
+			},
+		},
+	}
+
+	cb.Spec.Order, err = builder.ReadOrder(order)
+	if err != nil {
+		return err
+	}
+
+	marshal, err := json.Marshal(cb)
+	if err != nil {
+		return err
+	}
+
+	cb.Annotations[kubectlLastAppliedConfig] = string(marshal)
+
+	_, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(cb)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", cb.Name)
+	return err
 }

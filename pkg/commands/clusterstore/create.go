@@ -40,27 +40,31 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
-			if err != nil {
-				return err
-			}
-
-			factory.Printer.Printf("Creating Cluster Store...")
-			newStore, err := factory.MakeStore(name, buildpackages...)
-			if err != nil {
-				return err
-			}
-
-			_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Create(newStore)
-			if err != nil {
-				return err
-			}
-
-			factory.Printer.Printf("\"%s\" created", newStore.Name)
-			return nil
+			return create(name, buildpackages, factory, cs)
 		},
 	}
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
 	return cmd
+}
+
+func create(name string, buildpackages []string, factory *clusterstore.Factory, cs k8s.ClientSet) (err error) {
+	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+	if err != nil {
+		return err
+	}
+
+	factory.Printer.Printf("Creating Cluster Store...")
+	newStore, err := factory.MakeStore(name, buildpackages...)
+	if err != nil {
+		return err
+	}
+
+	_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Create(newStore)
+	if err != nil {
+		return err
+	}
+
+	factory.Printer.Printf("\"%s\" created", newStore.Name)
+	return nil
 }

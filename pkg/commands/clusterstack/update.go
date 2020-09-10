@@ -4,12 +4,10 @@
 package clusterstack
 
 import (
-	"fmt"
 	"io"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -26,12 +24,7 @@ type ImageRelocator interface {
 	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
 }
 
-func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, fetcher ImageFetcher, relocator ImageRelocator) *cobra.Command {
-	var (
-		buildImageRef string
-		runImageRef   string
-	)
-
+func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update <name>",
 		Short: "Update a cluster stack",
@@ -49,106 +42,42 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			printer := commands.NewPrinter(cmd)
+			factory.Printer = commands.NewPrinter(cmd)
 
 			stack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			repository, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
-			if err != nil {
-				return err
-			}
-
-			printer.Printf("Uploading to '%s'...", repository)
-
-			buildImage, err := fetcher.Fetch(buildImageRef)
-			if err != nil {
-				return err
-			}
-
-			buildStackId, err := clusterstack.GetStackId(buildImage)
-			if err != nil {
-				return err
-			}
-
-			runImage, err := fetcher.Fetch(runImageRef)
-			if err != nil {
-				return err
-			}
-
-			runStackId, err := clusterstack.GetStackId(runImage)
-			if err != nil {
-				return err
-			}
-
-			if buildStackId != runStackId {
-				return errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
-			}
-
-			relocatedBuildImageRef, err := relocator.Relocate(cmd.OutOrStdout(), buildImage, fmt.Sprintf("%s/%s", repository, clusterstack.BuildImageName))
-			if err != nil {
-				return err
-			}
-
-			relocatedRunImageRef, err := relocator.Relocate(cmd.OutOrStdout(), runImage, fmt.Sprintf("%s/%s", repository, clusterstack.RunImageName))
-			if err != nil {
-				return err
-			}
-
-			if wasUpdated, err := updateStack(stack, relocatedBuildImageRef, relocatedRunImageRef, buildStackId); err != nil {
-				return err
-			} else if !wasUpdated {
-				printer.Printf("Build and Run images already exist in stack\nClusterStack Unchanged")
-				return nil
-			}
-
-			_, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(stack)
-			if err != nil {
-				return err
-			}
-
-			printer.Printf("ClusterStack Updated")
-			return nil
+			return update(stack, factory, cs)
 		},
 	}
 
-	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
-	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
+	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
+	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")
 
 	return cmd
 }
 
-func updateStack(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef, stackId string) (bool, error) {
-	oldBuildDigest, err := clusterstack.GetDigest(stack.Status.BuildImage.LatestImage)
+func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, cs k8s.ClientSet) (err error) {
+	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	newBuildDigest, err := clusterstack.GetDigest(buildImageRef)
+	if wasUpdated, err := factory.UpdateStack(stack); err != nil {
+		return err
+	} else if !wasUpdated {
+		return nil
+	}
+
+	_, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(stack)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	oldRunDigest, err := clusterstack.GetDigest(stack.Status.RunImage.LatestImage)
-	if err != nil {
-		return false, err
-	}
-
-	newRunDigest, err := clusterstack.GetDigest(runImageRef)
-	if err != nil {
-		return false, err
-	}
-
-	if oldBuildDigest != newBuildDigest && oldRunDigest != newRunDigest {
-		stack.Spec.BuildImage.Image = buildImageRef
-		stack.Spec.RunImage.Image = runImageRef
-		stack.Spec.Id = stackId
-		return true, nil
-	}
-
-	return false, nil
+	factory.Printer.Printf("ClusterStack \"%s\" Updated", stack.Name)
+	return nil
 }

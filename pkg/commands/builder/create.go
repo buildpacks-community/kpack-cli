@@ -52,51 +52,7 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/
 				return err
 			}
 
-			cb := &v1alpha1.Builder{
-				TypeMeta: metaV1.TypeMeta{
-					Kind:       v1alpha1.BuilderKind,
-					APIVersion: "kpack.io/v1alpha1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        name,
-					Namespace:   cs.Namespace,
-					Annotations: map[string]string{},
-				},
-				Spec: v1alpha1.NamespacedBuilderSpec{
-					BuilderSpec: v1alpha1.BuilderSpec{
-						Tag: tag,
-						Stack: corev1.ObjectReference{
-							Name: stack,
-							Kind: v1alpha1.ClusterStackKind,
-						},
-						Store: corev1.ObjectReference{
-							Name: store,
-							Kind: v1alpha1.ClusterStoreKind,
-						},
-					},
-					ServiceAccount: "default",
-				},
-			}
-
-			cb.Spec.Order, err = builder.ReadOrder(order)
-			if err != nil {
-				return err
-			}
-
-			marshal, err := json.Marshal(cb)
-			if err != nil {
-				return err
-			}
-
-			cb.Annotations[kubectlLastAppliedConfig] = string(marshal)
-
-			_, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(cb)
-			if err != nil {
-				return err
-			}
-
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", cb.Name)
-			return err
+			return create(name, tag, cs.Namespace, stack, store, order, cmd, cs)
 		},
 	}
 	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
@@ -107,4 +63,52 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/
 	_ = cmd.MarkFlagRequired("tag")
 
 	return cmd
+}
+
+func create(name, tag, namespace, stack, store, order string, cmd *cobra.Command, cs k8s.ClientSet) (err error) {
+	bldr := &v1alpha1.Builder{
+		TypeMeta: metaV1.TypeMeta{
+			Kind:       v1alpha1.BuilderKind,
+			APIVersion: "kpack.io/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   namespace,
+			Annotations: map[string]string{},
+		},
+		Spec: v1alpha1.NamespacedBuilderSpec{
+			BuilderSpec: v1alpha1.BuilderSpec{
+				Tag: tag,
+				Stack: corev1.ObjectReference{
+					Name: stack,
+					Kind: v1alpha1.ClusterStackKind,
+				},
+				Store: corev1.ObjectReference{
+					Name: store,
+					Kind: v1alpha1.ClusterStoreKind,
+				},
+			},
+			ServiceAccount: "default",
+		},
+	}
+
+	bldr.Spec.Order, err = builder.ReadOrder(order)
+	if err != nil {
+		return err
+	}
+
+	marshal, err := json.Marshal(bldr)
+	if err != nil {
+		return err
+	}
+
+	bldr.Annotations[kubectlLastAppliedConfig] = string(marshal)
+
+	_, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(bldr)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", bldr.Name)
+	return err
 }

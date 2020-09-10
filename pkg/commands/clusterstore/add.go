@@ -4,6 +4,7 @@
 package clusterstore
 
 import (
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,37 +44,41 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 
 			s, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(storeName, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return errors.Errorf("Store '%s' does not exist", storeName)
+				return errors.Errorf("ClusterStore '%s' does not exist", storeName)
 			} else if err != nil {
 				return err
 			}
 
-			repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
-			if err != nil {
-				return err
-			}
-
-			factory.Printer.Printf("Adding Buildpackages...")
-			updatedStore, storeUpdated, err := factory.AddToStore(s, repo, buildpackages...)
-			if err != nil {
-				return err
-			}
-
-			if !storeUpdated {
-				factory.Printer.Printf("ClusterStore Unchanged")
-				return nil
-			}
-
-			_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(updatedStore)
-			if err != nil {
-				return err
-			}
-
-			factory.Printer.Printf("ClusterStore Updated")
-			return nil
+			return update(s, buildpackages, factory, cs)
 		},
 	}
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
 	return cmd
+}
+
+func update(s *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, cs k8s.ClientSet) error {
+	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+	if err != nil {
+		return err
+	}
+
+	factory.Printer.Printf("Adding Buildpackages...")
+	updatedStore, storeUpdated, err := factory.AddToStore(s, repo, buildpackages...)
+	if err != nil {
+		return err
+	}
+
+	if !storeUpdated {
+		factory.Printer.Printf("ClusterStore Unchanged")
+		return nil
+	}
+
+	_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(updatedStore)
+	if err != nil {
+		return err
+	}
+
+	factory.Printer.Printf("ClusterStore Updated")
+	return nil
 }

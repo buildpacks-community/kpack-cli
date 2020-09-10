@@ -12,6 +12,12 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/commands"
+)
+
+const (
+	defaultRevision = "master"
 )
 
 type SourceUploader interface {
@@ -24,14 +30,16 @@ type Factory struct {
 	GitRevision    string
 	Blob           string
 	LocalPath      string
-	SubPath        string
+	SubPath        *string
 	Builder        string
 	ClusterBuilder string
 	Env            []string
+	DeleteEnv      []string
+	Printer        *commands.Logger
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error) {
-	err := f.validate()
+	err := f.validateCreate()
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +77,7 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error
 	}, nil
 }
 
-func (f *Factory) validate() error {
+func (f *Factory) validateCreate() error {
 	sourceSet := paramSet{}
 	sourceSet.add("git", f.GitRepo)
 	sourceSet.add("blob", f.Blob)
@@ -77,10 +85,6 @@ func (f *Factory) validate() error {
 
 	if len(sourceSet) != 1 {
 		return errors.New("image source must be one of git, blob, or local-path")
-	}
-
-	if sourceSet.contains("git") && f.GitRevision == "" {
-		return errors.New("missing parameter git-revision")
 	}
 
 	builderSet := paramSet{}
@@ -110,20 +114,28 @@ func (f *Factory) makeEnvVars() ([]corev1.EnvVar, error) {
 }
 
 func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
+	subPath := ""
+	if f.SubPath != nil {
+		subPath = *f.SubPath
+	}
 	if f.GitRepo != "" {
-		return v1alpha1.SourceConfig{
+		s := v1alpha1.SourceConfig{
 			Git: &v1alpha1.Git{
 				URL:      f.GitRepo,
-				Revision: f.GitRevision,
+				Revision: defaultRevision,
 			},
-			SubPath: f.SubPath,
-		}, nil
+			SubPath: subPath,
+		}
+		if f.GitRevision != "" {
+			s.Git.Revision = f.GitRevision
+		}
+		return s, nil
 	} else if f.Blob != "" {
 		return v1alpha1.SourceConfig{
 			Blob: &v1alpha1.Blob{
 				URL: f.Blob,
 			},
-			SubPath: f.SubPath,
+			SubPath: subPath,
 		}, nil
 	} else {
 		ref, err := name.ParseReference(tag)
@@ -140,7 +152,7 @@ func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
 			Registry: &v1alpha1.Registry{
 				Image: sourceRef,
 			},
-			SubPath: f.SubPath,
+			SubPath: subPath,
 		}, nil
 	}
 }

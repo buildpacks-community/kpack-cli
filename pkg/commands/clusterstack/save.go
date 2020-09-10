@@ -4,20 +4,20 @@
 package clusterstack
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
+func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create <name>",
-		Short: "Create a cluster stack",
-		Long: `Create a cluster-scoped stack by providing command line arguments.
+		Use:   "save <name>",
+		Short: "Create or update a cluster stack",
+		Long: `Create or update a cluster-scoped stack by providing command line arguments.
 
 The run and build images will be uploaded to the canonical repository.
 Therefore, you must have credentials to access the registry on your machine.
@@ -39,7 +39,14 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 
 			factory.Printer = commands.NewPrinter(cmd)
 
-			return create(name, factory, cs)
+			cStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(name, metav1.GetOptions{})
+			if k8serrors.IsNotFound(err) {
+				return create(name, factory, cs)
+			} else if err != nil {
+				return err
+			}
+
+			return update(cStack, factory, cs)
 		},
 	}
 	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
@@ -48,24 +55,4 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 	_ = cmd.MarkFlagRequired("run-image")
 
 	return cmd
-}
-
-func create(name string, factory *clusterstack.Factory, cs k8s.ClientSet) (err error) {
-	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
-	if err != nil {
-		return err
-	}
-
-	stack, err := factory.MakeStack(name)
-	if err != nil {
-		return err
-	}
-
-	_, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Create(stack)
-	if err != nil {
-		return err
-	}
-
-	_, err = fmt.Fprintf(factory.Printer.Writer, "\"%s\" created\n", stack.Name)
-	return err
 }

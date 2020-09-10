@@ -4,17 +4,17 @@
 package image
 
 import (
-	"encoding/json"
-
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
-	"github.com/spf13/cobra"
-
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
+func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
 		tag       string
 		namespace string
@@ -23,10 +23,12 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Fa
 	)
 
 	cmd := &cobra.Command{
-		Use:   "create <name> --tag <tag>",
-		Short: "Create an image configuration",
-		Long: `Create an image configuration by providing command line arguments.
-This image will be created only if it does not exist in the provided namespace.
+		Use:   "save <name> --tag <tag>",
+		Short: "Create or patch an image configuration",
+		Long: `Create or patch an image configuration by providing command line arguments.
+This image will be created only if it does not exist in the provided namespace, otherwise it will be patched.
+
+The --tag flag is required for a create but is immutable and will be ignored for a patch.
 
 The namespace defaults to the kubernetes current-context namespace.
 
@@ -43,10 +45,10 @@ Environment variables may be provided by using the "--env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
 For example, "--env key1=value1 --env key2=value2 ...".`,
 		Example: `kp image create my-image --tag my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
-kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob
-kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code
-kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code --builder my-builder -n my-namespace
-kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple`,
+kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob
+kp image save my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code
+kp image save my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code --builder my-builder -n my-namespace
+kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -58,11 +60,29 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 			name := args[0]
 
 			factory.Printer = commands.NewPrinter(cmd)
-			factory.SubPath = &subPath
 
-			img, err := create(name, tag, factory, cs)
-			if err != nil {
+			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
+			if k8serrors.IsNotFound(err) {
+				if tag == "" {
+					return errors.New("--tag is required to create the resource")
+				}
+
+				factory.SubPath = &subPath
+				img, err = create(name, tag, factory, cs)
+				if err != nil {
+					return err
+				}
+			} else if err != nil {
 				return err
+			} else {
+				if cmd.Flag("sub-path").Changed {
+					factory.SubPath = &subPath
+				}
+
+				img, err = patch(img, factory, cs)
+				if err != nil {
+					return err
+				}
 			}
 
 			if wait {
@@ -86,31 +106,5 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
 
-	cmd.MarkFlagRequired("tag")
 	return cmd
-}
-
-func create(name, tag string, factory *image.Factory, cs k8s.ClientSet) (*v1alpha1.Image, error) {
-	img, err := factory.MakeImage(name, cs.Namespace, tag)
-	if err != nil {
-		return nil, err
-	}
-
-	originalImageCfg, err := json.Marshal(img)
-	if err != nil {
-		return nil, err
-	}
-
-	if img.Annotations == nil {
-		img.Annotations = map[string]string{}
-	}
-	img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(originalImageCfg)
-
-	img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Create(img)
-	if err != nil {
-		return nil, err
-	}
-
-	factory.Printer.Printf("\"%s\" created", img.Name)
-	return img, nil
 }

@@ -34,7 +34,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 		ImageRef: "",
 	}
 
-	patchFactory := &image.PatchFactory{
+	patchFactory := &image.Factory{
 		SourceUploader: sourceUploader,
 	}
 	fakeImageWaiter := &fakes.FakeImageWaiter{}

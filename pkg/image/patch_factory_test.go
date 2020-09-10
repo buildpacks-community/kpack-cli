@@ -25,7 +25,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		ImageRef: "",
 	}
 
-	factory := image.PatchFactory{
+	factory := image.Factory{
 		SourceUploader: uploader,
 	}
 
@@ -57,6 +57,13 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			},
 		},
 	}
+
+	it("defaults the git revision to master", func() {
+		factory.GitRepo = "some-repo"
+		patch, err := factory.MakePatch(img)
+		require.NoError(t, err)
+		require.Equal(t, `{"spec":{"source":{"blob":null,"git":{"revision":"master","url":"some-repo"}}}}`, string(patch))
+	})
 
 	when("too many source types are provided", func() {
 		it("returns an error message", func() {

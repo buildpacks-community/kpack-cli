@@ -33,6 +33,14 @@ func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 		require.Equal(t, "kpack.io/v1alpha1", img.APIVersion)
 	})
 
+	it("defaults the git revision as master", func() {
+		factory.GitRepo = "some-repo"
+		img, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+		require.NoError(t, err)
+
+		require.Equal(t, "master", img.Spec.Source.Git.Revision)
+	})
+
 	when("no params are set", func() {
 		it("returns an error message", func() {
 			_, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
@@ -47,14 +55,6 @@ func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.LocalPath = "some-local-path"
 			_, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
 			require.EqualError(t, err, "image source must be one of git, blob, or local-path")
-		})
-	})
-
-	when("git is missing git revision", func() {
-		it("returns an error message", func() {
-			factory.GitRepo = "some-dockerhub-id"
-			_, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
-			require.EqualError(t, err, "missing parameter git-revision")
 		})
 	})
 
