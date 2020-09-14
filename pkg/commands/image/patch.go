@@ -4,17 +4,17 @@
 package image
 
 import (
-	"fmt"
-
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, factory *image.PatchFactory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
+func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
 		namespace string
 		subPath   string
@@ -58,7 +58,11 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
-			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(args[0], metav1.GetOptions{})
+			factory.Printer = commands.NewPrinter(cmd)
+
+			name := args[0]
+
+			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -67,22 +71,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				factory.SubPath = &subPath
 			}
 
-			patch, err := factory.MakePatch(img)
-			if err != nil {
-				return err
-			}
-
-			if len(patch) == 0 {
-				_, err = fmt.Fprintln(cmd.OutOrStdout(), "nothing to patch")
-				return err
-			}
-
-			img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(args[0], types.MergePatchType, patch)
-			if err != nil {
-				return err
-			}
-
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" patched\n", img.Name)
+			img, err = patch(img, factory, cs)
 			if err != nil {
 				return err
 			}
@@ -100,7 +89,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVar(&factory.GitRepo, "git", "", "git repository url")
-	cmd.Flags().StringVar(&factory.GitRevision, "git-revision", "", "git revision")
+	cmd.Flags().StringVar(&factory.GitRevision, "git-revision", "", "git revision (default \"master\")")
 	cmd.Flags().StringVar(&factory.Blob, "blob", "", "source code blob url")
 	cmd.Flags().StringVar(&factory.LocalPath, "local-path", "", "path to local source code")
 	cmd.Flags().StringVar(&subPath, "sub-path", "", "build code at the sub path located within the source code directory")
@@ -111,4 +100,24 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image patch to be reconciled and tail resulting build logs")
 	return cmd
+}
+
+func patch(img *v1alpha1.Image, factory *image.Factory, cs k8s.ClientSet) (*v1alpha1.Image, error) {
+	patch, err := factory.MakePatch(img)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(patch) == 0 {
+		factory.Printer.Printf("nothing to patch")
+		return nil, err
+	}
+
+	img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(img.Name, types.MergePatchType, patch)
+	if err != nil {
+		return nil, err
+	}
+
+	factory.Printer.Printf("\"%s\" patched", img.Name)
+	return img, nil
 }

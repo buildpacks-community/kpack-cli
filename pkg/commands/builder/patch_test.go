@@ -85,6 +85,7 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args: []string{
 				bldr.Name,
+				"--tag", "some-other-tag",
 				"--stack", "some-other-stack",
 				"--store", "some-other-store",
 				"--order", "./testdata/patched-order.yaml",
@@ -92,7 +93,7 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			ExpectedOutput: "\"test-builder\" patched\n",
 			ExpectPatches: []string{
-				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"}}}`,
+				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 			},
 		}.TestKpack(t, cmdFunc)
 	})
@@ -106,13 +107,14 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			Args: []string{
 				bldr.Name,
+				"--tag", "some-other-tag",
 				"--stack", "some-other-stack",
 				"--store", "some-other-store",
 				"--order", "./testdata/patched-order.yaml",
 			},
 			ExpectedOutput: "\"test-builder\" patched\n",
 			ExpectPatches: []string{
-				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"}}}`,
+				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 			},
 		}.TestKpack(t, cmdFunc)
 	})

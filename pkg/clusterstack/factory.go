@@ -38,36 +38,7 @@ func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
 		return nil, err
 	}
 
-	buildImage, err := f.Fetcher.Fetch(f.BuildImageRef)
-	if err != nil {
-		return nil, err
-	}
-
-	buildStackId, err := GetStackId(buildImage)
-	if err != nil {
-		return nil, err
-	}
-
-	runImage, err := f.Fetcher.Fetch(f.RunImageRef)
-	if err != nil {
-		return nil, err
-	}
-
-	runStackId, err := GetStackId(runImage)
-	if err != nil {
-		return nil, err
-	}
-
-	if buildStackId != runStackId {
-		return nil, errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
-	}
-
-	relocatedBuildImageRef, err := f.Relocator.Relocate(f.Printer, buildImage, path.Join(f.Repository, BuildImageName))
-	if err != nil {
-		return nil, err
-	}
-
-	relocatedRunImageRef, err := f.Relocator.Relocate(f.Printer, runImage, path.Join(f.Repository, RunImageName))
+	relocatedBuildImageRef, relocatedRunImageRef, stackId, err := f.relocateStack()
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +53,7 @@ func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
 			Annotations: map[string]string{},
 		},
 		Spec: v1alpha1.ClusterStackSpec{
-			Id: buildStackId,
+			Id: stackId,
 			BuildImage: v1alpha1.ClusterStackSpecImage{
 				Image: relocatedBuildImageRef,
 			},
@@ -93,7 +64,97 @@ func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
 	}, nil
 }
 
+func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack) (bool, error) {
+	if err := f.validate(); err != nil {
+		return false, err
+	}
+
+	relocatedBuildImageRef, relocatedRunImageRef, stackId, err := f.relocateStack()
+	if err != nil {
+		return false, err
+	}
+
+	if wasUpdated, err := wasUpdated(stack, relocatedBuildImageRef, relocatedRunImageRef, stackId); err != nil {
+		return false, err
+	} else if !wasUpdated {
+		f.Printer.Printf("Build and Run images already exist in stack\nClusterStack Unchanged")
+		return false, nil
+	}
+	return true, nil
+}
+
+func (f *Factory) relocateStack() (string, string, string, error) {
+	buildImage, err := f.Fetcher.Fetch(f.BuildImageRef)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	buildStackId, err := GetStackId(buildImage)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	runImage, err := f.Fetcher.Fetch(f.RunImageRef)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	runStackId, err := GetStackId(runImage)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	if buildStackId != runStackId {
+		return "", "", "", errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
+	}
+
+	f.Printer.Printf("Uploading to '%s'...", f.Repository)
+
+	relocatedBuildImageRef, err := f.Relocator.Relocate(f.Printer.Writer, buildImage, path.Join(f.Repository, BuildImageName))
+	if err != nil {
+		return "", "", "", err
+	}
+
+	relocatedRunImageRef, err := f.Relocator.Relocate(f.Printer.Writer, runImage, path.Join(f.Repository, RunImageName))
+	if err != nil {
+		return "", "", "", err
+	}
+
+	return relocatedBuildImageRef, relocatedRunImageRef, buildStackId, nil
+}
+
 func (f *Factory) validate() error {
 	_, err := name.ParseReference(f.Repository, name.WeakValidation)
 	return err
+}
+
+func wasUpdated(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef, stackId string) (bool, error) {
+	oldBuildDigest, err := GetDigest(stack.Status.BuildImage.LatestImage)
+	if err != nil {
+		return false, err
+	}
+
+	newBuildDigest, err := GetDigest(buildImageRef)
+	if err != nil {
+		return false, err
+	}
+
+	oldRunDigest, err := GetDigest(stack.Status.RunImage.LatestImage)
+	if err != nil {
+		return false, err
+	}
+
+	newRunDigest, err := GetDigest(runImageRef)
+	if err != nil {
+		return false, err
+	}
+
+	if oldBuildDigest != newBuildDigest && oldRunDigest != newRunDigest {
+		stack.Spec.BuildImage.Image = buildImageRef
+		stack.Spec.RunImage.Image = runImageRef
+		stack.Spec.Id = stackId
+		return true, nil
+	}
+
+	return false, nil
 }

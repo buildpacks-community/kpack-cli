@@ -140,7 +140,7 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 				"-b", "some/image",
 			},
 			ExpectErr:      true,
-			ExpectedOutput: "Error: Store 'invalid-store' does not exist\n",
+			ExpectedOutput: "Error: ClusterStore 'invalid-store' does not exist\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 

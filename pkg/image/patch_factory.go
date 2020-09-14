@@ -4,8 +4,6 @@
 package image
 
 import (
-	"strings"
-
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	v1alpha12 "github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -15,25 +13,12 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-type PatchFactory struct {
-	SourceUploader SourceUploader
-	GitRepo        string
-	GitRevision    string
-	Blob           string
-	LocalPath      string
-	SubPath        *string
-	Builder        string
-	ClusterBuilder string
-	Env            []string
-	DeleteEnv      []string
-}
-
-func (f *PatchFactory) MakePatch(img *v1alpha1.Image) ([]byte, error) {
+func (f *Factory) MakePatch(img *v1alpha1.Image) ([]byte, error) {
 	if img.Spec.Build == nil {
 		img.Spec.Build = &v1alpha1.ImageBuild{}
 	}
 
-	err := f.validate(img)
+	err := f.validatePatch(img)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +40,7 @@ func (f *PatchFactory) MakePatch(img *v1alpha1.Image) ([]byte, error) {
 	return k8s.CreatePatch(img, patchedImage)
 }
 
-func (f *PatchFactory) validate(img *v1alpha1.Image) error {
+func (f *Factory) validatePatch(img *v1alpha1.Image) error {
 	sourceSet := paramSet{}
 	sourceSet.add("git", f.GitRepo)
 	sourceSet.add("blob", f.Blob)
@@ -117,7 +102,7 @@ func (f *PatchFactory) validate(img *v1alpha1.Image) error {
 	return nil
 }
 
-func (f *PatchFactory) setSource(image *v1alpha1.Image) error {
+func (f *Factory) setSource(image *v1alpha1.Image) error {
 	if f.SubPath != nil {
 		image.Spec.Source.SubPath = *f.SubPath
 	}
@@ -128,7 +113,7 @@ func (f *PatchFactory) setSource(image *v1alpha1.Image) error {
 			image.Spec.Source.Registry = nil
 			image.Spec.Source.Git = &v1alpha1.Git{
 				URL:      f.GitRepo,
-				Revision: "master",
+				Revision: defaultRevision,
 			}
 		}
 
@@ -158,7 +143,7 @@ func (f *PatchFactory) setSource(image *v1alpha1.Image) error {
 	return nil
 }
 
-func (f *PatchFactory) setBuild(image *v1alpha1.Image) error {
+func (f *Factory) setBuild(image *v1alpha1.Image) error {
 	for _, envToDelete := range f.DeleteEnv {
 		for i, e := range image.Spec.Build.Env {
 			if e.Name == envToDelete {
@@ -168,12 +153,12 @@ func (f *PatchFactory) setBuild(image *v1alpha1.Image) error {
 		}
 	}
 
-	envsToUpsert, err := f.makeEnvVars()
+	envsToSave, err := f.makeEnvVars()
 	if err != nil {
 		return err
 	}
 
-	for _, env := range envsToUpsert {
+	for _, env := range envsToSave {
 		updated := false
 
 		for i, e := range image.Spec.Build.Env {
@@ -192,7 +177,7 @@ func (f *PatchFactory) setBuild(image *v1alpha1.Image) error {
 	return nil
 }
 
-func (f *PatchFactory) setBuilder(image *v1alpha1.Image) {
+func (f *Factory) setBuilder(image *v1alpha1.Image) {
 	if f.Builder != "" {
 		image.Spec.Builder = corev1.ObjectReference{
 			Kind:      v1alpha12.BuilderKind,
@@ -205,19 +190,4 @@ func (f *PatchFactory) setBuilder(image *v1alpha1.Image) {
 			Name: f.ClusterBuilder,
 		}
 	}
-}
-
-func (f *PatchFactory) makeEnvVars() ([]corev1.EnvVar, error) {
-	var envVars []corev1.EnvVar
-	for _, e := range f.Env {
-		idx := strings.Index(e, "=")
-		if idx == -1 {
-			return nil, errors.Errorf("env vars are improperly formatted")
-		}
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  e[:idx],
-			Value: e[idx+1:],
-		})
-	}
-	return envVars, nil
 }

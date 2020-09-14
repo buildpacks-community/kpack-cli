@@ -94,10 +94,6 @@ func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		SourceUploader: sourceUploader,
 	}
 
-	imagePatchFactory := &image.PatchFactory{
-		SourceUploader: sourceUploader,
-	}
-
 	imageRootCmd := &cobra.Command{
 		Use:   "image",
 		Short: "Image commands",
@@ -107,7 +103,7 @@ func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	}
 	imageRootCmd.AddCommand(
 		imgcmds.NewCreateCommand(clientSetProvider, imageFactory, newImageWaiter),
-		imgcmds.NewPatchCommand(clientSetProvider, imagePatchFactory, newImageWaiter),
+		imgcmds.NewPatchCommand(clientSetProvider, imageFactory, newImageWaiter),
 		imgcmds.NewListCommand(clientSetProvider),
 		imgcmds.NewDeleteCommand(clientSetProvider),
 		imgcmds.NewTriggerCommand(clientSetProvider),
@@ -193,7 +189,7 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		clusterstackcmds.NewCreateCommand(clientSetProvider, stackFactory),
 		clusterstackcmds.NewListCommand(clientSetProvider),
 		clusterstackcmds.NewStatusCommand(clientSetProvider),
-		clusterstackcmds.NewUpdateCommand(clientSetProvider, &registry.Fetcher{}, &registry.Relocator{}),
+		clusterstackcmds.NewUpdateCommand(clientSetProvider, stackFactory),
 		clusterstackcmds.NewDeleteCommand(clientSetProvider),
 	)
 	return stackRootCmd
