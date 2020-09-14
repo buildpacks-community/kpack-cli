@@ -5,7 +5,6 @@ package source
 
 import (
 	"fmt"
-	"github.com/pivotal/build-service-cli/pkg/registry"
 	"io/ioutil"
 	"os"
 	"time"
@@ -20,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/pivotal/build-service-cli/pkg/archive"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type Uploader struct {

@@ -5,11 +5,12 @@ package fakes
 
 import (
 	"fmt"
-	"github.com/pivotal/build-service-cli/pkg/registry"
 	"io"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type Relocator struct {

@@ -5,9 +5,10 @@ package fakes
 
 import (
 	"errors"
-	"github.com/pivotal/build-service-cli/pkg/registry"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type Fetcher struct {

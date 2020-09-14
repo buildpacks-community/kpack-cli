@@ -5,7 +5,6 @@ package buildpackage
 
 import (
 	"fmt"
-	"github.com/pivotal/build-service-cli/pkg/registry"
 	"io/ioutil"
 	"testing"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pivotal/build-service-cli/pkg/image/fakes"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 func TestBuildpackageUploader(t *testing.T) {

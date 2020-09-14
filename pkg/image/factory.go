@@ -4,7 +4,6 @@
 package image
 
 import (
-	"github.com/pivotal/build-service-cli/pkg/registry"
 	"sort"
 	"strings"
 
@@ -15,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 const (

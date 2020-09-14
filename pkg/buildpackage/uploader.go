@@ -4,7 +4,6 @@
 package buildpackage
 
 import (
-	"github.com/pivotal/build-service-cli/pkg/registry"
 	"io"
 	"io/ioutil"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/pivotal/build-service-cli/pkg/archive"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 const (

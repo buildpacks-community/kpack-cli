@@ -4,15 +4,16 @@
 package registry
 
 import (
+	"os"
+
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
-	"os"
 )
 
-type Fetcher struct {}
+type Fetcher struct{}
 
 func (f *Fetcher) Fetch(src string, tlsCfg TLSConfig) (v1.Image, error) {
 	if f.isLocal(src) {

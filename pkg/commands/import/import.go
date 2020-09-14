@@ -76,7 +76,7 @@ cat dependencies.yaml | kp import -f -`,
 			storeFactory.Printer = logger
 
 			stackFactory.Repository = repository // FIXME
-			stackFactory.Printer = logger // FIXME
+			stackFactory.Printer = logger        // FIXME
 			stackFactory.TLSConfig = storeFactory.TLSConfig
 
 			descriptor, err := getDependencyDescriptor(cmd, filename)

@@ -4,10 +4,11 @@
 package fakes
 
 import (
-	"github.com/pivotal/build-service-cli/pkg/registry"
 	"io"
 
 	"github.com/pkg/errors"
+
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type FakeBuildpackageUploader map[string]string

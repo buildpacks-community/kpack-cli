@@ -4,7 +4,6 @@
 package clusterstack
 
 import (
-	"github.com/pivotal/build-service-cli/pkg/registry"
 	"io"
 	"path"
 
@@ -15,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type ImageFetcher interface {

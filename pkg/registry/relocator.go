@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Relocator struct {}
+type Relocator struct{}
 
 func (r *Relocator) Relocate(writer io.Writer, image v1.Image, dest string, tlsCfg TLSConfig) (string, error) {
 	ref, err := name.ParseReference(dest, name.WeakValidation)
