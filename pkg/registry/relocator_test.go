@@ -32,7 +32,7 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 			it("it should fetch the image with the digest", func() {
 				fetcher := registry.Fetcher{}
 
-				image, err := fetcher.Fetch("cloudfoundry/run:tiny-cnb")
+				image, err := fetcher.Fetch("cloudfoundry/run:tiny-cnb", registry.TLSConfig{})
 				require.NoError(t, err)
 				assert.NotNil(t, image)
 			})
@@ -75,7 +75,7 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 
 			relocator := registry.Relocator{}
 			output := &bytes.Buffer{}
-			relocatedRef, err := relocator.Relocate(output, srcImage, dst)
+			relocatedRef, err := relocator.Relocate(output, srcImage, dst, registry.TLSConfig{})
 			require.NoError(t, err)
 
 			require.Equal(t, 1, strings.Count(relocatedRef, "sha256:"))
@@ -91,7 +91,7 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 			require.NoError(t, err)
 
 			relocator := registry.Relocator{}
-			_, err = relocator.Relocate(ioutil.Discard, srcImage, "notuser/notimage:tag")
+			_, err = relocator.Relocate(ioutil.Discard, srcImage, "notuser/notimage:tag", registry.TLSConfig{})
 			require.Error(t, err)
 		})
 	})

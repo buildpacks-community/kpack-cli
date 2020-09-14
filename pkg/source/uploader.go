@@ -5,6 +5,7 @@ package source
 
 import (
 	"fmt"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 	"io/ioutil"
 	"os"
 	"time"
@@ -24,7 +25,12 @@ import (
 type Uploader struct {
 }
 
-func (s *Uploader) Upload(ref, path string) (string, error) {
+func (s *Uploader) Upload(ref, path string, tlsCfg registry.TLSConfig) (string, error) {
+	t, err := tlsCfg.Transport()
+	if err != nil {
+		return "", err
+	}
+
 	if archive.IsZip(path) {
 		unzipDest, err := ioutil.TempDir("", "zipdir")
 		if err != nil {
@@ -66,7 +72,7 @@ func (s *Uploader) Upload(ref, path string) (string, error) {
 		return "", err
 	}
 
-	err = remote.Write(fullRef, image, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	err = remote.Write(fullRef, image, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithTransport(t))
 	if err != nil {
 		if transportError, ok := err.(*transport.Error); ok {
 			if transportError.StatusCode == 401 {

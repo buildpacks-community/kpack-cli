@@ -45,6 +45,7 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 	}
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
+	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	return cmd
 }
 

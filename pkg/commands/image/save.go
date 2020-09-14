@@ -104,6 +104,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 	cmd.Flags().StringVarP(&factory.Builder, "builder", "b", "", "builder name")
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
+	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
 
 	return cmd

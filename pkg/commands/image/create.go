@@ -38,6 +38,7 @@ The flags for this command determine how the build will retrieve source code:
 
 Local source code will be pushed to the same registry provided for the image tag.
 Therefore, you must have credentials to access the registry on your machine.
+--registry-ca-cert-path and --registry-verify-certs are only used for local source type.
 
 Environment variables may be provided by using the "--env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
@@ -84,6 +85,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	cmd.Flags().StringVarP(&factory.Builder, "builder", "b", "", "builder name")
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
+	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
 
 	cmd.MarkFlagRequired("tag")

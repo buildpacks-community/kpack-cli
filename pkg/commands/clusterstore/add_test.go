@@ -84,6 +84,8 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 				storeName,
 				"--buildpackage", "some/newbp",
 				"-b", "bpfromcnb.cnb",
+				"--registry-ca-cert-path", "some-cert-path",
+				"--registry-verify-certs",
 			},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{

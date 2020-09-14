@@ -83,6 +83,8 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"some-stack",
 				"--build-image", "some-build-image",
 				"--run-image", "some-run-image",
+				"--registry-ca-cert-path", "some-cert-path",
+				"--registry-verify-certs",
 			},
 			ExpectedOutput: "Uploading to 'some-registry.io/some-repo'...\n\"some-stack\" created\n",
 			ExpectCreates: []runtime.Object{

@@ -51,6 +51,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 	}
 	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
 	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
+	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")
 

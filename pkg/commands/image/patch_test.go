@@ -271,6 +271,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 			Args: []string{
 				"some-image",
 				"--git-revision", "some-new-revision",
+				"--registry-ca-cert-path", "some-cert-path",
+				"--registry-verify-certs",
 				"--wait",
 			},
 			ExpectedOutput: "\"some-image\" patched\n",

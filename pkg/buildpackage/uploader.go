@@ -4,6 +4,7 @@
 package buildpackage
 
 import (
+	"github.com/pivotal/build-service-cli/pkg/registry"
 	"io"
 	"io/ioutil"
 	"os"
@@ -23,11 +24,11 @@ const (
 )
 
 type Relocator interface {
-	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
+	Relocate(writer io.Writer, image v1.Image, dest string, tlsCfg registry.TLSConfig) (string, error)
 }
 
 type Fetcher interface {
-	Fetch(src string) (v1.Image, error)
+	Fetch(src string, tlsCfg registry.TLSConfig) (v1.Image, error)
 }
 
 type Uploader struct {
@@ -35,14 +36,14 @@ type Uploader struct {
 	Fetcher   Fetcher
 }
 
-func (u *Uploader) UploadBuildpackage(writer io.Writer, repository, buildPackage string) (string, error) {
+func (u *Uploader) UploadBuildpackage(writer io.Writer, repository, buildPackage string, tlsCfg registry.TLSConfig) (string, error) {
 	tempDir, err := ioutil.TempDir("", "cnb-upload")
 	if err != nil {
 		return "", err
 	}
 	defer os.RemoveAll(tempDir)
 
-	image, err := u.read(buildPackage, tempDir)
+	image, err := u.read(buildPackage, tempDir, tlsCfg)
 	if err != nil {
 		return "", err
 	}
@@ -57,15 +58,15 @@ func (u *Uploader) UploadBuildpackage(writer io.Writer, repository, buildPackage
 		return "", err
 	}
 
-	return u.Relocator.Relocate(writer, image, path.Join(repository, strings.ReplaceAll(metadata.Id, "/", "_")))
+	return u.Relocator.Relocate(writer, image, path.Join(repository, strings.ReplaceAll(metadata.Id, "/", "_")), tlsCfg)
 }
 
-func (u *Uploader) read(buildPackage, tempDir string) (v1.Image, error) {
+func (u *Uploader) read(buildPackage, tempDir string, tlsCfg registry.TLSConfig) (v1.Image, error) {
 	if isLocalCnb(buildPackage) {
 		cnb, err := readCNB(buildPackage, tempDir)
 		return cnb, errors.Wrapf(err, "invalid local buildpackage %s", buildPackage)
 	}
-	return u.Fetcher.Fetch(buildPackage)
+	return u.Fetcher.Fetch(buildPackage, tlsCfg)
 }
 
 func isLocalCnb(buildPackage string) bool {
