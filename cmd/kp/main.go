@@ -104,6 +104,7 @@ func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	imageRootCmd.AddCommand(
 		imgcmds.NewCreateCommand(clientSetProvider, imageFactory, newImageWaiter),
 		imgcmds.NewPatchCommand(clientSetProvider, imageFactory, newImageWaiter),
+		imgcmds.NewSaveCommand(clientSetProvider, imageFactory, newImageWaiter),
 		imgcmds.NewListCommand(clientSetProvider),
 		imgcmds.NewDeleteCommand(clientSetProvider),
 		imgcmds.NewTriggerCommand(clientSetProvider),
@@ -152,6 +153,7 @@ func getClusterBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Co
 	clusterBuilderRootCmd.AddCommand(
 		clusterbuildercmds.NewCreateCommand(clientSetProvider),
 		clusterbuildercmds.NewPatchCommand(clientSetProvider),
+		clusterbuildercmds.NewSaveCommand(clientSetProvider),
 		clusterbuildercmds.NewListCommand(clientSetProvider),
 		clusterbuildercmds.NewStatusCommand(clientSetProvider),
 		clusterbuildercmds.NewDeleteCommand(clientSetProvider),
@@ -167,6 +169,7 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	builderRootCmd.AddCommand(
 		buildercmds.NewCreateCommand(clientSetProvider),
 		buildercmds.NewPatchCommand(clientSetProvider),
+		buildercmds.NewSaveCommand(clientSetProvider),
 		buildercmds.NewListCommand(clientSetProvider),
 		buildercmds.NewDeleteCommand(clientSetProvider),
 		buildercmds.NewStatusCommand(clientSetProvider),
@@ -187,9 +190,10 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	}
 	stackRootCmd.AddCommand(
 		clusterstackcmds.NewCreateCommand(clientSetProvider, stackFactory),
+		clusterstackcmds.NewUpdateCommand(clientSetProvider, stackFactory),
+		clusterstackcmds.NewSaveCommand(clientSetProvider, stackFactory),
 		clusterstackcmds.NewListCommand(clientSetProvider),
 		clusterstackcmds.NewStatusCommand(clientSetProvider),
-		clusterstackcmds.NewUpdateCommand(clientSetProvider, stackFactory),
 		clusterstackcmds.NewDeleteCommand(clientSetProvider),
 	)
 	return stackRootCmd
@@ -210,8 +214,9 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	}
 	storeRootCommand.AddCommand(
 		storecmds.NewCreateCommand(clientSetProvider, factory),
-		storecmds.NewDeleteCommand(clientSetProvider, commands.NewConfirmationProvider()),
 		storecmds.NewAddCommand(clientSetProvider, factory),
+		storecmds.NewSaveCommand(clientSetProvider, factory),
+		storecmds.NewDeleteCommand(clientSetProvider, commands.NewConfirmationProvider()),
 		storecmds.NewStatusCommand(clientSetProvider),
 		storecmds.NewRemoveCommand(clientSetProvider),
 		storecmds.NewListCommand(clientSetProvider),
