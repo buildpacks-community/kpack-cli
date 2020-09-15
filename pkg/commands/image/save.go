@@ -20,6 +20,8 @@ func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Fact
 		namespace string
 		subPath   string
 		wait      bool
+		dryRun    bool
+		output    string
 	)
 
 	cmd := &cobra.Command{
@@ -57,9 +59,12 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 				return err
 			}
 
-			name := args[0]
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
 
-			factory.Printer = commands.NewPrinter(cmd)
+			name := args[0]
 
 			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
@@ -68,10 +73,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 				}
 
 				factory.SubPath = &subPath
-				img, err = create(name, tag, factory, cs)
-				if err != nil {
-					return err
-				}
+				img, err = create(name, tag, factory, ch, cs)
 			} else if err != nil {
 				return err
 			} else {
@@ -79,13 +81,14 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 					factory.SubPath = &subPath
 				}
 
-				img, err = patch(img, factory, cs)
-				if err != nil {
-					return err
-				}
+				img, err = patch(img, factory, ch, cs)
 			}
 
-			if wait {
+			if err != nil {
+				return err
+			}
+
+			if ch.ShouldWait() {
 				_, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 				if err != nil {
 					return err
@@ -106,6 +109,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
-
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
@@ -29,7 +28,12 @@ type Factory struct {
 	Uploader   BuildpackageUploader
 	TLSConfig  registry.TLSConfig
 	Repository string
-	Printer    *commands.Logger
+	Printer    Printer
+}
+
+type Printer interface {
+	Printlnf(format string, a ...interface{}) error
+	Writer() io.Writer
 }
 
 func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.ClusterStore, error) {
@@ -50,7 +54,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 	}
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer, f.Repository, buildpackage, f.TLSConfig)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.Writer(), f.Repository, buildpackage, f.TLSConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -73,20 +77,20 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
 	storeUpdated := false
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer, repository, buildpackage, f.TLSConfig)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.Writer(), repository, buildpackage, f.TLSConfig)
 		if err != nil {
 			return nil, false, err
 		}
 
 		if storeContains(store, uploadedBp) {
-			f.Printer.Printf("\tBuildpackage already exists in the store")
+			f.Printer.Printlnf("\tBuildpackage already exists in the store")
 			continue
 		}
 
 		store.Spec.Sources = append(store.Spec.Sources, v1alpha1.StoreImage{
 			Image: uploadedBp,
 		})
-		f.Printer.Printf("\tAdded Buildpackage")
+		f.Printer.Printlnf("\tAdded Buildpackage")
 		storeUpdated = true
 	}
 

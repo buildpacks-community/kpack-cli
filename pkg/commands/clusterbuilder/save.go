@@ -8,15 +8,13 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
 func NewSaveCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
-		tag   string
-		stack string
-		store string
-		order string
+		flags CommandFlags
 	)
 
 	cmd := &cobra.Command{
@@ -42,30 +40,37 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --order /path/to/orde
 				return err
 			}
 
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
 
 			cb, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				if stack == "" {
-					stack = defaultStack
+				if flags.stack == "" {
+					flags.stack = defaultStack
 				}
 
-				if store == "" {
-					store = defaultStore
+				if flags.store == "" {
+					flags.store = defaultStore
 				}
 
-				return create(name, tag, stack, store, order, cmd, cs)
+				return create(name, flags, ch, cs)
 			} else if err != nil {
 				return err
 			}
 
-			return patch(cb, tag, stack, store, order, cmd, cs)
+			return patch(cb, flags, ch, cs)
 		},
 	}
-	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
-	cmd.Flags().StringVarP(&stack, "stack", "s", "", "stack resource to use (default \"default\" for a create)")
-	cmd.Flags().StringVar(&store, "store", "", "buildpack store to use (default \"default\" for a create)")
-	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
+	cmd.Flags().StringVarP(&flags.tag, "tag", "t", "", "registry location where the builder will be created")
+	cmd.Flags().StringVarP(&flags.stack, "stack", "s", "", "stack resource to use (default \"default\" for a create)")
+	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use (default \"default\" for a create)")
+	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
+	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&flags.output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }

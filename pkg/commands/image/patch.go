@@ -19,6 +19,8 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Fac
 		namespace string
 		subPath   string
 		wait      bool
+		dryRun    bool
+		output    string
 	)
 
 	cmd := &cobra.Command{
@@ -58,7 +60,10 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
-			factory.Printer = commands.NewPrinter(cmd)
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
 
 			name := args[0]
 
@@ -71,17 +76,16 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				factory.SubPath = &subPath
 			}
 
-			img, err = patch(img, factory, cs)
+			img, err = patch(img, factory, ch, cs)
 			if err != nil {
 				return err
 			}
 
-			if wait {
+			if ch.ShouldWait() {
 				_, err = newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 				if err != nil {
 					return err
 				}
-
 			}
 
 			return nil
@@ -97,28 +101,34 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringVar(&factory.ClusterBuilder, "cluster-builder", "", "cluster builder name")
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables to add/replace")
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
-	commands.SetTLSFlags(cmd, &factory.TLSConfig)
-
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image patch to be reconciled and tail resulting build logs")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
+	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	return cmd
 }
 
-func patch(img *v1alpha1.Image, factory *image.Factory, cs k8s.ClientSet) (*v1alpha1.Image, error) {
+func patch(img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (*v1alpha1.Image, error) {
 	patch, err := factory.MakePatch(img)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(patch) == 0 {
-		factory.Printer.Printf("nothing to patch")
-		return nil, err
+		return img, ch.Printlnf("nothing to patch")
 	}
 
-	img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(img.Name, types.MergePatchType, patch)
+	if !ch.IsDryRun() {
+		img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(img.Name, types.MergePatchType, patch)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = ch.PrintObj(img)
 	if err != nil {
 		return nil, err
 	}
 
-	factory.Printer.Printf("\"%s\" patched", img.Name)
-	return img, nil
+	return img, ch.PrintResult("%q patched", img.Name)
 }

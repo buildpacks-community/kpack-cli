@@ -20,6 +20,8 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Fa
 		namespace string
 		subPath   string
 		wait      bool
+		dryRun    bool
+		output    string
 	)
 
 	cmd := &cobra.Command{
@@ -56,17 +58,20 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 				return err
 			}
 
-			name := args[0]
-
-			factory.Printer = commands.NewPrinter(cmd)
-			factory.SubPath = &subPath
-
-			img, err := create(name, tag, factory, cs)
+			ch, err := commands.NewCommandHelper(cmd)
 			if err != nil {
 				return err
 			}
 
-			if wait {
+			name := args[0]
+			factory.SubPath = &subPath
+
+			img, err := create(name, tag, factory, ch, cs)
+			if err != nil {
+				return err
+			}
+
+			if ch.ShouldWait() {
 				_, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 				if err != nil {
 					return err
@@ -87,18 +92,20 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 
 	cmd.MarkFlagRequired("tag")
 	return cmd
 }
 
-func create(name, tag string, factory *image.Factory, cs k8s.ClientSet) (*v1alpha1.Image, error) {
+func create(name, tag string, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (*v1alpha1.Image, error) {
 	img, err := factory.MakeImage(name, cs.Namespace, tag)
 	if err != nil {
 		return nil, err
 	}
 
-	originalImageCfg, err := json.Marshal(img)
+	imgConfig, err := json.Marshal(img)
 	if err != nil {
 		return nil, err
 	}
@@ -106,13 +113,19 @@ func create(name, tag string, factory *image.Factory, cs k8s.ClientSet) (*v1alph
 	if img.Annotations == nil {
 		img.Annotations = map[string]string{}
 	}
-	img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(originalImageCfg)
+	img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(imgConfig)
 
-	img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Create(img)
+	if !ch.IsDryRun() {
+		img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Create(img)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = ch.PrintObj(img)
 	if err != nil {
 		return nil, err
 	}
 
-	factory.Printer.Printf("\"%s\" created", img.Name)
-	return img, nil
+	return img, ch.PrintResult("%q created", img.Name)
 }

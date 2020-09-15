@@ -14,6 +14,11 @@ import (
 )
 
 func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
+	var (
+		dryRun bool
+		output string
+	)
+
 	cmd := &cobra.Command{
 		Use:   "save <name>",
 		Short: "Create or update a cluster stack",
@@ -35,25 +40,30 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			name := args[0]
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
 
-			factory.Printer = commands.NewPrinter(cmd)
+			name := args[0]
+			factory.Printer = ch
 
 			cStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return create(name, factory, cs)
+				return create(name, factory, ch, cs)
 			} else if err != nil {
 				return err
 			}
 
-			return update(cStack, factory, cs)
+			return update(cStack, factory, ch, cs)
 		},
 	}
 	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
 	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")
-
 	return cmd
 }

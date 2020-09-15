@@ -13,7 +13,11 @@ import (
 )
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstore.Factory) *cobra.Command {
-	var buildpackages []string
+	var (
+		buildpackages []string
+		dryRun        bool
+		output        string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "create <store> -b <buildpackage> [-b <buildpackage>...]",
@@ -32,40 +36,53 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
-			factory.Printer = commands.NewPrinter(cmd)
-
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			return create(name, buildpackages, factory, cs)
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
+			name := args[0]
+			factory.Printer = ch
+
+			return create(name, buildpackages, factory, ch, cs)
 		},
 	}
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	return cmd
 }
 
-func create(name string, buildpackages []string, factory *clusterstore.Factory, cs k8s.ClientSet) (err error) {
+func create(name string, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
 	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
 		return err
 	}
 
-	factory.Printer.Printf("Creating Cluster Store...")
+	ch.Printlnf("Creating Cluster Store...")
 	newStore, err := factory.MakeStore(name, buildpackages...)
 	if err != nil {
 		return err
 	}
 
-	_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Create(newStore)
+	if !ch.IsDryRun() {
+		newStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Create(newStore)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = ch.PrintObj(newStore)
 	if err != nil {
 		return err
 	}
 
-	factory.Printer.Printf("\"%s\" created", newStore.Name)
-	return nil
+	return ch.PrintResult("%q created", newStore.Name)
 }

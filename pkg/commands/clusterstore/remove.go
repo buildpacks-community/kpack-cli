@@ -35,7 +35,10 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 				return err
 			}
 
-			printer := commands.NewPrinter(cmd)
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
 
 			storeName := args[0]
 
@@ -57,7 +60,7 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 				for _, bpToRemove := range buildpackages {
 					if storeImg.Image == bpToRemove {
 						found = true
-						printer.Printf("Removing buildpackage %s", bpToRemove)
+						ch.Printlnf("Removing buildpackage %s", bpToRemove)
 						break
 					}
 				}
@@ -73,7 +76,7 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 				return err
 			}
 
-			printer.Printf("ClusterStore Updated")
+			ch.Printlnf("ClusterStore Updated")
 			return nil
 		},
 	}

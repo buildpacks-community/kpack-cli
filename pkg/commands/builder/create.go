@@ -5,7 +5,6 @@ package builder
 
 import (
 	"encoding/json"
-	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -15,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -26,11 +26,7 @@ const (
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
-		tag       string
-		namespace string
-		stack     string
-		store     string
-		order     string
+		flags CommandFlags
 	)
 
 	cmd := &cobra.Command{
@@ -45,27 +41,46 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
-
-			cs, err := clientSetProvider.GetClientSet(namespace)
+			cs, err := clientSetProvider.GetClientSet(flags.namespace)
 			if err != nil {
 				return err
 			}
 
-			return create(name, tag, cs.Namespace, stack, store, order, cmd, cs)
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
+			name := args[0]
+			flags.namespace = cs.Namespace
+
+			return create(name, flags, ch, cs)
 		},
 	}
-	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
-	cmd.Flags().StringVarP(&stack, "stack", "s", defaultStack, "stack resource to use")
-	cmd.Flags().StringVar(&store, "store", defaultStore, "buildpack store to use")
-	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
-	_ = cmd.MarkFlagRequired("tag")
 
+	cmd.Flags().StringVarP(&flags.tag, "tag", "t", "", "registry location where the builder will be created")
+	cmd.Flags().StringVarP(&flags.namespace, "namespace", "n", "", "kubernetes namespace")
+	cmd.Flags().StringVarP(&flags.stack, "stack", "s", defaultStack, "stack resource to use")
+	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
+	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
+	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&flags.output, "output", "", "output format. supported formats are: yaml, json")
+
+	_ = cmd.MarkFlagRequired("tag")
 	return cmd
 }
 
-func create(name, tag, namespace, stack, store, order string, cmd *cobra.Command, cs k8s.ClientSet) (err error) {
+type CommandFlags struct {
+	tag       string
+	namespace string
+	stack     string
+	store     string
+	order     string
+	dryRun    bool
+	output    string
+}
+
+func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
 	bldr := &v1alpha1.Builder{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       v1alpha1.BuilderKind,
@@ -73,18 +88,18 @@ func create(name, tag, namespace, stack, store, order string, cmd *cobra.Command
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   namespace,
+			Namespace:   flags.namespace,
 			Annotations: map[string]string{},
 		},
 		Spec: v1alpha1.NamespacedBuilderSpec{
 			BuilderSpec: v1alpha1.BuilderSpec{
-				Tag: tag,
+				Tag: flags.tag,
 				Stack: corev1.ObjectReference{
-					Name: stack,
+					Name: flags.stack,
 					Kind: v1alpha1.ClusterStackKind,
 				},
 				Store: corev1.ObjectReference{
-					Name: store,
+					Name: flags.store,
 					Kind: v1alpha1.ClusterStoreKind,
 				},
 			},
@@ -92,7 +107,7 @@ func create(name, tag, namespace, stack, store, order string, cmd *cobra.Command
 		},
 	}
 
-	bldr.Spec.Order, err = builder.ReadOrder(order)
+	bldr.Spec.Order, err = builder.ReadOrder(flags.order)
 	if err != nil {
 		return err
 	}
@@ -104,11 +119,17 @@ func create(name, tag, namespace, stack, store, order string, cmd *cobra.Command
 
 	bldr.Annotations[kubectlLastAppliedConfig] = string(marshal)
 
-	_, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(bldr)
+	if !ch.IsDryRun() {
+		bldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(bldr)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = ch.PrintObj(bldr)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", bldr.Name)
-	return err
+	return ch.PrintResult("%q created", bldr.Name)
 }

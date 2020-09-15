@@ -220,4 +220,187 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
+
+	when("output flag is used", func() {
+		it("can output in yaml format", func() {
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterBuilder
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+  creationTimestamp: null
+  name: test-builder
+spec:
+  order:
+  - group:
+    - id: org.cloudfoundry.nodejs
+  - group:
+    - id: org.cloudfoundry.go
+  serviceAccountRef:
+    name: some-serviceaccount
+    namespace: kpack
+  stack:
+    kind: ClusterStack
+    name: some-stack
+  store:
+    kind: ClusterStore
+    name: some-store
+  tag: some-registry/some-project/test-builder
+status:
+  stack: {}
+`
+
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					expectedBuilder.Name,
+					"--tag", expectedBuilder.Spec.Tag,
+					"--stack", expectedBuilder.Spec.Stack.Name,
+					"--store", expectedBuilder.Spec.Store.Name,
+					"--order", "./testdata/order.yaml",
+					"--output", "yaml",
+				},
+				ExpectedOutput: resourceYAML,
+				ExpectCreates: []runtime.Object{
+					expectedBuilder,
+				},
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("can output in json format", func() {
+			const resourceJSON = `{
+    "kind": "ClusterBuilder",
+    "apiVersion": "kpack.io/v1alpha1",
+    "metadata": {
+        "name": "test-builder",
+        "creationTimestamp": null,
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"test-builder\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry/some-project/test-builder\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"some-stack\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"some-store\"},\"order\":[{\"group\":[{\"id\":\"org.cloudfoundry.nodejs\"}]},{\"group\":[{\"id\":\"org.cloudfoundry.go\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
+        }
+    },
+    "spec": {
+        "tag": "some-registry/some-project/test-builder",
+        "stack": {
+            "kind": "ClusterStack",
+            "name": "some-stack"
+        },
+        "store": {
+            "kind": "ClusterStore",
+            "name": "some-store"
+        },
+        "order": [
+            {
+                "group": [
+                    {
+                        "id": "org.cloudfoundry.nodejs"
+                    }
+                ]
+            },
+            {
+                "group": [
+                    {
+                        "id": "org.cloudfoundry.go"
+                    }
+                ]
+            }
+        ],
+        "serviceAccountRef": {
+            "namespace": "kpack",
+            "name": "some-serviceaccount"
+        }
+    },
+    "status": {
+        "stack": {}
+    }
+}
+`
+
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					expectedBuilder.Name,
+					"--tag", expectedBuilder.Spec.Tag,
+					"--stack", expectedBuilder.Spec.Stack.Name,
+					"--store", expectedBuilder.Spec.Store.Name,
+					"--order", "./testdata/order.yaml",
+					"--output", "json",
+				},
+				ExpectedOutput: resourceJSON,
+				ExpectCreates: []runtime.Object{
+					expectedBuilder,
+				},
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+	})
+
+	when("dry-run flag is used", func() {
+		it("does not create a ClusterBuilder and prints result with dry run indicated", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					expectedBuilder.Name,
+					"--tag", expectedBuilder.Spec.Tag,
+					"--stack", expectedBuilder.Spec.Stack.Name,
+					"--store", expectedBuilder.Spec.Store.Name,
+					"--order", "./testdata/order.yaml",
+					"--dry-run",
+				},
+				ExpectedOutput: `"test-builder" created (dry run)
+`,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		when("output flag is used", func() {
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterBuilder
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+  creationTimestamp: null
+  name: test-builder
+spec:
+  order:
+  - group:
+    - id: org.cloudfoundry.nodejs
+  - group:
+    - id: org.cloudfoundry.go
+  serviceAccountRef:
+    name: some-serviceaccount
+    namespace: kpack
+  stack:
+    kind: ClusterStack
+    name: some-stack
+  store:
+    kind: ClusterStore
+    name: some-store
+  tag: some-registry/some-project/test-builder
+status:
+  stack: {}
+`
+
+			it("does not create a ClusterBuilder and prints the resource output", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					Args: []string{
+						expectedBuilder.Name,
+						"--tag", expectedBuilder.Spec.Tag,
+						"--stack", expectedBuilder.Spec.Stack.Name,
+						"--store", expectedBuilder.Spec.Store.Name,
+						"--order", "./testdata/order.yaml",
+						"--dry-run",
+						"--output", "yaml",
+					},
+					ExpectedOutput: resourceYAML,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+	})
 }

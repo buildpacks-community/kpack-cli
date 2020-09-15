@@ -631,6 +631,183 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 	})
+
+	when("output flag is used", func() {
+		var (
+			dockerhubId          = "my-dockerhub-id"
+			dockerPassword       = "dummy-password"
+			secretName           = "my-docker-cred"
+			expectedDockerConfig = fmt.Sprintf("{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"%s\",\"password\":\"%s\"}}}", dockerhubId, dockerPassword)
+		)
+
+		expectedDockerSecret := &corev1.Secret{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      secretName,
+				Namespace: defaultNamespace,
+			},
+			Data: map[string][]byte{
+				corev1.DockerConfigJsonKey: []byte(expectedDockerConfig),
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+		}
+
+		expectedServiceAccount := &corev1.ServiceAccount{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "default",
+				Namespace: defaultNamespace,
+				Annotations: map[string]string{
+					secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.DockerhubUrl),
+				},
+			},
+			ImagePullSecrets: []corev1.LocalObjectReference{
+				{Name: secretName},
+			},
+			Secrets: []corev1.ObjectReference{
+				{Name: secretName},
+			},
+		}
+
+		fetcher.passwords["DOCKER_PASSWORD"] = dockerPassword
+
+		it("can output in yaml format", func() {
+			const resourceYAML = `data:
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-docker-cred
+  namespace: some-default-namespace
+type: kubernetes.io/dockerconfigjson
+---
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-docker-cred
+  namespace: some-default-namespace
+type: kubernetes.io/dockerconfigjson
+`
+
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					defaultServiceAccount,
+				},
+				Args: []string{
+					secretName,
+					"--dockerhub", dockerhubId,
+					"--output", "yaml",
+				},
+				ExpectedOutput: resourceYAML,
+				ExpectCreates: []runtime.Object{
+					expectedDockerSecret,
+				},
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedServiceAccount,
+					},
+				},
+			}.TestK8s(t, cmdFunc)
+		})
+
+		it("can output in json format", func() {
+			const resourceJSON = `{
+    "metadata": {
+        "name": "my-docker-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ=="
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+{
+    "metadata": {
+        "name": "my-docker-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ=="
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+`
+
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					defaultServiceAccount,
+				},
+				Args: []string{
+					secretName,
+					"--dockerhub", dockerhubId,
+					"--output", "json",
+				},
+				ExpectedOutput: resourceJSON,
+				ExpectCreates: []runtime.Object{
+					expectedDockerSecret,
+				},
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedServiceAccount,
+					},
+				},
+			}.TestK8s(t, cmdFunc)
+		})
+
+	})
+
+	when("dry-run flag is used", func() {
+		fetcher.passwords["DOCKER_PASSWORD"] = "dummy-password"
+
+		it("does not create the secret and prints result with dry run indicated", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					defaultServiceAccount,
+				},
+				Args: []string{
+					"my-docker-cred",
+					"--dockerhub", "my-dockerhub-id",
+					"--dry-run",
+				},
+				ExpectedOutput: `"my-docker-cred" created (dry run)
+`,
+			}.TestK8s(t, cmdFunc)
+		})
+
+		when("output flag is used", func() {
+			it("does not create the secret and prints resource output", func() {
+				const resourceYAML = `data:
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-docker-cred
+  namespace: some-default-namespace
+type: kubernetes.io/dockerconfigjson
+---
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-docker-cred
+  namespace: some-default-namespace
+type: kubernetes.io/dockerconfigjson
+`
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{
+						"my-docker-cred",
+						"--dockerhub", "my-dockerhub-id",
+						"--output", "yaml",
+						"--dry-run",
+					},
+					ExpectedOutput: resourceYAML,
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+	})
 }
 
 type fakeCredentialFetcher struct {

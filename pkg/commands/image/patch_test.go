@@ -287,4 +287,196 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 		assert.Len(t, fakeImageWaiter.Calls, 1)
 		assert.Equal(t, fakeImageWaiter.Calls[0], expectedWaitImage)
 	})
+
+	when("output flag is used", func() {
+		when("no parameters are provided", func() {
+			it("does not give output and informs user of nothing to patch", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						img,
+					},
+					Args: []string{
+						"some-image",
+						"--output", "yaml",
+					},
+					ExpectedErrorOutput: "nothing to patch\n",
+				}.TestKpack(t, cmdFunc)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+		})
+
+		it("can output resources in yaml and does not wait", func() {
+			const resourceYAML = `metadata:
+  creationTimestamp: null
+  name: some-image
+  namespace: some-default-namespace
+spec:
+  build:
+    env:
+    - name: key1
+      value: value1
+    - name: key2
+      value: value2
+    resources: {}
+  builder:
+    kind: ClusterBuilder
+    name: some-ccb
+  source:
+    blob:
+      url: some-blob
+    subPath: some-path
+  tag: some-tag
+status: {}
+`
+
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
+				Args: []string{
+					"some-image",
+					"--blob", "some-blob",
+					"--output", "yaml",
+					"--wait",
+				},
+				ExpectedOutput: resourceYAML,
+				ExpectPatches: []string{
+					`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
+				},
+			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
+		})
+
+		it("can output resources in json and does not wait", func() {
+			const resourceJSON = `{
+    "metadata": {
+        "name": "some-image",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "tag": "some-tag",
+        "builder": {
+            "kind": "ClusterBuilder",
+            "name": "some-ccb"
+        },
+        "source": {
+            "blob": {
+                "url": "some-blob"
+            },
+            "subPath": "some-path"
+        },
+        "build": {
+            "env": [
+                {
+                    "name": "key1",
+                    "value": "value1"
+                },
+                {
+                    "name": "key2",
+                    "value": "value2"
+                }
+            ],
+            "resources": {}
+        }
+    },
+    "status": {}
+}
+`
+
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
+				Args: []string{
+					"some-image",
+					"--blob", "some-blob",
+					"--output", "json",
+					"--wait",
+				},
+				ExpectedOutput: resourceJSON,
+				ExpectPatches: []string{
+					`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
+				},
+			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
+		})
+	})
+
+	when("dry-run flag is used", func() {
+		when("no parameters are provided", func() {
+			it("informs user of nothing to patch", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						img,
+					},
+					Args: []string{
+						"some-image",
+						"--dry-run",
+					},
+					ExpectedOutput: "nothing to patch\n",
+				}.TestKpack(t, cmdFunc)
+			})
+		})
+
+		it("does not patch and prints result message with dry run indicated", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					img,
+				},
+				Args: []string{
+					"some-image",
+					"--blob", "some-blob",
+					"--dry-run",
+					"--wait",
+				},
+				ExpectedOutput: `"some-image" patched (dry run)
+`,
+			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
+		})
+
+		when("output flag is used", func() {
+			it("does not patch and prints the resource output", func() {
+				const resourceYAML = `metadata:
+  creationTimestamp: null
+  name: some-image
+  namespace: some-default-namespace
+spec:
+  build:
+    env:
+    - name: key1
+      value: value1
+    - name: key2
+      value: value2
+    resources: {}
+  builder:
+    kind: ClusterBuilder
+    name: some-ccb
+  source:
+    git:
+      revision: some-revision
+      url: some-git-url
+    subPath: some-path
+  tag: some-tag
+status: {}
+`
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						img,
+					},
+					Args: []string{
+						"some-image",
+						"--blob", "some-blob",
+						"--output", "yaml",
+						"--dry-run",
+						"--wait",
+					},
+					ExpectedOutput: resourceYAML,
+				}.TestKpack(t, cmdFunc)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+		})
+	})
 }

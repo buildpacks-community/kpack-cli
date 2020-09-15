@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
@@ -44,6 +45,8 @@ func NewImportCommand(
 
 	var (
 		filename string
+		dryRun   bool
+		output   string
 	)
 
 	cmd := &cobra.Command{
@@ -55,6 +58,11 @@ cat dependencies.yaml | kp import -f -`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
+			if err != nil {
+				return err
+			}
+
+			ch, err := commands.NewCommandHelper(cmd)
 			if err != nil {
 				return err
 			}
@@ -76,22 +84,26 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			logger := commands.NewPrinter(cmd)
-
 			storeFactory.Repository = repository // FIXME
-			storeFactory.Printer = logger
+			storeFactory.Printer = ch
 
-			stackFactory.Repository = repository // FIXME
-			stackFactory.Printer = logger        // FIXME
+			stackFactory.Repository = repository
+			stackFactory.Printer = ch
 			stackFactory.TLSConfig = storeFactory.TLSConfig
 
-			importHelper := importHelper{descriptor, cs.KpackClient, timestampProvider, logger}
+			importHelper := importHelper{
+				descriptor:        descriptor,
+				client:            cs.KpackClient,
+				timestampProvider: timestampProvider,
+				objects:           []runtime.Object{},
+				ch:                ch,
+			}
 
-			if err := importHelper.ImportStores(storeFactory, repository); err != nil {
+			if err := importHelper.ImportClusterStores(storeFactory, repository); err != nil {
 				return err
 			}
 
-			if err := importHelper.ImportStacks(stackFactory); err != nil {
+			if err := importHelper.ImportClusterStacks(stackFactory); err != nil {
 				return err
 			}
 
@@ -99,10 +111,16 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			return nil
+			if err := ch.PrintObjs(importHelper.objects); err != nil {
+				return err
+			}
+
+			return ch.PrintResult("Imported resources created")
 		},
 	}
 	cmd.Flags().StringVarP(&filename, "filename", "f", "", "dependency descriptor filename")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 	commands.SetTLSFlags(cmd, &storeFactory.TLSConfig)
 	_ = cmd.MarkFlagRequired("filename")
 	return cmd
@@ -160,12 +178,13 @@ type importHelper struct {
 	descriptor        importpkg.DependencyDescriptor
 	client            kpack.Interface
 	timestampProvider TimestampProvider
-	logger            *commands.Logger
+	objects           []runtime.Object
+	ch                *commands.CommandHelper
 }
 
-func (i importHelper) ImportStores(factory *clusterstore.Factory, repository string) error {
+func (i *importHelper) ImportClusterStores(factory *clusterstore.Factory, repository string) error {
 	for _, store := range i.descriptor.ClusterStores {
-		i.logger.Printf("Importing Cluster Store '%s'...", store.Name)
+		i.ch.Printlnf("Importing Cluster Store '%s'...", store.Name)
 
 		var buildpackages []string
 		for _, s := range store.Sources {
@@ -185,10 +204,12 @@ func (i importHelper) ImportStores(factory *clusterstore.Factory, repository str
 
 			newStore.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
-			_, err = i.client.KpackV1alpha1().ClusterStores().Create(newStore)
-			if err != nil {
-				return err
+			if !i.ch.IsDryRun() {
+				if newStore, err = i.client.KpackV1alpha1().ClusterStores().Create(newStore); err != nil {
+					return err
+				}
 			}
+			i.trackObj(newStore)
 		} else {
 			updatedStore, _, err := factory.AddToStore(curStore, repository, buildpackages...)
 			if err != nil {
@@ -197,16 +218,18 @@ func (i importHelper) ImportStores(factory *clusterstore.Factory, repository str
 
 			curStore.Annotations = k8s.MergeAnnotations(curStore.Annotations, map[string]string{importTimestampKey: i.timestampProvider.GetTimestamp()})
 
-			_, err = i.client.KpackV1alpha1().ClusterStores().Update(updatedStore)
-			if err != nil {
-				return err
+			if !i.ch.IsDryRun() {
+				if updatedStore, err = i.client.KpackV1alpha1().ClusterStores().Update(updatedStore); err != nil {
+					return err
+				}
 			}
+			i.trackObj(updatedStore)
 		}
 	}
 	return nil
 }
 
-func (i importHelper) ImportStacks(factory *clusterstack.Factory) error {
+func (i *importHelper) ImportClusterStacks(factory *clusterstack.Factory) error {
 	for _, stack := range i.descriptor.ClusterStacks {
 		if stack.Name == i.descriptor.DefaultClusterStack {
 			i.descriptor.ClusterStacks = append(i.descriptor.ClusterStacks, importpkg.ClusterStack{
@@ -219,9 +242,9 @@ func (i importHelper) ImportStacks(factory *clusterstack.Factory) error {
 	}
 
 	for _, stack := range i.descriptor.ClusterStacks {
-		i.logger.Printf("Importing Cluster Stack '%s'...", stack.Name)
+		i.ch.Printlnf("Importing Cluster Stack '%s'...", stack.Name)
 
-		factory.Printer = i.logger
+		factory.Printer = i.ch
 		factory.BuildImageRef = stack.BuildImage.Image // FIXME
 		factory.RunImageRef = stack.RunImage.Image     // FIXME
 
@@ -238,26 +261,29 @@ func (i importHelper) ImportStacks(factory *clusterstack.Factory) error {
 		}
 
 		if k8serrors.IsNotFound(err) {
-			_, err = i.client.KpackV1alpha1().ClusterStacks().Create(newStack)
-			if err != nil {
-				return err
+			if !i.ch.IsDryRun() {
+				if newStack, err = i.client.KpackV1alpha1().ClusterStacks().Create(newStack); err != nil {
+					return err
+				}
 			}
+			i.trackObj(newStack)
 		} else {
 			updateStack := curStack.DeepCopy()
-
 			updateStack.Spec = newStack.Spec
 			updateStack.Annotations = k8s.MergeAnnotations(updateStack.Annotations, newStack.Annotations)
 
-			_, err = i.client.KpackV1alpha1().ClusterStacks().Update(updateStack)
-			if err != nil {
-				return err
+			if !i.ch.IsDryRun() {
+				if updateStack, err = i.client.KpackV1alpha1().ClusterStacks().Update(updateStack); err != nil {
+					return err
+				}
 			}
+			i.trackObj(updateStack)
 		}
 	}
 	return nil
 }
 
-func (i importHelper) ImportClusterBuilders(repository string, sa string) error {
+func (i *importHelper) ImportClusterBuilders(repository string, sa string) error {
 	for _, cb := range i.descriptor.ClusterBuilders {
 		if cb.Name == i.descriptor.DefaultClusterBuilder {
 			i.descriptor.ClusterBuilders = append(i.descriptor.ClusterBuilders, importpkg.ClusterBuilder{
@@ -271,14 +297,16 @@ func (i importHelper) ImportClusterBuilders(repository string, sa string) error 
 	}
 
 	for _, ccb := range i.descriptor.ClusterBuilders {
-		i.logger.Printf("Importing Cluster Builder '%s'...", ccb.Name)
+		if err := i.ch.Printlnf("Importing Cluster Builder '%s'...", ccb.Name); err != nil {
+			return err
+		}
 
-		newCCB, err := i.makeClusterBuilder(ccb, repository, sa)
+		newCB, err := i.makeClusterBuilder(ccb, repository, sa)
 		if err != nil {
 			return err
 		}
 
-		newCCB.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
+		newCB.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
 		curCCB, err := i.client.KpackV1alpha1().ClusterBuilders().Get(ccb.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
@@ -286,22 +314,30 @@ func (i importHelper) ImportClusterBuilders(repository string, sa string) error 
 		}
 
 		if k8serrors.IsNotFound(err) {
-			_, err = i.client.KpackV1alpha1().ClusterBuilders().Create(newCCB)
-			if err != nil {
-				return err
+			if !i.ch.IsDryRun() {
+				if newCB, err = i.client.KpackV1alpha1().ClusterBuilders().Create(newCB); err != nil {
+					return err
+				}
 			}
+			i.trackObj(newCB)
 		} else {
-			updateCCB := curCCB.DeepCopy()
-			updateCCB.Spec = newCCB.Spec
-			updateCCB.Annotations = k8s.MergeAnnotations(updateCCB.Annotations, newCCB.Annotations)
+			updateCB := curCCB.DeepCopy()
+			updateCB.Spec = newCB.Spec
+			updateCB.Annotations = k8s.MergeAnnotations(updateCB.Annotations, newCB.Annotations)
 
-			_, err = i.client.KpackV1alpha1().ClusterBuilders().Update(updateCCB)
-			if err != nil {
-				return err
+			if !i.ch.IsDryRun() {
+				if updateCB, err = i.client.KpackV1alpha1().ClusterBuilders().Update(updateCB); err != nil {
+					return err
+				}
 			}
+			i.trackObj(updateCB)
 		}
 	}
 	return nil
+}
+
+func (i *importHelper) trackObj(obj runtime.Object) {
+	i.objects = append(i.objects, obj)
 }
 
 func (i importHelper) makeClusterBuilder(ccb importpkg.ClusterBuilder, repository string, sa string) (*v1alpha1.ClusterBuilder, error) {

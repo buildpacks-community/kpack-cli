@@ -118,4 +118,175 @@ func testBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 		}.TestKpack(t, cmdFunc)
 	})
+
+	when("output flag is used", func() {
+		it("can output in yaml format", func() {
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: Builder
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Builder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccount":"default"},"status":{"stack":{}}}'
+  creationTimestamp: null
+  name: test-builder
+  namespace: some-namespace
+spec:
+  order:
+  - group:
+    - id: org.cloudfoundry.nodejs
+  - group:
+    - id: org.cloudfoundry.go
+  serviceAccount: default
+  stack:
+    kind: ClusterStack
+    name: some-stack
+  store:
+    kind: ClusterStore
+    name: some-store
+  tag: some-registry.com/test-builder
+status:
+  stack: {}
+`
+
+			testhelpers.CommandTest{
+				Args: []string{
+					expectedBuilder.Name,
+					"--tag", expectedBuilder.Spec.Tag,
+					"--stack", expectedBuilder.Spec.Stack.Name,
+					"--store", expectedBuilder.Spec.Store.Name,
+					"--order", "./testdata/order.yaml",
+					"-n", expectedBuilder.Namespace,
+					"--output", "yaml",
+				},
+				ExpectedOutput: resourceYAML,
+				ExpectCreates: []runtime.Object{
+					expectedBuilder,
+				},
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("can output in json format", func() {
+			const resourceJSON = `{
+    "kind": "Builder",
+    "apiVersion": "kpack.io/v1alpha1",
+    "metadata": {
+        "name": "test-builder",
+        "namespace": "some-namespace",
+        "creationTimestamp": null,
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"Builder\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"test-builder\",\"namespace\":\"some-namespace\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry.com/test-builder\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"some-stack\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"some-store\"},\"order\":[{\"group\":[{\"id\":\"org.cloudfoundry.nodejs\"}]},{\"group\":[{\"id\":\"org.cloudfoundry.go\"}]}],\"serviceAccount\":\"default\"},\"status\":{\"stack\":{}}}"
+        }
+    },
+    "spec": {
+        "tag": "some-registry.com/test-builder",
+        "stack": {
+            "kind": "ClusterStack",
+            "name": "some-stack"
+        },
+        "store": {
+            "kind": "ClusterStore",
+            "name": "some-store"
+        },
+        "order": [
+            {
+                "group": [
+                    {
+                        "id": "org.cloudfoundry.nodejs"
+                    }
+                ]
+            },
+            {
+                "group": [
+                    {
+                        "id": "org.cloudfoundry.go"
+                    }
+                ]
+            }
+        ],
+        "serviceAccount": "default"
+    },
+    "status": {
+        "stack": {}
+    }
+}
+`
+
+			testhelpers.CommandTest{
+				Args: []string{
+					expectedBuilder.Name,
+					"--tag", expectedBuilder.Spec.Tag,
+					"--stack", expectedBuilder.Spec.Stack.Name,
+					"--store", expectedBuilder.Spec.Store.Name,
+					"--order", "./testdata/order.yaml",
+					"-n", expectedBuilder.Namespace,
+					"--output", "json",
+				},
+				ExpectedOutput: resourceJSON,
+				ExpectCreates: []runtime.Object{
+					expectedBuilder,
+				},
+			}.TestKpack(t, cmdFunc)
+		})
+	})
+
+	when("dry-run flag is used", func() {
+		it("does not create a Builder and prints result with dry run indicated", func() {
+			testhelpers.CommandTest{
+				Args: []string{
+					expectedBuilder.Name,
+					"--tag", expectedBuilder.Spec.Tag,
+					"--stack", expectedBuilder.Spec.Stack.Name,
+					"--store", expectedBuilder.Spec.Store.Name,
+					"--order", "./testdata/order.yaml",
+					"-n", expectedBuilder.Namespace,
+					"--dry-run",
+				},
+				ExpectedOutput: `"test-builder" created (dry run)
+`,
+			}.TestKpack(t, cmdFunc)
+		})
+
+		when("output flag is used", func() {
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: Builder
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Builder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccount":"default"},"status":{"stack":{}}}'
+  creationTimestamp: null
+  name: test-builder
+  namespace: some-namespace
+spec:
+  order:
+  - group:
+    - id: org.cloudfoundry.nodejs
+  - group:
+    - id: org.cloudfoundry.go
+  serviceAccount: default
+  stack:
+    kind: ClusterStack
+    name: some-stack
+  store:
+    kind: ClusterStore
+    name: some-store
+  tag: some-registry.com/test-builder
+status:
+  stack: {}
+`
+
+			it("does not create a Builder and prints the resource output", func() {
+				testhelpers.CommandTest{
+					Args: []string{
+						expectedBuilder.Name,
+						"--tag", expectedBuilder.Spec.Tag,
+						"--stack", expectedBuilder.Spec.Stack.Name,
+						"--store", expectedBuilder.Spec.Store.Name,
+						"--order", "./testdata/order.yaml",
+						"-n", expectedBuilder.Namespace,
+						"--dry-run",
+						"--output", "yaml",
+					},
+					ExpectedOutput: resourceYAML,
+				}.TestKpack(t, cmdFunc)
+			})
+		})
+	})
 }
