@@ -188,6 +188,110 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectedOutput: "Error: build stack 'some-new-id' does not match run stack 'other-stack-id'\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
+
+	when("dry run is specified", func() {
+		const resourceYAML = `metadata:
+  creationTimestamp: null
+  name: some-stack
+spec:
+  buildImage:
+    image: some-registry.com/some-repo/build@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7
+  id: some-new-id
+  runImage:
+    image: some-registry.com/some-repo/run@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7
+status:
+  buildImage:
+    image: some-old-build-image
+    latestImage: some-registry.com/old-repo/build@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6
+  id: some-old-id
+  runImage:
+    image: some-old-run-image
+    latestImage: some-registry.com/old-repo/run@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6
+`
+		const resourceJSON = `{
+    "metadata": {
+        "name": "some-stack",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "id": "some-new-id",
+        "buildImage": {
+            "image": "some-registry.com/some-repo/build@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7"
+        },
+        "runImage": {
+            "image": "some-registry.com/some-repo/run@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7"
+        }
+    },
+    "status": {
+        "id": "some-old-id",
+        "buildImage": {
+            "latestImage": "some-registry.com/old-repo/build@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6",
+            "image": "some-old-build-image"
+        },
+        "runImage": {
+            "latestImage": "some-registry.com/old-repo/run@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6",
+            "image": "some-old-run-image"
+        }
+    }
+}
+`
+
+		when("without an output format", func() {
+			it("does not update the stack and defaults resource output to yaml format", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						stack,
+					},
+					Args: []string{
+						"some-stack",
+						"--build-image", "some-new-build-image",
+						"--run-image", "some-new-run-image",
+						"--dry-run",
+					},
+					ExpectedOutput: resourceYAML,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+
+		it("does not update the stack and outputs the resource in yaml format", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				KpackObjects: []runtime.Object{
+					stack,
+				},
+				Args: []string{
+					"some-stack",
+					"--build-image", "some-new-build-image",
+					"--run-image", "some-new-run-image",
+					"--dry-run", "-o", "yaml",
+				},
+				ExpectedOutput: resourceYAML,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("does not update the stack and outputs the resource in json format", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				KpackObjects: []runtime.Object{
+					stack,
+				},
+				Args: []string{
+					"some-stack",
+					"--build-image", "some-new-build-image",
+					"--run-image", "some-new-run-image",
+					"--dry-run", "-o", "json",
+				},
+				ExpectedOutput: resourceJSON,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+	})
 }
 
 func makeStackImages(t *testing.T, stackId string) (v1.Image, string, v1.Image, string) {

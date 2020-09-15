@@ -16,9 +16,10 @@ import (
 
 func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
-		namespace string
-		subPath   string
-		wait      bool
+		namespace    string
+		subPath      string
+		wait         bool
+		dryRunConfig DryRunConfig
 	)
 
 	cmd := &cobra.Command{
@@ -71,17 +72,18 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				factory.SubPath = &subPath
 			}
 
-			img, err = patch(img, factory, cs)
+			dryRunConfig.writer = cmd.OutOrStdout()
+
+			img, err = patch(img, factory, dryRunConfig, cs)
 			if err != nil {
 				return err
 			}
 
-			if wait {
+			if wait && !dryRunConfig.dryRun {
 				_, err = newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 				if err != nil {
 					return err
 				}
-
 			}
 
 			return nil
@@ -97,12 +99,14 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringVar(&factory.ClusterBuilder, "cluster-builder", "", "cluster builder name")
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables to add/replace")
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
-
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image patch to be reconciled and tail resulting build logs")
+	cmd.Flags().BoolVarP(&dryRunConfig.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVarP(&dryRunConfig.outputFormat, "output", "o", "yaml", "output format. supported formats are: yaml, json")
+
 	return cmd
 }
 
-func patch(img *v1alpha1.Image, factory *image.Factory, cs k8s.ClientSet) (*v1alpha1.Image, error) {
+func patch(img *v1alpha1.Image, factory *image.Factory, drc DryRunConfig, cs k8s.ClientSet) (*v1alpha1.Image, error) {
 	patch, err := factory.MakePatch(img)
 	if err != nil {
 		return nil, err
@@ -111,6 +115,14 @@ func patch(img *v1alpha1.Image, factory *image.Factory, cs k8s.ClientSet) (*v1al
 	if len(patch) == 0 {
 		factory.Printer.Printf("nothing to patch")
 		return nil, err
+	}
+
+	if drc.dryRun {
+		printer, err := commands.NewResourcePrinter(drc.outputFormat)
+		if err != nil {
+			return nil, err
+		}
+		return nil, printer.PrintObject(img, drc.writer)
 	}
 
 	img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(img.Name, types.MergePatchType, patch)

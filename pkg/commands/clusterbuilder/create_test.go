@@ -220,4 +220,22 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
+
+	when("dry run is specified", func() {
+		const resourceYAML = `
+`
+		const resourceJSON = `
+`
+
+		when("without an output format", func() {
+			it("does not create a stack and defaults resource output to yaml format", func() {
+			})
+		})
+
+		it("does not create a stack and outputs the resource in yaml format", func() {
+		})
+
+		it("does not create a stack and outputs the resource in json format", func() {
+		})
+	})
 }

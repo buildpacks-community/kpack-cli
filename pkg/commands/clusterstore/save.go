@@ -14,7 +14,10 @@ import (
 )
 
 func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstore.Factory) *cobra.Command {
-	var buildpackages []string
+	var (
+		buildpackages []string
+		dryRunConfig DryRunConfig
+	)
 
 	cmd := &cobra.Command{
 		Use:   "save <store> -b <buildpackage> [-b <buildpackage>...]",
@@ -34,7 +37,12 @@ kp clusterstore save my-store -b ../path/to/my-local-buildpackage.cnb`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
-			factory.Printer = commands.NewPrinter(cmd)
+			if dryRunConfig.dryRun {
+				factory.Printer = commands.NewDiscardPrinter()
+			} else {
+				factory.Printer = commands.NewPrinter(cmd)
+			}
+			dryRunConfig.writer = cmd.OutOrStdout()
 
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
@@ -43,15 +51,17 @@ kp clusterstore save my-store -b ../path/to/my-local-buildpackage.cnb`,
 
 			s, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(name, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return create(name, buildpackages, factory, cs)
+				return create(name, buildpackages, factory, dryRunConfig, cs)
 			} else if err != nil {
 				return err
 			}
 
-			return update(s, buildpackages, factory, cs)
+			return update(s, buildpackages, factory, dryRunConfig, cs)
 		},
 	}
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
+	cmd.Flags().BoolVarP(&dryRunConfig.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVarP(&dryRunConfig.outputFormat, "output", "o", "yaml", "output format. supported formats are: yaml, json")
 	return cmd
 }

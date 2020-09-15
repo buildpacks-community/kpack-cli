@@ -188,6 +188,7 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Aliases: []string{"csk"},
 		Short:   "Cluster Stack Commands",
 	}
+
 	stackRootCmd.AddCommand(
 		clusterstackcmds.NewCreateCommand(clientSetProvider, stackFactory),
 		clusterstackcmds.NewUpdateCommand(clientSetProvider, stackFactory),

@@ -184,4 +184,94 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
+
+	when("dry run is specified", func() {
+		const resourceYAML = `metadata:
+  creationTimestamp: null
+  name: some-store-name
+spec:
+  sources:
+  - image: some/imageinStore@sha256:123alreadyInStore
+  - image: some/path/newbp@sha256:123newbp
+  - image: some/path/bpfromcnb@sha256:123imagefromcnb
+status: {}
+`
+		const resourceJSON = `{
+    "metadata": {
+        "name": "some-store-name",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "sources": [
+            {
+                "image": "some/imageinStore@sha256:123alreadyInStore"
+            },
+            {
+                "image": "some/path/newbp@sha256:123newbp"
+            },
+            {
+                "image": "some/path/bpfromcnb@sha256:123imagefromcnb"
+            }
+        ]
+    },
+    "status": {}
+}
+`
+
+		when("without an output format", func() {
+			it("does not create a clusterstore and defaults resource output to yaml format", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						store,
+					},
+					Args: []string{
+						storeName,
+						"--buildpackage", "some/newbp",
+						"-b", "bpfromcnb.cnb",
+						"--dry-run",
+					},
+					ExpectedOutput: resourceYAML,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+
+		it("does not add buildpackage to store and outputs the resource in yaml format", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				KpackObjects: []runtime.Object{
+					store,
+				},
+				Args: []string{
+					storeName,
+					"--buildpackage", "some/newbp",
+					"-b", "bpfromcnb.cnb",
+					"--dry-run", "-o", "yaml",
+				},
+				ExpectedOutput: resourceYAML,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("does not add buildpackage to store and outputs the resource in json format", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				KpackObjects: []runtime.Object{
+					store,
+				},
+				Args: []string{
+					storeName,
+					"--buildpackage", "some/newbp",
+					"-b", "bpfromcnb.cnb",
+					"--dry-run", "-o", "json",
+				},
+				ExpectedOutput: resourceJSON,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+	})
 }

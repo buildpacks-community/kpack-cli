@@ -6,6 +6,7 @@ package clusterbuilder
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"path"
 
 	"github.com/spf13/cobra"
@@ -28,10 +29,7 @@ const (
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
-		tag   string
-		stack string
-		store string
-		order string
+		flags CommandFlags
 	)
 
 	cmd := &cobra.Command{
@@ -57,20 +55,31 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 				return err
 			}
 
-			return create(name, tag, stack, store, order, cmd, cs)
+			return create(name, flags, cmd.OutOrStdout(), cs)
 		},
 	}
-	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
-	cmd.Flags().StringVarP(&stack, "stack", "s", defaultStack, "stack resource to use")
-	cmd.Flags().StringVar(&store, "store", defaultStore, "buildpack store to use")
-	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
-
+	cmd.Flags().StringVarP(&flags.tag, "tag", "t", "", "registry location where the builder will be created")
+	cmd.Flags().StringVarP(&flags.stack, "stack", "s", defaultStack, "stack resource to use")
+	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
+	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
+	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVarP(&flags.outputFormat, "output", "", "yaml", "output format. supported formats are: yaml, json")
 	return cmd
 }
 
-func create(name, tag, stack, store, order string, cmd *cobra.Command, cs k8s.ClientSet) error {
+type CommandFlags struct {
+	tag   string
+	stack string
+	store string
+	order string
+	dryRun bool
+	outputFormat string
+}
+
+func create(name string, flags CommandFlags, writer io.Writer, cs k8s.ClientSet) error {
 	configHelper := k8s.DefaultConfigHelper(cs)
 
+	tag := flags.tag
 	if tag == "" {
 		repository, err := configHelper.GetCanonicalRepository()
 		if err != nil {
@@ -98,11 +107,11 @@ func create(name, tag, stack, store, order string, cmd *cobra.Command, cs k8s.Cl
 			BuilderSpec: v1alpha1.BuilderSpec{
 				Tag: tag,
 				Stack: corev1.ObjectReference{
-					Name: stack,
+					Name: flags.stack,
 					Kind: v1alpha1.ClusterStackKind,
 				},
 				Store: corev1.ObjectReference{
-					Name: store,
+					Name: flags.store,
 					Kind: v1alpha1.ClusterStoreKind,
 				},
 			},
@@ -113,7 +122,7 @@ func create(name, tag, stack, store, order string, cmd *cobra.Command, cs k8s.Cl
 		},
 	}
 
-	cb.Spec.Order, err = builder.ReadOrder(order)
+	cb.Spec.Order, err = builder.ReadOrder(flags.order)
 	if err != nil {
 		return err
 	}
@@ -130,6 +139,6 @@ func create(name, tag, stack, store, order string, cmd *cobra.Command, cs k8s.Cl
 		return err
 	}
 
-	_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", cb.Name)
+	_, err = fmt.Fprintf(writer, "\"%s\" created\n", cb.Name)
 	return err
 }

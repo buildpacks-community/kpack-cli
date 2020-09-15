@@ -631,6 +631,105 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 	})
+
+	when("dry run is specified", func() {
+		// .dockerconfigjson value is the base64 encoding of
+		// `{"auths":{"my-registry.io/my-repo":{"username":"my-registry-user","password":"dummy-password"}}}`
+		const expectedYAML = `data:
+  .dockerconfigjson: eyJhdXRocyI6eyJteS1yZWdpc3RyeS5pby9teS1yZXBvIjp7InVzZXJuYW1lIjoibXktcmVnaXN0cnktdXNlciIsInBhc3N3b3JkIjoiZHVtbXktcGFzc3dvcmQifX19
+metadata:
+  creationTimestamp: null
+  name: my-registry-cred
+  namespace: some-default-namespace
+type: kubernetes.io/dockerconfigjson
+---
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJteS1yZWdpc3RyeS5pby9teS1yZXBvIjp7InVzZXJuYW1lIjoibXktcmVnaXN0cnktdXNlciIsInBhc3N3b3JkIjoiZHVtbXktcGFzc3dvcmQifX19
+metadata:
+  creationTimestamp: null
+  name: my-registry-cred
+  namespace: some-default-namespace
+type: kubernetes.io/dockerconfigjson
+`
+		const expectedJSON = `{
+    "metadata": {
+        "name": "my-registry-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJteS1yZWdpc3RyeS5pby9teS1yZXBvIjp7InVzZXJuYW1lIjoibXktcmVnaXN0cnktdXNlciIsInBhc3N3b3JkIjoiZHVtbXktcGFzc3dvcmQifX19"
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+{
+    "metadata": {
+        "name": "my-registry-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJteS1yZWdpc3RyeS5pby9teS1yZXBvIjp7InVzZXJuYW1lIjoibXktcmVnaXN0cnktdXNlciIsInBhc3N3b3JkIjoiZHVtbXktcGFzc3dvcmQifX19"
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+`
+		var (
+			registry               = "my-registry.io/my-repo"
+			registryUser           = "my-registry-user"
+			registryPassword       = "dummy-password"
+			secretName             = "my-registry-cred"
+		)
+
+		fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
+
+		when("without an output format", func() {
+			it("does not create the image and defaults resource output to yaml format", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{
+						secretName,
+						"--registry", registry,
+						"--registry-user", registryUser,
+						"--dry-run",
+					},
+					ExpectedOutput: expectedYAML,
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+
+		it("does not create a secret and outputs the resources in yaml format", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					defaultServiceAccount,
+				},
+				Args: []string{
+					secretName,
+					"--registry", registry,
+					"--registry-user", registryUser,
+					"--dry-run", "-o", "yaml",
+				},
+				ExpectedOutput: expectedYAML,
+			}.TestK8s(t, cmdFunc)
+		})
+
+		it("does not create a secret and outputs the resource in json format", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					defaultServiceAccount,
+				},
+				Args: []string{
+					secretName,
+					"--registry", registry,
+					"--registry-user", registryUser,
+					"--dry-run", "-o", "json",
+				},
+				ExpectedOutput: expectedJSON,
+			}.TestK8s(t, cmdFunc)
+		})
+	})
 }
 
 type fakeCredentialFetcher struct {

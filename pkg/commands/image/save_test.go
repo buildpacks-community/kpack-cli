@@ -378,6 +378,126 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
+		when("dry run is specified", func() {
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: Image
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+  creationTimestamp: null
+  name: some-image
+  namespace: some-default-namespace
+spec:
+  build:
+    env:
+    - name: some-key
+      value: some-val
+    resources: {}
+  builder:
+    kind: ClusterBuilder
+    name: default
+  serviceAccount: default
+  source:
+    git:
+      revision: some-git-rev
+      url: some-git-url
+    subPath: some-sub-path
+  tag: some-registry.io/some-repo
+status: {}
+`
+			const resourceJSON = `{
+    "kind": "Image",
+    "apiVersion": "kpack.io/v1alpha1",
+    "metadata": {
+        "name": "some-image",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null,
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"Image\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"some-image\",\"namespace\":\"some-default-namespace\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry.io/some-repo\",\"builder\":{\"kind\":\"ClusterBuilder\",\"name\":\"default\"},\"serviceAccount\":\"default\",\"source\":{\"git\":{\"url\":\"some-git-url\",\"revision\":\"some-git-rev\"},\"subPath\":\"some-sub-path\"},\"build\":{\"env\":[{\"name\":\"some-key\",\"value\":\"some-val\"}],\"resources\":{}}},\"status\":{}}"
+        }
+    },
+    "spec": {
+        "tag": "some-registry.io/some-repo",
+        "builder": {
+            "kind": "ClusterBuilder",
+            "name": "default"
+        },
+        "serviceAccount": "default",
+        "source": {
+            "git": {
+                "url": "some-git-url",
+                "revision": "some-git-rev"
+            },
+            "subPath": "some-sub-path"
+        },
+        "build": {
+            "env": [
+                {
+                    "name": "some-key",
+                    "value": "some-val"
+                }
+            ],
+            "resources": {}
+        }
+    },
+    "status": {}
+}
+`
+
+			when("without an output format", func() {
+				it("does not create the image and defaults resource output to yaml format", func() {
+					testhelpers.CommandTest{
+						Args: []string{
+							"some-image",
+							"--tag", "some-registry.io/some-repo",
+							"--git", "some-git-url",
+							"--git-revision", "some-git-rev",
+							"--sub-path", "some-sub-path",
+							"--env", "some-key=some-val",
+							"--wait",
+							"--dry-run",
+						},
+						ExpectedOutput: resourceYAML,
+					}.TestKpack(t, cmdFunc)
+					assert.Len(t, fakeImageWaiter.Calls, 0)
+				})
+			})
+
+			it("does not create the image and outputs the resource in yaml format", func() {
+				testhelpers.CommandTest{
+					Args: []string{
+						"some-image",
+						"--tag", "some-registry.io/some-repo",
+						"--git", "some-git-url",
+						"--git-revision", "some-git-rev",
+						"--sub-path", "some-sub-path",
+						"--env", "some-key=some-val",
+						"--wait",
+						"--dry-run", "-o", "yaml",
+					},
+					ExpectedOutput: resourceYAML,
+				}.TestKpack(t, cmdFunc)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+
+			it("does not create the image and outputs the resource in json format", func() {
+				testhelpers.CommandTest{
+					Args: []string{
+						"some-image",
+						"--tag", "some-registry.io/some-repo",
+						"--git", "some-git-url",
+						"--git-revision", "some-git-rev",
+						"--sub-path", "some-sub-path",
+						"--env", "some-key=some-val",
+						"--wait",
+						"--dry-run", "-o", "json",
+					},
+					ExpectedOutput: resourceJSON,
+				}.TestKpack(t, cmdFunc)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+		})
+
 		it("errors when tag is not provided", func() {
 			testhelpers.CommandTest{
 				Args: []string{
@@ -442,7 +562,7 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		when("no parameters are provided", func() {
-			it("does not create a patch", func() {
+			it("does not create a patch and informs the user there is nothing to patch", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						img,
@@ -453,6 +573,22 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectedOutput: "nothing to patch\n",
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+
+			when("dry run is specified", func() {
+				it("does not create a patch and informs the user there is nothing to patch", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							img,
+						},
+						Args: []string{
+							"some-image",
+							"--dry-run", "-o", "yaml",
+						},
+						ExpectedOutput: "nothing to patch\n",
+					}.TestKpack(t, cmdFunc)
+					assert.Len(t, fakeImageWaiter.Calls, 0)
+				})
 			})
 		})
 
@@ -621,6 +757,115 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				}.TestKpack(t, cmdFunc)
 
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+		})
+
+		when("dry run is specified", func() {
+			const expectedYAML = `metadata:
+  creationTimestamp: null
+  name: some-image
+  namespace: some-default-namespace
+spec:
+  build:
+    env:
+    - name: key1
+      value: value1
+    - name: key2
+      value: value2
+    resources: {}
+  builder:
+    kind: ClusterBuilder
+    name: some-ccb
+  source:
+    git:
+      revision: some-revision
+      url: some-git-url
+    subPath: some-path
+  tag: some-tag
+status: {}
+`
+			const expectedJSON = `{
+    "metadata": {
+        "name": "some-image",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "tag": "some-tag",
+        "builder": {
+            "kind": "ClusterBuilder",
+            "name": "some-ccb"
+        },
+        "source": {
+            "git": {
+                "url": "some-git-url",
+                "revision": "some-revision"
+            },
+            "subPath": "some-path"
+        },
+        "build": {
+            "env": [
+                {
+                    "name": "key1",
+                    "value": "value1"
+                },
+                {
+                    "name": "key2",
+                    "value": "value2"
+                }
+            ],
+            "resources": {}
+        }
+    },
+    "status": {}
+}
+`
+
+			when("without an output format", func() {
+				it("does not patch the image and defaults resource output to yaml format", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							img,
+						},
+						Args: []string{
+							"some-image",
+							"--sub-path", "a-new-path",
+							"--dry-run",
+						},
+						ExpectedOutput: expectedYAML,
+					}.TestKpack(t, cmdFunc)
+					assert.Len(t, fakeImageWaiter.Calls, 0)
+				})
+			})
+
+			it("does not patch the image and outputs the resource in yaml format", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						img,
+					},
+					Args: []string{
+						"some-image",
+						"--sub-path", "a-new-path",
+						"--dry-run", "-o", "yaml",
+					},
+					ExpectedOutput: expectedYAML,
+				}.TestKpack(t, cmdFunc)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+
+			it("does not patch the image and outputs the resource in json format", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						img,
+					},
+					Args: []string{
+						"some-image",
+						"--sub-path", "a-new-path",
+						"--dry-run", "-o", "json",
+					},
+					ExpectedOutput: expectedJSON,
+				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 		})

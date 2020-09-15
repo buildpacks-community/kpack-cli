@@ -20,6 +20,7 @@ func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Fact
 		namespace string
 		subPath   string
 		wait      bool
+		dryRunConfig DryRunConfig
 	)
 
 	cmd := &cobra.Command{
@@ -61,6 +62,8 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 
 			factory.Printer = commands.NewPrinter(cmd)
 
+			dryRunConfig.writer = cmd.OutOrStdout()
+
 			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				if tag == "" {
@@ -68,10 +71,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 				}
 
 				factory.SubPath = &subPath
-				img, err = create(name, tag, factory, cs)
-				if err != nil {
-					return err
-				}
+				img, err = create(name, tag, factory, dryRunConfig, cs)
 			} else if err != nil {
 				return err
 			} else {
@@ -79,13 +79,14 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 					factory.SubPath = &subPath
 				}
 
-				img, err = patch(img, factory, cs)
-				if err != nil {
-					return err
-				}
+				img, err = patch(img, factory, dryRunConfig, cs)
 			}
 
-			if wait {
+			if err != nil {
+				return err
+			}
+
+			if wait && !dryRunConfig.dryRun {
 				_, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 				if err != nil {
 					return err
@@ -105,6 +106,8 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
+	cmd.Flags().BoolVarP(&dryRunConfig.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVarP(&dryRunConfig.outputFormat, "output", "o", "yaml", "output format. supported formats are: yaml, json")
 
 	return cmd
 }

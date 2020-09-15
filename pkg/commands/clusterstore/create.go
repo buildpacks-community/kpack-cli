@@ -4,6 +4,8 @@
 package clusterstore
 
 import (
+	"io"
+
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 
@@ -13,7 +15,10 @@ import (
 )
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstore.Factory) *cobra.Command {
-	var buildpackages []string
+	var (
+		buildpackages []string
+		dryRunConfig  DryRunConfig
+	)
 
 	cmd := &cobra.Command{
 		Use:   "create <store> -b <buildpackage> [-b <buildpackage>...]",
@@ -33,22 +38,35 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
-			factory.Printer = commands.NewPrinter(cmd)
+			if dryRunConfig.dryRun {
+				factory.Printer = commands.NewDiscardPrinter()
+			} else {
+				factory.Printer = commands.NewPrinter(cmd)
+			}
+			dryRunConfig.writer = cmd.OutOrStdout()
 
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			return create(name, buildpackages, factory, cs)
+			return create(name, buildpackages, factory, dryRunConfig, cs)
 		},
 	}
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
+	cmd.Flags().BoolVarP(&dryRunConfig.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVarP(&dryRunConfig.outputFormat, "output", "o", "yaml", "output format. supported formats are: yaml, json")
 	return cmd
 }
 
-func create(name string, buildpackages []string, factory *clusterstore.Factory, cs k8s.ClientSet) (err error) {
+type DryRunConfig struct {
+	dryRun       bool
+	outputFormat string
+	writer       io.Writer
+}
+
+func create(name string, buildpackages []string, factory *clusterstore.Factory, drc DryRunConfig, cs k8s.ClientSet) (err error) {
 	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
 		return err
@@ -58,6 +76,15 @@ func create(name string, buildpackages []string, factory *clusterstore.Factory, 
 	newStore, err := factory.MakeStore(name, buildpackages...)
 	if err != nil {
 		return err
+	}
+
+	if drc.dryRun {
+		printer, err := commands.NewResourcePrinter(drc.outputFormat)
+		if err != nil {
+			return err
+		}
+
+		return printer.PrintObject(newStore, drc.writer)
 	}
 
 	_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Create(newStore)

@@ -5,6 +5,7 @@ package clusterstack
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/spf13/cobra"
 
@@ -14,6 +15,10 @@ import (
 )
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
+	var (
+		dryRunConfig  DryRunConfig
+	)
+
 	cmd := &cobra.Command{
 		Use:   "create <name>",
 		Short: "Create a cluster stack",
@@ -36,21 +41,34 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 			}
 
 			name := args[0]
+			dryRunConfig.writer = cmd.OutOrStdout()
 
-			factory.Printer = commands.NewPrinter(cmd)
+			if dryRunConfig.dryRun {
+				factory.Printer = commands.NewDiscardPrinter()
+			} else {
+				factory.Printer = commands.NewPrinter(cmd)
+			}
 
-			return create(name, factory, cs)
+			return create(name, factory, dryRunConfig, cs)
 		},
 	}
 	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
 	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
+	cmd.Flags().BoolVarP(&dryRunConfig.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVarP(&dryRunConfig.outputFormat, "output", "o", "yaml", "output format. supported formats are: yaml, json")
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")
 
 	return cmd
 }
 
-func create(name string, factory *clusterstack.Factory, cs k8s.ClientSet) (err error) {
+type DryRunConfig struct {
+	dryRun       bool
+	outputFormat string
+	writer       io.Writer
+}
+
+func create(name string, factory *clusterstack.Factory, drc DryRunConfig, cs k8s.ClientSet) (err error) {
 	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
 		return err
@@ -59,6 +77,15 @@ func create(name string, factory *clusterstack.Factory, cs k8s.ClientSet) (err e
 	stack, err := factory.MakeStack(name)
 	if err != nil {
 		return err
+	}
+
+	if drc.dryRun {
+		printer, err := commands.NewResourcePrinter(drc.outputFormat)
+		if err != nil {
+			return err
+		}
+
+		return printer.PrintObject(stack, drc.writer)
 	}
 
 	_, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Create(stack)

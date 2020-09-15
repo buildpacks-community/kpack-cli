@@ -16,7 +16,10 @@ import (
 )
 
 func NewAddCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstore.Factory) *cobra.Command {
-	var buildpackages []string
+	var (
+		buildpackages []string
+		dryRunConfig  DryRunConfig
+	)
 
 	cmd := &cobra.Command{
 		Use:   "add <store> -b <buildpackage> [-b <buildpackage>...]",
@@ -35,7 +38,12 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			storeName := args[0]
-			factory.Printer = commands.NewPrinter(cmd)
+			if dryRunConfig.dryRun {
+				factory.Printer = commands.NewDiscardPrinter()
+			} else {
+				factory.Printer = commands.NewPrinter(cmd)
+			}
+			dryRunConfig.writer = cmd.OutOrStdout()
 
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
@@ -49,15 +57,17 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			return update(s, buildpackages, factory, cs)
+			return update(s, buildpackages, factory, dryRunConfig, cs)
 		},
 	}
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
+	cmd.Flags().BoolVarP(&dryRunConfig.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVarP(&dryRunConfig.outputFormat, "output", "o", "yaml", "output format. supported formats are: yaml, json")
 	return cmd
 }
 
-func update(s *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, cs k8s.ClientSet) error {
+func update(s *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, drc DryRunConfig, cs k8s.ClientSet) error {
 	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
 		return err
@@ -72,6 +82,15 @@ func update(s *v1alpha1.ClusterStore, buildpackages []string, factory *clusterst
 	if !storeUpdated {
 		factory.Printer.Printf("ClusterStore Unchanged")
 		return nil
+	}
+
+	if drc.dryRun {
+		printer, err := commands.NewResourcePrinter(drc.outputFormat)
+		if err != nil {
+			return err
+		}
+
+		return printer.PrintObject(updatedStore, drc.writer)
 	}
 
 	_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(updatedStore)

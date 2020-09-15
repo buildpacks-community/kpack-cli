@@ -146,4 +146,91 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectedOutput: "Error: build stack 'some-stack-id' does not match run stack 'some-other-stack-id'\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
+
+	when("dry run is specified", func() {
+		const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
+  creationTimestamp: null
+  name: some-stack
+spec:
+  buildImage:
+    image: some-registry.io/some-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+  id: some-stack-id
+  runImage:
+    image: some-registry.io/some-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+status:
+  buildImage: {}
+  runImage: {}
+`
+		const resourceJSON = `{
+    "kind": "ClusterStack",
+    "apiVersion": "kpack.io/v1alpha1",
+    "metadata": {
+        "name": "some-stack",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "id": "some-stack-id",
+        "buildImage": {
+            "image": "some-registry.io/some-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d"
+        },
+        "runImage": {
+            "image": "some-registry.io/some-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d"
+        }
+    },
+    "status": {
+        "buildImage": {},
+        "runImage": {}
+    }
+}
+`
+
+		when("without an output format", func() {
+			it("does not create a stack and defaults resource output to yaml format", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					Args: []string{
+						"some-stack",
+						"--build-image", "some-build-image",
+						"--run-image", "some-run-image",
+						"--dry-run",
+					},
+					ExpectedOutput: resourceYAML,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+
+		it("does not create a stack and outputs the resource in yaml format", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					"some-stack",
+					"--build-image", "some-build-image",
+					"--run-image", "some-run-image",
+					"--dry-run", "-o", "yaml",
+				},
+				ExpectedOutput: resourceYAML,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("does not create a stack and outputs the resource in json format", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					"some-stack",
+					"--build-image", "some-build-image",
+					"--run-image", "some-run-image",
+					"--dry-run", "-o", "json",
+				},
+				ExpectedOutput: resourceJSON,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+	})
 }

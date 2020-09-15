@@ -6,6 +6,7 @@ package commands
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 
 	"github.com/spf13/cobra"
 )
@@ -14,6 +15,13 @@ func NewPrinter(cmd *cobra.Command) *Logger {
 	return &Logger{
 		Writer: cmd.OutOrStdout(),
 		Err:    cmd.OutOrStderr(),
+	}
+}
+
+func NewDiscardPrinter() *Logger {
+	return &Logger{
+		Writer: ioutil.Discard,
+		Err:    ioutil.Discard,
 	}
 }
 
