@@ -632,7 +632,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	when("dry run is specified", func() {
+	when("dry run flag is provided", func() {
 		// .dockerconfigjson value is the base64 encoding of
 		// `{"auths":{"my-registry.io/my-repo":{"username":"my-registry-user","password":"dummy-password"}}}`
 		const expectedYAML = `data:
@@ -680,27 +680,9 @@ type: kubernetes.io/dockerconfigjson
 			registryPassword       = "dummy-password"
 			secretName             = "my-registry-cred"
 		)
-
 		fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
 
-		when("without an output format", func() {
-			it("does not create the image and defaults resource output to yaml format", func() {
-				testhelpers.CommandTest{
-					Objects: []runtime.Object{
-						defaultServiceAccount,
-					},
-					Args: []string{
-						secretName,
-						"--registry", registry,
-						"--registry-user", registryUser,
-						"--dry-run",
-					},
-					ExpectedOutput: expectedYAML,
-				}.TestK8s(t, cmdFunc)
-			})
-		})
-
-		it("does not create a secret and outputs the resources in yaml format", func() {
+		it("does not create a secret and can output resource in yaml format", func() {
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
 					defaultServiceAccount,
@@ -715,7 +697,7 @@ type: kubernetes.io/dockerconfigjson
 			}.TestK8s(t, cmdFunc)
 		})
 
-		it("does not create a secret and outputs the resource in json format", func() {
+		it("does not create a secret and can output resource in json format", func() {
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
 					defaultServiceAccount,
@@ -728,6 +710,23 @@ type: kubernetes.io/dockerconfigjson
 				},
 				ExpectedOutput: expectedJSON,
 			}.TestK8s(t, cmdFunc)
+		})
+
+		when("output flag is not specified", func() {
+			it("does not create the image and defaults resource output to yaml format", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{
+						secretName,
+						"--registry", registry,
+						"--registry-user", registryUser,
+						"--dry-run",
+					},
+					ExpectedOutput: expectedYAML,
+				}.TestK8s(t, cmdFunc)
+			})
 		})
 	})
 }

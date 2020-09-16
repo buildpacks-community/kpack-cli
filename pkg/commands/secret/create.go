@@ -19,8 +19,8 @@ import (
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, secretFactory *secret.Factory) *cobra.Command {
 	var (
 		namespace    string
-		dryRun       bool
-		outputFormat string
+		dryRun bool
+		output string
 	)
 
 	cmd := &cobra.Command{
@@ -76,7 +76,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 
 			var printer commands.ResourcePrinter
 			if dryRun {
-				printer, err = commands.NewResourcePrinter(outputFormat)
+				printer, err = commands.NewResourcePrinter(output)
 				if err != nil {
 					return err
 				}
@@ -129,8 +129,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 	cmd.Flags().StringVarP(&secretFactory.GitSshKeyFile, "git-ssh-key", "", "", "path to a file containing the GitUrl SSH private key")
 	cmd.Flags().StringVarP(&secretFactory.GitUser, "git-user", "", "", "git user")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "yaml", "output format. supported formats are: yaml, json")
-
+	cmd.Flags().StringVarP(&output, "output", "o", "yaml", "output format. supported formats are: yaml, json")
 	return cmd
 }
 
