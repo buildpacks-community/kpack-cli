@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -86,6 +87,15 @@ func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, writer io.Writer, cs
 	if len(patch) == 0 {
 		_, err = fmt.Fprintln(writer, "nothing to patch")
 		return err
+	}
+
+	if flags.dryRun {
+		printer, err := commands.NewResourcePrinter(flags.outputFormat)
+		if err != nil {
+			return err
+		}
+
+		return printer.PrintObject(cb, writer)
 	}
 
 	_, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Patch(cb.Name, types.MergePatchType, patch)

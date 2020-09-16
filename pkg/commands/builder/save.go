@@ -13,11 +13,7 @@ import (
 
 func NewSaveCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
-		tag       string
-		namespace string
-		stack     string
-		store     string
-		order     string
+		flags CommandFlags
 	)
 
 	cmd := &cobra.Command{
@@ -36,40 +32,43 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --order /path/to
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cs, err := clientSetProvider.GetClientSet(namespace)
+			cs, err := clientSetProvider.GetClientSet(flags.namespace)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
+			flags.namespace = cs.Namespace
 
 			bldr, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				if tag == "" {
+				if flags.tag == "" {
 					return errors.New("--tag is required to create the resource")
 				}
 
-				if stack == "" {
-					stack = defaultStack
+				if flags.stack == "" {
+					flags.stack = defaultStack
 				}
 
-				if store == "" {
-					store = defaultStore
+				if flags.store == "" {
+					flags.store = defaultStore
 				}
 
-				return create(name, tag, cs.Namespace, stack, store, order, cmd, cs)
+				return create(name, flags, cmd.OutOrStdout(), cs)
 			} else if err != nil {
 				return err
 			}
 
-			return patch(bldr, tag, stack, store, order, cmd, cs)
+			return patch(bldr, flags, cmd.OutOrStdout(), cs)
 		},
 	}
-	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
-	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
-	cmd.Flags().StringVarP(&stack, "stack", "s", "", "stack resource to use (default \"default\" for a create)")
-	cmd.Flags().StringVar(&store, "store", "", "buildpack store to use (default \"default\" for a create)")
-	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
+	cmd.Flags().StringVarP(&flags.tag, "tag", "t", "", "registry location where the builder will be created")
+	cmd.Flags().StringVarP(&flags.namespace, "namespace", "n", "", "kubernetes namespace")
+	cmd.Flags().StringVarP(&flags.stack, "stack", "s", "", "stack resource to use (default \"default\" for a create)")
+	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use (default \"default\" for a create)")
+	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
+	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVarP(&flags.outputFormat, "output", "", "yaml", "output format. supported formats are: yaml, json")
 	return cmd
 }

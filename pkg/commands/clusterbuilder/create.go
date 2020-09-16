@@ -16,6 +16,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -58,6 +59,7 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 			return create(name, flags, cmd.OutOrStdout(), cs)
 		},
 	}
+
 	cmd.Flags().StringVarP(&flags.tag, "tag", "t", "", "registry location where the builder will be created")
 	cmd.Flags().StringVarP(&flags.stack, "stack", "s", defaultStack, "stack resource to use")
 	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
@@ -133,6 +135,15 @@ func create(name string, flags CommandFlags, writer io.Writer, cs k8s.ClientSet)
 	}
 
 	cb.Annotations[kubectlLastAppliedConfig] = string(marshal)
+
+	if flags.dryRun {
+		printer, err := commands.NewResourcePrinter(flags.outputFormat)
+		if err != nil {
+			return err
+		}
+
+		return printer.PrintObject(cb, writer)
+	}
 
 	_, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(cb)
 	if err != nil {

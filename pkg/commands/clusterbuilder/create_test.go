@@ -222,20 +222,130 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("dry run is specified", func() {
-		const resourceYAML = `
+		const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterBuilder
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+  creationTimestamp: null
+  name: test-builder
+spec:
+  order:
+  - group:
+    - id: org.cloudfoundry.nodejs
+  - group:
+    - id: org.cloudfoundry.go
+  serviceAccountRef:
+    name: some-serviceaccount
+    namespace: kpack
+  stack:
+    kind: ClusterStack
+    name: some-stack
+  store:
+    kind: ClusterStore
+    name: some-store
+  tag: some-registry/some-project/test-builder
+status:
+  stack: {}
 `
-		const resourceJSON = `
+		const resourceJSON = `{
+    "kind": "ClusterBuilder",
+    "apiVersion": "kpack.io/v1alpha1",
+    "metadata": {
+        "name": "test-builder",
+        "creationTimestamp": null,
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"test-builder\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry/some-project/test-builder\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"some-stack\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"some-store\"},\"order\":[{\"group\":[{\"id\":\"org.cloudfoundry.nodejs\"}]},{\"group\":[{\"id\":\"org.cloudfoundry.go\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
+        }
+    },
+    "spec": {
+        "tag": "some-registry/some-project/test-builder",
+        "stack": {
+            "kind": "ClusterStack",
+            "name": "some-stack"
+        },
+        "store": {
+            "kind": "ClusterStore",
+            "name": "some-store"
+        },
+        "order": [
+            {
+                "group": [
+                    {
+                        "id": "org.cloudfoundry.nodejs"
+                    }
+                ]
+            },
+            {
+                "group": [
+                    {
+                        "id": "org.cloudfoundry.go"
+                    }
+                ]
+            }
+        ],
+        "serviceAccountRef": {
+            "namespace": "kpack",
+            "name": "some-serviceaccount"
+        }
+    },
+    "status": {
+        "stack": {}
+    }
+}
 `
 
 		when("without an output format", func() {
-			it("does not create a stack and defaults resource output to yaml format", func() {
+			it("does not create a ClusterBuilder and defaults resource output to yaml format", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					Args: []string{
+						expectedBuilder.Name,
+						"--tag", expectedBuilder.Spec.Tag,
+						"--stack", expectedBuilder.Spec.Stack.Name,
+						"--store", expectedBuilder.Spec.Store.Name,
+						"--order", "./testdata/order.yaml",
+						"--dry-run",
+					},
+					ExpectedOutput: resourceYAML,
+				}.TestK8sAndKpack(t, cmdFunc)
 			})
 		})
 
-		it("does not create a stack and outputs the resource in yaml format", func() {
+		it("does not create a ClusterBuilder and outputs the resource in yaml format", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					expectedBuilder.Name,
+					"--tag", expectedBuilder.Spec.Tag,
+					"--stack", expectedBuilder.Spec.Stack.Name,
+					"--store", expectedBuilder.Spec.Store.Name,
+					"--order", "./testdata/order.yaml",
+					"--dry-run", "--output", "yaml",
+				},
+				ExpectedOutput: resourceYAML,
+			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("does not create a stack and outputs the resource in json format", func() {
+		it("does not create a ClusterBuilder and outputs the resource in json format", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					expectedBuilder.Name,
+					"--tag", expectedBuilder.Spec.Tag,
+					"--stack", expectedBuilder.Spec.Stack.Name,
+					"--store", expectedBuilder.Spec.Store.Name,
+					"--order", "./testdata/order.yaml",
+					"--dry-run", "--output", "json",
+				},
+				ExpectedOutput: resourceJSON,
+			}.TestK8sAndKpack(t, cmdFunc)
 		})
 	})
 }
