@@ -4,7 +4,6 @@
 package secret
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -61,6 +60,11 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				return err
 			}
 
+			printer, err := commands.NewCommandPrinter(cmd)
+			if err != nil {
+				return err
+			}
+
 			if val, ok := os.LookupEnv("GCR_SERVICE_ACCOUNT_PATH"); ok {
 				secretFactory.GcrServiceAccountFile = val
 			}
@@ -69,23 +73,19 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				secretFactory.GitSshKeyFile = val
 			}
 
-			sec, target, err := secretFactory.MakeSecret(args[0], cs.Namespace)
+			secret, target, err := secretFactory.MakeSecret(args[0], cs.Namespace)
 			if err != nil {
 				return err
 			}
 
-			var printer commands.ResourcePrinter
-			if dryRun {
-				printer, err = commands.NewResourcePrinter(output)
+			if !dryRun {
+				secret, err = cs.K8sClient.CoreV1().Secrets(cs.Namespace).Create(secret)
 				if err != nil {
 					return err
 				}
-
-				err = printer.PrintObject(sec, cmd.OutOrStdout())
-			} else {
-				_, err = cs.K8sClient.CoreV1().Secrets(cs.Namespace).Create(sec)
 			}
 
+			err = printer.PrintObj(secret)
 			if err != nil {
 				return err
 			}
@@ -97,7 +97,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 
 			serviceAccount.Secrets = append(serviceAccount.Secrets, corev1.ObjectReference{Name: args[0]})
 
-			if sec.Type == corev1.SecretTypeDockerConfigJson {
+			if secret.Type == corev1.SecretTypeDockerConfigJson {
 				serviceAccount.ImagePullSecrets = append(serviceAccount.ImagePullSecrets, corev1.LocalObjectReference{Name: args[0]})
 			}
 
@@ -106,17 +106,19 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				return err
 			}
 
-			if dryRun {
-				err = printer.PrintObject(sec, cmd.OutOrStdout())
-			} else {
-				_, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(serviceAccount)
+			if !dryRun {
+				serviceAccount, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(serviceAccount)
 				if err != nil {
 					return err
 				}
-
-				_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", args[0])
 			}
-			return err
+
+			err = printer.PrintResult("%q created", secret.Name)
+			if err != nil  {
+				return err
+			}
+
+			return printer.PrintObj(secret)
 		},
 	}
 
@@ -129,7 +131,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 	cmd.Flags().StringVarP(&secretFactory.GitSshKeyFile, "git-ssh-key", "", "", "path to a file containing the GitUrl SSH private key")
 	cmd.Flags().StringVarP(&secretFactory.GitUser, "git-user", "", "", "git user")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&output, "output", "o", "yaml", "output format. supported formats are: yaml, json")
+	cmd.Flags().StringVarP(&output, "output", "", "", "output format. supported formats are: yaml, json")
 	return cmd
 }
 

@@ -5,7 +5,6 @@ package image
 
 import (
 	"encoding/json"
-	"io"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
@@ -17,11 +16,12 @@ import (
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
-		tag          string
-		namespace    string
-		subPath      string
-		wait         bool
-		dryRunConfig DryRunConfig
+		tag       string
+		namespace string
+		subPath   string
+		wait      bool
+		dryRun    bool
+		output    string
 	)
 
 	cmd := &cobra.Command{
@@ -57,20 +57,23 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 				return err
 			}
 
-			name := args[0]
-
-			factory.Printer = commands.NewPrinter(cmd)
-			factory.SubPath = &subPath
-
-			dryRunConfig.writer = cmd.OutOrStdout()
-
-			img, err := create(name, tag, factory, dryRunConfig, cs)
+			cp, err := commands.NewCommandPrinter(cmd)
 			if err != nil {
 				return err
 			}
 
-			if wait && !dryRunConfig.dryRun {
-				_, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
+			name := args[0]
+
+			factory.Printer = cp
+			factory.SubPath = &subPath
+
+			img, err := create(name, tag, factory, cp, cs)
+			if err != nil {
+				return err
+			}
+
+			if wait && !dryRun {
+				_, err := newImageWaiter(cs).Wait(cmd.Context(), cp.TextWriter(), img)
 				if err != nil {
 					return err
 				}
@@ -89,26 +92,20 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
-	cmd.Flags().BoolVarP(&dryRunConfig.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&dryRunConfig.outputFormat, "output", "o", "yaml", "output format. supported formats are: yaml, json")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVarP(&output, "output", "", "", "output format. supported formats are: yaml, json")
 
 	cmd.MarkFlagRequired("tag")
 	return cmd
 }
 
-type DryRunConfig struct {
-	dryRun       bool
-	outputFormat string
-	writer       io.Writer
-}
-
-func create(name, tag string, factory *image.Factory, drc DryRunConfig, cs k8s.ClientSet) (*v1alpha1.Image, error) {
+func create(name, tag string, factory *image.Factory, cp *commands.CommandPrinter, cs k8s.ClientSet) (*v1alpha1.Image, error) {
 	img, err := factory.MakeImage(name, cs.Namespace, tag)
 	if err != nil {
 		return nil, err
 	}
 
-	originalImageCfg, err := json.Marshal(img)
+	imgConfig, err := json.Marshal(img)
 	if err != nil {
 		return nil, err
 	}
@@ -116,21 +113,19 @@ func create(name, tag string, factory *image.Factory, drc DryRunConfig, cs k8s.C
 	if img.Annotations == nil {
 		img.Annotations = map[string]string{}
 	}
-	img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(originalImageCfg)
+	img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(imgConfig)
 
-	if drc.dryRun {
-		printer, err := commands.NewResourcePrinter(drc.outputFormat)
+    if !cp.IsDryRun() {
+		img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Create(img)
 		if err != nil {
 			return nil, err
 		}
-		return nil, printer.PrintObject(img, drc.writer)
 	}
 
-	img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Create(img)
+	err = cp.PrintObj(img)
 	if err != nil {
 		return nil, err
 	}
 
-	factory.Printer.Printf("\"%s\" created", img.Name)
-	return img, nil
+	return img, cp.PrintResult("%q created", img.Name)
 }

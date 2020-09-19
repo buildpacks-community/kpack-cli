@@ -1,3 +1,6 @@
+// Copyright 2020-Present VMware, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 package commands
 
 import (
@@ -11,8 +14,8 @@ import (
 )
 
 const (
-	FormatYAML string = "yaml"
-	FormatJSON string = "json"
+	FormatYAML    string = "yaml"
+	FormatJSON    string = "json"
 )
 
 type ResourcePrinter interface {
@@ -58,7 +61,7 @@ func (y *YAMLResourcePrinter) PrintObject(obj runtime.Object, w io.Writer) error
 
 type JSONResourcePrinter struct {}
 
-func (j JSONResourcePrinter) PrintObject(obj runtime.Object, w io.Writer) error{
+func (j JSONResourcePrinter) PrintObject(obj runtime.Object, w io.Writer) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return err
@@ -74,4 +77,3 @@ func (j JSONResourcePrinter) PrintObject(obj runtime.Object, w io.Writer) error{
 	_, err = w.Write(buf.Bytes())
 	return err
 }
-

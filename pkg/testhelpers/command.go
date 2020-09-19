@@ -23,12 +23,13 @@ type CommandTest struct {
 	StdIn string
 	Args  []string
 
-	ExpectErr      bool
-	ExpectedOutput string
-	ExpectUpdates  []clientgotesting.UpdateActionImpl
-	ExpectCreates  []runtime.Object
-	ExpectDeletes  []clientgotesting.DeleteActionImpl
-	ExpectPatches  []string
+	ExpectErr           bool
+	ExpectedOutput      string
+	ExpectedErrorOutput string
+	ExpectUpdates       []clientgotesting.UpdateActionImpl
+	ExpectCreates       []runtime.Object
+	ExpectDeletes       []clientgotesting.DeleteActionImpl
+	ExpectPatches       []string
 }
 
 func (c CommandTest) TestK8sAndKpack(t *testing.T, cmdFactory func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command) {
@@ -42,6 +43,9 @@ func (c CommandTest) TestK8sAndKpack(t *testing.T, cmdFactory func(k8sClientSet 
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
 
+	errOut := &bytes.Buffer{}
+	cmd.SetErr(errOut)
+
 	err := cmd.Execute()
 	if !c.ExpectErr {
 		require.NoError(t, err)
@@ -49,7 +53,8 @@ func (c CommandTest) TestK8sAndKpack(t *testing.T, cmdFactory func(k8sClientSet 
 		require.Error(t, err)
 	}
 
-	require.Equal(t, c.ExpectedOutput, out.String())
+	require.Equal(t, c.ExpectedOutput, out.String(), "Actual output does not match ExpectedOutput")
+	require.Equal(t, c.ExpectedErrorOutput, errOut.String(), "Actual error output does not match ExpectedErrorOutput")
 	TestK8sAndKpackActions(t, k8sClient, kpackClient, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes, c.ExpectPatches)
 }
 
@@ -63,6 +68,9 @@ func (c CommandTest) TestKpack(t *testing.T, cmdFactory func(clientSet *kpackfak
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
 
+	errOut := &bytes.Buffer{}
+	cmd.SetErr(errOut)
+
 	err := cmd.Execute()
 	if !c.ExpectErr {
 		require.NoError(t, err)
@@ -70,7 +78,8 @@ func (c CommandTest) TestKpack(t *testing.T, cmdFactory func(clientSet *kpackfak
 		require.Error(t, err)
 	}
 
-	require.Equal(t, c.ExpectedOutput, out.String())
+	require.Equal(t, c.ExpectedOutput, out.String(), "Actual output does not match ExpectedOutput")
+	require.Equal(t, c.ExpectedErrorOutput, errOut.String(), "Actual error output does not match ExpectedErrorOutput")
 	TestKpackActions(t, client, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes, c.ExpectPatches)
 }
 
@@ -87,6 +96,9 @@ func (c CommandTest) TestK8s(t *testing.T, cmdFactory func(clientSet *k8sfakes.C
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
 
+	errOut := &bytes.Buffer{}
+	cmd.SetErr(errOut)
+
 	err := cmd.Execute()
 	if !c.ExpectErr {
 		require.NoError(t, err)
@@ -94,6 +106,7 @@ func (c CommandTest) TestK8s(t *testing.T, cmdFactory func(clientSet *k8sfakes.C
 		require.Error(t, err)
 	}
 
-	require.Equal(t, c.ExpectedOutput, out.String())
+	require.Equal(t, c.ExpectedOutput, out.String(), "Actual output does not match ExpectedOutput")
+	require.Equal(t, c.ExpectedErrorOutput, errOut.String(), "Actual error output does not match ExpectedErrorOutput")
 	TestK8sActions(t, client, c.ExpectUpdates, c.ExpectCreates, c.ExpectDeletes, c.ExpectPatches)
 }

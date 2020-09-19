@@ -69,39 +69,43 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["DOCKER_PASSWORD"] = dockerPassword
 
+			expectedDockerSecret := &corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      secretName,
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					corev1.DockerConfigJsonKey: []byte(expectedDockerConfig),
+				},
+				Type: corev1.SecretTypeDockerConfigJson,
+			}
+
+			expectedServiceAccount := &corev1.ServiceAccount{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "default",
+					Namespace: namespace,
+					Annotations: map[string]string{
+						secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.DockerhubUrl),
+					},
+				},
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{Name: secretName},
+				},
+				Secrets: []corev1.ObjectReference{
+					{Name: secretName},
+				},
+			}
+
 			it("creates a secret with the correct annotations for docker in the provided namespace and updates the service account", func() {
-				expectedDockerSecret := &corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      secretName,
-						Namespace: namespace,
-					},
-					Data: map[string][]byte{
-						corev1.DockerConfigJsonKey: []byte(expectedDockerConfig),
-					},
-					Type: corev1.SecretTypeDockerConfigJson,
-				}
-
-				expectedServiceAccount := &corev1.ServiceAccount{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "default",
-						Namespace: namespace,
-						Annotations: map[string]string{
-							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.DockerhubUrl),
-						},
-					},
-					ImagePullSecrets: []corev1.LocalObjectReference{
-						{Name: secretName},
-					},
-					Secrets: []corev1.ObjectReference{
-						{Name: secretName},
-					},
-				}
-
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
 					},
-					Args: []string{secretName, "--dockerhub", dockerhubId, "-n", namespace},
+					Args: []string{
+						secretName,
+						"--dockerhub", dockerhubId,
+						"-n", namespace,
+					},
 					ExpectedOutput: `"my-docker-cred" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -113,6 +117,113 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestK8s(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it ("can output resources in yaml format", func() {
+					const resourceYAML = `data:
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-docker-cred
+  namespace: some-namespace
+type: kubernetes.io/dockerconfigjson
+---
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-docker-cred
+  namespace: some-namespace
+type: kubernetes.io/dockerconfigjson
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--dockerhub", dockerhubId,
+							"--output", "yaml",
+							"-n", namespace,
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+
+				it ("can output resources in json format", func() {
+					const resourceJSON = `{
+    "metadata": {
+        "name": "my-docker-cred",
+        "namespace": "some-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ=="
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+{
+    "metadata": {
+        "name": "my-docker-cred",
+        "namespace": "some-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ=="
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--dockerhub", dockerhubId,
+							"--output", "json",
+							"-n", namespace,
+						},
+						ExpectedOutput: resourceJSON,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
+			when("dry-run flag is used", func() {
+				it("does not create or update any resources", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--dockerhub", dockerhubId,
+							"--dry-run",
+							"-n", namespace,
+						},
+						ExpectedOutput: `"my-docker-cred" created (dry run)
+`,
+					}.TestK8s(t, cmdFunc)
+				})
 			})
 		})
 
@@ -127,39 +238,44 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
 
+			expectedDockerSecret := &corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      secretName,
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+				},
+				Type: corev1.SecretTypeDockerConfigJson,
+			}
+
+			expectedServiceAccount := &corev1.ServiceAccount{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "default",
+					Namespace: namespace,
+					Annotations: map[string]string{
+						secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, registry),
+					},
+				},
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{Name: secretName},
+				},
+				Secrets: []corev1.ObjectReference{
+					{Name: secretName},
+				},
+			}
+
 			it("creates a secret with the correct annotations for the registry in the provided namespace and updates the service account", func() {
-				expectedDockerSecret := &corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      secretName,
-						Namespace: namespace,
-					},
-					Data: map[string][]byte{
-						corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
-					},
-					Type: corev1.SecretTypeDockerConfigJson,
-				}
-
-				expectedServiceAccount := &corev1.ServiceAccount{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "default",
-						Namespace: namespace,
-						Annotations: map[string]string{
-							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, registry),
-						},
-					},
-					ImagePullSecrets: []corev1.LocalObjectReference{
-						{Name: secretName},
-					},
-					Secrets: []corev1.ObjectReference{
-						{Name: secretName},
-					},
-				}
-
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
 					},
-					Args: []string{secretName, "--registry", registry, "--registry-user", registryUser, "-n", namespace},
+					Args: []string{
+						secretName,
+						"--registry", registry,
+						"--registry-user", registryUser,
+						"-n", namespace,
+					},
 					ExpectedOutput: `"my-registry-cred" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -172,6 +288,116 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				}.TestK8s(t, cmdFunc)
 			})
+
+			when("output flag is used", func() {
+				it ("can output resources in yaml format", func() {
+					const resourceYAML = `data:
+  .dockerconfigjson: eyJhdXRocyI6eyJteS1yZWdpc3RyeS5pby9teS1yZXBvIjp7InVzZXJuYW1lIjoibXktcmVnaXN0cnktdXNlciIsInBhc3N3b3JkIjoiZHVtbXktcGFzc3dvcmQifX19
+metadata:
+  creationTimestamp: null
+  name: my-registry-cred
+  namespace: some-namespace
+type: kubernetes.io/dockerconfigjson
+---
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJteS1yZWdpc3RyeS5pby9teS1yZXBvIjp7InVzZXJuYW1lIjoibXktcmVnaXN0cnktdXNlciIsInBhc3N3b3JkIjoiZHVtbXktcGFzc3dvcmQifX19
+metadata:
+  creationTimestamp: null
+  name: my-registry-cred
+  namespace: some-namespace
+type: kubernetes.io/dockerconfigjson
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--registry", registry,
+							"--registry-user", registryUser,
+							"--output", "yaml",
+							"-n", namespace,
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+
+				it ("can output resources in json format", func() {
+					const resourceJSON = `{
+    "metadata": {
+        "name": "my-registry-cred",
+        "namespace": "some-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJteS1yZWdpc3RyeS5pby9teS1yZXBvIjp7InVzZXJuYW1lIjoibXktcmVnaXN0cnktdXNlciIsInBhc3N3b3JkIjoiZHVtbXktcGFzc3dvcmQifX19"
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+{
+    "metadata": {
+        "name": "my-registry-cred",
+        "namespace": "some-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJteS1yZWdpc3RyeS5pby9teS1yZXBvIjp7InVzZXJuYW1lIjoibXktcmVnaXN0cnktdXNlciIsInBhc3N3b3JkIjoiZHVtbXktcGFzc3dvcmQifX19"
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--registry", registry,
+							"--registry-user", registryUser,
+							"--output", "json",
+							"-n", namespace,
+						},
+						ExpectedOutput: resourceJSON,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
+			when("dry-run flag is used", func() {
+				it("does not create or update any resources", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--registry", registry,
+							"--registry-user", registryUser,
+							"--dry-run",
+							"-n", namespace,
+						},
+						ExpectedOutput: `"my-registry-cred" created (dry run)
+`,
+					}.TestK8s(t, cmdFunc)
+				})
+			})
 		})
 
 		when("creating a gcr registry secret", func() {
@@ -183,39 +409,43 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords[gcrServiceAccountFile] = `{"some-key":"some-value"}`
 
+			expectedDockerSecret := &corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      secretName,
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+				},
+				Type: corev1.SecretTypeDockerConfigJson,
+			}
+
+			expectedServiceAccount := &corev1.ServiceAccount{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "default",
+					Namespace: namespace,
+					Annotations: map[string]string{
+						secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.GcrUrl),
+					},
+				},
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{Name: secretName},
+				},
+				Secrets: []corev1.ObjectReference{
+					{Name: secretName},
+				},
+			}
+
 			it("creates a secret with the correct annotations for the registry in the provided namespace and updates the service account", func() {
-				expectedDockerSecret := &corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      secretName,
-						Namespace: namespace,
-					},
-					Data: map[string][]byte{
-						corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
-					},
-					Type: corev1.SecretTypeDockerConfigJson,
-				}
-
-				expectedServiceAccount := &corev1.ServiceAccount{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "default",
-						Namespace: namespace,
-						Annotations: map[string]string{
-							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.GcrUrl),
-						},
-					},
-					ImagePullSecrets: []corev1.LocalObjectReference{
-						{Name: secretName},
-					},
-					Secrets: []corev1.ObjectReference{
-						{Name: secretName},
-					},
-				}
-
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
 					},
-					Args: []string{secretName, "--gcr", gcrServiceAccountFile, "-n", namespace},
+					Args: []string{
+						secretName,
+						"--gcr", gcrServiceAccountFile,
+						"-n", namespace,
+					},
 					ExpectedOutput: `"my-gcr-cred" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -228,6 +458,113 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				}.TestK8s(t, cmdFunc)
 			})
+
+			when("output flag is used", func() {
+				it ("can output resources in yaml format", func() {
+					const resourceYAML = `data:
+  .dockerconfigjson: eyJhdXRocyI6eyJnY3IuaW8iOnsidXNlcm5hbWUiOiJfanNvbl9rZXkiLCJwYXNzd29yZCI6IntcInNvbWUta2V5XCI6XCJzb21lLXZhbHVlXCJ9In19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-gcr-cred
+  namespace: some-namespace
+type: kubernetes.io/dockerconfigjson
+---
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJnY3IuaW8iOnsidXNlcm5hbWUiOiJfanNvbl9rZXkiLCJwYXNzd29yZCI6IntcInNvbWUta2V5XCI6XCJzb21lLXZhbHVlXCJ9In19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-gcr-cred
+  namespace: some-namespace
+type: kubernetes.io/dockerconfigjson
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--gcr", gcrServiceAccountFile,
+							"--output", "yaml",
+							"-n", namespace,
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+
+				it ("can output resources in json format", func() {
+					const resourceJSON = `{
+    "metadata": {
+        "name": "my-gcr-cred",
+        "namespace": "some-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJnY3IuaW8iOnsidXNlcm5hbWUiOiJfanNvbl9rZXkiLCJwYXNzd29yZCI6IntcInNvbWUta2V5XCI6XCJzb21lLXZhbHVlXCJ9In19fQ=="
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+{
+    "metadata": {
+        "name": "my-gcr-cred",
+        "namespace": "some-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJnY3IuaW8iOnsidXNlcm5hbWUiOiJfanNvbl9rZXkiLCJwYXNzd29yZCI6IntcInNvbWUta2V5XCI6XCJzb21lLXZhbHVlXCJ9In19fQ=="
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--gcr", gcrServiceAccountFile,
+							"--output", "json",
+							"-n", namespace,
+						},
+						ExpectedOutput: resourceJSON,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
+			when("dry-run flag is used", func() {
+				it("does not create or update any resources", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--gcr", gcrServiceAccountFile,
+							"--dry-run",
+							"-n", namespace,
+						},
+						ExpectedOutput: `"my-gcr-cred" created (dry run)
+`,
+					}.TestK8s(t, cmdFunc)
+				})
+			})
 		})
 
 		when("creating a git ssh secret", func() {
@@ -239,39 +576,44 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords[gitSshFile] = "some git ssh key"
 
+			expectedGitSecret := &corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      secretName,
+					Namespace: namespace,
+					Annotations: map[string]string{
+						secret.GitAnnotation: gitRepo,
+					},
+				},
+				Data: map[string][]byte{
+					corev1.SSHAuthPrivateKey: []byte("some git ssh key"),
+				},
+				Type: corev1.SecretTypeSSHAuth,
+			}
+
+			expectedServiceAccount := &corev1.ServiceAccount{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "default",
+					Namespace: namespace,
+					Annotations: map[string]string{
+						secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
+					},
+				},
+				Secrets: []corev1.ObjectReference{
+					{Name: secretName},
+				},
+			}
+
 			it("creates a secret with the correct annotations for git ssh in the provided namespace and updates the service account", func() {
-				expectedGitSecret := &corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      secretName,
-						Namespace: namespace,
-						Annotations: map[string]string{
-							secret.GitAnnotation: gitRepo,
-						},
-					},
-					Data: map[string][]byte{
-						corev1.SSHAuthPrivateKey: []byte("some git ssh key"),
-					},
-					Type: corev1.SecretTypeSSHAuth,
-				}
-
-				expectedServiceAccount := &corev1.ServiceAccount{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "default",
-						Namespace: namespace,
-						Annotations: map[string]string{
-							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
-						},
-					},
-					Secrets: []corev1.ObjectReference{
-						{Name: secretName},
-					},
-				}
-
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
 					},
-					Args: []string{secretName, "--git-url", gitRepo, "--git-ssh-key", gitSshFile, "-n", namespace},
+					Args: []string{
+						secretName,
+						"--git-url", gitRepo,
+						"--git-ssh-key", gitSshFile,
+						"-n", namespace,
+					},
 					ExpectedOutput: `"my-git-ssh-cred" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -283,6 +625,126 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestK8s(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it ("can output resources in yaml format", func() {
+					const resourceYAML = `data:
+  ssh-privatekey: c29tZSBnaXQgc3NoIGtleQ==
+metadata:
+  annotations:
+    kpack.io/git: git@github.com
+  creationTimestamp: null
+  name: my-git-ssh-cred
+  namespace: some-namespace
+type: kubernetes.io/ssh-auth
+---
+data:
+  ssh-privatekey: c29tZSBnaXQgc3NoIGtleQ==
+metadata:
+  annotations:
+    kpack.io/git: git@github.com
+  creationTimestamp: null
+  name: my-git-ssh-cred
+  namespace: some-namespace
+type: kubernetes.io/ssh-auth
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-ssh-key", gitSshFile,
+							"--output", "yaml",
+							"-n", namespace,
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectCreates: []runtime.Object{
+							expectedGitSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+
+				it ("can output resources in json format", func() {
+					const resourceJSON = `{
+    "metadata": {
+        "name": "my-git-ssh-cred",
+        "namespace": "some-namespace",
+        "creationTimestamp": null,
+        "annotations": {
+            "kpack.io/git": "git@github.com"
+        }
+    },
+    "data": {
+        "ssh-privatekey": "c29tZSBnaXQgc3NoIGtleQ=="
+    },
+    "type": "kubernetes.io/ssh-auth"
+}
+{
+    "metadata": {
+        "name": "my-git-ssh-cred",
+        "namespace": "some-namespace",
+        "creationTimestamp": null,
+        "annotations": {
+            "kpack.io/git": "git@github.com"
+        }
+    },
+    "data": {
+        "ssh-privatekey": "c29tZSBnaXQgc3NoIGtleQ=="
+    },
+    "type": "kubernetes.io/ssh-auth"
+}
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-ssh-key", gitSshFile,
+							"--output", "json",
+							"-n", namespace,
+						},
+						ExpectedOutput: resourceJSON,
+						ExpectCreates: []runtime.Object{
+							expectedGitSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
+			when("dry-run flag is used", func() {
+				it("does not create or update any resources", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-ssh-key", gitSshFile,
+							"--dry-run",
+							"-n", namespace,
+						},
+						ExpectedOutput: `"my-git-ssh-cred" created (dry run)
+`,
+					}.TestK8s(t, cmdFunc)
+				})
 			})
 		})
 
@@ -296,40 +758,45 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["GIT_PASSWORD"] = gitPassword
 
+			expectedGitSecret := &corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      secretName,
+					Namespace: namespace,
+					Annotations: map[string]string{
+						secret.GitAnnotation: gitRepo,
+					},
+				},
+				Data: map[string][]byte{
+					corev1.BasicAuthUsernameKey: []byte(gitUser),
+					corev1.BasicAuthPasswordKey: []byte(gitPassword),
+				},
+				Type: corev1.SecretTypeBasicAuth,
+			}
+
+			expectedServiceAccount := &corev1.ServiceAccount{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "default",
+					Namespace: namespace,
+					Annotations: map[string]string{
+						secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
+					},
+				},
+				Secrets: []corev1.ObjectReference{
+					{Name: secretName},
+				},
+			}
+
 			it("creates a secret with the correct annotations for git basic auth in the provided namespace and updates the service account", func() {
-				expectedGitSecret := &corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      secretName,
-						Namespace: namespace,
-						Annotations: map[string]string{
-							secret.GitAnnotation: gitRepo,
-						},
-					},
-					Data: map[string][]byte{
-						corev1.BasicAuthUsernameKey: []byte(gitUser),
-						corev1.BasicAuthPasswordKey: []byte(gitPassword),
-					},
-					Type: corev1.SecretTypeBasicAuth,
-				}
-
-				expectedServiceAccount := &corev1.ServiceAccount{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "default",
-						Namespace: namespace,
-						Annotations: map[string]string{
-							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
-						},
-					},
-					Secrets: []corev1.ObjectReference{
-						{Name: secretName},
-					},
-				}
-
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
 					},
-					Args: []string{secretName, "--git-url", gitRepo, "--git-user", gitUser, "-n", namespace},
+					Args: []string{
+						secretName,
+						"--git-url", gitRepo,
+						"--git-user", gitUser,
+						"-n", namespace,
+					},
 					ExpectedOutput: `"my-git-basic-cred" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -341,6 +808,130 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestK8s(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it ("can output resources in yaml format", func() {
+					const resourceYAML = `data:
+  password: bXktZ2l0LXBhc3N3b3Jk
+  username: bXktZ2l0LXVzZXI=
+metadata:
+  annotations:
+    kpack.io/git: https://github.com
+  creationTimestamp: null
+  name: my-git-basic-cred
+  namespace: some-namespace
+type: kubernetes.io/basic-auth
+---
+data:
+  password: bXktZ2l0LXBhc3N3b3Jk
+  username: bXktZ2l0LXVzZXI=
+metadata:
+  annotations:
+    kpack.io/git: https://github.com
+  creationTimestamp: null
+  name: my-git-basic-cred
+  namespace: some-namespace
+type: kubernetes.io/basic-auth
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-user", gitUser,
+							"--output", "yaml",
+							"-n", namespace,
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectCreates: []runtime.Object{
+							expectedGitSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+
+				it ("can output resources in json format", func() {
+					const resourceJSON = `{
+    "metadata": {
+        "name": "my-git-basic-cred",
+        "namespace": "some-namespace",
+        "creationTimestamp": null,
+        "annotations": {
+            "kpack.io/git": "https://github.com"
+        }
+    },
+    "data": {
+        "password": "bXktZ2l0LXBhc3N3b3Jk",
+        "username": "bXktZ2l0LXVzZXI="
+    },
+    "type": "kubernetes.io/basic-auth"
+}
+{
+    "metadata": {
+        "name": "my-git-basic-cred",
+        "namespace": "some-namespace",
+        "creationTimestamp": null,
+        "annotations": {
+            "kpack.io/git": "https://github.com"
+        }
+    },
+    "data": {
+        "password": "bXktZ2l0LXBhc3N3b3Jk",
+        "username": "bXktZ2l0LXVzZXI="
+    },
+    "type": "kubernetes.io/basic-auth"
+}
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-user", gitUser,
+							"--output", "json",
+							"-n", namespace,
+						},
+						ExpectedOutput: resourceJSON,
+						ExpectCreates: []runtime.Object{
+							expectedGitSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
+			when("dry-run flag is used", func() {
+				it("does not create or update any resources", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-user", gitUser,
+							"--dry-run",
+							"-n", namespace,
+						},
+						ExpectedOutput: `"my-git-basic-cred" created (dry run)
+`,
+					}.TestK8s(t, cmdFunc)
+				})
 			})
 		})
 	})
@@ -356,39 +947,42 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["DOCKER_PASSWORD"] = dockerPassword
 
+			expectedDockerSecret := &corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      secretName,
+					Namespace: defaultNamespace,
+				},
+				Data: map[string][]byte{
+					corev1.DockerConfigJsonKey: []byte(expectedDockerConfig),
+				},
+				Type: corev1.SecretTypeDockerConfigJson,
+			}
+
+			expectedServiceAccount := &corev1.ServiceAccount{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "default",
+					Namespace: defaultNamespace,
+					Annotations: map[string]string{
+						secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.DockerhubUrl),
+					},
+				},
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{Name: secretName},
+				},
+				Secrets: []corev1.ObjectReference{
+					{Name: secretName},
+				},
+			}
+
 			it("creates a secret with the correct annotations for docker in the default namespace and updates the service account", func() {
-				expectedDockerSecret := &corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      secretName,
-						Namespace: defaultNamespace,
-					},
-					Data: map[string][]byte{
-						corev1.DockerConfigJsonKey: []byte(expectedDockerConfig),
-					},
-					Type: corev1.SecretTypeDockerConfigJson,
-				}
-
-				expectedServiceAccount := &corev1.ServiceAccount{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "default",
-						Namespace: defaultNamespace,
-						Annotations: map[string]string{
-							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.DockerhubUrl),
-						},
-					},
-					ImagePullSecrets: []corev1.LocalObjectReference{
-						{Name: secretName},
-					},
-					Secrets: []corev1.ObjectReference{
-						{Name: secretName},
-					},
-				}
-
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultServiceAccount,
 					},
-					Args: []string{secretName, "--dockerhub", dockerhubId},
+					Args: []string{
+						secretName,
+						"--dockerhub", dockerhubId,
+					},
 					ExpectedOutput: `"my-docker-cred" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -400,6 +994,111 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestK8s(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it ("can output resources in yaml format", func() {
+					const resourceYAML = `data:
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-docker-cred
+  namespace: some-default-namespace
+type: kubernetes.io/dockerconfigjson
+---
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-docker-cred
+  namespace: some-default-namespace
+type: kubernetes.io/dockerconfigjson
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--dockerhub", dockerhubId,
+							"--output", "yaml",
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+
+				it ("can output resources in json format", func() {
+					const resourceJSON = `{
+    "metadata": {
+        "name": "my-docker-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ=="
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+{
+    "metadata": {
+        "name": "my-docker-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ=="
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--dockerhub", dockerhubId,
+							"--output", "json",
+						},
+						ExpectedOutput: resourceJSON,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
+			when("dry-run flag is used", func() {
+				it("does not create or update any resources", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultNamespacedServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--dockerhub", dockerhubId,
+							"--dry-run",
+							"-n", namespace,
+						},
+						ExpectedOutput: `"my-docker-cred" created (dry run)
+`,
+					}.TestK8s(t, cmdFunc)
+				})
 			})
 		})
 
@@ -414,39 +1113,43 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
 
+			expectedDockerSecret := &corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      secretName,
+					Namespace: defaultNamespace,
+				},
+				Data: map[string][]byte{
+					corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+				},
+				Type: corev1.SecretTypeDockerConfigJson,
+			}
+
+			expectedServiceAccount := &corev1.ServiceAccount{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "default",
+					Namespace: defaultNamespace,
+					Annotations: map[string]string{
+						secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, registry),
+					},
+				},
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{Name: secretName},
+				},
+				Secrets: []corev1.ObjectReference{
+					{Name: secretName},
+				},
+			}
+
 			it("creates a secret with the correct annotations for the registry in the default namespace and updates the service account", func() {
-				expectedDockerSecret := &corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      secretName,
-						Namespace: defaultNamespace,
-					},
-					Data: map[string][]byte{
-						corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
-					},
-					Type: corev1.SecretTypeDockerConfigJson,
-				}
-
-				expectedServiceAccount := &corev1.ServiceAccount{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "default",
-						Namespace: defaultNamespace,
-						Annotations: map[string]string{
-							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, registry),
-						},
-					},
-					ImagePullSecrets: []corev1.LocalObjectReference{
-						{Name: secretName},
-					},
-					Secrets: []corev1.ObjectReference{
-						{Name: secretName},
-					},
-				}
-
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultServiceAccount,
 					},
-					Args: []string{secretName, "--registry", registry, "--registry-user", registryUser},
+					Args: []string{
+						secretName,
+						"--registry", registry,
+						"--registry-user", registryUser,
+					},
 					ExpectedOutput: `"my-registry-cred" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -459,183 +1162,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				}.TestK8s(t, cmdFunc)
 			})
-		})
 
-		when("creating a gcr registry secret", func() {
-			var (
-				gcrServiceAccountFile  = "./testdata/gcr-service-account.json"
-				secretName             = "my-gcr-cred"
-				expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"{\"some-key\":\"some-value\"}"}}}`, secret.GcrUrl, secret.GcrUser)
-			)
-
-			fetcher.passwords[gcrServiceAccountFile] = `{"some-key":"some-value"}`
-
-			it("creates a secret with the correct annotations for gcr in the default namespace and updates the service account", func() {
-				expectedDockerSecret := &corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      secretName,
-						Namespace: defaultNamespace,
-					},
-					Data: map[string][]byte{
-						corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
-					},
-					Type: corev1.SecretTypeDockerConfigJson,
-				}
-
-				expectedServiceAccount := &corev1.ServiceAccount{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "default",
-						Namespace: defaultNamespace,
-						Annotations: map[string]string{
-							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.GcrUrl),
-						},
-					},
-					ImagePullSecrets: []corev1.LocalObjectReference{
-						{Name: secretName},
-					},
-					Secrets: []corev1.ObjectReference{
-						{Name: secretName},
-					},
-				}
-
-				testhelpers.CommandTest{
-					Objects: []runtime.Object{
-						defaultServiceAccount,
-					},
-					Args: []string{secretName, "--gcr", gcrServiceAccountFile},
-					ExpectedOutput: `"my-gcr-cred" created
-`,
-					ExpectCreates: []runtime.Object{
-						expectedDockerSecret,
-					},
-					ExpectUpdates: []clientgotesting.UpdateActionImpl{
-						{
-							Object: expectedServiceAccount,
-						},
-					},
-				}.TestK8s(t, cmdFunc)
-			})
-		})
-
-		when("creating a git ssh secret", func() {
-			var (
-				gitRepo    = "git@github.com"
-				gitSshFile = "./testdata/git-ssh.pem"
-				secretName = "my-git-ssh-cred"
-			)
-
-			fetcher.passwords[gitSshFile] = "some git ssh key"
-
-			it("creates a secret with the correct annotations for git ssh in the default namespace and updates the service account", func() {
-				expectedGitSecret := &corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      secretName,
-						Namespace: defaultNamespace,
-						Annotations: map[string]string{
-							secret.GitAnnotation: gitRepo,
-						},
-					},
-					Data: map[string][]byte{
-						corev1.SSHAuthPrivateKey: []byte("some git ssh key"),
-					},
-					Type: corev1.SecretTypeSSHAuth,
-				}
-
-				expectedServiceAccount := &corev1.ServiceAccount{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "default",
-						Namespace: defaultNamespace,
-						Annotations: map[string]string{
-							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
-						},
-					},
-					Secrets: []corev1.ObjectReference{
-						{Name: secretName},
-					},
-				}
-
-				testhelpers.CommandTest{
-					Objects: []runtime.Object{
-						defaultServiceAccount,
-					},
-					Args: []string{secretName, "--git-url", gitRepo, "--git-ssh-key", gitSshFile},
-					ExpectedOutput: `"my-git-ssh-cred" created
-`,
-					ExpectCreates: []runtime.Object{
-						expectedGitSecret,
-					},
-					ExpectUpdates: []clientgotesting.UpdateActionImpl{
-						{
-							Object: expectedServiceAccount,
-						},
-					},
-				}.TestK8s(t, cmdFunc)
-			})
-		})
-
-		when("creating a git basic auth secret", func() {
-			var (
-				gitRepo     = "https://github.com"
-				gitUser     = "my-git-user"
-				gitPassword = "my-git-password"
-				secretName  = "my-git-basic-cred"
-			)
-
-			fetcher.passwords["GIT_PASSWORD"] = gitPassword
-
-			it("creates a secret with the correct annotations for git basic auth in the default namespace and updates the service account", func() {
-				expectedGitSecret := &corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      secretName,
-						Namespace: defaultNamespace,
-						Annotations: map[string]string{
-							secret.GitAnnotation: gitRepo,
-						},
-					},
-					Data: map[string][]byte{
-						corev1.BasicAuthUsernameKey: []byte(gitUser),
-						corev1.BasicAuthPasswordKey: []byte(gitPassword),
-					},
-					Type: corev1.SecretTypeBasicAuth,
-				}
-
-				expectedServiceAccount := &corev1.ServiceAccount{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "default",
-						Namespace: defaultNamespace,
-						Annotations: map[string]string{
-							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
-						},
-					},
-					Secrets: []corev1.ObjectReference{
-						{Name: secretName},
-					},
-				}
-
-				testhelpers.CommandTest{
-					Objects: []runtime.Object{
-						defaultServiceAccount,
-					},
-					Args: []string{secretName, "--git-url", gitRepo, "--git-user", gitUser},
-					ExpectedOutput: `"my-git-basic-cred" created
-`,
-					ExpectCreates: []runtime.Object{
-						expectedGitSecret,
-					},
-					ExpectUpdates: []clientgotesting.UpdateActionImpl{
-						{
-							Object: expectedServiceAccount,
-						},
-					},
-				}.TestK8s(t, cmdFunc)
-			})
-		})
-	})
-
-	when("dry run flag is provided", func() {
-		// .dockerconfigjson value is the base64 encoding of
-		// `{"auths":{"my-registry.io/my-repo":{"username":"my-registry-user","password":"dummy-password"}}}`
-		const expectedYAML = `data:
+			when("output flag is used", func() {
+				it ("can output resources in yaml format", func() {
+					const resourceYAML = `data:
   .dockerconfigjson: eyJhdXRocyI6eyJteS1yZWdpc3RyeS5pby9teS1yZXBvIjp7InVzZXJuYW1lIjoibXktcmVnaXN0cnktdXNlciIsInBhc3N3b3JkIjoiZHVtbXktcGFzc3dvcmQifX19
 metadata:
   creationTimestamp: null
@@ -651,7 +1181,31 @@ metadata:
   namespace: some-default-namespace
 type: kubernetes.io/dockerconfigjson
 `
-		const expectedJSON = `{
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--registry", registry,
+							"--registry-user", registryUser,
+							"--output", "yaml",
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+
+				it ("can output resources in json format", func() {
+					const resourceJSON = `{
     "metadata": {
         "name": "my-registry-cred",
         "namespace": "some-default-namespace",
@@ -674,58 +1228,568 @@ type: kubernetes.io/dockerconfigjson
     "type": "kubernetes.io/dockerconfigjson"
 }
 `
-		var (
-			registry               = "my-registry.io/my-repo"
-			registryUser           = "my-registry-user"
-			registryPassword       = "dummy-password"
-			secretName             = "my-registry-cred"
-		)
-		fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
 
-		it("does not create a secret and can output resource in yaml format", func() {
-			testhelpers.CommandTest{
-				Objects: []runtime.Object{
-					defaultServiceAccount,
-				},
-				Args: []string{
-					secretName,
-					"--registry", registry,
-					"--registry-user", registryUser,
-					"--dry-run", "-o", "yaml",
-				},
-				ExpectedOutput: expectedYAML,
-			}.TestK8s(t, cmdFunc)
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--registry", registry,
+							"--registry-user", registryUser,
+							"--output", "json",
+						},
+						ExpectedOutput: resourceJSON,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
+			when("dry-run flag is used", func() {
+				it("does not create or update any resources", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--registry", registry,
+							"--registry-user", registryUser,
+							"--dry-run",
+						},
+						ExpectedOutput: `"my-registry-cred" created (dry run)
+`,
+					}.TestK8s(t, cmdFunc)
+				})
+			})
 		})
 
-		it("does not create a secret and can output resource in json format", func() {
-			testhelpers.CommandTest{
-				Objects: []runtime.Object{
-					defaultServiceAccount,
-				},
-				Args: []string{
-					secretName,
-					"--registry", registry,
-					"--registry-user", registryUser,
-					"--dry-run", "-o", "json",
-				},
-				ExpectedOutput: expectedJSON,
-			}.TestK8s(t, cmdFunc)
-		})
+		when("creating a gcr registry secret", func() {
+			var (
+				gcrServiceAccountFile  = "./testdata/gcr-service-account.json"
+				secretName             = "my-gcr-cred"
+				expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"{\"some-key\":\"some-value\"}"}}}`, secret.GcrUrl, secret.GcrUser)
+			)
 
-		when("output flag is not specified", func() {
-			it("does not create the image and defaults resource output to yaml format", func() {
+			fetcher.passwords[gcrServiceAccountFile] = `{"some-key":"some-value"}`
+
+			expectedDockerSecret := &corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      secretName,
+					Namespace: defaultNamespace,
+				},
+				Data: map[string][]byte{
+					corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+				},
+				Type: corev1.SecretTypeDockerConfigJson,
+			}
+
+			expectedServiceAccount := &corev1.ServiceAccount{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "default",
+					Namespace: defaultNamespace,
+					Annotations: map[string]string{
+						secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.GcrUrl),
+					},
+				},
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{Name: secretName},
+				},
+				Secrets: []corev1.ObjectReference{
+					{Name: secretName},
+				},
+			}
+
+			it("creates a secret with the correct annotations for gcr in the default namespace and updates the service account", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultServiceAccount,
 					},
 					Args: []string{
 						secretName,
-						"--registry", registry,
-						"--registry-user", registryUser,
-						"--dry-run",
+						"--gcr", gcrServiceAccountFile,
 					},
-					ExpectedOutput: expectedYAML,
+					ExpectedOutput: `"my-gcr-cred" created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedDockerSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
 				}.TestK8s(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it ("can output resources in yaml format", func() {
+					const resourceYAML = `data:
+  .dockerconfigjson: eyJhdXRocyI6eyJnY3IuaW8iOnsidXNlcm5hbWUiOiJfanNvbl9rZXkiLCJwYXNzd29yZCI6IntcInNvbWUta2V5XCI6XCJzb21lLXZhbHVlXCJ9In19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-gcr-cred
+  namespace: some-default-namespace
+type: kubernetes.io/dockerconfigjson
+---
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJnY3IuaW8iOnsidXNlcm5hbWUiOiJfanNvbl9rZXkiLCJwYXNzd29yZCI6IntcInNvbWUta2V5XCI6XCJzb21lLXZhbHVlXCJ9In19fQ==
+metadata:
+  creationTimestamp: null
+  name: my-gcr-cred
+  namespace: some-default-namespace
+type: kubernetes.io/dockerconfigjson
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--gcr", gcrServiceAccountFile,
+							"--output", "yaml",
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+
+				it ("can output resources in json format", func() {
+					const resourceJSON = `{
+    "metadata": {
+        "name": "my-gcr-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJnY3IuaW8iOnsidXNlcm5hbWUiOiJfanNvbl9rZXkiLCJwYXNzd29yZCI6IntcInNvbWUta2V5XCI6XCJzb21lLXZhbHVlXCJ9In19fQ=="
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+{
+    "metadata": {
+        "name": "my-gcr-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null
+    },
+    "data": {
+        ".dockerconfigjson": "eyJhdXRocyI6eyJnY3IuaW8iOnsidXNlcm5hbWUiOiJfanNvbl9rZXkiLCJwYXNzd29yZCI6IntcInNvbWUta2V5XCI6XCJzb21lLXZhbHVlXCJ9In19fQ=="
+    },
+    "type": "kubernetes.io/dockerconfigjson"
+}
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--gcr", gcrServiceAccountFile,
+							"--output", "json",
+						},
+						ExpectedOutput: resourceJSON,
+						ExpectCreates: []runtime.Object{
+							expectedDockerSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
+			when("dry-run flag is used", func() {
+				it("does not create or update any resources", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--gcr", gcrServiceAccountFile,
+							"--dry-run",
+						},
+						ExpectedOutput: `"my-gcr-cred" created (dry run)
+`,
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+		})
+
+		when("creating a git ssh secret", func() {
+			var (
+				gitRepo    = "git@github.com"
+				gitSshFile = "./testdata/git-ssh.pem"
+				secretName = "my-git-ssh-cred"
+			)
+
+			fetcher.passwords[gitSshFile] = "some git ssh key"
+
+			expectedGitSecret := &corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      secretName,
+					Namespace: defaultNamespace,
+					Annotations: map[string]string{
+						secret.GitAnnotation: gitRepo,
+					},
+				},
+				Data: map[string][]byte{
+					corev1.SSHAuthPrivateKey: []byte("some git ssh key"),
+				},
+				Type: corev1.SecretTypeSSHAuth,
+			}
+
+			expectedServiceAccount := &corev1.ServiceAccount{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "default",
+					Namespace: defaultNamespace,
+					Annotations: map[string]string{
+						secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
+					},
+				},
+				Secrets: []corev1.ObjectReference{
+					{Name: secretName},
+				},
+			}
+
+			it("creates a secret with the correct annotations for git ssh in the default namespace and updates the service account", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{
+						secretName, "--git-url",
+						gitRepo, "--git-ssh-key", gitSshFile,
+					},
+					ExpectedOutput: `"my-git-ssh-cred" created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedGitSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it ("can output resources in yaml format", func() {
+					const resourceYAML = `data:
+  ssh-privatekey: c29tZSBnaXQgc3NoIGtleQ==
+metadata:
+  annotations:
+    kpack.io/git: git@github.com
+  creationTimestamp: null
+  name: my-git-ssh-cred
+  namespace: some-default-namespace
+type: kubernetes.io/ssh-auth
+---
+data:
+  ssh-privatekey: c29tZSBnaXQgc3NoIGtleQ==
+metadata:
+  annotations:
+    kpack.io/git: git@github.com
+  creationTimestamp: null
+  name: my-git-ssh-cred
+  namespace: some-default-namespace
+type: kubernetes.io/ssh-auth
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-ssh-key", gitSshFile,
+							"--output", "yaml",
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectCreates: []runtime.Object{
+							expectedGitSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+
+				it ("can output resources in json format", func() {
+					const resourceJSON = `{
+    "metadata": {
+        "name": "my-git-ssh-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null,
+        "annotations": {
+            "kpack.io/git": "git@github.com"
+        }
+    },
+    "data": {
+        "ssh-privatekey": "c29tZSBnaXQgc3NoIGtleQ=="
+    },
+    "type": "kubernetes.io/ssh-auth"
+}
+{
+    "metadata": {
+        "name": "my-git-ssh-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null,
+        "annotations": {
+            "kpack.io/git": "git@github.com"
+        }
+    },
+    "data": {
+        "ssh-privatekey": "c29tZSBnaXQgc3NoIGtleQ=="
+    },
+    "type": "kubernetes.io/ssh-auth"
+}
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-ssh-key", gitSshFile,
+							"--output", "json",
+						},
+						ExpectedOutput: resourceJSON,
+						ExpectCreates: []runtime.Object{
+							expectedGitSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
+			when("dry-run flag is used", func() {
+				it("does not create or update any resources", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-ssh-key", gitSshFile,
+							"--dry-run",
+						},
+						ExpectedOutput: `"my-git-ssh-cred" created (dry run)
+`,
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+		})
+
+		when("creating a git basic auth secret", func() {
+			var (
+				gitRepo     = "https://github.com"
+				gitUser     = "my-git-user"
+				gitPassword = "my-git-password"
+				secretName  = "my-git-basic-cred"
+			)
+
+			fetcher.passwords["GIT_PASSWORD"] = gitPassword
+
+			expectedGitSecret := &corev1.Secret{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      secretName,
+					Namespace: defaultNamespace,
+					Annotations: map[string]string{
+						secret.GitAnnotation: gitRepo,
+					},
+				},
+				Data: map[string][]byte{
+					corev1.BasicAuthUsernameKey: []byte(gitUser),
+					corev1.BasicAuthPasswordKey: []byte(gitPassword),
+				},
+				Type: corev1.SecretTypeBasicAuth,
+			}
+
+			expectedServiceAccount := &corev1.ServiceAccount{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      "default",
+					Namespace: defaultNamespace,
+					Annotations: map[string]string{
+						secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
+					},
+				},
+				Secrets: []corev1.ObjectReference{
+					{Name: secretName},
+				},
+			}
+
+			it("creates a secret with the correct annotations for git basic auth in the default namespace and updates the service account", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultServiceAccount,
+					},
+					Args: []string{
+						secretName,
+						"--git-url", gitRepo,
+						"--git-user", gitUser,
+					},
+					ExpectedOutput: `"my-git-basic-cred" created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedGitSecret,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it ("can output resources in yaml format", func() {
+					const resourceYAML = `data:
+  password: bXktZ2l0LXBhc3N3b3Jk
+  username: bXktZ2l0LXVzZXI=
+metadata:
+  annotations:
+    kpack.io/git: https://github.com
+  creationTimestamp: null
+  name: my-git-basic-cred
+  namespace: some-default-namespace
+type: kubernetes.io/basic-auth
+---
+data:
+  password: bXktZ2l0LXBhc3N3b3Jk
+  username: bXktZ2l0LXVzZXI=
+metadata:
+  annotations:
+    kpack.io/git: https://github.com
+  creationTimestamp: null
+  name: my-git-basic-cred
+  namespace: some-default-namespace
+type: kubernetes.io/basic-auth
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-user", gitUser,
+							"--output", "yaml",
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectCreates: []runtime.Object{
+							expectedGitSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+
+				it ("can output resources in json format", func() {
+					const resourceJSON = `{
+    "metadata": {
+        "name": "my-git-basic-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null,
+        "annotations": {
+            "kpack.io/git": "https://github.com"
+        }
+    },
+    "data": {
+        "password": "bXktZ2l0LXBhc3N3b3Jk",
+        "username": "bXktZ2l0LXVzZXI="
+    },
+    "type": "kubernetes.io/basic-auth"
+}
+{
+    "metadata": {
+        "name": "my-git-basic-cred",
+        "namespace": "some-default-namespace",
+        "creationTimestamp": null,
+        "annotations": {
+            "kpack.io/git": "https://github.com"
+        }
+    },
+    "data": {
+        "password": "bXktZ2l0LXBhc3N3b3Jk",
+        "username": "bXktZ2l0LXVzZXI="
+    },
+    "type": "kubernetes.io/basic-auth"
+}
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-user", gitUser,
+							"--output", "json",
+						},
+						ExpectedOutput: resourceJSON,
+						ExpectCreates: []runtime.Object{
+							expectedGitSecret,
+						},
+						ExpectUpdates: []clientgotesting.UpdateActionImpl{
+							{
+								Object: expectedServiceAccount,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
+			when("dry-run flag is used", func() {
+				it("does not create or update any resources", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							defaultServiceAccount,
+						},
+						Args: []string{
+							secretName,
+							"--git-url", gitRepo,
+							"--git-user", gitUser,
+							"--dry-run",
+						},
+						ExpectedOutput: `"my-git-basic-cred" created (dry run)
+`,
+					}.TestK8s(t, cmdFunc)
+				})
 			})
 		})
 	})
