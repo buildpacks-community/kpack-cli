@@ -144,8 +144,9 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
-	when("dry run is specified", func() {
-		const resourceYAML = `apiVersion: kpack.io/v1alpha1
+	when("output flag is used", func() {
+		it("can output in yaml format", func() {
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   annotations:
@@ -158,7 +159,28 @@ spec:
   - image: some-registry.io/some-repo/bpfromcnb@sha256:123imagefromcnb
 status: {}
 `
-		const resourceJSON = `{
+
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					expectedStore.Name,
+					"--buildpackage", buildpackage1,
+					"-b", buildpackage2,
+					"--output", "yaml",
+				},
+				ExpectedOutput: resourceYAML,
+				ExpectedErrorOutput: `Creating Cluster Store...
+`,
+				ExpectCreates: []runtime.Object{
+					expectedStore,
+				},
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("can output in json format", func() {
+			const resourceJSON = `{
     "kind": "ClusterStore",
     "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
@@ -182,8 +204,60 @@ status: {}
 }
 `
 
-		when("without an output format", func() {
-			it("does not create a clusterstore and defaults resource output to yaml format", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					expectedStore.Name,
+					"--buildpackage", buildpackage1,
+					"-b", buildpackage2,
+					"--output", "json",
+				},
+				ExpectedOutput: resourceJSON,
+				ExpectedErrorOutput: `Creating Cluster Store...
+`,
+				ExpectCreates: []runtime.Object{
+					expectedStore,
+				},
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+	})
+
+	when("dry-run flag is used", func() {
+		it("does not create a clusterstore and prints result with dry run indicated", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					expectedStore.Name,
+					"--buildpackage", buildpackage1,
+					"-b", buildpackage2,
+					"--dry-run",
+				},
+				ExpectedOutput: `Creating Cluster Store...
+"test-store" created (dry run)
+`,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		when("output flag is used", func() {
+			it("does not create a clusterstore and prints the resource output", func() {
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStore
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-store","creationTimestamp":null},"spec":{"sources":[{"image":"some-registry.io/some-repo/newbp@sha256:123newbp"},{"image":"some-registry.io/some-repo/bpfromcnb@sha256:123imagefromcnb"}]},"status":{}}'
+  creationTimestamp: null
+  name: test-store
+spec:
+  sources:
+  - image: some-registry.io/some-repo/newbp@sha256:123newbp
+  - image: some-registry.io/some-repo/bpfromcnb@sha256:123imagefromcnb
+status: {}
+`
+
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
 						config,
@@ -192,41 +266,14 @@ status: {}
 						expectedStore.Name,
 						"--buildpackage", buildpackage1,
 						"-b", buildpackage2,
+						"--output", "yaml",
 						"--dry-run",
 					},
 					ExpectedOutput: resourceYAML,
+					ExpectedErrorOutput: `Creating Cluster Store...
+`,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
-		})
-
-		it("does not create a clusterstore and outputs the resource in yaml format", func() {
-			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
-					config,
-				},
-				Args: []string{
-					expectedStore.Name,
-					"--buildpackage", buildpackage1,
-					"-b", buildpackage2,
-					"--dry-run", "-o", "yaml",
-				},
-				ExpectedOutput: resourceYAML,
-			}.TestK8sAndKpack(t, cmdFunc)
-		})
-
-		it("does not create a clusterstore and outputs the resource in json format", func() {
-			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
-					config,
-				},
-				Args: []string{
-					expectedStore.Name,
-					"--buildpackage", buildpackage1,
-					"-b", buildpackage2,
-					"--dry-run", "-o", "json",
-				},
-				ExpectedOutput: resourceJSON,
-			}.TestK8sAndKpack(t, cmdFunc)
 		})
 	})
 }

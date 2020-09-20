@@ -297,7 +297,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 						"some-image",
 						"--output", "yaml",
 					},
-					ExpectedOutput: "nothing to patch\n",
+					ExpectedErrorOutput: "nothing to patch\n",
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
@@ -428,13 +428,14 @@ status: {}
 					"--dry-run",
 					"--wait",
 				},
-				ExpectedOutput: "\"some-image\" patched (dry run)\n",
+				ExpectedOutput: `"some-image" patched (dry run)
+`,
 			}.TestKpack(t, cmdFunc)
 			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 
 		when("output flag is used", func() {
-			it("does not patch the image but prints the resource output", func() {
+			it("does not patch and prints the resource output", func() {
 				const resourceYAML = `metadata:
   creationTimestamp: null
   name: some-image

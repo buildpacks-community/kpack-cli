@@ -12,8 +12,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
 const (
@@ -35,7 +33,6 @@ type Factory struct {
 	ClusterBuilder string
 	Env            []string
 	DeleteEnv      []string
-	Printer        *commands.CommandHelper
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error) {

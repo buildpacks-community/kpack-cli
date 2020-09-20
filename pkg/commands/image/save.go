@@ -65,7 +65,6 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 			}
 
 			name := args[0]
-			factory.Printer = ch
 
 			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {

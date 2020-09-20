@@ -63,8 +63,6 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 			}
 
 			name := args[0]
-
-			factory.Printer = ch
 			factory.SubPath = &subPath
 
 			img, err := create(name, tag, factory, ch, cs)
@@ -73,7 +71,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 			}
 
 			if ch.CanWait() {
-				_, err := newImageWaiter(cs).Wait(cmd.Context(), ch.TextWriter(), img)
+				_, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 				if err != nil {
 					return err
 				}

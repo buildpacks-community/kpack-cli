@@ -753,12 +753,13 @@ type: kubernetes.io/dockerconfigjson
 				},
 			}.TestK8s(t, cmdFunc)
 		})
+
 	})
 
 	when("dry-run flag is used", func() {
 		fetcher.passwords["DOCKER_PASSWORD"] = "dummy-password"
 
-		it("does not creates the image and prints result message with dry run indicated", func() {
+		it("does not create the secret and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
 					defaultServiceAccount,
@@ -774,7 +775,7 @@ type: kubernetes.io/dockerconfigjson
 		})
 
 		when("output flag is used", func() {
-			it("does not create the image but prints the resource output", func() {
+			it("does not create the secret and prints resource output", func() {
 				const resourceYAML = `data:
   .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
 metadata:

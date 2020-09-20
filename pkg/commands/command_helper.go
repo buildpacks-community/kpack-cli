@@ -32,9 +32,12 @@ func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
 		return nil, err
 	}
 
-	output, err := cmd.Flags().GetString("output")
-	if err != nil {
-		return nil, err
+	output := ""
+	if cmd.Flags().Changed("output") {
+		output, err = cmd.Flags().GetString("output")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	wait := false
@@ -65,10 +68,19 @@ func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
 		outputResource,
 		wait,
 		cmd.OutOrStdout(),
-		cmd.OutOrStderr(),
+		cmd.ErrOrStderr(),
 		strings.Builder{},
 		resourcePrinter,
 	}, nil
+}
+
+func (cp CommandHelper) IsDryRun() bool {
+	return cp.dryRun
+}
+
+func (cp CommandHelper) CanWait() bool {
+	return cp.wait && !cp.dryRun && !cp.outputResource
+
 }
 
 func (cp CommandHelper) PrintObj(obj runtime.Object) error {
@@ -95,29 +107,16 @@ func (cp CommandHelper) PrintResult(format string, a ...interface{}) error {
 	}
 	cp.builder.WriteString("\n")
 
-	_, err = cp.ResultWriter().Write([]byte(cp.builder.String()))
+	_, err = cp.OutOrDiscardWriter().Write([]byte(cp.builder.String()))
 	return err
 }
 
 func (cp CommandHelper) Printlnf(format string, a ...interface{}) error {
-	return cp.printf(format+"\n", a...)
-}
-
-func (cp CommandHelper) printf(format string, a ...interface{}) error {
-	_, err := fmt.Fprintf(cp.TextWriter(), format, a...)
+	_, err := fmt.Fprintf(cp.OutOrErrWriter(), format+"\n", a...)
 	return err
 }
 
-func (cp CommandHelper) IsDryRun() bool {
-	return cp.dryRun
-}
-
-func (cp CommandHelper) CanWait() bool {
-	return cp.wait && !cp.dryRun && !cp.outputResource
-
-}
-
-func (cp CommandHelper) TextWriter() io.Writer {
+func (cp CommandHelper) OutOrErrWriter() io.Writer {
 	if cp.outputResource {
 		return cp.errWriter
 	} else {
@@ -125,7 +124,7 @@ func (cp CommandHelper) TextWriter() io.Writer {
 	}
 }
 
-func (cp CommandHelper) ResultWriter() io.Writer {
+func (cp CommandHelper) OutOrDiscardWriter() io.Writer {
 	if cp.outputResource {
 		return ioutil.Discard
 	} else {

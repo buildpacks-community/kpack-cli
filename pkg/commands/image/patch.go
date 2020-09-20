@@ -65,7 +65,6 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
-			factory.Printer = ch
 			name := args[0]
 
 			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})

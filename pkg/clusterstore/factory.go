@@ -27,7 +27,7 @@ type BuildpackageUploader interface {
 type Factory struct {
 	Uploader   BuildpackageUploader
 	Repository string
-	Printer    *commands.Logger
+	Printer    *commands.CommandHelper
 }
 
 func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.ClusterStore, error) {
@@ -48,7 +48,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 	}
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer, f.Repository, buildpackage)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.OutOrErrWriter(), f.Repository, buildpackage)
 		if err != nil {
 			return nil, err
 		}
@@ -71,20 +71,20 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
 	storeUpdated := false
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer, repository, buildpackage)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.OutOrErrWriter(), repository, buildpackage)
 		if err != nil {
 			return nil, false, err
 		}
 
 		if storeContains(store, uploadedBp) {
-			f.Printer.Printf("\tBuildpackage already exists in the store")
+			f.Printer.Printlnf("\tBuildpackage already exists in the store")
 			continue
 		}
 
 		store.Spec.Sources = append(store.Spec.Sources, v1alpha1.StoreImage{
 			Image: uploadedBp,
 		})
-		f.Printer.Printf("\tAdded Buildpackage")
+		f.Printer.Printlnf("\tAdded Buildpackage")
 		storeUpdated = true
 	}
 

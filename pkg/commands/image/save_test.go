@@ -568,7 +568,7 @@ status: {}
 			})
 
 			when("the image config is valid", func() {
-				it("does not creates the image and prints result message with dry run indicated", func() {
+				it("does not creates an image and prints result message with dry run indicated", func() {
 					testhelpers.CommandTest{
 						Args: []string{
 							"some-image",
@@ -587,7 +587,7 @@ status: {}
 				})
 
 				when("output flag is used", func() {
-					it("does not create the image but prints the resource output", func() {
+					it("does not create an image and prints the resource output", func() {
 						const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: Image
 metadata:
@@ -906,7 +906,7 @@ status: {}
 							"some-image",
 							"--output", "yaml",
 						},
-						ExpectedOutput: "nothing to patch\n",
+						ExpectedErrorOutput: "nothing to patch\n",
 					}.TestKpack(t, cmdFunc)
 					assert.Len(t, fakeImageWaiter.Calls, 0)
 				})
@@ -1037,13 +1037,14 @@ status: {}
 						"--dry-run",
 						"--wait",
 					},
-					ExpectedOutput: "\"some-image\" patched (dry run)\n",
+					ExpectedOutput: `"some-image" patched (dry run)
+`,
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 
 			when("output flag is used", func() {
-				it("does not patch the image but prints the resource output", func() {
+				it("does not patch and prints the resource output", func() {
 					const resourceYAML = `metadata:
   creationTimestamp: null
   name: some-image

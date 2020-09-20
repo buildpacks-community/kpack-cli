@@ -18,7 +18,8 @@ import (
 func NewAddCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstore.Factory) *cobra.Command {
 	var (
 		buildpackages []string
-		dryRunConfig  DryRunConfig
+		dryRun bool
+		output string
 	)
 
 	cmd := &cobra.Command{
@@ -37,67 +38,63 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			storeName := args[0]
-			if dryRunConfig.dryRun {
-				factory.Printer = commands.NewDiscardPrinter()
-			} else {
-				factory.Printer = commands.NewPrinter(cmd)
-			}
-			dryRunConfig.writer = cmd.OutOrStdout()
-
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			s, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(storeName, v1.GetOptions{})
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
+			name := args[0]
+			factory.Printer = ch
+
+			s, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(name, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return errors.Errorf("ClusterStore '%s' does not exist", storeName)
+				return errors.Errorf("ClusterStore '%s' does not exist", name)
 			} else if err != nil {
 				return err
 			}
 
-			return update(s, buildpackages, factory, dryRunConfig, cs)
+			return update(s, buildpackages, factory, ch, cs)
 		},
 	}
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
-	cmd.Flags().BoolVarP(&dryRunConfig.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&dryRunConfig.outputFormat, "output", "o", "yaml", "output format. supported formats are: yaml, json")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }
 
-func update(s *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, drc DryRunConfig, cs k8s.ClientSet) error {
+func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) error {
 	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
 		return err
 	}
 
-	factory.Printer.Printf("Adding Buildpackages...")
-	updatedStore, storeUpdated, err := factory.AddToStore(s, repo, buildpackages...)
+	ch.Printlnf("Adding Buildpackages...")
+	updatedStore, storeUpdated, err := factory.AddToStore(store, repo, buildpackages...)
 	if err != nil {
 		return err
 	}
 
 	if !storeUpdated {
-		factory.Printer.Printf("ClusterStore Unchanged")
-		return nil
+		return ch.Printlnf("ClusterStore Unchanged")
 	}
 
-	if drc.dryRun {
-		printer, err := commands.NewResourcePrinter(drc.outputFormat)
+	if !ch.IsDryRun() {
+		updatedStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(updatedStore)
 		if err != nil {
 			return err
 		}
-
-		return printer.PrintObject(updatedStore, drc.writer)
 	}
 
-	_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(updatedStore)
+	err = ch.PrintObj(updatedStore)
 	if err != nil {
 		return err
 	}
 
-	factory.Printer.Printf("ClusterStore Updated")
-	return nil
+	return ch.PrintResult("ClusterStore Updated")
 }
