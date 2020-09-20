@@ -59,13 +59,13 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 				return err
 			}
 
-			cp, err := commands.NewCommandPrinter(cmd)
+			ch, err := commands.NewCommandHelper(cmd)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
-			factory.Printer = cp
+			factory.Printer = ch
 
 			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
@@ -74,7 +74,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 				}
 
 				factory.SubPath = &subPath
-				img, err = create(name, tag, factory, cp, cs)
+				img, err = create(name, tag, factory, ch, cs)
 			} else if err != nil {
 				return err
 			} else {
@@ -82,14 +82,14 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 					factory.SubPath = &subPath
 				}
 
-				img, err = patch(img, factory, cp, cs)
+				img, err = patch(img, factory, ch, cs)
 			}
 
 			if err != nil {
 				return err
 			}
 
-			if wait && !dryRun {
+			if ch.CanWait() {
 				_, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 				if err != nil {
 					return err

@@ -35,7 +35,7 @@ type Factory struct {
 	ClusterBuilder string
 	Env            []string
 	DeleteEnv      []string
-	Printer        *commands.CommandPrinter
+	Printer        *commands.CommandHelper
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error) {

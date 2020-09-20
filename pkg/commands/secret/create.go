@@ -60,7 +60,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				return err
 			}
 
-			printer, err := commands.NewCommandPrinter(cmd)
+			ch, err := commands.NewCommandHelper(cmd)
 			if err != nil {
 				return err
 			}
@@ -85,7 +85,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				}
 			}
 
-			err = printer.PrintObj(secret)
+			err = ch.PrintObj(secret)
 			if err != nil {
 				return err
 			}
@@ -113,12 +113,12 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				}
 			}
 
-			err = printer.PrintResult("%q created", secret.Name)
+			err = ch.PrintResult("%q created", secret.Name)
 			if err != nil  {
 				return err
 			}
 
-			return printer.PrintObj(secret)
+			return ch.PrintObj(secret)
 		},
 	}
 

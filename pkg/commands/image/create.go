@@ -57,23 +57,23 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 				return err
 			}
 
-			cp, err := commands.NewCommandPrinter(cmd)
+			ch, err := commands.NewCommandHelper(cmd)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
 
-			factory.Printer = cp
+			factory.Printer = ch
 			factory.SubPath = &subPath
 
-			img, err := create(name, tag, factory, cp, cs)
+			img, err := create(name, tag, factory, ch, cs)
 			if err != nil {
 				return err
 			}
 
-			if wait && !dryRun {
-				_, err := newImageWaiter(cs).Wait(cmd.Context(), cp.TextWriter(), img)
+			if ch.CanWait() {
+				_, err := newImageWaiter(cs).Wait(cmd.Context(), ch.TextWriter(), img)
 				if err != nil {
 					return err
 				}
@@ -99,7 +99,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	return cmd
 }
 
-func create(name, tag string, factory *image.Factory, cp *commands.CommandPrinter, cs k8s.ClientSet) (*v1alpha1.Image, error) {
+func create(name, tag string, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (*v1alpha1.Image, error) {
 	img, err := factory.MakeImage(name, cs.Namespace, tag)
 	if err != nil {
 		return nil, err
@@ -115,17 +115,17 @@ func create(name, tag string, factory *image.Factory, cp *commands.CommandPrinte
 	}
 	img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(imgConfig)
 
-    if !cp.IsDryRun() {
+    if !ch.IsDryRun() {
 		img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Create(img)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	err = cp.PrintObj(img)
+	err = ch.PrintObj(img)
 	if err != nil {
 		return nil, err
 	}
 
-	return img, cp.PrintResult("%q created", img.Name)
+	return img, ch.PrintResult("%q created", img.Name)
 }

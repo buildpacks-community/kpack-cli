@@ -14,22 +14,38 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type CommandPrinter struct {
-	dryRun          bool
-	outputResource  bool
+type CommandHelper struct {
+	dryRun         bool
+	outputResource bool
+	wait           bool
+
 	outWriter       io.Writer
 	errWriter       io.Writer
+
 	builder         strings.Builder
 	resourcePrinter ResourcePrinter
 }
 
-func NewCommandPrinter(cmd *cobra.Command) (*CommandPrinter, error) {
+func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
 	dryRun, err := cmd.Flags().GetBool("dry-run")
 	if err != nil {
 		return nil, err
 	}
 
 	output, err := cmd.Flags().GetString("output")
+	if err != nil {
+		return nil, err
+	}
+
+	wait := false
+	flag := cmd.Flags().Lookup("wait")
+	if flag != nil {
+		wait, err = cmd.Flags().GetBool("wait")
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +60,10 @@ func NewCommandPrinter(cmd *cobra.Command) (*CommandPrinter, error) {
 		}
 	}
 
-	return &CommandPrinter{
+	return &CommandHelper{
 		dryRun,
 		outputResource,
+		wait,
 		cmd.OutOrStdout(),
 		cmd.OutOrStderr(),
 		strings.Builder{},
@@ -54,14 +71,14 @@ func NewCommandPrinter(cmd *cobra.Command) (*CommandPrinter, error) {
 	}, nil
 }
 
-func (cp CommandPrinter) PrintObj(obj runtime.Object) error {
+func (cp CommandHelper) PrintObj(obj runtime.Object) error {
 	if cp.outputResource {
 		return cp.resourcePrinter.PrintObject(obj, cp.outWriter)
 	}
 	return nil
 }
 
-func (cp CommandPrinter) PrintResult(format string, a ...interface{}) error {
+func (cp CommandHelper) PrintResult(format string, a ...interface{}) error {
 	cp.builder.Reset()
 
 	str := fmt.Sprintf(format, a...)
@@ -82,20 +99,25 @@ func (cp CommandPrinter) PrintResult(format string, a ...interface{}) error {
 	return err
 }
 
-func (cp CommandPrinter) Printlnf(format string, a ...interface{}) error {
+func (cp CommandHelper) Printlnf(format string, a ...interface{}) error {
 	return cp.printf(format+"\n", a...)
 }
 
-func (cp CommandPrinter) printf(format string, a ...interface{}) error {
+func (cp CommandHelper) printf(format string, a ...interface{}) error {
 	_, err := fmt.Fprintf(cp.TextWriter(), format, a...)
 	return err
 }
 
-func (cp CommandPrinter) IsDryRun() bool {
+func (cp CommandHelper) IsDryRun() bool {
 	return cp.dryRun
 }
 
-func (cp CommandPrinter) TextWriter() io.Writer {
+func (cp CommandHelper) CanWait() bool {
+	return cp.wait && !cp.dryRun && !cp.outputResource
+
+}
+
+func (cp CommandHelper) TextWriter() io.Writer {
 	if cp.outputResource {
 		return cp.errWriter
 	} else {
@@ -103,7 +125,7 @@ func (cp CommandPrinter) TextWriter() io.Writer {
 	}
 }
 
-func (cp CommandPrinter) ResultWriter() io.Writer {
+func (cp CommandHelper) ResultWriter() io.Writer {
 	if cp.outputResource {
 		return ioutil.Discard
 	} else {
