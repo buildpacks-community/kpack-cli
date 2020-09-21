@@ -103,8 +103,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image patch to be reconciled and tail resulting build logs")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&output, "output", "", "", "output format. supported formats are: yaml, json")
-
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }
 

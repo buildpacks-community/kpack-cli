@@ -5,8 +5,6 @@ package clusterbuilder
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
 	"path"
 
 	"github.com/spf13/cobra"
@@ -16,6 +14,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -48,14 +47,19 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
-
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			return create(name, flags, cmd.OutOrStdout(), cs)
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
+			name := args[0]
+
+			return create(name, flags, ch, cs)
 		},
 	}
 
@@ -64,7 +68,7 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&flags.outputFormat, "output", "", "yaml", "output format. supported formats are: yaml, json")
+	cmd.Flags().StringVar(&flags.outputFormat, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }
 
@@ -77,17 +81,16 @@ type CommandFlags struct {
 	outputFormat string
 }
 
-func create(name string, flags CommandFlags, writer io.Writer, cs k8s.ClientSet) error {
+func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) error {
 	configHelper := k8s.DefaultConfigHelper(cs)
 
-	tag := flags.tag
-	if tag == "" {
+	if flags.tag == "" {
 		repository, err := configHelper.GetCanonicalRepository()
 		if err != nil {
 			return err
 		}
 
-		tag = path.Join(repository, name)
+		flags.tag = path.Join(repository, name)
 	}
 
 	serviceAccount, err := configHelper.GetCanonicalServiceAccount()
@@ -106,7 +109,7 @@ func create(name string, flags CommandFlags, writer io.Writer, cs k8s.ClientSet)
 		},
 		Spec: v1alpha1.ClusterBuilderSpec{
 			BuilderSpec: v1alpha1.BuilderSpec{
-				Tag: tag,
+				Tag: flags.tag,
 				Stack: corev1.ObjectReference{
 					Name: flags.stack,
 					Kind: v1alpha1.ClusterStackKind,
@@ -135,20 +138,17 @@ func create(name string, flags CommandFlags, writer io.Writer, cs k8s.ClientSet)
 
 	cb.Annotations[kubectlLastAppliedConfig] = string(marshal)
 
-	if flags.dryRun {
-		printer, err := k8s.NewObjectPrinter(flags.outputFormat)
+	if !ch.IsDryRun() {
+		cb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(cb)
 		if err != nil {
 			return err
 		}
-
-		return printer.PrintObject(cb, writer)
 	}
 
-	_, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(cb)
+	err = ch.PrintObj(cb)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(writer, "\"%s\" created\n", cb.Name)
-	return err
+	return ch.PrintResult("%q created", cb.Name)
 }

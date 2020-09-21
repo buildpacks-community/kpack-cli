@@ -131,7 +131,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 	cmd.Flags().StringVarP(&secretFactory.GitSshKeyFile, "git-ssh-key", "", "", "path to a file containing the GitUrl SSH private key")
 	cmd.Flags().StringVarP(&secretFactory.GitUser, "git-user", "", "", "git user")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&output, "output", "", "", "output format. supported formats are: yaml, json")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }
 

@@ -29,7 +29,7 @@ func NewObjectPrinter(format string) (ResourcePrinter, error) {
 	case FormatJSON:
 		return JSONResourcePrinter{}, nil
 	default:
-		return nil, fmt.Errorf("unsupported output format: %s, supported formats are yaml, json", format)
+		return nil, fmt.Errorf("unsupported output format: %q, supported formats are yaml, json", format)
 	}
 }
 

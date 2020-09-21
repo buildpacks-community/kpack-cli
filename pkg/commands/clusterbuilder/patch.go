@@ -4,15 +4,13 @@
 package clusterbuilder
 
 import (
-	"fmt"
-	"io"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -34,6 +32,11 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
 
 			cb, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(name, metav1.GetOptions{})
@@ -41,7 +44,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			return patch(cb, flags, cmd.OutOrStdout(), cs)
+			return patch(cb, flags, ch, cs)
 		},
 	}
 
@@ -54,7 +57,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	return cmd
 }
 
-func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, writer io.Writer, cs k8s.ClientSet) error {
+func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) error {
 	patchedCb := cb.DeepCopy()
 
 	if flags.tag != "" {
@@ -84,24 +87,20 @@ func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, writer io.Writer, cs
 	}
 
 	if len(patch) == 0 {
-		_, err = fmt.Fprintln(writer, "nothing to patch")
-		return err
+		return  ch.Printlnf("nothing to patch")
 	}
 
-	if flags.dryRun {
-		printer, err := k8s.NewObjectPrinter(flags.outputFormat)
+	if !ch.IsDryRun() {
+		cb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Patch(cb.Name, types.MergePatchType, patch)
 		if err != nil {
 			return err
 		}
-
-		return printer.PrintObject(cb, writer)
 	}
 
-	_, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Patch(cb.Name, types.MergePatchType, patch)
+	err = ch.PrintObj(cb)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(writer, "\"%s\" patched\n", cb.Name)
-	return err
+	return ch.PrintResult("%q patched", cb.Name)
 }

@@ -91,7 +91,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&output, "output", "", "", "output format. supported formats are: yaml, json")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 
 	cmd.MarkFlagRequired("tag")
 	return cmd

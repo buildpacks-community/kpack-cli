@@ -8,6 +8,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -39,6 +40,11 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --order /path/to/orde
 				return err
 			}
 
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
 
 			cb, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(name, metav1.GetOptions{})
@@ -51,12 +57,12 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --order /path/to/orde
 					flags.store = defaultStore
 				}
 
-				return create(name, flags, cmd.OutOrStdout(), cs)
+				return create(name, flags, ch, cs)
 			} else if err != nil {
 				return err
 			}
 
-			return patch(cb, flags, cmd.OutOrStdout(), cs)
+			return patch(cb, flags, ch, cs)
 		},
 	}
 

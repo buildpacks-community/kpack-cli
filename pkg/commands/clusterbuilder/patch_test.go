@@ -26,7 +26,7 @@ func testClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 	var (
 		builder = &v1alpha1.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
+				Kind:       v1alpha1.BuilderKind,
 				APIVersion: "kpack.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -108,9 +108,140 @@ func testClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 		}.TestKpack(t, cmdFunc)
 	})
 
-	when("dry run is specified", func() {
-		const resourceYAML = `apiVersion: kpack.io/v1alpha1
-kind: ClusterBuilder
+	when("output flag is used", func() {
+		it("can output in yaml format", func() {
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: Builder
+metadata:
+  creationTimestamp: null
+  name: test-builder
+spec:
+  order:
+  - group:
+    - id: org.cloudfoundry.test-bp
+  - group:
+    - id: org.cloudfoundry.fake-bp
+  serviceAccountRef:
+    name: some-service-account
+    namespace: some-namespace
+  stack:
+    kind: ClusterStack
+    name: some-other-stack
+  store:
+    kind: ClusterStore
+    name: some-other-store
+  tag: some-other-tag
+status:
+  stack: {}
+`
+
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					builder,
+				},
+				Args: []string{
+					builder.Name,
+					"--tag", "some-other-tag",
+					"--stack", "some-other-stack",
+					"--store", "some-other-store",
+					"--order", "./testdata/patched-order.yaml",
+					"--output", "yaml",
+				},
+				ExpectedOutput: resourceYAML,
+				ExpectPatches: []string{
+					`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
+				},
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("can output in json format", func() {
+			const resourceJSON = `{
+    "kind": "Builder",
+    "apiVersion": "kpack.io/v1alpha1",
+    "metadata": {
+        "name": "test-builder",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "tag": "some-other-tag",
+        "stack": {
+            "kind": "ClusterStack",
+            "name": "some-other-stack"
+        },
+        "store": {
+            "kind": "ClusterStore",
+            "name": "some-other-store"
+        },
+        "order": [
+            {
+                "group": [
+                    {
+                        "id": "org.cloudfoundry.test-bp"
+                    }
+                ]
+            },
+            {
+                "group": [
+                    {
+                        "id": "org.cloudfoundry.fake-bp"
+                    }
+                ]
+            }
+        ],
+        "serviceAccountRef": {
+            "namespace": "some-namespace",
+            "name": "some-service-account"
+        }
+    },
+    "status": {
+        "stack": {}
+    }
+}
+`
+
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					builder,
+				},
+				Args: []string{
+					builder.Name,
+					"--tag", "some-other-tag",
+					"--stack", "some-other-stack",
+					"--store", "some-other-store",
+					"--order", "./testdata/patched-order.yaml",
+					"--output", "json",
+				},
+				ExpectedOutput: resourceJSON,
+				ExpectPatches: []string{
+					`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
+				},
+			}.TestKpack(t, cmdFunc)
+		})
+	})
+
+	when("dry-run flag is used", func() {
+		it("does not patch a ClusterBuilder and prints result with dry run indicated", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					builder,
+				},
+				Args: []string{
+					builder.Name,
+					"--tag", "some-other-tag",
+					"--stack", "some-other-stack",
+					"--store", "some-other-store",
+					"--order", "./testdata/patched-order.yaml",
+					"--dry-run",
+				},
+				ExpectedOutput: `"test-builder" patched (dry run)
+`,
+			}.TestKpack(t, cmdFunc)
+		})
+
+		when("output flag is used", func() {
+			it("does not patch a ClusterBuilder and prints the resource output", func() {
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: Builder
 metadata:
   creationTimestamp: null
   name: test-builder
@@ -133,86 +264,7 @@ spec:
 status:
   stack: {}
 `
-		const resourceJSON = `{
-    "kind": "ClusterBuilder",
-    "apiVersion": "kpack.io/v1alpha1",
-    "metadata": {
-        "name": "test-builder",
-        "creationTimestamp": null
-    },
-    "spec": {
-        "tag": "some-registry.com/test-builder",
-        "stack": {
-            "kind": "ClusterStack",
-            "name": "some-stack"
-        },
-        "store": {
-            "kind": "ClusterStore",
-            "name": "some-store"
-        },
-        "order": [
-            {
-                "group": [
-                    {
-                        "id": "org.cloudfoundry.nodejs"
-                    }
-                ]
-            },
-            {
-                "group": [
-                    {
-                        "id": "org.cloudfoundry.go"
-                    }
-                ]
-            }
-        ],
-        "serviceAccountRef": {
-            "namespace": "some-namespace",
-            "name": "some-service-account"
-        }
-    },
-    "status": {
-        "stack": {}
-    }
-}
-`
 
-		it("does not patch a ClusterBuilder and outputs the resource in yaml format", func() {
-			testhelpers.CommandTest{
-				Objects: []runtime.Object{
-					builder,
-				},
-				Args: []string{
-					builder.Name,
-					"--tag", "some-other-tag",
-					"--stack", "some-other-stack",
-					"--store", "some-other-store",
-					"--order", "./testdata/patched-order.yaml",
-					"--dry-run", "--output", "yaml",
-				},
-				ExpectedOutput: resourceYAML,
-			}.TestKpack(t, cmdFunc)
-		})
-
-		it("does not patch a ClusterBuilder and outputs the resource in json format", func() {
-			testhelpers.CommandTest{
-				Objects: []runtime.Object{
-					builder,
-				},
-				Args: []string{
-					builder.Name,
-					"--tag", "some-other-tag",
-					"--stack", "some-other-stack",
-					"--store", "some-other-store",
-					"--order", "./testdata/patched-order.yaml",
-					"--dry-run", "--output", "json",
-				},
-				ExpectedOutput: resourceJSON,
-			}.TestKpack(t, cmdFunc)
-		})
-
-		when("without an output format", func() {
-			it("does not patch a ClusterBuilder and defaults resource output to yaml format", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						builder,
@@ -224,23 +276,9 @@ status:
 						"--store", "some-other-store",
 						"--order", "./testdata/patched-order.yaml",
 						"--dry-run",
+						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
-				}.TestKpack(t, cmdFunc)
-			})
-		})
-
-		when("without any changes", func() {
-			it("does not patch and informs user nothing to patch", func() {
-				testhelpers.CommandTest{
-					Objects: []runtime.Object{
-						builder,
-					},
-					Args: []string{
-						builder.Name,
-						"--dry-run", "--output", "yaml",
-					},
-					ExpectedOutput: "nothing to patch\n",
 				}.TestKpack(t, cmdFunc)
 			})
 		})

@@ -55,7 +55,7 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&output, "output", "", "", "output format. supported formats are: yaml, json")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }
 

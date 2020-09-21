@@ -164,4 +164,3 @@ func getStringFlag(name string, cmd *cobra.Command) (string, error) {
 	}
 	return value, nil
 }
-
