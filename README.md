@@ -1,15 +1,19 @@
 # kp cli to interact with [kpack](github.com/pivotal/kpack)
 
-### Building Locally
+## Contributing
+
+Please read the [contributing](CONTRIBUTING.md) doc to begin contributing.
+
+## Building Locally
 
 ```
 go install ./cmd/kp
 ```
 
-### Getting Started
+## Getting Started
 
 ```
 kp --help
 ```
 
-### [Documentation](docs/kp.md)
+## [Documentation](docs/kp.md)
