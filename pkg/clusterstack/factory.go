@@ -12,8 +12,6 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
 type ImageFetcher interface {
@@ -25,12 +23,17 @@ type ImageRelocator interface {
 }
 
 type Factory struct {
-	Printer       *commands.Logger
+	Printer       IPrinter
 	Fetcher       ImageFetcher
 	Relocator     ImageRelocator
 	Repository    string
 	BuildImageRef string
 	RunImageRef   string
+}
+
+type IPrinter interface {
+	Printlnf(format string, a ...interface{}) error
+	Writer() io.Writer
 }
 
 func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
@@ -77,7 +80,7 @@ func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack) (bool, error) {
 	if wasUpdated, err := wasUpdated(stack, relocatedBuildImageRef, relocatedRunImageRef, stackId); err != nil {
 		return false, err
 	} else if !wasUpdated {
-		f.Printer.Printf("Build and Run images already exist in stack\nClusterStack Unchanged")
+		f.Printer.Printlnf("Build and Run images already exist in stack\nClusterStack Unchanged")
 		return false, nil
 	}
 	return true, nil
@@ -108,14 +111,14 @@ func (f *Factory) relocateStack() (string, string, string, error) {
 		return "", "", "", errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
 	}
 
-	f.Printer.Printf("Uploading to '%s'...", f.Repository)
+	f.Printer.Printlnf("Uploading to '%s'...", f.Repository)
 
-	relocatedBuildImageRef, err := f.Relocator.Relocate(f.Printer.Writer, buildImage, path.Join(f.Repository, BuildImageName))
+	relocatedBuildImageRef, err := f.Relocator.Relocate(f.Printer.Writer(), buildImage, path.Join(f.Repository, BuildImageName))
 	if err != nil {
 		return "", "", "", err
 	}
 
-	relocatedRunImageRef, err := f.Relocator.Relocate(f.Printer.Writer, runImage, path.Join(f.Repository, RunImageName))
+	relocatedRunImageRef, err := f.Relocator.Relocate(f.Printer.Writer(), runImage, path.Join(f.Repository, RunImageName))
 	if err != nil {
 		return "", "", "", err
 	}

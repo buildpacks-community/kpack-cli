@@ -58,6 +58,11 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
 			configHelper := k8s.DefaultConfigHelper(cs)
 
 			repository, err := configHelper.GetCanonicalRepository()
@@ -70,10 +75,8 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			logger := commands.NewPrinter(cmd)
-
 			storeFactory.Repository = repository // FIXME
-			storeFactory.Printer = logger
+			storeFactory.Printer = ch
 
 			stackFactory.Repository = repository // FIXME
 
@@ -82,7 +85,7 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			importHelper := importHelper{descriptor, cs.KpackClient, timestampProvider, logger}
+			importHelper := importHelper{descriptor, cs.KpackClient, timestampProvider, ch}
 
 			if err := importHelper.ImportStores(storeFactory, repository); err != nil {
 				return err
@@ -140,12 +143,12 @@ type importHelper struct {
 	descriptor        importpkg.DependencyDescriptor
 	client            kpack.Interface
 	timestampProvider TimestampProvider
-	logger            *commands.Logger
+	logger            *commands.CommandHelper
 }
 
 func (i importHelper) ImportStores(factory *clusterstore.Factory, repository string) error {
 	for _, store := range i.descriptor.Stores {
-		i.logger.Printf("Importing Cluster Store '%s'...", store.Name)
+		i.logger.Printlnf("Importing Cluster Store '%s'...", store.Name)
 
 		var buildpackages []string
 		for _, s := range store.Sources {
@@ -199,7 +202,7 @@ func (i importHelper) ImportStacks(factory *clusterstack.Factory) error {
 	}
 
 	for _, stack := range i.descriptor.Stacks {
-		i.logger.Printf("Importing Cluster Stack '%s'...", stack.Name)
+		i.logger.Printlnf("Importing Cluster Stack '%s'...", stack.Name)
 
 		factory.Printer = i.logger
 		factory.BuildImageRef = stack.BuildImage.Image // FIXME
@@ -251,7 +254,7 @@ func (i importHelper) ImportClusterBuilders(repository string, sa string) error 
 	}
 
 	for _, ccb := range i.descriptor.ClusterBuilders {
-		i.logger.Printf("Importing Cluster Builder '%s'...", ccb.Name)
+		i.logger.Printlnf("Importing Cluster Builder '%s'...", ccb.Name)
 
 		newCCB, err := i.makeClusterBuilder(ccb, repository, sa)
 		if err != nil {

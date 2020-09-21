@@ -16,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
-	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -116,7 +115,7 @@ func create(name string, flags CommandFlags, writer io.Writer, cs k8s.ClientSet)
 	bldr.Annotations[kubectlLastAppliedConfig] = string(marshal)
 
 	if flags.dryRun {
-		printer, err := commands.NewResourcePrinter(flags.outputFormat)
+		printer, err := k8s.NewObjectPrinter(flags.outputFormat)
 		if err != nil {
 			return err
 		}

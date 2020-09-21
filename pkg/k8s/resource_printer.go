@@ -1,7 +1,7 @@
 // Copyright 2020-Present VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package commands
+package k8s
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ type ResourcePrinter interface {
 	PrintObject(obj runtime.Object, w io.Writer) error
 }
 
-func NewResourcePrinter(format string) (ResourcePrinter, error) {
+func NewObjectPrinter(format string) (ResourcePrinter, error) {
 	switch format {
 	case FormatYAML:
 		return &YAMLResourcePrinter{}, nil

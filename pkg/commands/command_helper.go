@@ -12,6 +12,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
 type CommandHelper struct {
@@ -19,45 +21,38 @@ type CommandHelper struct {
 	outputResource bool
 	wait           bool
 
-	outWriter       io.Writer
-	errWriter       io.Writer
+	outWriter io.Writer
+	errWriter io.Writer
 
-	builder         strings.Builder
-	resourcePrinter ResourcePrinter
+	objectPrinter k8s.ResourcePrinter
+	builder       strings.Builder
 }
 
 func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
-	dryRun, err := cmd.Flags().GetBool("dry-run")
+	dryRun, err := getBoolFlag("dry-run", cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	output := ""
-	if cmd.Flags().Changed("output") {
-		output, err = cmd.Flags().GetString("output")
-		if err != nil {
-			return nil, err
-		}
+	output, err := getStringFlag("output", cmd)
+	if err != nil {
+		return nil, err
 	}
 
-	wait := false
-	flag := cmd.Flags().Lookup("wait")
-	if flag != nil {
-		wait, err = cmd.Flags().GetBool("wait")
-		if err != nil {
-			return nil, err
-		}
+	wait, err := getBoolFlag("wait", cmd)
+	if err != nil {
+		return nil, err
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	var resourcePrinter ResourcePrinter
+	var resourcePrinter k8s.ResourcePrinter
 
 	outputResource := len(output) > 0
 	if outputResource {
-		resourcePrinter, err = NewResourcePrinter(output)
+		resourcePrinter, err = k8s.NewObjectPrinter(output)
 		if err != nil {
 			return nil, err
 		}
@@ -69,8 +64,8 @@ func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
 		wait,
 		cmd.OutOrStdout(),
 		cmd.ErrOrStderr(),
-		strings.Builder{},
 		resourcePrinter,
+		strings.Builder{},
 	}, nil
 }
 
@@ -85,7 +80,7 @@ func (cp CommandHelper) CanWait() bool {
 
 func (cp CommandHelper) PrintObj(obj runtime.Object) error {
 	if cp.outputResource {
-		return cp.resourcePrinter.PrintObject(obj, cp.outWriter)
+		return cp.objectPrinter.PrintObject(obj, cp.outWriter)
 	}
 	return nil
 }
@@ -131,3 +126,42 @@ func (cp CommandHelper) OutOrDiscardWriter() io.Writer {
 		return cp.outWriter
 	}
 }
+
+func (cp CommandHelper) Writer() io.Writer {
+	return cp.OutOrErrWriter()
+}
+
+func getBoolFlag(name string, cmd *cobra.Command) (bool, error) {
+	flag := cmd.Flags().Lookup(name)
+	if flag == nil {
+		return false, nil
+	}
+
+	if !cmd.Flags().Changed(name) {
+		return false, nil
+	}
+
+	value, err := cmd.Flags().GetBool(name)
+	if err != nil {
+		return value, err
+	}
+	return value, nil
+}
+
+func getStringFlag(name string, cmd *cobra.Command) (string, error) {
+	flag := cmd.Flags().Lookup(name)
+	if flag == nil {
+		return "", nil
+	}
+
+	if !cmd.Flags().Changed(name) {
+		return "", nil
+	}
+
+	value, err := cmd.Flags().GetString(name)
+	if err != nil {
+		return value, err
+	}
+	return value, nil
+}
+

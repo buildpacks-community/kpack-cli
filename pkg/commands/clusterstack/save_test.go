@@ -153,38 +153,193 @@ func testSaveCommand(t *testing.T, when spec.G, it spec.S) {
 				ExpectedOutput: "Error: build stack 'some-stack-id' does not match run stack 'some-other-stack-id'\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
-	})
 
-	when("updating", func() {
-		it("updates the stack id, run image, and build image when the clusterstack does exist", func() {
-			stack := &v1alpha1.ClusterStack{
+		when("output flag is used", func() {
+			expectedStack := &v1alpha1.ClusterStack{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       v1alpha1.ClusterStackKind,
+					APIVersion: "kpack.io/v1alpha1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "some-stack",
 				},
 				Spec: v1alpha1.ClusterStackSpec{
-					Id: "some-old-id",
+					Id: "some-stack-id",
 					BuildImage: v1alpha1.ClusterStackSpecImage{
-						Image: "some-old-build-image",
+						Image: "some-registry.io/some-repo/build@" + buildImageId,
 					},
 					RunImage: v1alpha1.ClusterStackSpecImage{
-						Image: "some-old-run-image",
-					},
-				},
-				Status: v1alpha1.ClusterStackStatus{
-					ResolvedClusterStack: v1alpha1.ResolvedClusterStack{
-						Id: "some-old-id",
-						BuildImage: v1alpha1.ClusterStackStatusImage{
-							LatestImage: "some-registry.io/old-repo/build@" + buildImageId,
-							Image:       "some-old-build-image",
-						},
-						RunImage: v1alpha1.ClusterStackStatusImage{
-							LatestImage: "some-registry.io/old-repo/run@" + runImageId,
-							Image:       "some-old-run-image",
-						},
+						Image: "some-registry.io/some-repo/run@" + runImageId,
 					},
 				},
 			}
 
+			it("can output in yaml format", func() {
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
+  creationTimestamp: null
+  name: some-stack
+spec:
+  buildImage:
+    image: some-registry.io/some-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+  id: some-stack-id
+  runImage:
+    image: some-registry.io/some-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+status:
+  buildImage: {}
+  runImage: {}
+`
+
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					Args: []string{
+						"some-stack",
+						"--build-image", "some-build-image",
+						"--run-image", "some-run-image",
+						"--output", "yaml",
+					},
+					ExpectedOutput: resourceYAML,
+					ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+`,
+					ExpectCreates: []runtime.Object{
+						expectedStack,
+					},
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+
+			it("can output in json format", func() {
+				const resourceJSON = `{
+    "kind": "ClusterStack",
+    "apiVersion": "kpack.io/v1alpha1",
+    "metadata": {
+        "name": "some-stack",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "id": "some-stack-id",
+        "buildImage": {
+            "image": "some-registry.io/some-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d"
+        },
+        "runImage": {
+            "image": "some-registry.io/some-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d"
+        }
+    },
+    "status": {
+        "buildImage": {},
+        "runImage": {}
+    }
+}
+`
+
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					Args: []string{
+						"some-stack",
+						"--build-image", "some-build-image",
+						"--run-image", "some-run-image",
+						"--output", "json",
+					},
+					ExpectedOutput: resourceJSON,
+					ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+`,
+					ExpectCreates: []runtime.Object{
+						expectedStack,
+					},
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+
+		when("dry-run flag is used", func() {
+			it("does not create a clusterstack and prints result with dry run indicated", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					Args: []string{
+						"some-stack",
+						"--build-image", "some-build-image",
+						"--run-image", "some-run-image",
+						"--dry-run",
+					},
+					ExpectedOutput: `Uploading to 'some-registry.io/some-repo'...
+"some-stack" created (dry run)
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it("does not create a clusterstack and prints the resource output", func() {
+					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
+  creationTimestamp: null
+  name: some-stack
+spec:
+  buildImage:
+    image: some-registry.io/some-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+  id: some-stack-id
+  runImage:
+    image: some-registry.io/some-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+status:
+  buildImage: {}
+  runImage: {}
+`
+
+					testhelpers.CommandTest{
+						K8sObjects: []runtime.Object{
+							config,
+						},
+						Args: []string{
+							"some-stack",
+							"--build-image", "some-build-image",
+							"--run-image", "some-run-image",
+							"--dry-run",
+							"--output", "yaml",
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+`,
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
+			})
+		})
+	})
+
+	when("updating", func() {
+		stack := &v1alpha1.ClusterStack{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "some-stack",
+			},
+			Spec: v1alpha1.ClusterStackSpec{
+				Id: "some-old-id",
+				BuildImage: v1alpha1.ClusterStackSpecImage{
+					Image: "some-old-build-image",
+				},
+				RunImage: v1alpha1.ClusterStackSpecImage{
+					Image: "some-old-run-image",
+				},
+			},
+			Status: v1alpha1.ClusterStackStatus{
+				ResolvedClusterStack: v1alpha1.ResolvedClusterStack{
+					Id: "some-old-id",
+					BuildImage: v1alpha1.ClusterStackStatusImage{
+						LatestImage: "some-registry.io/old-repo/build@" + buildImageId,
+						Image:       "some-old-build-image",
+					},
+					RunImage: v1alpha1.ClusterStackStatusImage{
+						LatestImage: "some-registry.io/old-repo/run@" + runImageId,
+						Image:       "some-old-run-image",
+					},
+				},
+			},
+		}
+
+		it("updates the stack id, run image, and build image when the clusterstack does exist", func() {
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
 					config,
@@ -213,6 +368,193 @@ func testSaveCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput: "Uploading to 'some-registry.io/some-repo'...\nClusterStack \"some-stack\" Updated\n",
 			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		when("output flag is used", func() {
+			it("can output in yaml format", func() {
+				const resourceYAML = `metadata:
+  creationTimestamp: null
+  name: some-stack
+spec:
+  buildImage:
+    image: some-registry.io/some-repo/build@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7
+  id: some-new-id
+  runImage:
+    image: some-registry.io/some-repo/run@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7
+status:
+  buildImage:
+    image: some-old-build-image
+    latestImage: some-registry.io/old-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+  id: some-old-id
+  runImage:
+    image: some-old-run-image
+    latestImage: some-registry.io/old-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+`
+
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						stack,
+					},
+					Args:      []string{
+						"some-stack",
+						"--build-image", "some-new-build-image",
+						"--run-image", "some-new-run-image",
+						"--output", "yaml",
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: &v1alpha1.ClusterStack{
+								ObjectMeta: stack.ObjectMeta,
+								Spec: v1alpha1.ClusterStackSpec{
+									Id: "some-new-id",
+									BuildImage: v1alpha1.ClusterStackSpecImage{
+										Image: "some-registry.io/some-repo/build@" + newBuildImageId,
+									},
+									RunImage: v1alpha1.ClusterStackSpecImage{
+										Image: "some-registry.io/some-repo/run@" + newRunImageId,
+									},
+								},
+								Status: stack.Status,
+							},
+						},
+					},
+					ExpectedOutput: resourceYAML,
+					ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+
+			it("can output in json format", func() {
+				const resourceJSON = `{
+    "metadata": {
+        "name": "some-stack",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "id": "some-new-id",
+        "buildImage": {
+            "image": "some-registry.io/some-repo/build@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7"
+        },
+        "runImage": {
+            "image": "some-registry.io/some-repo/run@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7"
+        }
+    },
+    "status": {
+        "id": "some-old-id",
+        "buildImage": {
+            "latestImage": "some-registry.io/old-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d",
+            "image": "some-old-build-image"
+        },
+        "runImage": {
+            "latestImage": "some-registry.io/old-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d",
+            "image": "some-old-run-image"
+        }
+    }
+}
+`
+
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						stack,
+					},
+					Args:      []string{
+						"some-stack",
+						"--build-image", "some-new-build-image",
+						"--run-image", "some-new-run-image",
+						"--output", "json",
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: &v1alpha1.ClusterStack{
+								ObjectMeta: stack.ObjectMeta,
+								Spec: v1alpha1.ClusterStackSpec{
+									Id: "some-new-id",
+									BuildImage: v1alpha1.ClusterStackSpecImage{
+										Image: "some-registry.io/some-repo/build@" + newBuildImageId,
+									},
+									RunImage: v1alpha1.ClusterStackSpecImage{
+										Image: "some-registry.io/some-repo/run@" + newRunImageId,
+									},
+								},
+								Status: stack.Status,
+							},
+						},
+					},
+					ExpectedOutput: resourceJSON,
+					ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+
+		when("dry-run flag is used", func() {
+			it("does not update the clusterstack and prints result with dry run indicated", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						stack,
+					},
+					Args:      []string{
+						"some-stack",
+						"--build-image", "some-new-build-image",
+						"--run-image", "some-new-run-image",
+						"--dry-run",
+					},
+					ExpectedOutput: `Uploading to 'some-registry.io/some-repo'...
+ClusterStack "some-stack" Updated (dry run)
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it("does not update the clusterstack and prints the resource output", func() {
+					const resourceYAML = `metadata:
+  creationTimestamp: null
+  name: some-stack
+spec:
+  buildImage:
+    image: some-registry.io/some-repo/build@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7
+  id: some-new-id
+  runImage:
+    image: some-registry.io/some-repo/run@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7
+status:
+  buildImage:
+    image: some-old-build-image
+    latestImage: some-registry.io/old-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+  id: some-old-id
+  runImage:
+    image: some-old-run-image
+    latestImage: some-registry.io/old-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+`
+
+					testhelpers.CommandTest{
+						K8sObjects: []runtime.Object{
+							config,
+						},
+						KpackObjects: []runtime.Object{
+							stack,
+						},
+						Args:      []string{
+							"some-stack",
+							"--build-image", "some-new-build-image",
+							"--run-image", "some-new-run-image",
+							"--dry-run",
+							"--output", "yaml",
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+`,
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
+			})
 		})
 	})
 }

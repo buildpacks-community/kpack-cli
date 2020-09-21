@@ -4,7 +4,6 @@
 package clusterstack
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/spf13/cobra"
@@ -40,16 +39,15 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			name := args[0]
-			dryRunConfig.writer = cmd.OutOrStdout()
-
-			if dryRunConfig.dryRun {
-				factory.Printer = commands.NewDiscardPrinter()
-			} else {
-				factory.Printer = commands.NewPrinter(cmd)
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
 			}
 
-			return create(name, factory, dryRunConfig, cs)
+			name := args[0]
+			factory.Printer = ch
+
+			return create(name, factory, ch, cs)
 		},
 	}
 	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
@@ -68,7 +66,7 @@ type DryRunConfig struct {
 	writer       io.Writer
 }
 
-func create(name string, factory *clusterstack.Factory, drc DryRunConfig, cs k8s.ClientSet) (err error) {
+func create(name string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
 	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
 		return err
@@ -79,20 +77,17 @@ func create(name string, factory *clusterstack.Factory, drc DryRunConfig, cs k8s
 		return err
 	}
 
-	if drc.dryRun {
-		printer, err := commands.NewResourcePrinter(drc.outputFormat)
+	if !ch.IsDryRun() {
+		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Create(stack)
 		if err != nil {
 			return err
 		}
-
-		return printer.PrintObject(stack, drc.writer)
 	}
 
-	_, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Create(stack)
+	err = ch.PrintObj(stack)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(factory.Printer.Writer, "\"%s\" created\n", stack.Name)
-	return err
+	return ch.PrintResult("%q created", stack.Name)
 }

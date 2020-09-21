@@ -46,19 +46,19 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			if dryRunConfig.dryRun {
-				factory.Printer = commands.NewDiscardPrinter()
-			} else {
-				factory.Printer = commands.NewPrinter(cmd)
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
 			}
-			dryRunConfig.writer = cmd.OutOrStdout()
+
+			factory.Printer = ch
 
 			stack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			return update(stack, factory, dryRunConfig, cs)
+			return update(stack, factory, ch, cs)
 		},
 	}
 
@@ -72,7 +72,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, drc DryRunConfig, cs k8s.ClientSet) (err error) {
+func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
 	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
 		return err
@@ -84,20 +84,17 @@ func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, drc Dry
 		return nil
 	}
 
-	if drc.dryRun {
-		printer, err := commands.NewResourcePrinter(drc.outputFormat)
+	if !ch.IsDryRun() {
+		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(stack)
 		if err != nil {
 			return err
 		}
-
-		return printer.PrintObject(stack, drc.writer)
 	}
 
-	_, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(stack)
+	err = ch.PrintObj(stack)
 	if err != nil {
 		return err
 	}
 
-	factory.Printer.Printf("ClusterStack \"%s\" Updated", stack.Name)
-	return nil
+	return ch.PrintResult("ClusterStack %q Updated", stack.Name)
 }

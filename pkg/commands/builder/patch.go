@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
-	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -92,7 +91,7 @@ func patch(bldr *v1alpha1.Builder, flags CommandFlags, writer io.Writer, cs k8s.
 	}
 
 	if flags.dryRun {
-		printer, err := commands.NewResourcePrinter(flags.outputFormat)
+		printer, err := k8s.NewObjectPrinter(flags.outputFormat)
 		if err != nil {
 			return err
 		}

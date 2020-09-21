@@ -12,8 +12,6 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
 const (
@@ -27,7 +25,12 @@ type BuildpackageUploader interface {
 type Factory struct {
 	Uploader   BuildpackageUploader
 	Repository string
-	Printer    *commands.CommandHelper
+	Printer    IPrinter
+}
+
+type IPrinter interface {
+	Printlnf(format string, a ...interface{}) error
+	Writer() io.Writer
 }
 
 func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.ClusterStore, error) {
@@ -48,7 +51,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 	}
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.OutOrErrWriter(), f.Repository, buildpackage)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.Writer(), f.Repository, buildpackage)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +74,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
 	storeUpdated := false
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.OutOrErrWriter(), repository, buildpackage)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.Writer(), repository, buildpackage)
 		if err != nil {
 			return nil, false, err
 		}

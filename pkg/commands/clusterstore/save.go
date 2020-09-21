@@ -50,14 +50,14 @@ kp clusterstore save my-store -b ../path/to/my-local-buildpackage.cnb`,
 			name := args[0]
 			factory.Printer = ch
 
-			s, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(name, v1.GetOptions{})
+			clusterStore, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(name, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				return create(name, buildpackages, factory, ch, cs)
 			} else if err != nil {
 				return err
 			}
 
-			return update(s, buildpackages, factory, ch, cs)
+			return update(clusterStore, buildpackages, factory, ch, cs)
 		},
 	}
 
