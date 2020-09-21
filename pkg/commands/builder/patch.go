@@ -4,15 +4,13 @@
 package builder
 
 import (
-	"fmt"
-	"io"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -34,6 +32,11 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
 			flags.namespace = cs.Namespace
 
@@ -42,7 +45,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			return patch(cb, flags, cmd.OutOrStdout(), cs)
+			return patch(cb, flags, ch, cs)
 		},
 	}
 
@@ -52,11 +55,11 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&flags.outputFormat, "output", "", "yaml", "output format. supported formats are: yaml, json")
+	cmd.Flags().StringVar(&flags.output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }
 
-func patch(bldr *v1alpha1.Builder, flags CommandFlags, writer io.Writer, cs k8s.ClientSet) error {
+func patch(bldr *v1alpha1.Builder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) error {
 	patchedBldr := bldr.DeepCopy()
 
 	if flags.tag != "" {
@@ -86,24 +89,20 @@ func patch(bldr *v1alpha1.Builder, flags CommandFlags, writer io.Writer, cs k8s.
 	}
 
 	if len(patch) == 0 {
-		_, err = fmt.Fprintln(writer, "nothing to patch")
-		return err
+		return ch.PrintResult("nothing to patch")
 	}
 
-	if flags.dryRun {
-		printer, err := k8s.NewObjectPrinter(flags.outputFormat)
+	if !ch.IsDryRun() {
+		patchedBldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Patch(patchedBldr.Name, types.MergePatchType, patch)
 		if err != nil {
 			return err
 		}
-
-		return printer.PrintObject(bldr, writer)
 	}
 
-	_, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Patch(bldr.Name, types.MergePatchType, patch)
+	err = ch.PrintObj(patchedBldr)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(writer, "\"%s\" patched\n", bldr.Name)
-	return err
+	return ch.PrintResult("%q patched", patchedBldr.Name)
 }

@@ -4,6 +4,7 @@
 package builder
 
 import (
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -37,6 +38,11 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --order /path/to
 				return err
 			}
 
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
 			flags.namespace = cs.Namespace
 
@@ -54,12 +60,12 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --order /path/to
 					flags.store = defaultStore
 				}
 
-				return create(name, flags, cmd.OutOrStdout(), cs)
+				return create(name, flags, ch, cs)
 			} else if err != nil {
 				return err
 			}
 
-			return patch(bldr, flags, cmd.OutOrStdout(), cs)
+			return patch(bldr, flags, ch, cs)
 		},
 	}
 
@@ -69,6 +75,6 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --order /path/to
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use (default \"default\" for a create)")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&flags.outputFormat, "output", "", "yaml", "output format. supported formats are: yaml, json")
+	cmd.Flags().StringVar(&flags.output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }

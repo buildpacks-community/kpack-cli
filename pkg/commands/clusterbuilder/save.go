@@ -71,6 +71,6 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --order /path/to/orde
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use (default \"default\" for a create)")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&flags.outputFormat, "output", "", "yaml", "output format. supported formats are: yaml, json")
+	cmd.Flags().StringVar(&flags.output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }

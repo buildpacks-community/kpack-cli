@@ -297,6 +297,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 						"some-image",
 						"--output", "yaml",
 					},
+
 					ExpectedErrorOutput: "nothing to patch\n",
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -412,7 +413,7 @@ status: {}
 						"some-image",
 						"--dry-run",
 					},
-					ExpectedOutput: "nothing to patch\n",
+					ExpectedOutput: "nothing to patch (dry run)\n",
 				}.TestKpack(t, cmdFunc)
 			})
 		})

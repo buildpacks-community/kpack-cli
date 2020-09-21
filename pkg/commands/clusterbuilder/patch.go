@@ -53,7 +53,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&flags.outputFormat, "output", "", "yaml", "output format. supported formats are: yaml, json")
+	cmd.Flags().StringVar(&flags.output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }
 
@@ -87,20 +87,20 @@ func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.Command
 	}
 
 	if len(patch) == 0 {
-		return  ch.Printlnf("nothing to patch")
+		return ch.PrintResult("nothing to patch")
 	}
 
 	if !ch.IsDryRun() {
-		cb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Patch(cb.Name, types.MergePatchType, patch)
+		patchedCb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Patch(patchedCb.Name, types.MergePatchType, patch)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = ch.PrintObj(cb)
+	err = ch.PrintObj(patchedCb)
 	if err != nil {
 		return err
 	}
 
-	return ch.PrintResult("%q patched", cb.Name)
+	return ch.PrintResult("%q patched", patchedCb.Name)
 }

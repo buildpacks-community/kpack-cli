@@ -248,19 +248,19 @@ metadata:
 spec:
   order:
   - group:
-    - id: org.cloudfoundry.nodejs
+    - id: org.cloudfoundry.test-bp
   - group:
-    - id: org.cloudfoundry.go
+    - id: org.cloudfoundry.fake-bp
   serviceAccountRef:
     name: some-service-account
     namespace: some-namespace
   stack:
     kind: ClusterStack
-    name: some-stack
+    name: some-other-stack
   store:
     kind: ClusterStore
-    name: some-store
-  tag: some-registry.com/test-builder
+    name: some-other-store
+  tag: some-other-tag
 status:
   stack: {}
 `

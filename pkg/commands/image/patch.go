@@ -114,8 +114,7 @@ func patch(img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelp
 	}
 
 	if len(patch) == 0 {
-		ch.Printlnf("nothing to patch")
-		return nil, err
+		return img, ch.PrintResult("nothing to patch")
 	}
 
 	if !ch.IsDryRun() {

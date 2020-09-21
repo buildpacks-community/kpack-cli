@@ -5,8 +5,6 @@ package builder
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -16,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -47,10 +46,15 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/
 				return err
 			}
 
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
 			flags.namespace = cs.Namespace
 
-			return create(name, flags, cmd.OutOrStdout(), cs)
+			return create(name, flags, ch, cs)
 		},
 	}
 
@@ -60,22 +64,23 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/
 	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVarP(&flags.outputFormat, "output", "", "yaml", "output format. supported formats are: yaml, json")
+	cmd.Flags().StringVar(&flags.output, "output", "", "output format. supported formats are: yaml, json")
+
 	_ = cmd.MarkFlagRequired("tag")
 	return cmd
 }
 
 type CommandFlags struct {
-	tag   string
+	tag       string
 	namespace string
-	stack string
-	store string
-	order string
-	dryRun bool
-	outputFormat string
+	stack     string
+	store     string
+	order     string
+	dryRun    bool
+	output    string
 }
 
-func create(name string, flags CommandFlags, writer io.Writer, cs k8s.ClientSet) (err error) {
+func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
 	bldr := &v1alpha1.Builder{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       v1alpha1.BuilderKind,
@@ -114,20 +119,17 @@ func create(name string, flags CommandFlags, writer io.Writer, cs k8s.ClientSet)
 
 	bldr.Annotations[kubectlLastAppliedConfig] = string(marshal)
 
-	if flags.dryRun {
-		printer, err := k8s.NewObjectPrinter(flags.outputFormat)
+	if !ch.IsDryRun() {
+		bldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(bldr)
 		if err != nil {
 			return err
 		}
-
-		return printer.PrintObject(bldr, writer)
 	}
 
-	_, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(bldr)
+	err = ch.PrintObj(bldr)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(writer, "\"%s\" created\n", bldr.Name)
-	return err
+	return ch.PrintResult("%q created", bldr.Name)
 }
