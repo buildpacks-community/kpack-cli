@@ -14,20 +14,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type ImageFetcher interface {
-	Fetch(src string) (v1.Image, error)
+	Fetch(src string, tlsCfg registry.TLSConfig) (v1.Image, error)
 }
 
 type ImageRelocator interface {
-	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
+	Relocate(writer io.Writer, image v1.Image, dest string, tlsCfg registry.TLSConfig) (string, error)
 }
 
 type Factory struct {
 	Printer       *commands.Logger
 	Fetcher       ImageFetcher
 	Relocator     ImageRelocator
+	TLSConfig     registry.TLSConfig
 	Repository    string
 	BuildImageRef string
 	RunImageRef   string
@@ -84,7 +86,7 @@ func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack) (bool, error) {
 }
 
 func (f *Factory) relocateStack() (string, string, string, error) {
-	buildImage, err := f.Fetcher.Fetch(f.BuildImageRef)
+	buildImage, err := f.Fetcher.Fetch(f.BuildImageRef, f.TLSConfig)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -94,7 +96,7 @@ func (f *Factory) relocateStack() (string, string, string, error) {
 		return "", "", "", err
 	}
 
-	runImage, err := f.Fetcher.Fetch(f.RunImageRef)
+	runImage, err := f.Fetcher.Fetch(f.RunImageRef, f.TLSConfig)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -110,12 +112,12 @@ func (f *Factory) relocateStack() (string, string, string, error) {
 
 	f.Printer.Printf("Uploading to '%s'...", f.Repository)
 
-	relocatedBuildImageRef, err := f.Relocator.Relocate(f.Printer.Writer, buildImage, path.Join(f.Repository, BuildImageName))
+	relocatedBuildImageRef, err := f.Relocator.Relocate(f.Printer.Writer, buildImage, path.Join(f.Repository, BuildImageName), f.TLSConfig)
 	if err != nil {
 		return "", "", "", err
 	}
 
-	relocatedRunImageRef, err := f.Relocator.Relocate(f.Printer.Writer, runImage, path.Join(f.Repository, RunImageName))
+	relocatedRunImageRef, err := f.Relocator.Relocate(f.Printer.Writer, runImage, path.Join(f.Repository, RunImageName), f.TLSConfig)
 	if err != nil {
 		return "", "", "", err
 	}

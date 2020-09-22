@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 )
 
 type SourceUploader interface {
-	Upload(ref, path string) (string, error)
+	Upload(ref, path string, tlsCfg registry.TLSConfig) (string, error)
 }
 
 type Factory struct {
@@ -35,6 +36,7 @@ type Factory struct {
 	ClusterBuilder string
 	Env            []string
 	DeleteEnv      []string
+	TLSConfig      registry.TLSConfig
 	Printer        *commands.Logger
 }
 
@@ -143,7 +145,7 @@ func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
 			return v1alpha1.SourceConfig{}, err
 		}
 
-		sourceRef, err := f.SourceUploader.Upload(ref.Context().Name()+"-source", f.LocalPath)
+		sourceRef, err := f.SourceUploader.Upload(ref.Context().Name()+"-source", f.LocalPath, f.TLSConfig)
 		if err != nil {
 			return v1alpha1.SourceConfig{}, err
 		}

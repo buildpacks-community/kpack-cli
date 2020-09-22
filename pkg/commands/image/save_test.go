@@ -98,6 +98,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
 							"-n", namespace,
+							"--registry-ca-cert-path", "some-cert-path",
+							"--registry-verify-certs",
 							"--wait",
 						},
 						ExpectedOutput: "\"some-image\" created\n",

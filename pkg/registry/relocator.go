@@ -15,10 +15,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Relocator struct {
-}
+type Relocator struct{}
 
-func (*Relocator) Relocate(writer io.Writer, image v1.Image, dest string) (string, error) {
+func (r *Relocator) Relocate(writer io.Writer, image v1.Image, dest string, tlsCfg TLSConfig) (string, error) {
 	ref, err := name.ParseReference(dest, name.WeakValidation)
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -45,12 +44,17 @@ func (*Relocator) Relocate(writer io.Writer, image v1.Image, dest string) (strin
 	defer spinner.Stop()
 	go spinner.Write()
 
-	err = remote.Write(ref, image, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	t, err := tlsCfg.Transport()
+	if err != nil {
+		return "", err
+	}
+
+	err = remote.Write(ref, image, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithTransport(t))
 	if err != nil {
 		return "", newImageAccessError(refName, err)
 	}
 
-	return fmt.Sprintf("%s@%s", refName, digest.String()), remote.Tag(ref.Context().Tag(timestampTag()), image, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	return fmt.Sprintf("%s@%s", refName, digest.String()), remote.Tag(ref.Context().Tag(timestampTag()), image, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithTransport(t))
 }
 
 func timestampTag() string {

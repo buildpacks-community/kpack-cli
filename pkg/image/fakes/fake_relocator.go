@@ -9,12 +9,14 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type Relocator struct {
 }
 
-func (r *Relocator) Relocate(_ io.Writer, image v1.Image, dest string) (string, error) {
+func (r *Relocator) Relocate(_ io.Writer, image v1.Image, dest string, _ registry.TLSConfig) (string, error) {
 	digest, err := image.Digest()
 	if err != nil {
 		return "", err

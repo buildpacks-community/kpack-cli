@@ -76,6 +76,8 @@ cat dependencies.yaml | kp import -f -`,
 			storeFactory.Printer = logger
 
 			stackFactory.Repository = repository // FIXME
+			stackFactory.Printer = logger        // FIXME
+			stackFactory.TLSConfig = storeFactory.TLSConfig
 
 			descriptor, err := getDependencyDescriptor(cmd, filename)
 			if err != nil {
@@ -100,6 +102,7 @@ cat dependencies.yaml | kp import -f -`,
 		},
 	}
 	cmd.Flags().StringVarP(&filename, "filename", "f", "", "dependency descriptor filename")
+	commands.SetTLSFlags(cmd, &storeFactory.TLSConfig)
 	_ = cmd.MarkFlagRequired("filename")
 	return cmd
 }

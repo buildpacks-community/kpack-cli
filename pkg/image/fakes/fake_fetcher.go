@@ -7,13 +7,15 @@ import (
 	"errors"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type Fetcher struct {
 	images map[string]v1.Image
 }
 
-func (f Fetcher) Fetch(src string) (v1.Image, error) {
+func (f Fetcher) Fetch(src string, _ registry.TLSConfig) (v1.Image, error) {
 	image, ok := f.images[src]
 	if !ok {
 		return nil, errors.New("image not found")

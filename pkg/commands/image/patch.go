@@ -97,6 +97,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringVar(&factory.ClusterBuilder, "cluster-builder", "", "cluster builder name")
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables to add/replace")
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
+	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image patch to be reconciled and tail resulting build logs")
 	return cmd

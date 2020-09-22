@@ -99,7 +99,12 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			KpackObjects: []runtime.Object{
 				stack,
 			},
-			Args:      []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
+			Args: []string{"some-stack",
+				"--build-image", "some-new-build-image",
+				"--run-image", "some-new-run-image",
+				"--registry-ca-cert-path", "some-cert-path",
+				"--registry-verify-certs",
+			},
 			ExpectErr: false,
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{

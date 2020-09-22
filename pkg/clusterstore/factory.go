@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 const (
@@ -21,11 +22,12 @@ const (
 )
 
 type BuildpackageUploader interface {
-	UploadBuildpackage(writer io.Writer, repository, buildPackage string) (string, error)
+	UploadBuildpackage(writer io.Writer, repository, buildPackage string, tlsCfg registry.TLSConfig) (string, error)
 }
 
 type Factory struct {
 	Uploader   BuildpackageUploader
+	TLSConfig  registry.TLSConfig
 	Repository string
 	Printer    *commands.Logger
 }
@@ -48,7 +50,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 	}
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer, f.Repository, buildpackage)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer, f.Repository, buildpackage, f.TLSConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +73,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
 	storeUpdated := false
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer, repository, buildpackage)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer, repository, buildpackage, f.TLSConfig)
 		if err != nil {
 			return nil, false, err
 		}

@@ -176,6 +176,8 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				Args: []string{
 					"-f", "./testdata/deps.yaml",
+					"--registry-ca-cert-path", "some-cert-path",
+					"--registry-verify-certs",
 				},
 				ExpectedOutput: "Importing Cluster Store 'some-store'...\nImporting Cluster Stack 'some-stack'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'default'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Builder 'some-ccb'...\nImporting Cluster Builder 'default'...\n",
 				ExpectCreates: []runtime.Object{

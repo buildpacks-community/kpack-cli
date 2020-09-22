@@ -89,6 +89,8 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					expectedStore.Name,
 					"--buildpackage", buildpackage1,
 					"-b", buildpackage2,
+					"--registry-ca-cert-path", "some-cert-path",
+					"--registry-verify-certs",
 				},
 				ExpectedOutput: "Creating Cluster Store...\n\"test-store\" created\n",
 				ExpectCreates: []runtime.Object{
