@@ -107,22 +107,7 @@ func ZipToTar(srcZip string) (string, error) {
 
 		var header *tar.Header
 		if f.Mode()&os.ModeSymlink != 0 {
-			target, err := func() (string, error) {
-				r, err := f.Open()
-				if err != nil {
-					return "", nil
-				}
-				defer r.Close()
-
-				// contents is the target of the symlink
-				target, err := ioutil.ReadAll(r)
-				if err != nil {
-					return "", err
-				}
-
-				return string(target), nil
-			}()
-
+			target, err := getSymlinkTarget(f)
 			if err != nil {
 				return "", err
 			}
@@ -146,24 +131,40 @@ func ZipToTar(srcZip string) (string, error) {
 		}
 
 		if f.Mode().IsRegular() {
-			err := func() error {
-				fi, err := f.Open()
-				if err != nil {
-					return err
-				}
-				defer fi.Close()
-
-				_, err = io.Copy(tw, fi)
-				return err
-			}()
-
-			if err != nil {
+			if err := copyFile(f, tw); err != nil {
 				return "", err
 			}
 		}
 	}
 
 	return tarFile.Name(), nil
+}
+
+func getSymlinkTarget(f *zip.File) (string, error) {
+	r, err := f.Open()
+	if err != nil {
+		return "", nil
+	}
+	defer r.Close()
+
+	// contents is the target of the symlink
+	target, err := ioutil.ReadAll(r)
+	if err != nil {
+		return "", err
+	}
+
+	return string(target), nil
+}
+
+func copyFile(from *zip.File, to io.Writer) error {
+	fi, err := from.Open()
+	if err != nil {
+		return err
+	}
+	defer fi.Close()
+
+	_, err = io.Copy(to, fi)
+	return err
 }
 
 func isFatFile(header zip.FileHeader) bool {
