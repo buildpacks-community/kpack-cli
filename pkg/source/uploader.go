@@ -5,7 +5,6 @@ package source
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -30,26 +29,20 @@ func (s *Uploader) Upload(ref, path string, tlsCfg registry.TLSConfig) (string, 
 	if err != nil {
 		return "", err
 	}
+	var tarFile string
 
 	if archive.IsZip(path) {
-		unzipDest, err := ioutil.TempDir("", "zipdir")
+		tarFile, err = archive.ZipToTar(path)
 		if err != nil {
 			return "", err
 		}
-		defer os.RemoveAll(unzipDest)
-
-		err = archive.ExtractZip(path, unzipDest)
+	} else {
+		tarFile, err = archive.CreateTar(path)
 		if err != nil {
 			return "", err
 		}
-
-		path = unzipDest
 	}
 
-	tarFile, err := archive.CreateTar(path)
-	if err != nil {
-		return "", err
-	}
 	defer os.RemoveAll(tarFile)
 
 	image, err := random.Image(0, 0)

@@ -4,9 +4,11 @@
 package archive
 
 import (
+	"archive/tar"
 	"archive/zip"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -78,4 +80,100 @@ func ExtractZip(src string, dest string) error {
 		}
 	}
 	return nil
+}
+
+func ZipToTar(srcZip string) (string, error) {
+	tarFile, err := ioutil.TempFile("", "")
+	if err != nil {
+		return "", fmt.Errorf("create file for tar: %s", err)
+	}
+	defer tarFile.Close()
+
+	tw := tar.NewWriter(tarFile)
+	defer tw.Close()
+
+	zipReader, err := zip.OpenReader(srcZip)
+	if err != nil {
+		return "", err
+	}
+	defer zipReader.Close()
+
+	var fileMode int64
+	for _, f := range zipReader.File {
+		fileMode = -1
+		if isFatFile(f.FileHeader) {
+			fileMode = 0777
+		}
+
+		var header *tar.Header
+		if f.Mode()&os.ModeSymlink != 0 {
+			target, err := getSymlinkTarget(f)
+			if err != nil {
+				return "", err
+			}
+
+			header, err = tar.FileInfoHeader(f.FileInfo(), target)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			header, err = tar.FileInfoHeader(f.FileInfo(), f.Name)
+			if err != nil {
+				return "", err
+			}
+		}
+
+		header.Name = filepath.ToSlash(f.Name)
+		finalizeHeader(header, 0, 0, fileMode)
+
+		if err := tw.WriteHeader(header); err != nil {
+			return "", err
+		}
+
+		if f.Mode().IsRegular() {
+			if err := copyFile(f, tw); err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return tarFile.Name(), nil
+}
+
+func getSymlinkTarget(f *zip.File) (string, error) {
+	r, err := f.Open()
+	if err != nil {
+		return "", nil
+	}
+	defer r.Close()
+
+	// contents is the target of the symlink
+	target, err := ioutil.ReadAll(r)
+	if err != nil {
+		return "", err
+	}
+
+	return string(target), nil
+}
+
+func copyFile(from *zip.File, to io.Writer) error {
+	fi, err := from.Open()
+	if err != nil {
+		return err
+	}
+	defer fi.Close()
+
+	_, err = io.Copy(to, fi)
+	return err
+}
+
+func isFatFile(header zip.FileHeader) bool {
+	var (
+		creatorFAT  uint16 = 0
+		creatorVFAT uint16 = 14
+	)
+
+	// This identifies FAT files, based on the `zip` source: https://golang.org/src/archive/zip/struct.go
+	firstByte := header.CreatorVersion >> 8
+	return firstByte == creatorFAT || firstByte == creatorVFAT
 }
