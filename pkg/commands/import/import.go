@@ -13,6 +13,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -60,6 +61,11 @@ cat dependencies.yaml | kp import -f -`,
 
 			configHelper := k8s.DefaultConfigHelper(cs)
 
+			descriptor, err := getDependencyDescriptor(cmd, filename)
+			if err != nil {
+				return err
+			}
+
 			repository, err := configHelper.GetCanonicalRepository()
 			if err != nil {
 				return err
@@ -78,11 +84,6 @@ cat dependencies.yaml | kp import -f -`,
 			stackFactory.Repository = repository // FIXME
 			stackFactory.Printer = logger        // FIXME
 			stackFactory.TLSConfig = storeFactory.TLSConfig
-
-			descriptor, err := getDependencyDescriptor(cmd, filename)
-			if err != nil {
-				return err
-			}
 
 			importHelper := importHelper{descriptor, cs.KpackClient, timestampProvider, logger}
 
@@ -127,9 +128,25 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 		return importpkg.DependencyDescriptor{}, err
 	}
 
-	var deps importpkg.DependencyDescriptor
-	if err := yaml.Unmarshal(buf, &deps); err != nil {
+	var api importpkg.API
+	if err := yaml.Unmarshal(buf, &api); err != nil {
 		return importpkg.DependencyDescriptor{}, err
+	}
+
+	var deps importpkg.DependencyDescriptor
+	switch api.Version {
+	case importpkg.APIVersionV1:
+		var d1 importpkg.DependencyDescriptorV1
+		if err := yaml.Unmarshal(buf, &d1); err != nil {
+			return importpkg.DependencyDescriptor{}, err
+		}
+		deps = d1.ToNextVersion()
+	case importpkg.CurrentAPIVersion:
+		if err := yaml.Unmarshal(buf, &deps); err != nil {
+			return importpkg.DependencyDescriptor{}, err
+		}
+	default:
+		return importpkg.DependencyDescriptor{}, errors.Errorf("did not find expected apiVersion, must be one of: %s", []string{importpkg.APIVersionV1, importpkg.CurrentAPIVersion})
 	}
 
 	if err := deps.Validate(); err != nil {
@@ -147,7 +164,7 @@ type importHelper struct {
 }
 
 func (i importHelper) ImportStores(factory *clusterstore.Factory, repository string) error {
-	for _, store := range i.descriptor.Stores {
+	for _, store := range i.descriptor.ClusterStores {
 		i.logger.Printf("Importing Cluster Store '%s'...", store.Name)
 
 		var buildpackages []string
@@ -190,9 +207,9 @@ func (i importHelper) ImportStores(factory *clusterstore.Factory, repository str
 }
 
 func (i importHelper) ImportStacks(factory *clusterstack.Factory) error {
-	for _, stack := range i.descriptor.Stacks {
-		if stack.Name == i.descriptor.DefaultStack {
-			i.descriptor.Stacks = append(i.descriptor.Stacks, importpkg.Stack{
+	for _, stack := range i.descriptor.ClusterStacks {
+		if stack.Name == i.descriptor.DefaultClusterStack {
+			i.descriptor.ClusterStacks = append(i.descriptor.ClusterStacks, importpkg.ClusterStack{
 				Name:       "default",
 				BuildImage: stack.BuildImage,
 				RunImage:   stack.RunImage,
@@ -201,7 +218,7 @@ func (i importHelper) ImportStacks(factory *clusterstack.Factory) error {
 		}
 	}
 
-	for _, stack := range i.descriptor.Stacks {
+	for _, stack := range i.descriptor.ClusterStacks {
 		i.logger.Printf("Importing Cluster Stack '%s'...", stack.Name)
 
 		factory.Printer = i.logger
@@ -241,13 +258,13 @@ func (i importHelper) ImportStacks(factory *clusterstack.Factory) error {
 }
 
 func (i importHelper) ImportClusterBuilders(repository string, sa string) error {
-	for _, ccb := range i.descriptor.ClusterBuilders {
-		if ccb.Name == i.descriptor.DefaultClusterBuilder {
+	for _, cb := range i.descriptor.ClusterBuilders {
+		if cb.Name == i.descriptor.DefaultClusterBuilder {
 			i.descriptor.ClusterBuilders = append(i.descriptor.ClusterBuilders, importpkg.ClusterBuilder{
-				Name:  "default",
-				Stack: ccb.Stack,
-				Store: ccb.Store,
-				Order: ccb.Order,
+				Name:         "default",
+				ClusterStack: cb.ClusterStack,
+				ClusterStore: cb.ClusterStore,
+				Order:        cb.Order,
 			})
 			break
 		}
@@ -301,11 +318,11 @@ func (i importHelper) makeClusterBuilder(ccb importpkg.ClusterBuilder, repositor
 			BuilderSpec: v1alpha1.BuilderSpec{
 				Tag: path.Join(repository, ccb.Name),
 				Stack: corev1.ObjectReference{
-					Name: ccb.Stack,
+					Name: ccb.ClusterStack,
 					Kind: v1alpha1.ClusterStackKind,
 				},
 				Store: corev1.ObjectReference{
-					Name: ccb.Store,
+					Name: ccb.ClusterStore,
 					Kind: v1alpha1.ClusterStoreKind,
 				},
 				Order: ccb.Order,

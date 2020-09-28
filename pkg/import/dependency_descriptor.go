@@ -9,17 +9,23 @@ import (
 	"github.com/pkg/errors"
 )
 
+const CurrentAPIVersion = "kp.kpack.io/v1alpha2"
+
+type API struct {
+	Version string `yaml:"apiVersion" json:"apiVersion"`
+}
+
 type DependencyDescriptor struct {
 	APIVersion            string           `yaml:"apiVersion"`
 	Kind                  string           `yaml:"kind"`
-	DefaultStack          string           `yaml:"defaultStack"`
+	DefaultClusterStack   string           `yaml:"defaultClusterStack"`
 	DefaultClusterBuilder string           `yaml:"defaultClusterBuilder"`
-	Stores                []Store          `yaml:"stores"`
-	Stacks                []Stack          `yaml:"stacks"`
+	ClusterStores         []ClusterStore   `yaml:"clusterStores"`
+	ClusterStacks         []ClusterStack   `yaml:"clusterStacks"`
 	ClusterBuilders       []ClusterBuilder `yaml:"clusterBuilders"`
 }
 
-type Store struct {
+type ClusterStore struct {
 	Name    string   `yaml:"name"`
 	Sources []Source `yaml:"sources"`
 }
@@ -28,22 +34,22 @@ type Source struct {
 	Image string `yaml:"image"`
 }
 
-type Stack struct {
+type ClusterStack struct {
 	Name       string `yaml:"name"`
 	BuildImage Source `yaml:"buildImage"`
 	RunImage   Source `yaml:"runImage"`
 }
 
 type ClusterBuilder struct {
-	Name  string                `yaml:"name"`
-	Stack string                `yaml:"stack"`
-	Store string                `yaml:"store"`
-	Order []v1alpha1.OrderEntry `yaml:"order"`
+	Name         string                `yaml:"name"`
+	ClusterStack string                `yaml:"clusterStack"`
+	ClusterStore string                `yaml:"clusterStore"`
+	Order        []v1alpha1.OrderEntry `yaml:"order"`
 }
 
 func (d DependencyDescriptor) Validate() error {
 	storeSet := map[string]interface{}{}
-	for _, store := range d.Stores {
+	for _, store := range d.ClusterStores {
 		if name, ok := storeSet[store.Name]; ok {
 			return errors.Errorf("duplicate store name '%s'", name)
 		}
@@ -58,7 +64,7 @@ func (d DependencyDescriptor) Validate() error {
 	}
 
 	stackSet := map[string]interface{}{}
-	for _, stack := range d.Stacks {
+	for _, stack := range d.ClusterStacks {
 		if name, ok := stackSet[stack.Name]; ok {
 			return errors.Errorf("duplicate stack name '%s'", name)
 		}
@@ -75,8 +81,8 @@ func (d DependencyDescriptor) Validate() error {
 		}
 	}
 
-	if _, ok := stackSet[d.DefaultStack]; !ok {
-		return errors.Errorf("default stack '%s' not found", d.DefaultStack)
+	if _, ok := stackSet[d.DefaultClusterStack]; !ok {
+		return errors.Errorf("default cluster stack '%s' not found", d.DefaultClusterStack)
 	}
 
 	ccbSet := map[string]interface{}{}
@@ -86,12 +92,12 @@ func (d DependencyDescriptor) Validate() error {
 		}
 		ccbSet[ccb.Name] = nil
 
-		if _, ok := storeSet[ccb.Store]; !ok {
-			return errors.Errorf("cluster builder '%s' references unknown store '%s'", ccb.Name, ccb.Store)
+		if _, ok := storeSet[ccb.ClusterStore]; !ok {
+			return errors.Errorf("cluster builder '%s' references unknown cluster store '%s'", ccb.Name, ccb.ClusterStore)
 		}
 
-		if _, ok := stackSet[ccb.Stack]; !ok {
-			return errors.Errorf("cluster builder '%s' references unknown stack '%s'", ccb.Name, ccb.Stack)
+		if _, ok := stackSet[ccb.ClusterStack]; !ok {
+			return errors.Errorf("cluster builder '%s' references unknown cluster stack '%s'", ccb.Name, ccb.ClusterStack)
 		}
 	}
 

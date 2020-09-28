@@ -13,8 +13,8 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
-	k8s.io/api v0.17.5
-	k8s.io/apimachinery v0.17.5
+	k8s.io/api v0.17.6
+	k8s.io/apimachinery v0.17.6
 	k8s.io/client-go v11.0.1-0.20190805182717-6502b5e7b1b5+incompatible
 )
 

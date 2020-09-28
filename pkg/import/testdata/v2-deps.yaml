@@ -18,4 +18,4 @@ clusterBuilders:
   clusterStore: some-store
   order:
   - group:
-    - id: buildpack-1
+    - id: buildpack
