@@ -121,14 +121,14 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "some-ccb",
+			Name: "some-cb",
 			Annotations: map[string]string{
 				importTimestampKey: timestampProvider.timestamp,
 			},
 		},
 		Spec: v1alpha1.ClusterBuilderSpec{
 			BuilderSpec: v1alpha1.BuilderSpec{
-				Tag: "new-registry.io/new-project/some-ccb",
+				Tag: "new-registry.io/new-project/some-cb",
 				Stack: corev1.ObjectReference{
 					Name: "some-stack",
 					Kind: v1alpha1.ClusterStackKind,
@@ -165,9 +165,9 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		return importcmds.NewImportCommand(clientSetProvider, timestampProvider, storeFactory, stackFactory)
 	}
 
-	when("there are no stores, stacks, or ccbs", func() {
-		it("creates stores, stacks, and ccbs defined in the dependency descriptor", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+	when("there are no stores, stacks, or cbs", func() {
+		it("creates stores, stacks, and cbs defined in the dependency descriptor", func() {
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
@@ -179,7 +179,31 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: "Importing Cluster Store 'some-store'...\nImporting Cluster Stack 'some-stack'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'default'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Builder 'some-ccb'...\nImporting Cluster Builder 'default'...\n",
+				ExpectedOutput: "Importing Cluster Store 'some-store'...\nImporting Cluster Stack 'some-stack'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'default'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Builder 'some-cb'...\nImporting Cluster Builder 'default'...\n",
+				ExpectCreates: []runtime.Object{
+					store,
+					stack,
+					defaultStack,
+					builder,
+					defaultBuilder,
+				},
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("creates stores, stacks, and cbs defined in the dependency descriptor for version 1", func() {
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					"-f", "./testdata/v1-deps.yaml",
+					"--registry-ca-cert-path", "some-cert-path",
+					"--registry-verify-certs",
+				},
+				ExpectedOutput: "Importing Cluster Store 'some-store'...\nImporting Cluster Stack 'some-stack'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'default'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Builder 'some-cb'...\nImporting Cluster Builder 'default'...\n",
 				ExpectCreates: []runtime.Object{
 					store,
 					stack,
@@ -191,7 +215,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	when("there are existing stores, stacks, or ccbs", func() {
+	when("there are existing stores, stacks, or cbs", func() {
 		when("the dependency descriptor and the store have the exact same objects", func() {
 			const newTimestamp = "new-timestamp"
 			timestampProvider.timestamp = newTimestamp
@@ -212,7 +236,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			expectedDefaultBuilder.Annotations[importTimestampKey] = newTimestamp
 
 			it("updates the import timestamp", func() {
-				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 				stack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImageId)
@@ -235,7 +259,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: "Importing Cluster Store 'some-store'...\n\tBuildpackage already exists in the store\nImporting Cluster Stack 'some-stack'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'default'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Builder 'some-ccb'...\nImporting Cluster Builder 'default'...\n",
+					ExpectedOutput: "Importing Cluster Store 'some-store'...\n\tBuildpackage already exists in the store\nImporting Cluster Stack 'some-stack'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'default'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Builder 'some-cb'...\nImporting Cluster Builder 'default'...\n",
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{
 							Object: expectedStore,
@@ -264,7 +288,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				defaultBuilder.Annotations = nil
 
 				expectedStore.Annotations = map[string]string{importTimestampKey: newTimestamp}
-				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 				testhelpers.CommandTest{
@@ -281,7 +305,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: "Importing Cluster Store 'some-store'...\n\tBuildpackage already exists in the store\nImporting Cluster Stack 'some-stack'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'default'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Builder 'some-ccb'...\nImporting Cluster Builder 'default'...\n",
+					ExpectedOutput: "Importing Cluster Store 'some-store'...\n\tBuildpackage already exists in the store\nImporting Cluster Stack 'some-stack'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'default'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Builder 'some-cb'...\nImporting Cluster Builder 'default'...\n",
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{
 							Object: expectedStore,
@@ -353,10 +377,10 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}
 
-			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-ccb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-ccb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-2"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-2"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 			expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-2"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
-			it("creates stores, stacks, and ccbs defined in the dependency descriptor and updates the timestamp", func() {
+			it("creates stores, stacks, and cbs defined in the dependency descriptor and updates the timestamp", func() {
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
 						config,
@@ -371,7 +395,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					Args: []string{
 						"-f", "./testdata/updated-deps.yaml",
 					},
-					ExpectedOutput: "Importing Cluster Store 'some-store'...\n\tAdded Buildpackage\nImporting Cluster Stack 'some-stack'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'default'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Builder 'some-ccb'...\nImporting Cluster Builder 'default'...\n",
+					ExpectedOutput: "Importing Cluster Store 'some-store'...\n\tAdded Buildpackage\nImporting Cluster Stack 'some-stack'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Stack 'default'...\nUploading to 'new-registry.io/new-project'...\nImporting Cluster Builder 'some-cb'...\nImporting Cluster Builder 'default'...\n",
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{
 							Object: expectedStore,
@@ -392,6 +416,17 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
 		})
+	})
+
+	it("errors when the apiVersion is unexpected", func() {
+		testhelpers.CommandTest{
+			K8sObjects: []runtime.Object{},
+			Args: []string{
+				"-f", "./testdata/invalid-deps.yaml",
+			},
+			ExpectedOutput: "Error: did not find expected apiVersion, must be one of: [kp.kpack.io/v1alpha1 kp.kpack.io/v1alpha2]\n",
+			ExpectErr:      true,
+		}.TestK8sAndKpack(t, cmdFunc)
 	})
 }
 
