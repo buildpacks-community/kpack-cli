@@ -2,6 +2,7 @@ package _import_test
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -20,6 +21,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	storefakes "github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
+	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
 	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
@@ -160,10 +162,16 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	defaultBuilder.Name = "default"
 	defaultBuilder.Spec.Tag = "new-registry.io/new-project/default"
 
+	var fakeConfirmationProvider *commandsfakes.FakeConfirmationProvider
+
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return importcmds.NewImportCommand(clientSetProvider, timestampProvider, storeFactory, stackFactory)
+		return importcmds.NewImportCommand(clientSetProvider, timestampProvider, storeFactory, stackFactory, fakeConfirmationProvider)
 	}
+
+	it.Before(func() {
+		fakeConfirmationProvider = commandsfakes.NewFakeConfirmationProvider(true, nil)
+	})
 
 	when("there are no stores, stacks, or cbs", func() {
 		it("creates stores, stacks, and cbs defined in the dependency descriptor", func() {
@@ -196,6 +204,7 @@ Imported resources created
 					defaultBuilder,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
+			require.Equal(t, true, fakeConfirmationProvider.WasRequested())
 		})
 
 		it("creates stores, stacks, and cbs defined in the dependency descriptor for version 1", func() {
@@ -228,6 +237,40 @@ Imported resources created
 					defaultBuilder,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("skips confirmation when the force flag is used", func(){
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					"-f", "./testdata/deps.yaml",
+					"--registry-ca-cert-path", "some-cert-path",
+					"--registry-verify-certs",
+					"--force",
+				},
+				ExpectedOutput: `Importing Cluster Store 'some-store'...
+Importing Cluster Stack 'some-stack'...
+Uploading to 'new-registry.io/new-project'...
+Importing Cluster Stack 'default'...
+Uploading to 'new-registry.io/new-project'...
+Importing Cluster Builder 'some-cb'...
+Importing Cluster Builder 'default'...
+Imported resources created
+`,
+				ExpectCreates: []runtime.Object{
+					store,
+					stack,
+					defaultStack,
+					builder,
+					defaultBuilder,
+				},
+			}.TestK8sAndKpack(t, cmdFunc)
+			require.Equal(t, false, fakeConfirmationProvider.WasRequested())
 		})
 	})
 
