@@ -36,15 +36,25 @@ type TimestampProvider interface {
 	GetTimestamp() string
 }
 
+type ConfirmationProvider interface {
+	Confirm(message string, okayResponses ...string) (bool, error)
+}
+
 func NewImportCommand(
 	clientSetProvider k8s.ClientSetProvider,
 	timestampProvider TimestampProvider,
 	storeFactory *clusterstore.Factory,
-	stackFactory *clusterstack.Factory) *cobra.Command {
+	stackFactory *clusterstack.Factory,
+	confirmationProvider ConfirmationProvider) *cobra.Command {
 
 	var (
-		filename  string
+		filename string
+		force    bool
 		tlsConfig registry.TLSConfig
+	)
+
+	const (
+		confirmMessage = "Confirm with y:"
 	)
 
 	cmd := &cobra.Command{
@@ -98,6 +108,17 @@ cat dependencies.yaml | kp import -f -`,
 				ch:                ch,
 			}
 
+			if !force {
+				confirmed, err := confirmationProvider.Confirm(confirmMessage)
+				if err != nil {
+					return err
+				}
+
+				if !confirmed {
+					return importHelper.ch.Printlnf("Skipping import")
+				}
+			}
+
 			if err := importHelper.ImportClusterStores(storeFactory, repository); err != nil {
 				return err
 			}
@@ -118,6 +139,7 @@ cat dependencies.yaml | kp import -f -`,
 		},
 	}
 	cmd.Flags().StringVarP(&filename, "filename", "f", "", "dependency descriptor filename")
+	cmd.Flags().BoolVar(&force, "force", false, "force import without confirmation")
 	commands.SetDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsConfig)
 	_ = cmd.MarkFlagRequired("filename")

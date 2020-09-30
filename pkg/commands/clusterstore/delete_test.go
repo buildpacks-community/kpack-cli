@@ -5,6 +5,7 @@ package clusterstore_test
 
 import (
 	"fmt"
+	"github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -30,19 +31,18 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 		storeName = "some-store-name"
 	)
 
-	var confirmationProvider FakeConfirmationProvider
+	var confirmationProvider *fakes.FakeConfirmationProvider
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return clusterstore.NewDeleteCommand(clientSetProvider, &confirmationProvider)
+		return clusterstore.NewDeleteCommand(clientSetProvider, confirmationProvider)
 	}
 
-	when("confirmation is given by user", func() {
-		it.Before(func() {
-			confirmationProvider.confirm = true
-			confirmationProvider.err = nil
-		})
+	it.Before(func() {
+		confirmationProvider = fakes.NewFakeConfirmationProvider(true, nil)
+	})
 
+	when("confirmation is given by user", func() {
 		when("store exists", func() {
 			store := &v1alpha1.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
@@ -56,10 +56,6 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			}
-
-			it.Before(func() {
-				confirmationProvider.requested = false
-			})
 
 			it("confirms and deletes the store", func() {
 				testhelpers.CommandTest{
@@ -76,15 +72,11 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestKpack(t, cmdFunc)
-				assert.True(t, confirmationProvider.requested)
+				assert.True(t, confirmationProvider.WasRequested())
 			})
 		})
 
 		when("store does not exist", func() {
-			it.Before(func() {
-				confirmationProvider.requested = false
-			})
-
 			it("confirms and errors with store not found", func() {
 				testhelpers.CommandTest{
 					Objects:        nil,
@@ -97,16 +89,14 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestKpack(t, cmdFunc)
-				assert.True(t, confirmationProvider.requested)
+				assert.True(t, confirmationProvider.WasRequested())
 			})
 		})
 	})
 
 	when("confirmation is not given by user", func() {
 		it.Before(func() {
-			confirmationProvider.confirm = false
-			confirmationProvider.err = nil
-			confirmationProvider.requested = false
+			confirmationProvider = fakes.NewFakeConfirmationProvider(false, nil)
 		})
 
 		it("skips deleting the store", func() {
@@ -116,16 +106,14 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 				ExpectErr:      false,
 				ExpectedOutput: "Skipping ClusterStore deletion\n",
 			}.TestKpack(t, cmdFunc)
-			assert.True(t, confirmationProvider.requested)
+			assert.True(t, confirmationProvider.WasRequested())
 		})
 	})
 
 	when("confirmation process errors", func() {
 		confirmationError := errors.New("some weird error")
 		it.Before(func() {
-			confirmationProvider.confirm = false
-			confirmationProvider.err = confirmationError
-			confirmationProvider.requested = false
+			confirmationProvider = fakes.NewFakeConfirmationProvider(false, confirmationError)
 		})
 
 		it("confirms and bubbles up the error", func() {
@@ -135,7 +123,7 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 				ExpectErr:      true,
 				ExpectedOutput: fmt.Sprintf("Error: %s\n", confirmationError),
 			}.TestKpack(t, cmdFunc)
-			assert.True(t, confirmationProvider.requested)
+			assert.True(t, confirmationProvider.WasRequested())
 		})
 	})
 
@@ -154,10 +142,6 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}
 
-			it.Before(func() {
-				confirmationProvider.requested = false
-			})
-
 			it("deletes the store without confirmation", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
@@ -173,15 +157,11 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestKpack(t, cmdFunc)
-				assert.False(t, confirmationProvider.requested)
+				assert.False(t, confirmationProvider.WasRequested())
 			})
 		})
 
 		when("store does not exist", func() {
-			it.Before(func() {
-				confirmationProvider.requested = false
-			})
-
 			it("does not confirm and errors with store not found", func() {
 				testhelpers.CommandTest{
 					Objects:        nil,
@@ -194,21 +174,8 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestKpack(t, cmdFunc)
-				assert.False(t, confirmationProvider.requested)
+				assert.False(t, confirmationProvider.WasRequested())
 			})
 		})
 	})
-}
-
-type FakeConfirmationProvider struct {
-	// return values for confirm request
-	confirm bool
-	err     error
-	// tracks if confirmation was requested
-	requested bool
-}
-
-func (f *FakeConfirmationProvider) Confirm(_ string, _ ...string) (bool, error) {
-	f.requested = true
-	return f.confirm, f.err
 }
