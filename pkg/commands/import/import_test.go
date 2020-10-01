@@ -592,7 +592,7 @@ status:
 					"-f", "./testdata/deps.yaml",
 					"--output", "yaml",
 				},
-				ExpectedOutput: resourceYAML,
+				ExpectedOutput:      resourceYAML,
 				ExpectedErrorOutput: expectedOutput,
 				ExpectCreates: []runtime.Object{
 					store,
@@ -761,7 +761,7 @@ status:
 					"-f", "./testdata/deps.yaml",
 					"--output", "json",
 				},
-				ExpectedOutput: resourceJSON,
+				ExpectedOutput:      resourceJSON,
 				ExpectedErrorOutput: expectedOutput,
 				ExpectCreates: []runtime.Object{
 					store,
@@ -919,7 +919,7 @@ Importing Cluster Builder 'default'...
 						"--dry-run",
 						"--output", "yaml",
 					},
-					ExpectedOutput: resourceYAML,
+					ExpectedOutput:      resourceYAML,
 					ExpectedErrorOutput: expectedOutput,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})

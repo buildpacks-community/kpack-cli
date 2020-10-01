@@ -6,6 +6,8 @@ package builder
 import (
 	"fmt"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
+
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -24,7 +26,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 The namespace defaults to the kubernetes current-context namespace.`,
 		Example: "kp builder delete my-builder\nkp builder delete -n my-namespace other-builder",
-		Args:    cobra.ExactArgs(1),
+		Args:    commands.ExactArgsWithUsage(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {

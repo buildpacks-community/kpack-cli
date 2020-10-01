@@ -29,7 +29,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 The namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "kp builder status my-builder\nkp builder status -n my-namespace other-builder",
-		Args:         cobra.ExactArgs(1),
+		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)

@@ -35,7 +35,7 @@ The canonical repository is read from the "canonical.repository" key in the "kp-
 		Example: `kp clusterstore add my-store -b my-registry.com/my-buildpackage
 kp clusterstore add my-store -b my-registry.com/my-buildpackage -b my-registry.com/my-other-buildpackage -b my-registry.com/my-third-buildpackage
 kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
-		Args:         cobra.ExactArgs(1),
+		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")

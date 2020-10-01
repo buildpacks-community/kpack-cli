@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -18,7 +19,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short:   "Delete a cluster stack",
 		Long:    "Delete a specific cluster-scoped stack from the cluster.",
 		Example: "kp clusterstack delete my-stack",
-		Args:    cobra.ExactArgs(1),
+		Args:    commands.ExactArgsWithUsage(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {

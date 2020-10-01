@@ -32,7 +32,7 @@ No defaults will be assumed for patches.
 kp cb save my-builder --order /path/to/order.yaml
 kp cb save my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
 kp cb save my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml`,
-		Args:         cobra.ExactArgs(1),
+		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")

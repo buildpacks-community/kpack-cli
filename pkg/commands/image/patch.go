@@ -52,7 +52,7 @@ kp image patch my-image --blob https://my-blob-host.com/my-blob
 kp image patch my-image --local-path /path/to/local/source/code
 kp image patch my-image --local-path /path/to/local/source/code --builder my-builder
 kp image patch my-image --env foo=bar --env color=red --delete-env apple --delete-env potato`,
-		Args:         cobra.ExactArgs(1),
+		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)
