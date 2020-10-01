@@ -64,12 +64,12 @@ Message:        --
 LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
 
 Last Successful Build
-Id:        1
-Reason:    CONFIG
+Id:              1
+Build Reason:    CONFIG
 
 Last Failed Build
-Id:        2
-Reason:    COMMIT,BUILDPACK
+Id:              2
+Build Reason:    COMMIT,BUILDPACK
 
 `
 
@@ -119,12 +119,12 @@ Message:        --
 LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
 
 Last Successful Build
-Id:        1
-Reason:    CONFIG
+Id:              1
+Build Reason:    CONFIG
 
 Last Failed Build
-Id:        2
-Reason:    COMMIT,BUILDPACK
+Id:              2
+Build Reason:    COMMIT,BUILDPACK
 
 `
 
