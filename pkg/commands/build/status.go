@@ -96,7 +96,7 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 	statusItems := []string{
 		"Image", bld.Status.LatestImage,
 		"Status", getStatus(bld),
-		"Build Reasons", bld.Annotations[v1alpha1.BuildReasonAnnotation],
+		"Build Reason", bld.Annotations[v1alpha1.BuildReasonAnnotation],
 	}
 
 	if cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded); cond.Reason != "" {
