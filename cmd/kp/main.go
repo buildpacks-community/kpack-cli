@@ -237,7 +237,18 @@ func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	storeFactory := &clusterstore.Factory{Uploader: bpUploader}
 
-	return importcmds.NewImportCommand(clientSetProvider, importpkg.DefaultTimestampProvider(), storeFactory, stackFactory)
+	importFactory := &importpkg.Factory{
+		TimestampProvider: importpkg.DefaultTimestampProvider(),
+	}
+
+	return importcmds.NewImportCommand(
+		clientSetProvider,
+		importFactory,
+		storeFactory,
+		stackFactory,
+		commands.Differ{},
+		commands.NewConfirmationProvider(),
+	)
 }
 
 func getCompletionCommand() *cobra.Command {
