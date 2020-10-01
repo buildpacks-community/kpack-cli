@@ -24,7 +24,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short:        "Patch an existing builder configuration",
 		Long:         ` `,
 		Example:      `kp builder patch my-builder`,
-		Args:         cobra.ExactArgs(1),
+		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(flags.namespace)

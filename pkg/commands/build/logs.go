@@ -7,6 +7,8 @@ import (
 	"context"
 	"sort"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
+
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/logs"
 	"github.com/pkg/errors"
@@ -31,7 +33,7 @@ func NewLogsCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 The build defaults to the latest build number.
 The namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "kp build logs my-image\nkp build logs my-image -b 2 -n my-namespace",
-		Args:         cobra.ExactArgs(1),
+		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)
