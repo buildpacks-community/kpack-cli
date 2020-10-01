@@ -1,0 +1,27 @@
+apiVersion: kp.kpack.io/v1alpha1
+kind: DependencyDescriptor
+defaultClusterBuilder: full
+defaultStack: full
+stores:
+- name: default
+  sources:
+  - image: dev.registry.pivotal.io/tanzu-go-buildpack/go@sha256:b3aabeec621a74bb57c7b97ad5e3d8ee31a83ab367a47455a9aaac7b79cbc022
+  - image: dev.registry.pivotal.io/tanzu-java-buildpack/java@sha256:49117cd7d145353ff566879a752630041f61572923dd722abff9c44dbc9b0daa
+  - image: dev.registry.pivotal.io/tanzu-nodejs-buildpack/nodejs@sha256:80b68add67f8f06ff7a121062df13a12de7eb4ae1d8bf53bae1bf72e543f1c06
+stacks:
+- name: full
+  buildImage:
+    image: dev.registry.pivotal.io/tbs-dependencies/build-full@sha256:5894c65843faa5ce0727b861ad3256e4b7e219bbf7ba19a2465f855a19895ba4
+  runImage:
+    image: dev.registry.pivotal.io/tbs-dependencies/run-full@sha256:a6b043a144968575577c45e8d22a38a2cb240988d4cf0c812574c67055698b11
+clusterBuilders:
+- name: full
+  stack: full
+  store: default
+  order:
+  - group:
+    - id: tanzu-buildpacks/dotnet-core
+  - group:
+    - id: tanzu-buildpacks/nodejs
+  - group:
+    - id: tanzu-buildpacks/go

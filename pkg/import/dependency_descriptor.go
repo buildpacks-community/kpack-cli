@@ -30,6 +30,10 @@ type ClusterStore struct {
 	Sources []Source `yaml:"sources"`
 }
 
+func (cs ClusterStore) DiffObject() interface{} {
+	return cs
+}
+
 type Source struct {
 	Image string `yaml:"image"`
 }
@@ -40,11 +44,19 @@ type ClusterStack struct {
 	RunImage   Source `yaml:"runImage"`
 }
 
+func (cs ClusterStack) DiffObject() interface{} {
+	return cs
+}
+
 type ClusterBuilder struct {
 	Name         string                `yaml:"name"`
 	ClusterStack string                `yaml:"clusterStack"`
 	ClusterStore string                `yaml:"clusterStore"`
 	Order        []v1alpha1.OrderEntry `yaml:"order"`
+}
+
+func (cb ClusterBuilder) DiffObject() interface{} {
+	return cb
 }
 
 func (d DependencyDescriptor) Validate() error {
@@ -106,4 +118,33 @@ func (d DependencyDescriptor) Validate() error {
 	}
 
 	return nil
+}
+
+func (d DependencyDescriptor) GetClusterStacks() []ClusterStack {
+	for _, stack := range d.ClusterStacks {
+		if stack.Name == d.DefaultClusterStack {
+			d.ClusterStacks = append(d.ClusterStacks, ClusterStack{
+				Name:       "default",
+				BuildImage: stack.BuildImage,
+				RunImage:   stack.RunImage,
+			})
+			break
+		}
+	}
+	return d.ClusterStacks
+}
+
+func (d DependencyDescriptor) GetClusterBuilders() []ClusterBuilder {
+	for _, cb := range d.ClusterBuilders {
+		if cb.Name == d.DefaultClusterBuilder {
+			d.ClusterBuilders = append(d.ClusterBuilders, ClusterBuilder{
+				Name:         "default",
+				ClusterStack: cb.ClusterStack,
+				ClusterStore: cb.ClusterStore,
+				Order:        cb.Order,
+			})
+			break
+		}
+	}
+	return d.ClusterBuilders
 }
