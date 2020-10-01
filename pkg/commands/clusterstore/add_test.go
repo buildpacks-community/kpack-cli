@@ -186,4 +186,184 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
+
+	when("output flag is used", func() {
+		it("can output in yaml format", func() {
+			const resourceYAML = `metadata:
+  creationTimestamp: null
+  name: some-store-name
+spec:
+  sources:
+  - image: some/imageinStore@sha256:123alreadyInStore
+  - image: some/path/newbp@sha256:123newbp
+  - image: some/path/bpfromcnb@sha256:123imagefromcnb
+status: {}
+`
+
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				KpackObjects: []runtime.Object{
+					store,
+				},
+				Args: []string{
+					storeName,
+					"--buildpackage", "some/newbp",
+					"-b", "bpfromcnb.cnb",
+					"--output", "yaml",
+				},
+				ExpectErr: false,
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: &v1alpha1.ClusterStore{
+							ObjectMeta: store.ObjectMeta,
+							Spec: v1alpha1.ClusterStoreSpec{
+								Sources: []v1alpha1.StoreImage{
+									{
+										Image: imageAlreadyInStore,
+									},
+									{
+										Image: "some/path/newbp@sha256:123newbp",
+									},
+									{
+										Image: "some/path/bpfromcnb@sha256:123imagefromcnb",
+									},
+								},
+							},
+						},
+					},
+				},
+				ExpectedOutput: resourceYAML,
+				ExpectedErrorOutput: `Adding Buildpackages...
+	Added Buildpackage
+	Added Buildpackage
+`,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("can output in json format", func() {
+			const resourceJSON = `{
+    "metadata": {
+        "name": "some-store-name",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "sources": [
+            {
+                "image": "some/imageinStore@sha256:123alreadyInStore"
+            },
+            {
+                "image": "some/path/newbp@sha256:123newbp"
+            },
+            {
+                "image": "some/path/bpfromcnb@sha256:123imagefromcnb"
+            }
+        ]
+    },
+    "status": {}
+}
+`
+
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				KpackObjects: []runtime.Object{
+					store,
+				},
+				Args: []string{
+					storeName,
+					"--buildpackage", "some/newbp",
+					"-b", "bpfromcnb.cnb",
+					"--output", "json",
+				},
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: &v1alpha1.ClusterStore{
+							ObjectMeta: store.ObjectMeta,
+							Spec: v1alpha1.ClusterStoreSpec{
+								Sources: []v1alpha1.StoreImage{
+									{
+										Image: imageAlreadyInStore,
+									},
+									{
+										Image: "some/path/newbp@sha256:123newbp",
+									},
+									{
+										Image: "some/path/bpfromcnb@sha256:123imagefromcnb",
+									},
+								},
+							},
+						},
+					},
+				},
+				ExpectedOutput: resourceJSON,
+				ExpectedErrorOutput: `Adding Buildpackages...
+	Added Buildpackage
+	Added Buildpackage
+`,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+	})
+
+	when("dry-run flag is used", func() {
+		it("does not create a clusterstore and prints result with dry run indicated", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				KpackObjects: []runtime.Object{
+					store,
+				},
+				Args: []string{
+					storeName,
+					"--buildpackage", "some/newbp",
+					"-b", "bpfromcnb.cnb",
+					"--dry-run",
+				},
+				ExpectedOutput: `Adding Buildpackages...
+	Added Buildpackage
+	Added Buildpackage
+ClusterStore Updated (dry run)
+`,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		when("output flag is used", func() {
+			it("does not create a clusterstore and prints the resource output", func() {
+				const resourceYAML = `metadata:
+  creationTimestamp: null
+  name: some-store-name
+spec:
+  sources:
+  - image: some/imageinStore@sha256:123alreadyInStore
+  - image: some/path/newbp@sha256:123newbp
+  - image: some/path/bpfromcnb@sha256:123imagefromcnb
+status: {}
+`
+
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						store,
+					},
+					Args: []string{
+						storeName,
+						"--buildpackage", "some/newbp",
+						"-b", "bpfromcnb.cnb",
+						"--dry-run",
+						"--output", "yaml",
+					},
+					ExpectedOutput: resourceYAML,
+					ExpectedErrorOutput: `Adding Buildpackages...
+	Added Buildpackage
+	Added Buildpackage
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+	})
 }

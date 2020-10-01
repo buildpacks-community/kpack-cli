@@ -5,7 +5,6 @@ package clusterbuilder
 
 import (
 	"encoding/json"
-	"fmt"
 	"path"
 
 	"github.com/spf13/cobra"
@@ -15,6 +14,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -28,10 +28,7 @@ const (
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
-		tag   string
-		stack string
-		store string
-		order string
+		flags CommandFlags
 	)
 
 	cmd := &cobra.Command{
@@ -50,34 +47,50 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
-
 			cs, err := clientSetProvider.GetClientSet("")
 			if err != nil {
 				return err
 			}
 
-			return create(name, tag, stack, store, order, cmd, cs)
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
+			name := args[0]
+
+			return create(name, flags, ch, cs)
 		},
 	}
-	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the builder will be created")
-	cmd.Flags().StringVarP(&stack, "stack", "s", defaultStack, "stack resource to use")
-	cmd.Flags().StringVar(&store, "store", defaultStore, "buildpack store to use")
-	cmd.Flags().StringVarP(&order, "order", "o", "", "path to buildpack order yaml")
 
+	cmd.Flags().StringVarP(&flags.tag, "tag", "t", "", "registry location where the builder will be created")
+	cmd.Flags().StringVarP(&flags.stack, "stack", "s", defaultStack, "stack resource to use")
+	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
+	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
+	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&flags.output, "output", "", "output format. supported formats are: yaml, json")
 	return cmd
 }
 
-func create(name, tag, stack, store, order string, cmd *cobra.Command, cs k8s.ClientSet) error {
+type CommandFlags struct {
+	tag    string
+	stack  string
+	store  string
+	order  string
+	dryRun bool
+	output string
+}
+
+func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) error {
 	configHelper := k8s.DefaultConfigHelper(cs)
 
-	if tag == "" {
+	if flags.tag == "" {
 		repository, err := configHelper.GetCanonicalRepository()
 		if err != nil {
 			return err
 		}
 
-		tag = path.Join(repository, name)
+		flags.tag = path.Join(repository, name)
 	}
 
 	serviceAccount, err := configHelper.GetCanonicalServiceAccount()
@@ -96,13 +109,13 @@ func create(name, tag, stack, store, order string, cmd *cobra.Command, cs k8s.Cl
 		},
 		Spec: v1alpha1.ClusterBuilderSpec{
 			BuilderSpec: v1alpha1.BuilderSpec{
-				Tag: tag,
+				Tag: flags.tag,
 				Stack: corev1.ObjectReference{
-					Name: stack,
+					Name: flags.stack,
 					Kind: v1alpha1.ClusterStackKind,
 				},
 				Store: corev1.ObjectReference{
-					Name: store,
+					Name: flags.store,
 					Kind: v1alpha1.ClusterStoreKind,
 				},
 			},
@@ -113,7 +126,7 @@ func create(name, tag, stack, store, order string, cmd *cobra.Command, cs k8s.Cl
 		},
 	}
 
-	cb.Spec.Order, err = builder.ReadOrder(order)
+	cb.Spec.Order, err = builder.ReadOrder(flags.order)
 	if err != nil {
 		return err
 	}
@@ -125,11 +138,17 @@ func create(name, tag, stack, store, order string, cmd *cobra.Command, cs k8s.Cl
 
 	cb.Annotations[kubectlLastAppliedConfig] = string(marshal)
 
-	_, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(cb)
+	if !ch.IsDryRun() {
+		cb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(cb)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = ch.PrintObj(cb)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" created\n", cb.Name)
-	return err
+	return ch.PrintResult("%q created", cb.Name)
 }

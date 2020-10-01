@@ -13,7 +13,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
@@ -37,7 +36,6 @@ type Factory struct {
 	Env            []string
 	DeleteEnv      []string
 	TLSConfig      registry.TLSConfig
-	Printer        *commands.Logger
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error) {

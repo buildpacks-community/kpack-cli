@@ -25,6 +25,11 @@ type ImageRelocator interface {
 }
 
 func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
+	var (
+		dryRun bool
+		output string
+	)
+
 	cmd := &cobra.Command{
 		Use:   "update <name>",
 		Short: "Update a cluster stack",
@@ -42,27 +47,33 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			factory.Printer = commands.NewPrinter(cmd)
+			ch, err := commands.NewCommandHelper(cmd)
+			if err != nil {
+				return err
+			}
+
+			factory.Printer = ch
 
 			stack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			return update(stack, factory, cs)
+			return update(stack, factory, ch, cs)
 		},
 	}
 
 	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
 	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
+	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")
-
 	return cmd
 }
 
-func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, cs k8s.ClientSet) (err error) {
+func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
 	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
 		return err
@@ -74,11 +85,17 @@ func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, cs k8s.
 		return nil
 	}
 
-	_, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(stack)
+	if !ch.IsDryRun() {
+		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(stack)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = ch.PrintObj(stack)
 	if err != nil {
 		return err
 	}
 
-	factory.Printer.Printf("ClusterStack \"%s\" Updated", stack.Name)
-	return nil
+	return ch.PrintResult("ClusterStack %q Updated", stack.Name)
 }
