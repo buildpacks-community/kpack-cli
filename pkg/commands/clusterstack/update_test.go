@@ -196,7 +196,9 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `metadata:
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
   creationTimestamp: null
   name: some-stack
 spec:
@@ -253,6 +255,8 @@ status:
 
 		it("can output in json format", func() {
 			const resourceJSON = `{
+    "kind": "ClusterStack",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "some-stack",
         "creationTimestamp": null
@@ -340,7 +344,9 @@ ClusterStack "some-stack" Updated (dry run)
 
 		when("output flag is used", func() {
 			it("does not update the clusterstack and prints the resource output", func() {
-				const resourceYAML = `metadata:
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
   creationTimestamp: null
   name: some-stack
 spec:

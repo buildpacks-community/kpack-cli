@@ -113,7 +113,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				}
 			}
 
-			err = ch.PrintObj(secret)
+			err = ch.PrintObj(serviceAccount)
 			if err != nil {
 				return err
 			}

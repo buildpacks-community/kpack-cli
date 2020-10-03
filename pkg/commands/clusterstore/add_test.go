@@ -189,7 +189,9 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `metadata:
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStore
+metadata:
   creationTimestamp: null
   name: some-store-name
 spec:
@@ -244,6 +246,8 @@ status: {}
 
 		it("can output in json format", func() {
 			const resourceJSON = `{
+    "kind": "ClusterStore",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "some-store-name",
         "creationTimestamp": null
@@ -332,7 +336,9 @@ ClusterStore Updated (dry run)
 
 		when("output flag is used", func() {
 			it("does not create a clusterstore and prints the resource output", func() {
-				const resourceYAML = `metadata:
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStore
+metadata:
   creationTimestamp: null
   name: some-store-name
 spec:
