@@ -4,7 +4,6 @@
 package clusterbuilder
 
 import (
-	"encoding/json"
 	"path"
 
 	"github.com/spf13/cobra"
@@ -19,11 +18,10 @@ import (
 )
 
 const (
-	kpNamespace              = "kpack"
-	apiVersion               = "kpack.io/v1alpha1"
-	defaultStack             = "default"
-	defaultStore             = "default"
-	kubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
+	kpNamespace  = "kpack"
+	apiVersion   = "kpack.io/v1alpha1"
+	defaultStack = "default"
+	defaultStore = "default"
 )
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
@@ -131,12 +129,10 @@ func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.
 		return err
 	}
 
-	marshal, err := json.Marshal(cb)
+	k8s.SetLastAppliedCfg(cb)
 	if err != nil {
 		return err
 	}
-
-	cb.Annotations[kubectlLastAppliedConfig] = string(marshal)
 
 	if !ch.IsDryRun() {
 		cb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(cb)

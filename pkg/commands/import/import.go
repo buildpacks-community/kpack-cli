@@ -4,7 +4,6 @@
 package _import
 
 import (
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"os"
@@ -28,9 +27,8 @@ import (
 )
 
 const (
-	importNamespace          = "kpack"
-	kubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
-	importTimestampKey       = "kpack.io/import-timestamp"
+	importNamespace    = "kpack"
+	importTimestampKey = "kpack.io/import-timestamp"
 )
 
 type TimestampProvider interface {
@@ -373,11 +371,5 @@ func (i importHelper) makeClusterBuilder(ccb importpkg.ClusterBuilder, repositor
 		}
 	}
 
-	marshal, err := json.Marshal(newCCB)
-	if err != nil {
-		return nil, err
-	}
-	newCCB.Annotations[kubectlLastAppliedConfig] = string(marshal)
-
-	return newCCB, nil
+	return newCCB, k8s.SetLastAppliedCfg(newCCB)
 }

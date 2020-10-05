@@ -37,7 +37,7 @@ func (f *Factory) MakePatch(img *v1alpha1.Image) (*v1alpha1.Image, []byte, error
 
 	f.setBuilder(patchedImage)
 
-	patch, err :=k8s.CreatePatch(img, patchedImage)
+	patch, err := k8s.CreatePatch(img, patchedImage)
 	return patchedImage, patch, err
 }
 

@@ -4,8 +4,6 @@
 package image
 
 import (
-	"encoding/json"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
 
@@ -105,15 +103,10 @@ func create(name, tag string, factory *image.Factory, ch *commands.CommandHelper
 		return nil, err
 	}
 
-	imgConfig, err := json.Marshal(img)
+	k8s.SetLastAppliedCfg(img)
 	if err != nil {
 		return nil, err
 	}
-
-	if img.Annotations == nil {
-		img.Annotations = map[string]string{}
-	}
-	img.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = string(imgConfig)
 
 	if !ch.IsDryRun() {
 		img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Create(img)
