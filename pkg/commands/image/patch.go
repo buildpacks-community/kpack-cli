@@ -109,7 +109,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 }
 
 func patch(img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (*v1alpha1.Image, error) {
-	patch, err := factory.MakePatch(img)
+	patchedImage, patch, err := factory.MakePatch(img)
 	if err != nil {
 		return nil, err
 	}
@@ -119,16 +119,16 @@ func patch(img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelp
 	}
 
 	if !ch.IsDryRun() {
-		img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(img.Name, types.MergePatchType, patch)
+		patchedImage, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(img.Name, types.MergePatchType, patch)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	err = ch.PrintObj(img)
+	err = ch.PrintObj(patchedImage)
 	if err != nil {
 		return nil, err
 	}
 
-	return img, ch.PrintResult("%q patched", img.Name)
+	return patchedImage, ch.PrintResult("%q patched", img.Name)
 }

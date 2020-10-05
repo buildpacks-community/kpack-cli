@@ -460,9 +460,8 @@ spec:
     kind: ClusterBuilder
     name: some-ccb
   source:
-    git:
-      revision: some-revision
-      url: some-git-url
+    blob:
+      url: some-blob
     subPath: some-path
   tag: some-tag
 status: {}
