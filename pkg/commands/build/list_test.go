@@ -22,10 +22,10 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		image            = "test-image"
 		defaultNamespace = "some-default-namespace"
-		expectedOutput   = `BUILD    STATUS      IMAGE                   STARTED                FINISHED               REASON
-1        SUCCESS     repo.com/image-1:tag    0001-01-01 00:00:00    0001-01-01 00:00:00    CONFIG
-2        FAILURE     repo.com/image-2:tag    0001-01-01 01:00:00    0001-01-01 00:00:00    COMMIT+
-3        BUILDING    repo.com/image-3:tag    0001-01-01 05:00:00                           TRIGGER
+		expectedOutput   = `BUILD    STATUS      IMAGE                   REASON
+1        SUCCESS     repo.com/image-1:tag    CONFIG
+2        FAILURE     repo.com/image-2:tag    COMMIT+
+3        BUILDING    repo.com/image-3:tag    TRIGGER
 
 `
 	)

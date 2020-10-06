@@ -58,7 +58,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 }
 
 func displayBuildsTable(cmd *cobra.Command, buildList *v1alpha1.BuildList) error {
-	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "Build", "Status", "Image", "Started", "Finished", "Reason")
+	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "Build", "Status", "Image", "Reason")
 	if err != nil {
 		return err
 	}
@@ -68,8 +68,6 @@ func displayBuildsTable(cmd *cobra.Command, buildList *v1alpha1.BuildList) error
 			bld.Labels[v1alpha1.BuildNumberLabel],
 			getStatus(bld),
 			bld.Status.LatestImage,
-			getStarted(bld),
-			getFinished(bld),
 			getTruncatedReason(bld),
 		)
 		if err != nil {
