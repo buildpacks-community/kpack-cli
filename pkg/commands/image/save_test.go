@@ -4,6 +4,7 @@
 package image_test
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -51,6 +52,7 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			const namespace = "some-namespace"
 
 			when("the image config is valid", func() {
+				cacheSize := resource.MustParse("2G")
 				expectedImage := &v1alpha1.Image{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Image",
@@ -60,7 +62,7 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 						Name:      "some-image",
 						Namespace: namespace,
 						Annotations: map[string]string{
-							"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
+							"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cacheSize":"2G","build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
 						},
 					},
 					Spec: v1alpha1.ImageSpec{
@@ -85,6 +87,7 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 								},
 							},
 						},
+						CacheSize: &cacheSize,
 					},
 				}
 
@@ -97,6 +100,7 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--git-revision", "some-git-rev",
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
+							"--cache-size", "2G",
 							"-n", namespace,
 							"--registry-ca-cert-path", "some-cert-path",
 							"--registry-verify-certs",
@@ -114,7 +118,7 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 
 				it("defaults the git revision to master", func() {
 					expectedImage.Spec.Source.Git.Revision = "master"
-					expectedImage.ObjectMeta.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"master"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`
+					expectedImage.ObjectMeta.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"master"},"subPath":"some-sub-path"},"cacheSize":"2G","build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`
 
 					testhelpers.CommandTest{
 						Args: []string{
@@ -123,6 +127,7 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--git", "some-git-url",
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
+							"--cache-size", "2G",
 							"-n", namespace,
 						},
 						ExpectedOutput: "\"some-image\" created\n",
