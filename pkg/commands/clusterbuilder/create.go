@@ -129,7 +129,7 @@ func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.
 		return err
 	}
 
-	k8s.SetLastAppliedCfg(cb)
+	err = k8s.SetLastAppliedCfg(cb)
 	if err != nil {
 		return err
 	}
