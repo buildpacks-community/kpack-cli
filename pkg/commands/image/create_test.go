@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -48,6 +49,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("a namespace is provided", func() {
 		const namespace = "some-namespace"
+		var cacheSize = resource.MustParse("2G")
 
 		when("the image config is valid", func() {
 			it("creates the image and wait on the image", func() {
@@ -60,7 +62,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						Name:      "some-image",
 						Namespace: namespace,
 						Annotations: map[string]string{
-							"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
+							"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cacheSize":"2G","build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
 						},
 					},
 					Spec: v1alpha1.ImageSpec{
@@ -85,6 +87,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 								},
 							},
 						},
+						CacheSize: &cacheSize,
 					},
 				}
 
@@ -96,6 +99,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						"--git-revision", "some-git-rev",
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
+						"--cache-size", "2G",
 						"-n", namespace,
 						"--registry-ca-cert-path", "some-cert-path",
 						"--registry-verify-certs",

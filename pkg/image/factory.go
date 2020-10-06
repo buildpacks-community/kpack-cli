@@ -11,6 +11,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/registry"
@@ -34,6 +35,7 @@ type Factory struct {
 	Builder        string
 	ClusterBuilder string
 	Env            []string
+	CacheSize      string
 	DeleteEnv      []string
 	TLSConfig      registry.TLSConfig
 }
@@ -50,6 +52,11 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error
 	}
 
 	envVars, err := f.makeEnvVars()
+	if err != nil {
+		return nil, err
+	}
+
+	cacheSize, err := f.makeCacheSize()
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +80,7 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error
 			Build: &v1alpha1.ImageBuild{
 				Env: envVars,
 			},
+			CacheSize: cacheSize,
 		},
 	}, nil
 }
@@ -111,6 +119,23 @@ func (f *Factory) makeEnvVars() ([]corev1.EnvVar, error) {
 		})
 	}
 	return envVars, nil
+}
+
+func (f *Factory) makeCacheSize() (*resource.Quantity, error) {
+	if f.CacheSize == "" {
+		return nil, nil
+	}
+
+	c, err := resource.ParseQuantity(f.CacheSize)
+	if err != nil {
+		return nil, errors.New("invalid cache size, must be valid quantity ex. 2G")
+	}
+
+	if c.Sign() <= 0 {
+		return nil, errors.New("cache size must be greater than 0")
+	}
+
+	return &c, nil
 }
 
 func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
