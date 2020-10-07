@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/build"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -31,7 +32,7 @@ func NewLogsCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 The build defaults to the latest build number.
 The namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "kp build logs my-image\nkp build logs my-image -b 2 -n my-namespace",
-		Args:         cobra.ExactArgs(1),
+		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)

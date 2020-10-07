@@ -30,7 +30,7 @@ The canonical repository is read from the "canonical.repository" key in the "kp-
 `,
 		Example: `kp clusterstack create my-stack --build-image my-registry.com/build --run-image my-registry.com/run
 kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
-		Args:         cobra.ExactArgs(1),
+		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")

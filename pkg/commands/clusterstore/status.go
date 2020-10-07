@@ -28,7 +28,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short:        "Display cluster store status",
 		Long:         `Prints information about the status of a specific cluster-scoped store.`,
 		Example:      "kp clusterstore status my-store",
-		Args:         cobra.ExactArgs(1),
+		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")

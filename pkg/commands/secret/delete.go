@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
@@ -25,7 +26,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 The namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "kp secret delete my-secret",
-		Args:         cobra.ExactArgs(1),
+		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)
