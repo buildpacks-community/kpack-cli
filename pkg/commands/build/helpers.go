@@ -24,17 +24,6 @@ func getStatus(b v1alpha1.Build) string {
 	}
 }
 
-func getStarted(b v1alpha1.Build) string {
-	return b.CreationTimestamp.Time.Format("2006-01-02 15:04:05")
-}
-
-func getFinished(b v1alpha1.Build) string {
-	if b.IsRunning() {
-		return ""
-	}
-	return b.Status.GetCondition(corev1alpha1.ConditionSucceeded).LastTransitionTime.Inner.Format("2006-01-02 15:04:05")
-}
-
 func getTruncatedReason(b v1alpha1.Build) string {
 	r := getReasons(b)
 
