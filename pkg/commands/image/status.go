@@ -79,7 +79,7 @@ func displayImageStatus(cmd *cobra.Command, image *v1alpha1.Image, builds []v1al
 	err = statusWriter.AddBlock(
 		"Last Successful Build",
 		"Id", getId(successfulBuild),
-		"Reason", getReason(successfulBuild),
+		"Build Reason", getReason(successfulBuild),
 	)
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func displayImageStatus(cmd *cobra.Command, image *v1alpha1.Image, builds []v1al
 	err = statusWriter.AddBlock(
 		"Last Failed Build",
 		"Id", getId(failedBuild),
-		"Reason", getReason(failedBuild),
+		"Build Reason", getReason(failedBuild),
 	)
 	if err != nil {
 		return err

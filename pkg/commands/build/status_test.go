@@ -28,9 +28,9 @@ func testBuildStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		image                       = "test-image"
 		defaultNamespace            = "some-default-namespace"
-		expectedOutputForMostRecent = `Image:            repo.com/image-3:tag
-Status:           BUILDING
-Build Reasons:    TRIGGER
+		expectedOutputForMostRecent = `Image:           repo.com/image-3:tag
+Status:          BUILDING
+Build Reason:    TRIGGER
 
 Pod Name:    pod-three
 
@@ -44,9 +44,9 @@ bp-id-1         bp-version-1
 bp-id-2         bp-version-2
 
 `
-		expectedOutputForBuildNumber = `Image:            repo.com/image-1:tag
-Status:           SUCCESS
-Build Reasons:    CONFIG
+		expectedOutputForBuildNumber = `Image:           repo.com/image-1:tag
+Status:          SUCCESS
+Build Reason:    CONFIG
 
 Pod Name:    pod-one
 
@@ -168,7 +168,7 @@ bp-id-2         bp-version-2
 			it("displays status reason and status message", func() {
 				expectedOutput := `Image:             repo.com/image-3:tag
 Status:            BUILDING
-Build Reasons:     TRIGGER
+Build Reason:      TRIGGER
 Status Reason:     some-reason
 Status Message:    some-message
 
