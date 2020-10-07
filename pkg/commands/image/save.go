@@ -31,6 +31,7 @@ func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Fact
 This image will be created only if it does not exist in the provided namespace, otherwise it will be patched.
 
 The --tag flag is required for a create but is immutable and will be ignored for a patch.
+The --cache-size flag can be used for a create but is immutable and will be ignored for a patch.
 
 The namespace defaults to the kubernetes current-context namespace.
 
@@ -104,6 +105,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 	cmd.Flags().StringVar(&factory.Blob, "blob", "", "source code blob url")
 	cmd.Flags().StringVar(&factory.LocalPath, "local-path", "", "path to local source code")
 	cmd.Flags().StringVar(&subPath, "sub-path", "", "build code at the sub path located within the source code directory")
+	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size (default 2G)")
 	cmd.Flags().StringVarP(&factory.Builder, "builder", "b", "", "builder name")
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
