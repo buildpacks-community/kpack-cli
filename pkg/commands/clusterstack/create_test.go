@@ -86,7 +86,10 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--registry-ca-cert-path", "some-cert-path",
 				"--registry-verify-certs",
 			},
-			ExpectedOutput: "Uploading to 'some-registry.io/some-repo'...\n\"some-stack\" created\n",
+			ExpectedOutput: `Creating ClusterStack...
+Uploading to 'some-registry.io/some-repo'...
+"some-stack" created
+`,
 			ExpectCreates: []runtime.Object{
 				expectedStack,
 			},
@@ -144,8 +147,10 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--build-image", "some-build-image",
 				"--run-image", "some-other-run-image",
 			},
-			ExpectErr:      true,
-			ExpectedOutput: "Error: build stack 'some-stack-id' does not match run stack 'some-other-stack-id'\n",
+			ExpectErr: true,
+			ExpectedOutput: `Creating ClusterStack...
+Error: build stack 'some-stack-id' does not match run stack 'some-other-stack-id'
+`,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
@@ -197,7 +202,8 @@ status:
 					"--output", "yaml",
 				},
 				ExpectedOutput: resourceYAML,
-				ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+				ExpectedErrorOutput: `Creating ClusterStack...
+Uploading to 'some-registry.io/some-repo'...
 `,
 				ExpectCreates: []runtime.Object{
 					expectedStack,
@@ -240,7 +246,8 @@ status:
 					"--output", "json",
 				},
 				ExpectedOutput: resourceJSON,
-				ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+				ExpectedErrorOutput: `Creating ClusterStack...
+Uploading to 'some-registry.io/some-repo'...
 `,
 				ExpectCreates: []runtime.Object{
 					expectedStack,
@@ -261,7 +268,8 @@ status:
 					"--run-image", "some-run-image",
 					"--dry-run",
 				},
-				ExpectedOutput: `Uploading to 'some-registry.io/some-repo'...
+				ExpectedOutput: `Creating ClusterStack... (dry run)
+Uploading to 'some-registry.io/some-repo'...
 "some-stack" created (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -297,7 +305,8 @@ status:
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+					ExpectedErrorOutput: `Creating ClusterStack... (dry run)
+Uploading to 'some-registry.io/some-repo'...
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})

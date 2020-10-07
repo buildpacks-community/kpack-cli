@@ -92,7 +92,7 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: "Creating Cluster Store...\n\"test-store\" created\n",
+				ExpectedOutput: "Creating ClusterStore...\n\"test-store\" created\n",
 				ExpectCreates: []runtime.Object{
 					expectedStore,
 				},
@@ -145,7 +145,7 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					expectedStore.Name,
 				},
 				ExpectErr:      true,
-				ExpectedOutput: "Creating Cluster Store...\nError: At least one buildpackage must be provided\n",
+				ExpectedOutput: "Creating ClusterStore...\nError: At least one buildpackage must be provided\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
@@ -176,7 +176,7 @@ status: {}
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Creating Cluster Store...
+					ExpectedErrorOutput: `Creating ClusterStore...
 `,
 					ExpectCreates: []runtime.Object{
 						expectedStore,
@@ -220,7 +220,7 @@ status: {}
 						"--output", "json",
 					},
 					ExpectedOutput: resourceJSON,
-					ExpectedErrorOutput: `Creating Cluster Store...
+					ExpectedErrorOutput: `Creating ClusterStore...
 `,
 					ExpectCreates: []runtime.Object{
 						expectedStore,
@@ -241,7 +241,7 @@ status: {}
 						"-b", buildpackage2,
 						"--dry-run",
 					},
-					ExpectedOutput: `Creating Cluster Store...
+					ExpectedOutput: `Creating ClusterStore... (dry run)
 "test-store" created (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -275,7 +275,7 @@ status: {}
 							"--dry-run",
 						},
 						ExpectedOutput: resourceYAML,
-						ExpectedErrorOutput: `Creating Cluster Store...
+						ExpectedErrorOutput: `Creating ClusterStore... (dry run)
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})
@@ -455,7 +455,7 @@ status: {}
 						"--buildpackage", "patch/bp",
 						"--dry-run",
 					},
-					ExpectedOutput: `Adding Buildpackages...
+					ExpectedOutput: `Adding Buildpackages... (dry run)
 	Added Buildpackage
 ClusterStore Updated (dry run)
 `,
@@ -493,7 +493,7 @@ status: {}
 							"--output", "yaml",
 						},
 						ExpectedOutput: resourceYAML,
-						ExpectedErrorOutput: `Adding Buildpackages...
+						ExpectedErrorOutput: `Adding Buildpackages... (dry run)
 	Added Buildpackage
 `,
 					}.TestK8sAndKpack(t, cmdFunc)

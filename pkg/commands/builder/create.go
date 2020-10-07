@@ -4,8 +4,6 @@
 package builder
 
 import (
-	"encoding/json"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -19,9 +17,8 @@ import (
 )
 
 const (
-	defaultStack             = "default"
-	defaultStore             = "default"
-	kubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
+	defaultStack = "default"
+	defaultStore = "default"
 )
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
@@ -112,12 +109,10 @@ func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.
 		return err
 	}
 
-	marshal, err := json.Marshal(bldr)
+	err = k8s.SetLastAppliedCfg(bldr)
 	if err != nil {
 		return err
 	}
-
-	bldr.Annotations[kubectlLastAppliedConfig] = string(marshal)
 
 	if !ch.IsDryRun() {
 		bldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(bldr)

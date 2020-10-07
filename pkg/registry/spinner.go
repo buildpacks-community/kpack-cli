@@ -26,12 +26,13 @@ type uploadSpinner struct {
 }
 
 func newUploadSpinner(writer io.Writer, size int64) *uploadSpinner {
+	isTerminal := terminal.IsTerminal(int(os.Stdout.Fd())) || terminal.IsTerminal(int(os.Stderr.Fd()))
 	sp := &uploadSpinner{
 		size:     readableSize(size),
 		stopChan: make(chan struct{}),
 		doneChan: make(chan struct{}),
 		Output:   writer,
-		NotTty:   !terminal.IsTerminal(int(os.Stdout.Fd())),
+		NotTty:   !isTerminal,
 	}
 	return sp
 }

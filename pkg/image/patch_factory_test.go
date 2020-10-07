@@ -60,7 +60,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 
 	it("defaults the git revision to master", func() {
 		factory.GitRepo = "some-repo"
-		patch, err := factory.MakePatch(img)
+		_, patch, err := factory.MakePatch(img)
 		require.NoError(t, err)
 		require.Equal(t, `{"spec":{"source":{"blob":null,"git":{"revision":"master","url":"some-repo"}}}}`, string(patch))
 	})
@@ -70,7 +70,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.GitRepo = "some-git-repo"
 			factory.Blob = "some-blob"
 			factory.LocalPath = "some-local-path"
-			_, err := factory.MakePatch(img)
+			_, _, err := factory.MakePatch(img)
 			require.EqualError(t, err, "image source must be one of git, blob, or local-path")
 		})
 	})
@@ -79,7 +79,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		it("returns an error message", func() {
 			factory.Blob = "some-blob"
 			factory.GitRevision = "some-revision"
-			_, err := factory.MakePatch(img)
+			_, _, err := factory.MakePatch(img)
 			require.EqualError(t, err, "git-revision is incompatible with blob and local path image sources")
 		})
 	})
@@ -87,7 +87,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	when("git revision is provided with an existing non-git source types", func() {
 		it("returns an error message", func() {
 			factory.GitRevision = "some-revision"
-			_, err := factory.MakePatch(img)
+			_, _, err := factory.MakePatch(img)
 			require.EqualError(t, err, "git-revision is incompatible with existing image source")
 		})
 	})
@@ -96,7 +96,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		it("returns an error message", func() {
 			factory.Builder = "some-builder"
 			factory.ClusterBuilder = "some-cluster-builder"
-			_, err := factory.MakePatch(img)
+			_, _, err := factory.MakePatch(img)
 			require.EqualError(t, err, "must provide one of builder or cluster-builder")
 		})
 	})
@@ -105,7 +105,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		it("returns an error message", func() {
 			factory.DeleteEnv = []string{"foo"}
 			factory.Env = []string{"foo=bar"}
-			_, err := factory.MakePatch(img)
+			_, _, err := factory.MakePatch(img)
 			require.EqualError(t, err, "duplicate delete-env and env-var parameter 'foo'")
 		})
 	})
@@ -113,7 +113,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	when("delete-env does not exist in the current image", func() {
 		it("returns an error message", func() {
 			factory.DeleteEnv = []string{"bar"}
-			_, err := factory.MakePatch(img)
+			_, _, err := factory.MakePatch(img)
 			require.EqualError(t, err, "delete-env parameter 'bar' not found in existing image configuration")
 		})
 	})
@@ -121,7 +121,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	when("the image.spec.build is nil", func() {
 		it("does not panic", func() {
 			img.Spec.Build = nil
-			_, err := factory.MakePatch(img)
+			_, _, err := factory.MakePatch(img)
 			require.NoError(t, err)
 		})
 	})
@@ -129,7 +129,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	when("an env var has an equal sign in the value", func() {
 		it("handles the env var", func() {
 			factory.Env = append(factory.Env, `BP_MAVEN_BUILD_ARGUMENTS="-Dmaven.test.skip=true -Pk8s package"`)
-			patch, err := factory.MakePatch(img)
+			_, patch, err := factory.MakePatch(img)
 			require.NoError(t, err)
 			require.Equal(t, `{"spec":{"build":{"env":[{"name":"foo"},{"name":"BP_MAVEN_BUILD_ARGUMENTS","value":"\"-Dmaven.test.skip=true -Pk8s package\""}]}}}`, string(patch))
 		})

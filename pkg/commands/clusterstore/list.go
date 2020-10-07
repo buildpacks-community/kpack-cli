@@ -33,7 +33,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 			}
 
 			if len(storeList.Items) == 0 {
-				return errors.New("no clusterstores found")
+				return errors.New("no ClusterStores found")
 			} else {
 				return displayStoresTable(cmd, storeList)
 			}

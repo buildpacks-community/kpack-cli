@@ -13,31 +13,32 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func (f *Factory) MakePatch(img *v1alpha1.Image) ([]byte, error) {
+func (f *Factory) MakePatch(img *v1alpha1.Image) (*v1alpha1.Image, []byte, error) {
 	if img.Spec.Build == nil {
 		img.Spec.Build = &v1alpha1.ImageBuild{}
 	}
 
 	err := f.validatePatch(img)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	patchedImage := img.DeepCopy()
 
 	err = f.setSource(patchedImage)
 	if err != nil {
-		return nil, err
+		return patchedImage, nil, err
 	}
 
 	err = f.setBuild(patchedImage)
 	if err != nil {
-		return nil, err
+		return patchedImage, nil, err
 	}
 
 	f.setBuilder(patchedImage)
 
-	return k8s.CreatePatch(img, patchedImage)
+	patch, err := k8s.CreatePatch(img, patchedImage)
+	return patchedImage, patch, err
 }
 
 func (f *Factory) validatePatch(img *v1alpha1.Image) error {

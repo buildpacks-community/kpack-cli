@@ -123,7 +123,10 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nClusterStack \"some-stack\" Updated\n",
+			ExpectedOutput: `Updating ClusterStack...
+Uploading to 'some-registry.com/some-repo'...
+"some-stack" updated
+`,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
@@ -135,9 +138,13 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			KpackObjects: []runtime.Object{
 				stack,
 			},
-			Args:           []string{"some-stack", "--build-image", "some-old-build-image", "--run-image", "some-old-run-image"},
-			ExpectErr:      false,
-			ExpectedOutput: "Uploading to 'some-registry.com/some-repo'...\nBuild and Run images already exist in stack\nClusterStack Unchanged\n",
+			Args:      []string{"some-stack", "--build-image", "some-old-build-image", "--run-image", "some-old-run-image"},
+			ExpectErr: false,
+			ExpectedOutput: `Updating ClusterStack...
+Uploading to 'some-registry.com/some-repo'...
+Build and Run images already exist in stack
+ClusterStack Unchanged
+`,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
@@ -188,15 +195,19 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			KpackObjects: []runtime.Object{
 				stack,
 			},
-			Args:           []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
-			ExpectErr:      true,
-			ExpectedOutput: "Error: build stack 'some-new-id' does not match run stack 'other-stack-id'\n",
+			Args:      []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
+			ExpectErr: true,
+			ExpectedOutput: `Updating ClusterStack...
+Error: build stack 'some-new-id' does not match run stack 'other-stack-id'
+`,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `metadata:
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
   creationTimestamp: null
   name: some-stack
 spec:
@@ -246,13 +257,16 @@ status:
 					},
 				},
 				ExpectedOutput: resourceYAML,
-				ExpectedErrorOutput: `Uploading to 'some-registry.com/some-repo'...
+				ExpectedErrorOutput: `Updating ClusterStack...
+Uploading to 'some-registry.com/some-repo'...
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
 		it("can output in json format", func() {
 			const resourceJSON = `{
+    "kind": "ClusterStack",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "some-stack",
         "creationTimestamp": null
@@ -311,7 +325,8 @@ status:
 					},
 				},
 				ExpectedOutput: resourceJSON,
-				ExpectedErrorOutput: `Uploading to 'some-registry.com/some-repo'...
+				ExpectedErrorOutput: `Updating ClusterStack...
+Uploading to 'some-registry.com/some-repo'...
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -332,15 +347,18 @@ status:
 					"--run-image", "some-new-run-image",
 					"--dry-run",
 				},
-				ExpectedOutput: `Uploading to 'some-registry.com/some-repo'...
-ClusterStack "some-stack" Updated (dry run)
+				ExpectedOutput: `Updating ClusterStack... (dry run)
+Uploading to 'some-registry.com/some-repo'...
+"some-stack" updated (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
 		when("output flag is used", func() {
 			it("does not update the clusterstack and prints the resource output", func() {
-				const resourceYAML = `metadata:
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
   creationTimestamp: null
   name: some-stack
 spec:
@@ -374,7 +392,8 @@ status:
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Uploading to 'some-registry.com/some-repo'...
+					ExpectedErrorOutput: `Updating ClusterStack... (dry run)
+Uploading to 'some-registry.com/some-repo'...
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})

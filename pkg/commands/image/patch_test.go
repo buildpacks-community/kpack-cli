@@ -306,7 +306,9 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("can output resources in yaml and does not wait", func() {
-			const resourceYAML = `metadata:
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: Image
+metadata:
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -349,6 +351,8 @@ status: {}
 
 		it("can output resources in json and does not wait", func() {
 			const resourceJSON = `{
+    "kind": "Image",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "some-image",
         "namespace": "some-default-namespace",
@@ -438,7 +442,9 @@ status: {}
 
 		when("output flag is used", func() {
 			it("does not patch and prints the resource output", func() {
-				const resourceYAML = `metadata:
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: Image
+metadata:
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -454,9 +460,8 @@ spec:
     kind: ClusterBuilder
     name: some-ccb
   source:
-    git:
-      revision: some-revision
-      url: some-git-url
+    blob:
+      url: some-blob
     subPath: some-path
   tag: some-tag
 status: {}

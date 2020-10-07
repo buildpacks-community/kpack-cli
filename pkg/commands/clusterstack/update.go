@@ -79,6 +79,10 @@ func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *com
 		return err
 	}
 
+	if err = ch.PrintStatus("Updating ClusterStack..."); err != nil {
+		return err
+	}
+
 	if wasUpdated, err := factory.UpdateStack(stack); err != nil {
 		return err
 	} else if !wasUpdated {
@@ -92,10 +96,9 @@ func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *com
 		}
 	}
 
-	err = ch.PrintObj(stack)
-	if err != nil {
+	if err = ch.PrintObj(stack); err != nil {
 		return err
 	}
 
-	return ch.PrintResult("ClusterStack %q Updated", stack.Name)
+	return ch.PrintResult("%q updated", stack.Name)
 }

@@ -670,21 +670,28 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		fetcher.passwords["DOCKER_PASSWORD"] = dockerPassword
 
 		it("can output in yaml format", func() {
-			const resourceYAML = `data:
+			const resourceYAML = `apiVersion: v1
+data:
   .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+kind: Secret
 metadata:
   creationTimestamp: null
   name: my-docker-cred
   namespace: some-default-namespace
 type: kubernetes.io/dockerconfigjson
 ---
-data:
-  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+apiVersion: v1
+imagePullSecrets:
+- name: my-docker-cred
+kind: ServiceAccount
 metadata:
+  annotations:
+    kpack.io/managedSecret: '{"my-docker-cred":"https://index.docker.io/v1/"}'
   creationTimestamp: null
-  name: my-docker-cred
+  name: default
   namespace: some-default-namespace
-type: kubernetes.io/dockerconfigjson
+secrets:
+- name: my-docker-cred
 `
 
 			testhelpers.CommandTest{
@@ -710,6 +717,8 @@ type: kubernetes.io/dockerconfigjson
 
 		it("can output in json format", func() {
 			const resourceJSON = `{
+    "kind": "Secret",
+    "apiVersion": "v1",
     "metadata": {
         "name": "my-docker-cred",
         "namespace": "some-default-namespace",
@@ -721,15 +730,26 @@ type: kubernetes.io/dockerconfigjson
     "type": "kubernetes.io/dockerconfigjson"
 }
 {
+    "kind": "ServiceAccount",
+    "apiVersion": "v1",
     "metadata": {
-        "name": "my-docker-cred",
+        "name": "default",
         "namespace": "some-default-namespace",
-        "creationTimestamp": null
+        "creationTimestamp": null,
+        "annotations": {
+            "kpack.io/managedSecret": "{\"my-docker-cred\":\"https://index.docker.io/v1/\"}"
+        }
     },
-    "data": {
-        ".dockerconfigjson": "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ=="
-    },
-    "type": "kubernetes.io/dockerconfigjson"
+    "secrets": [
+        {
+            "name": "my-docker-cred"
+        }
+    ],
+    "imagePullSecrets": [
+        {
+            "name": "my-docker-cred"
+        }
+    ]
 }
 `
 
@@ -753,7 +773,6 @@ type: kubernetes.io/dockerconfigjson
 				},
 			}.TestK8s(t, cmdFunc)
 		})
-
 	})
 
 	when("dry-run flag is used", func() {
@@ -776,21 +795,28 @@ type: kubernetes.io/dockerconfigjson
 
 		when("output flag is used", func() {
 			it("does not create the secret and prints resource output", func() {
-				const resourceYAML = `data:
+				const resourceYAML = `apiVersion: v1
+data:
   .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+kind: Secret
 metadata:
   creationTimestamp: null
   name: my-docker-cred
   namespace: some-default-namespace
 type: kubernetes.io/dockerconfigjson
 ---
-data:
-  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+apiVersion: v1
+imagePullSecrets:
+- name: my-docker-cred
+kind: ServiceAccount
 metadata:
+  annotations:
+    kpack.io/managedSecret: '{"my-docker-cred":"https://index.docker.io/v1/"}'
   creationTimestamp: null
-  name: my-docker-cred
+  name: default
   namespace: some-default-namespace
-type: kubernetes.io/dockerconfigjson
+secrets:
+- name: my-docker-cred
 `
 
 				testhelpers.CommandTest{

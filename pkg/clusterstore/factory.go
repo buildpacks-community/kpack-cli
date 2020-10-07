@@ -4,7 +4,6 @@
 package clusterstore
 
 import (
-	"encoding/json"
 	"io"
 	"strings"
 
@@ -13,11 +12,8 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
-)
-
-const (
-	KubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
 )
 
 type BuildpackageUploader interface {
@@ -32,7 +28,7 @@ type Factory struct {
 }
 
 type Printer interface {
-	Printlnf(format string, a ...interface{}) error
+	Printlnf(format string, args ...interface{}) error
 	Writer() io.Writer
 }
 
@@ -64,14 +60,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 		})
 	}
 
-	marshal, err := json.Marshal(newStore)
-	if err != nil {
-		return nil, err
-	}
-
-	newStore.Annotations[KubectlLastAppliedConfig] = string(marshal)
-
-	return newStore, nil
+	return newStore, k8s.SetLastAppliedCfg(newStore)
 }
 
 func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
@@ -79,18 +68,24 @@ func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, bu
 	for _, buildpackage := range buildpackages {
 		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.Writer(), repository, buildpackage, f.TLSConfig)
 		if err != nil {
-			return nil, false, err
+			return store, false, err
 		}
 
 		if storeContains(store, uploadedBp) {
-			f.Printer.Printlnf("\tBuildpackage already exists in the store")
+			if err = f.Printer.Printlnf("\tBuildpackage already exists in the store"); err != nil {
+				return store, false, err
+			}
 			continue
 		}
 
 		store.Spec.Sources = append(store.Spec.Sources, v1alpha1.StoreImage{
 			Image: uploadedBp,
 		})
-		f.Printer.Printlnf("\tAdded Buildpackage")
+
+		if err = f.Printer.Printlnf("\tAdded Buildpackage"); err != nil {
+			return store, false, err
+		}
+
 		storeUpdated = true
 	}
 

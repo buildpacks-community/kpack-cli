@@ -4,7 +4,6 @@
 package _import
 
 import (
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"os"
@@ -28,9 +27,8 @@ import (
 )
 
 const (
-	importNamespace          = "kpack"
-	kubectlLastAppliedConfig = "kubectl.kubernetes.io/last-applied-configuration"
-	importTimestampKey       = "kpack.io/import-timestamp"
+	importNamespace    = "kpack"
+	importTimestampKey = "kpack.io/import-timestamp"
 )
 
 type TimestampProvider interface {
@@ -184,7 +182,9 @@ type importHelper struct {
 
 func (i *importHelper) ImportClusterStores(factory *clusterstore.Factory, repository string) error {
 	for _, store := range i.descriptor.ClusterStores {
-		i.ch.Printlnf("Importing Cluster Store '%s'...", store.Name)
+		if err := i.ch.Printlnf("Importing ClusterStore '%s'...", store.Name); err != nil {
+			return err
+		}
 
 		var buildpackages []string
 		for _, s := range store.Sources {
@@ -242,7 +242,9 @@ func (i *importHelper) ImportClusterStacks(factory *clusterstack.Factory) error 
 	}
 
 	for _, stack := range i.descriptor.ClusterStacks {
-		i.ch.Printlnf("Importing Cluster Stack '%s'...", stack.Name)
+		if err := i.ch.Printlnf("Importing ClusterStack '%s'...", stack.Name); err != nil {
+			return err
+		}
 
 		factory.Printer = i.ch
 		factory.BuildImageRef = stack.BuildImage.Image // FIXME
@@ -297,7 +299,7 @@ func (i *importHelper) ImportClusterBuilders(repository string, sa string) error
 	}
 
 	for _, ccb := range i.descriptor.ClusterBuilders {
-		if err := i.ch.Printlnf("Importing Cluster Builder '%s'...", ccb.Name); err != nil {
+		if err := i.ch.Printlnf("Importing ClusterBuilder '%s'...", ccb.Name); err != nil {
 			return err
 		}
 
@@ -373,11 +375,5 @@ func (i importHelper) makeClusterBuilder(ccb importpkg.ClusterBuilder, repositor
 		}
 	}
 
-	marshal, err := json.Marshal(newCCB)
-	if err != nil {
-		return nil, err
-	}
-	newCCB.Annotations[kubectlLastAppliedConfig] = string(marshal)
-
-	return newCCB, nil
+	return newCCB, k8s.SetLastAppliedCfg(newCCB)
 }

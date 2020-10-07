@@ -7,10 +7,16 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"reflect"
 	"strings"
 
+	"github.com/pivotal/kpack/pkg/apis/build"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
@@ -25,6 +31,8 @@ type CommandHelper struct {
 
 	objPrinter k8s.ObjectPrinter
 	strBuilder strings.Builder
+
+	typeToGVK map[reflect.Type]schema.GroupVersionKind
 }
 
 func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
@@ -61,6 +69,7 @@ func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
 		errWriter:  cmd.ErrOrStderr(),
 		objPrinter: objPrinter,
 		strBuilder: strings.Builder{},
+		typeToGVK:  getTypeToGVKLookup(),
 	}, nil
 }
 
@@ -73,46 +82,42 @@ func (ch CommandHelper) ShouldWait() bool {
 }
 
 func (ch CommandHelper) PrintObjs(objs []runtime.Object) error {
-	if ch.output {
-		for _, obj := range objs {
-			if err := ch.objPrinter.PrintObject(obj, ch.outWriter); err != nil {
-				return err
-			}
+	for _, obj := range objs {
+		if err := ch.PrintObj(obj); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
 func (ch CommandHelper) PrintObj(obj runtime.Object) error {
-	if ch.output {
-		return ch.objPrinter.PrintObject(obj, ch.outWriter)
-	}
-	return nil
-}
-
-func (ch CommandHelper) PrintResult(format string, a ...interface{}) error {
-	ch.strBuilder.Reset()
-
-	str := fmt.Sprintf(format, a...)
-	_, err := ch.strBuilder.WriteString(str)
-	if err != nil {
-		return err
+	if !ch.output {
+		return nil
 	}
 
-	if ch.dryRun {
-		_, err = ch.strBuilder.WriteString(" (dry run)")
-		if err != nil {
-			return err
+	oGVK := obj.GetObjectKind().GroupVersionKind()
+	if oGVK.Version == "" || oGVK.Kind == "" {
+		nGVK, ok := ch.typeToGVK[reflect.TypeOf(obj)]
+		if !ok {
+			return errors.Errorf("failed to output. unknown type %q", reflect.TypeOf(obj))
 		}
+		obj.GetObjectKind().SetGroupVersionKind(nGVK)
 	}
-	ch.strBuilder.WriteString("\n")
-
-	_, err = ch.OutOrDiscardWriter().Write([]byte(ch.strBuilder.String()))
+	err := ch.objPrinter.PrintObject(obj, ch.outWriter)
+	obj.GetObjectKind().SetGroupVersionKind(oGVK)
 	return err
 }
 
-func (ch CommandHelper) Printlnf(format string, a ...interface{}) error {
-	_, err := fmt.Fprintf(ch.OutOrErrWriter(), format+"\n", a...)
+func (ch CommandHelper) PrintResult(format string, args ...interface{}) error {
+	return ch.printDryRun(ch.OutOrDiscardWriter(), format, args...)
+}
+
+func (ch CommandHelper) PrintStatus(format string, args ...interface{}) error {
+	return ch.printDryRun(ch.OutOrErrWriter(), format, args...)
+}
+
+func (ch CommandHelper) Printlnf(format string, args ...interface{}) error {
+	_, err := fmt.Fprintf(ch.OutOrErrWriter(), format+"\n", args...)
 	return err
 }
 
@@ -134,6 +139,27 @@ func (ch CommandHelper) OutOrDiscardWriter() io.Writer {
 
 func (ch CommandHelper) Writer() io.Writer {
 	return ch.OutOrErrWriter()
+}
+
+func (ch CommandHelper) printDryRun(writer io.Writer, format string, a ...interface{}) error {
+	ch.strBuilder.Reset()
+
+	str := fmt.Sprintf(format, a...)
+	_, err := ch.strBuilder.WriteString(str)
+	if err != nil {
+		return err
+	}
+
+	if ch.dryRun {
+		_, err = ch.strBuilder.WriteString(" (dry run)")
+		if err != nil {
+			return err
+		}
+	}
+	ch.strBuilder.WriteString("\n")
+
+	_, err = writer.Write([]byte(ch.strBuilder.String()))
+	return err
 }
 
 func getBoolFlag(name string, cmd *cobra.Command) (bool, error) {
@@ -168,4 +194,19 @@ func getStringFlag(name string, cmd *cobra.Command) (string, error) {
 		return value, err
 	}
 	return value, nil
+}
+
+func getTypeToGVKLookup() map[reflect.Type]schema.GroupVersionKind {
+	v1GV := schema.GroupVersion{Group: v1.GroupName, Version: "v1"}
+	buildGV := schema.GroupVersion{Group: build.GroupName, Version: "v1alpha1"}
+
+	return map[reflect.Type]schema.GroupVersionKind{
+		reflect.TypeOf(&v1.Secret{}):               v1GV.WithKind("Secret"),
+		reflect.TypeOf(&v1.ServiceAccount{}):       v1GV.WithKind("ServiceAccount"),
+		reflect.TypeOf(&v1alpha1.Image{}):          buildGV.WithKind("Image"),
+		reflect.TypeOf(&v1alpha1.Builder{}):        buildGV.WithKind(v1alpha1.BuilderKind),
+		reflect.TypeOf(&v1alpha1.ClusterStack{}):   buildGV.WithKind(v1alpha1.ClusterStackKind),
+		reflect.TypeOf(&v1alpha1.ClusterStore{}):   buildGV.WithKind(v1alpha1.ClusterStoreKind),
+		reflect.TypeOf(&v1alpha1.ClusterBuilder{}): buildGV.WithKind(v1alpha1.ClusterBuilderKind),
+	}
 }

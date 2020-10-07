@@ -65,6 +65,10 @@ func create(name string, factory *clusterstack.Factory, ch *commands.CommandHelp
 		return err
 	}
 
+	if err = ch.PrintStatus("Creating ClusterStack..."); err != nil {
+		return err
+	}
+
 	stack, err := factory.MakeStack(name)
 	if err != nil {
 		return err
@@ -77,8 +81,7 @@ func create(name string, factory *clusterstack.Factory, ch *commands.CommandHelp
 		}
 	}
 
-	err = ch.PrintObj(stack)
-	if err != nil {
+	if err = ch.PrintObj(stack); err != nil {
 		return err
 	}
 
