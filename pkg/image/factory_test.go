@@ -8,6 +8,7 @@ import (
 
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/pivotal/build-service-cli/pkg/image"
 	srcfakes "github.com/pivotal/build-service-cli/pkg/source/fakes"
@@ -77,6 +78,40 @@ func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 			require.Len(t, img.Env(), 1)
 			require.Equal(t, "BP_MAVEN_BUILD_ARGUMENTS", img.Env()[0].Name)
 			require.Equal(t, `"-Dmaven.test.skip=true -Pk8s package"`, img.Env()[0].Value)
+		})
+	})
+
+	when("cache size", func() {
+		factory.Blob = "some-blob"
+
+		it("can be set", func() {
+			factory.CacheSize = "2G"
+			expectedCache := resource.MustParse("2G")
+			img, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+			require.NoError(t, err)
+			require.Equal(t, img.Spec.CacheSize, &expectedCache)
+		})
+
+		it("defaults to nil", func() {
+			img, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+			require.NoError(t, err)
+			require.Nil(t, img.Spec.CacheSize)
+		})
+
+		it("errors with invalid cache size", func() {
+			factory.CacheSize = "invalid"
+			_, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+			require.EqualError(t, err, "invalid cache size, must be valid quantity ex. 2G")
+		})
+
+		it("errors with non-positive cache size", func() {
+			factory.CacheSize = "-1"
+			_, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+			require.EqualError(t, err, "cache size must be greater than 0")
+
+			factory.CacheSize = "0"
+			_, err = factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+			require.EqualError(t, err, "cache size must be greater than 0")
 		})
 	})
 }
