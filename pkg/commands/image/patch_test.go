@@ -263,6 +263,23 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
+	it("can patch cache size", func() {
+		testhelpers.CommandTest{
+			Objects: []runtime.Object{
+				img,
+			},
+			Args: []string{
+				"some-image",
+				"--cache-size", "3G",
+			},
+			ExpectedOutput: "\"some-image\" patched\n",
+			ExpectPatches: []string{
+				`{"spec":{"cacheSize":"3G"}}`,
+			},
+		}.TestKpack(t, cmdFunc)
+		assert.Len(t, fakeImageWaiter.Calls, 0)
+	})
+
 	it("will wait on the image update if requested", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{

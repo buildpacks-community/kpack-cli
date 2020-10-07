@@ -10,6 +10,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/image"
@@ -132,6 +133,29 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			_, patch, err := factory.MakePatch(img)
 			require.NoError(t, err)
 			require.Equal(t, `{"spec":{"build":{"env":[{"name":"foo"},{"name":"BP_MAVEN_BUILD_ARGUMENTS","value":"\"-Dmaven.test.skip=true -Pk8s package\""}]}}}`, string(patch))
+		})
+	})
+
+	when("patching cache size", func() {
+		it("can set a new cache size", func() {
+			factory.CacheSize = "3G"
+			_, patch, err := factory.MakePatch(img)
+			require.NoError(t, err)
+			require.Equal(t, `{"spec":{"cacheSize":"3G"}}`, string(patch))
+		})
+
+		it("errors if cache size is decreased", func() {
+			cache := resource.MustParse("2G")
+			img.Spec.CacheSize = &cache
+			factory.CacheSize = "1G"
+			_, _, err := factory.MakePatch(img)
+			require.EqualError(t, err, "cache size cannot be decreased, current: 2G, requested: 1G")
+		})
+
+		it("errors if cache size is invalid", func() {
+			factory.CacheSize = "invalid"
+			_, _, err := factory.MakePatch(img)
+			require.EqualError(t, err, "invalid cache size, must be valid quantity ex. 2G")
 		})
 	})
 }

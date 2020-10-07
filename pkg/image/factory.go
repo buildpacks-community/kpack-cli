@@ -126,6 +126,10 @@ func (f *Factory) makeCacheSize() (*resource.Quantity, error) {
 		return nil, nil
 	}
 
+	return f.getCacheSize()
+}
+
+func (f *Factory) getCacheSize() (*resource.Quantity, error) {
 	c, err := resource.ParseQuantity(f.CacheSize)
 	if err != nil {
 		return nil, errors.New("invalid cache size, must be valid quantity ex. 2G")
