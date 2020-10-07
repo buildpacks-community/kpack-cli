@@ -66,7 +66,7 @@ func create(name string, buildpackages []string, factory *clusterstore.Factory, 
 		return err
 	}
 
-	if err = ch.PrintStatus("Creating Cluster Store..."); err != nil {
+	if err = ch.PrintStatus("Creating ClusterStore..."); err != nil {
 		return err
 	}
 

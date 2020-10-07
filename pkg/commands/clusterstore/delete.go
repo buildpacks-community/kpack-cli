@@ -52,7 +52,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvi
 			}
 
 			if !confirmed {
-				_, err = fmt.Fprintln(cmd.OutOrStdout(), "Skipping clusterstore deletion")
+				_, err = fmt.Fprintln(cmd.OutOrStdout(), "Skipping ClusterStore deletion")
 				return err
 			}
 

@@ -113,7 +113,7 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 				Objects:        nil,
 				Args:           []string{storeName},
 				ExpectErr:      false,
-				ExpectedOutput: "Skipping clusterstore deletion\n",
+				ExpectedOutput: "Skipping ClusterStore deletion\n",
 			}.TestKpack(t, cmdFunc)
 			assert.True(t, confirmationProvider.requested)
 		})

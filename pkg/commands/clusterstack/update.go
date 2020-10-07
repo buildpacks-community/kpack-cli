@@ -79,7 +79,7 @@ func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *com
 		return err
 	}
 
-	if err = ch.PrintStatus("Updating Cluster Stack..."); err != nil {
+	if err = ch.PrintStatus("Updating ClusterStack..."); err != nil {
 		return err
 	}
 

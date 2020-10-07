@@ -182,7 +182,7 @@ type importHelper struct {
 
 func (i *importHelper) ImportClusterStores(factory *clusterstore.Factory, repository string) error {
 	for _, store := range i.descriptor.ClusterStores {
-		if err := i.ch.Printlnf("Importing Cluster Store '%s'...", store.Name); err != nil {
+		if err := i.ch.Printlnf("Importing ClusterStore '%s'...", store.Name); err != nil {
 			return err
 		}
 
@@ -242,7 +242,7 @@ func (i *importHelper) ImportClusterStacks(factory *clusterstack.Factory) error 
 	}
 
 	for _, stack := range i.descriptor.ClusterStacks {
-		if err := i.ch.Printlnf("Importing Cluster Stack '%s'...", stack.Name); err != nil {
+		if err := i.ch.Printlnf("Importing ClusterStack '%s'...", stack.Name); err != nil {
 			return err
 		}
 
@@ -299,7 +299,7 @@ func (i *importHelper) ImportClusterBuilders(repository string, sa string) error
 	}
 
 	for _, ccb := range i.descriptor.ClusterBuilders {
-		if err := i.ch.Printlnf("Importing Cluster Builder '%s'...", ccb.Name); err != nil {
+		if err := i.ch.Printlnf("Importing ClusterBuilder '%s'...", ccb.Name); err != nil {
 			return err
 		}
 

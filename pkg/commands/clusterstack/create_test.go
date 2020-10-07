@@ -86,7 +86,7 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--registry-ca-cert-path", "some-cert-path",
 				"--registry-verify-certs",
 			},
-			ExpectedOutput: `Creating Cluster Stack...
+			ExpectedOutput: `Creating ClusterStack...
 Uploading to 'some-registry.io/some-repo'...
 "some-stack" created
 `,
@@ -148,7 +148,7 @@ Uploading to 'some-registry.io/some-repo'...
 				"--run-image", "some-other-run-image",
 			},
 			ExpectErr: true,
-			ExpectedOutput: `Creating Cluster Stack...
+			ExpectedOutput: `Creating ClusterStack...
 Error: build stack 'some-stack-id' does not match run stack 'some-other-stack-id'
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
@@ -202,7 +202,7 @@ status:
 					"--output", "yaml",
 				},
 				ExpectedOutput: resourceYAML,
-				ExpectedErrorOutput: `Creating Cluster Stack...
+				ExpectedErrorOutput: `Creating ClusterStack...
 Uploading to 'some-registry.io/some-repo'...
 `,
 				ExpectCreates: []runtime.Object{
@@ -246,7 +246,7 @@ Uploading to 'some-registry.io/some-repo'...
 					"--output", "json",
 				},
 				ExpectedOutput: resourceJSON,
-				ExpectedErrorOutput: `Creating Cluster Stack...
+				ExpectedErrorOutput: `Creating ClusterStack...
 Uploading to 'some-registry.io/some-repo'...
 `,
 				ExpectCreates: []runtime.Object{
@@ -268,7 +268,7 @@ Uploading to 'some-registry.io/some-repo'...
 					"--run-image", "some-run-image",
 					"--dry-run",
 				},
-				ExpectedOutput: `Creating Cluster Stack... (dry run)
+				ExpectedOutput: `Creating ClusterStack... (dry run)
 Uploading to 'some-registry.io/some-repo'...
 "some-stack" created (dry run)
 `,
@@ -305,7 +305,7 @@ status:
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Creating Cluster Stack... (dry run)
+					ExpectedErrorOutput: `Creating ClusterStack... (dry run)
 Uploading to 'some-registry.io/some-repo'...
 `,
 				}.TestK8sAndKpack(t, cmdFunc)

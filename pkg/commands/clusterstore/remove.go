@@ -51,7 +51,7 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 
 			for _, bpToRemove := range buildpackages {
 				if !storeContainsBuildpackage(store, bpToRemove) {
-					return errors.Errorf("Buildpackage '%s' does not exist in the clusterstore", bpToRemove)
+					return errors.Errorf("Buildpackage '%s' does not exist in the ClusterStore", bpToRemove)
 				}
 			}
 			var updatedStoreSources []v1alpha1.StoreImage
