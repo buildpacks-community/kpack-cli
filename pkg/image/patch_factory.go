@@ -30,6 +30,11 @@ func (f *Factory) MakePatch(img *v1alpha1.Image) (*v1alpha1.Image, []byte, error
 		return patchedImage, nil, err
 	}
 
+	err = f.setCacheSize(patchedImage)
+	if err != nil {
+		return patchedImage, nil, err
+	}
+
 	err = f.setBuild(patchedImage)
 	if err != nil {
 		return patchedImage, nil, err
@@ -140,6 +145,25 @@ func (f *Factory) setSource(image *v1alpha1.Image) error {
 		image.Spec.Source.Blob = nil
 		image.Spec.Source.Registry = &v1alpha1.Registry{Image: sourceRef}
 	}
+
+	return nil
+}
+
+func (f *Factory) setCacheSize(image *v1alpha1.Image) error {
+	if f.CacheSize == "" {
+		return nil
+	}
+
+	c, err := f.getCacheSize()
+	if err != nil {
+		return err
+	}
+
+	if image.Spec.CacheSize != nil && c.Cmp(*image.Spec.CacheSize) < 0 {
+		return errors.Errorf("cache size cannot be decreased, current: %v, requested: %v", image.Spec.CacheSize, c)
+	}
+
+	image.Spec.CacheSize = c
 
 	return nil
 }

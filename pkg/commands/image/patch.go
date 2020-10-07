@@ -46,7 +46,10 @@ For example, "--env key1=value1 --env key2=value2 ...".
 
 Existing environment variables may be deleted by using the "--delete-env" flag.
 For each environment variable, supply the "--delete-env" flag followed by the variable name.
-For example, "--delete-env key1 --delete-env key2 ...".`,
+For example, "--delete-env key1 --delete-env key2 ...".
+
+The --cache-size flag can only be used to increase the size of the existing cache.
+`,
 		Example: `kp image patch my-image --git-revision my-other-branch
 kp image patch my-image --blob https://my-blob-host.com/my-blob
 kp image patch my-image --local-path /path/to/local/source/code
@@ -101,6 +104,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringVar(&factory.ClusterBuilder, "cluster-builder", "", "cluster builder name")
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables to add/replace")
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
+	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size as a kubernetes quantity")
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image patch to be reconciled and tail resulting build logs")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
 	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
