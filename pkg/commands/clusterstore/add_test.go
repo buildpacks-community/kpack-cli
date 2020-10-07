@@ -326,7 +326,7 @@ status: {}
 					"-b", "bpfromcnb.cnb",
 					"--dry-run",
 				},
-				ExpectedOutput: `Adding Buildpackages...
+				ExpectedOutput: `Adding Buildpackages... (dry run)
 	Added Buildpackage
 	Added Buildpackage
 ClusterStore Updated (dry run)
@@ -364,7 +364,7 @@ status: {}
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Adding Buildpackages...
+					ExpectedErrorOutput: `Adding Buildpackages... (dry run)
 	Added Buildpackage
 	Added Buildpackage
 `,

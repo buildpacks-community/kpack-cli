@@ -35,7 +35,7 @@ type Factory struct {
 }
 
 type Printer interface {
-	Printlnf(format string, a ...interface{}) error
+	Printlnf(format string, args ...interface{}) error
 	Writer() io.Writer
 }
 
@@ -83,8 +83,7 @@ func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack) (bool, error) {
 	if wasUpdated, err := wasUpdated(stack, relocatedBuildImageRef, relocatedRunImageRef, stackId); err != nil {
 		return false, err
 	} else if !wasUpdated {
-		f.Printer.Printlnf("Build and Run images already exist in stack\nClusterStack Unchanged")
-		return false, nil
+		return false, f.Printer.Printlnf("Build and Run images already exist in stack\nClusterStack Unchanged")
 	}
 	return true, nil
 }
@@ -114,7 +113,9 @@ func (f *Factory) relocateStack() (string, string, string, error) {
 		return "", "", "", errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
 	}
 
-	f.Printer.Printlnf("Uploading to '%s'...", f.Repository)
+	if err = f.Printer.Printlnf("Uploading to '%s'...", f.Repository); err != nil {
+		return "", "", "", err
+	}
 
 	relocatedBuildImageRef, err := f.Relocator.Relocate(f.Printer.Writer(), buildImage, path.Join(f.Repository, BuildImageName), f.TLSConfig)
 	if err != nil {

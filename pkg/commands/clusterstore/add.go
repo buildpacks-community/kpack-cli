@@ -75,7 +75,10 @@ func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clust
 		return err
 	}
 
-	ch.Printlnf("Adding Buildpackages...")
+	if err = ch.PrintStatus("Adding Buildpackages..."); err != nil {
+		return err
+	}
+
 	updatedStore, storeUpdated, err := factory.AddToStore(store, repo, buildpackages...)
 	if err != nil {
 		return err
@@ -92,8 +95,7 @@ func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clust
 		}
 	}
 
-	err = ch.PrintObj(updatedStore)
-	if err != nil {
+	if err = ch.PrintObj(updatedStore); err != nil {
 		return err
 	}
 

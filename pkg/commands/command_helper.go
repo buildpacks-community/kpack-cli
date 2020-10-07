@@ -99,7 +99,7 @@ func (ch CommandHelper) PrintObj(obj runtime.Object) error {
 	if oGVK.Version == "" || oGVK.Kind == "" {
 		nGVK, ok := ch.typeToGVK[reflect.TypeOf(obj)]
 		if !ok {
-			return errors.Errorf("failed to print object. unknown type %q", reflect.TypeOf(obj))
+			return errors.Errorf("failed to output. unknown type %q", reflect.TypeOf(obj))
 		}
 		obj.GetObjectKind().SetGroupVersionKind(nGVK)
 	}
@@ -108,29 +108,16 @@ func (ch CommandHelper) PrintObj(obj runtime.Object) error {
 	return err
 }
 
-func (ch CommandHelper) PrintResult(format string, a ...interface{}) error {
-	ch.strBuilder.Reset()
-
-	str := fmt.Sprintf(format, a...)
-	_, err := ch.strBuilder.WriteString(str)
-	if err != nil {
-		return err
-	}
-
-	if ch.dryRun {
-		_, err = ch.strBuilder.WriteString(" (dry run)")
-		if err != nil {
-			return err
-		}
-	}
-	ch.strBuilder.WriteString("\n")
-
-	_, err = ch.OutOrDiscardWriter().Write([]byte(ch.strBuilder.String()))
-	return err
+func (ch CommandHelper) PrintResult(format string, args ...interface{}) error {
+	return ch.printDryRun(ch.OutOrDiscardWriter(), format, args...)
 }
 
-func (ch CommandHelper) Printlnf(format string, a ...interface{}) error {
-	_, err := fmt.Fprintf(ch.OutOrErrWriter(), format+"\n", a...)
+func (ch CommandHelper) PrintStatus(format string, args ...interface{}) error {
+	return ch.printDryRun(ch.OutOrErrWriter(), format, args...)
+}
+
+func (ch CommandHelper) Printlnf(format string, args ...interface{}) error {
+	_, err := fmt.Fprintf(ch.OutOrErrWriter(), format+"\n", args...)
 	return err
 }
 
@@ -152,6 +139,27 @@ func (ch CommandHelper) OutOrDiscardWriter() io.Writer {
 
 func (ch CommandHelper) Writer() io.Writer {
 	return ch.OutOrErrWriter()
+}
+
+func (ch CommandHelper) printDryRun(writer io.Writer, format string, a ...interface{}) error {
+	ch.strBuilder.Reset()
+
+	str := fmt.Sprintf(format, a...)
+	_, err := ch.strBuilder.WriteString(str)
+	if err != nil {
+		return err
+	}
+
+	if ch.dryRun {
+		_, err = ch.strBuilder.WriteString(" (dry run)")
+		if err != nil {
+			return err
+		}
+	}
+	ch.strBuilder.WriteString("\n")
+
+	_, err = writer.Write([]byte(ch.strBuilder.String()))
+	return err
 }
 
 func getBoolFlag(name string, cmd *cobra.Command) (bool, error) {
@@ -196,6 +204,7 @@ func getTypeToGVKLookup() map[reflect.Type]schema.GroupVersionKind {
 		reflect.TypeOf(&v1.Secret{}):               v1GV.WithKind("Secret"),
 		reflect.TypeOf(&v1.ServiceAccount{}):       v1GV.WithKind("ServiceAccount"),
 		reflect.TypeOf(&v1alpha1.Image{}):          buildGV.WithKind("Image"),
+		reflect.TypeOf(&v1alpha1.Builder{}):        buildGV.WithKind(v1alpha1.BuilderKind),
 		reflect.TypeOf(&v1alpha1.ClusterStack{}):   buildGV.WithKind(v1alpha1.ClusterStackKind),
 		reflect.TypeOf(&v1alpha1.ClusterStore{}):   buildGV.WithKind(v1alpha1.ClusterStoreKind),
 		reflect.TypeOf(&v1alpha1.ClusterBuilder{}): buildGV.WithKind(v1alpha1.ClusterBuilderKind),

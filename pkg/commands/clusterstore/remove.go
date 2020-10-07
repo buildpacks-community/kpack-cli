@@ -76,8 +76,7 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 				return err
 			}
 
-			ch.Printlnf("ClusterStore Updated")
-			return nil
+			return ch.Printlnf("ClusterStore Updated")
 		},
 	}
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "buildpackage to remove")

@@ -93,7 +93,10 @@ func testSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: "Uploading to 'some-registry.io/some-repo'...\n\"some-stack\" created\n",
+				ExpectedOutput: `Creating Cluster Stack...
+Uploading to 'some-registry.io/some-repo'...
+"some-stack" created
+`,
 				ExpectCreates: []runtime.Object{
 					expectedStack,
 				},
@@ -151,8 +154,10 @@ func testSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--build-image", "some-build-image",
 					"--run-image", "some-other-run-image",
 				},
-				ExpectErr:      true,
-				ExpectedOutput: "Error: build stack 'some-stack-id' does not match run stack 'some-other-stack-id'\n",
+				ExpectErr: true,
+				ExpectedOutput: `Creating Cluster Stack...
+Error: build stack 'some-stack-id' does not match run stack 'some-other-stack-id'
+`,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
@@ -204,7 +209,8 @@ status:
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+					ExpectedErrorOutput: `Creating Cluster Stack...
+Uploading to 'some-registry.io/some-repo'...
 `,
 					ExpectCreates: []runtime.Object{
 						expectedStack,
@@ -247,7 +253,8 @@ status:
 						"--output", "json",
 					},
 					ExpectedOutput: resourceJSON,
-					ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+					ExpectedErrorOutput: `Creating Cluster Stack...
+Uploading to 'some-registry.io/some-repo'...
 `,
 					ExpectCreates: []runtime.Object{
 						expectedStack,
@@ -268,7 +275,8 @@ status:
 						"--run-image", "some-run-image",
 						"--dry-run",
 					},
-					ExpectedOutput: `Uploading to 'some-registry.io/some-repo'...
+					ExpectedOutput: `Creating Cluster Stack... (dry run)
+Uploading to 'some-registry.io/some-repo'...
 "some-stack" created (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -304,7 +312,8 @@ status:
 							"--output", "yaml",
 						},
 						ExpectedOutput: resourceYAML,
-						ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+						ExpectedErrorOutput: `Creating Cluster Stack... (dry run)
+Uploading to 'some-registry.io/some-repo'...
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})
@@ -368,7 +377,10 @@ status:
 						},
 					},
 				},
-				ExpectedOutput: "Uploading to 'some-registry.io/some-repo'...\nClusterStack \"some-stack\" Updated\n",
+				ExpectedOutput: `Updating Cluster Stack...
+Uploading to 'some-registry.io/some-repo'...
+"some-stack" updated
+`,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
@@ -426,7 +438,8 @@ status:
 						},
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+					ExpectedErrorOutput: `Updating Cluster Stack...
+Uploading to 'some-registry.io/some-repo'...
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -493,7 +506,8 @@ status:
 						},
 					},
 					ExpectedOutput: resourceJSON,
-					ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+					ExpectedErrorOutput: `Updating Cluster Stack...
+Uploading to 'some-registry.io/some-repo'...
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -514,8 +528,9 @@ status:
 						"--run-image", "some-new-run-image",
 						"--dry-run",
 					},
-					ExpectedOutput: `Uploading to 'some-registry.io/some-repo'...
-ClusterStack "some-stack" Updated (dry run)
+					ExpectedOutput: `Updating Cluster Stack... (dry run)
+Uploading to 'some-registry.io/some-repo'...
+"some-stack" updated (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -558,7 +573,8 @@ status:
 							"--output", "yaml",
 						},
 						ExpectedOutput: resourceYAML,
-						ExpectedErrorOutput: `Uploading to 'some-registry.io/some-repo'...
+						ExpectedErrorOutput: `Updating Cluster Stack... (dry run)
+Uploading to 'some-registry.io/some-repo'...
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})

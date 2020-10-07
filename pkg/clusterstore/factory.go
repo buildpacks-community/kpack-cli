@@ -28,7 +28,7 @@ type Factory struct {
 }
 
 type Printer interface {
-	Printlnf(format string, a ...interface{}) error
+	Printlnf(format string, args ...interface{}) error
 	Writer() io.Writer
 }
 
@@ -68,18 +68,24 @@ func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, bu
 	for _, buildpackage := range buildpackages {
 		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.Writer(), repository, buildpackage, f.TLSConfig)
 		if err != nil {
-			return nil, false, err
+			return store, false, err
 		}
 
 		if storeContains(store, uploadedBp) {
-			f.Printer.Printlnf("\tBuildpackage already exists in the store")
+			if err = f.Printer.Printlnf("\tBuildpackage already exists in the store"); err != nil {
+				return store, false, err
+			}
 			continue
 		}
 
 		store.Spec.Sources = append(store.Spec.Sources, v1alpha1.StoreImage{
 			Image: uploadedBp,
 		})
-		f.Printer.Printlnf("\tAdded Buildpackage")
+
+		if err = f.Printer.Printlnf("\tAdded Buildpackage"); err != nil {
+			return store, false, err
+		}
+
 		storeUpdated = true
 	}
 

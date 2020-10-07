@@ -66,7 +66,10 @@ func create(name string, buildpackages []string, factory *clusterstore.Factory, 
 		return err
 	}
 
-	ch.Printlnf("Creating Cluster Store...")
+	if err = ch.PrintStatus("Creating Cluster Store..."); err != nil {
+		return err
+	}
+
 	newStore, err := factory.MakeStore(name, buildpackages...)
 	if err != nil {
 		return err
@@ -79,8 +82,7 @@ func create(name string, buildpackages []string, factory *clusterstore.Factory, 
 		}
 	}
 
-	err = ch.PrintObj(newStore)
-	if err != nil {
+	if err = ch.PrintObj(newStore); err != nil {
 		return err
 	}
 

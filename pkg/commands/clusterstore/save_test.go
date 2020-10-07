@@ -241,7 +241,7 @@ status: {}
 						"-b", buildpackage2,
 						"--dry-run",
 					},
-					ExpectedOutput: `Creating Cluster Store...
+					ExpectedOutput: `Creating Cluster Store... (dry run)
 "test-store" created (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -275,7 +275,7 @@ status: {}
 							"--dry-run",
 						},
 						ExpectedOutput: resourceYAML,
-						ExpectedErrorOutput: `Creating Cluster Store...
+						ExpectedErrorOutput: `Creating Cluster Store... (dry run)
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})
@@ -455,7 +455,7 @@ status: {}
 						"--buildpackage", "patch/bp",
 						"--dry-run",
 					},
-					ExpectedOutput: `Adding Buildpackages...
+					ExpectedOutput: `Adding Buildpackages... (dry run)
 	Added Buildpackage
 ClusterStore Updated (dry run)
 `,
@@ -493,7 +493,7 @@ status: {}
 							"--output", "yaml",
 						},
 						ExpectedOutput: resourceYAML,
-						ExpectedErrorOutput: `Adding Buildpackages...
+						ExpectedErrorOutput: `Adding Buildpackages... (dry run)
 	Added Buildpackage
 `,
 					}.TestK8sAndKpack(t, cmdFunc)

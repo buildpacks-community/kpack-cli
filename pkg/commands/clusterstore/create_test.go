@@ -238,7 +238,7 @@ status: {}
 					"-b", buildpackage2,
 					"--dry-run",
 				},
-				ExpectedOutput: `Creating Cluster Store...
+				ExpectedOutput: `Creating Cluster Store... (dry run)
 "test-store" created (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -272,7 +272,7 @@ status: {}
 						"--dry-run",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Creating Cluster Store...
+					ExpectedErrorOutput: `Creating Cluster Store... (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
