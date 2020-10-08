@@ -86,21 +86,17 @@ func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.Command
 		return err
 	}
 
-	if len(patch) == 0 {
-		return ch.PrintResult("nothing to patch")
-	}
-
-	if !ch.IsDryRun() {
+	hasPatch := len(patch) > 0
+	if hasPatch && !ch.IsDryRun() {
 		patchedCb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Patch(patchedCb.Name, types.MergePatchType, patch)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = ch.PrintObj(patchedCb)
-	if err != nil {
+	if err = ch.PrintObj(patchedCb); err != nil {
 		return err
 	}
 
-	return ch.PrintResult("%q patched", patchedCb.Name)
+	return ch.PrintChangeResult(hasPatch, "%q patched", patchedCb.Name)
 }

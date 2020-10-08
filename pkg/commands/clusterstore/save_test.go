@@ -439,6 +439,44 @@ status: {}
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
+
+			when("there are no changes in the update", func() {
+				fakeBuildpackageUploader[buildpackage1] = uploadedBp1
+
+				it("can output original resource in requested format", func() {
+					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStore
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-store","creationTimestamp":null},"spec":{"sources":[{"image":"some-registry.io/some-repo/newbp@sha256:123newbp"},{"image":"some-registry.io/some-repo/bpfromcnb@sha256:123imagefromcnb"}]},"status":{}}'
+  creationTimestamp: null
+  name: test-store
+spec:
+  sources:
+  - image: some-registry.io/some-repo/newbp@sha256:123newbp
+  - image: some-registry.io/some-repo/bpfromcnb@sha256:123imagefromcnb
+status: {}
+`
+
+					testhelpers.CommandTest{
+						K8sObjects: []runtime.Object{
+							config,
+						},
+						KpackObjects: []runtime.Object{
+							expectedStore,
+						},
+						Args: []string{
+							expectedStore.Name,
+							"-b", buildpackage1,
+							"--output", "yaml",
+						},
+						ExpectedErrorOutput: `Adding Buildpackages...
+	Buildpackage already exists in the store
+`,
+						ExpectedOutput: resourceYAML,
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
+			})
 		})
 
 		when("dry-run flag is used", func() {
@@ -460,6 +498,28 @@ status: {}
 ClusterStore Updated (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
+			})
+
+			when("there are no changes in the update", func() {
+				it("does not create a clusterstore and informs of no change", func() {
+					testhelpers.CommandTest{
+						K8sObjects: []runtime.Object{
+							config,
+						},
+						KpackObjects: []runtime.Object{
+							expectedStore,
+						},
+						Args: []string{
+							expectedStore.Name,
+							"--buildpackage", buildpackage1,
+							"--dry-run",
+						},
+						ExpectedOutput: `Adding Buildpackages... (dry run)
+	Buildpackage already exists in the store
+ClusterStore Updated (no change)
+`,
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
 			})
 
 			when("output flag is used", func() {

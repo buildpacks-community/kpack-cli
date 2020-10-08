@@ -128,7 +128,8 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 				bldr.Name,
 				"-n", bldr.Namespace,
 			},
-			ExpectedOutput: "nothing to patch\n",
+			ExpectedOutput: `"test-builder" patched (no change)
+`,
 		}.TestKpack(t, cmdFunc)
 	})
 
@@ -240,6 +241,46 @@ status:
 				},
 			}.TestKpack(t, cmdFunc)
 		})
+
+		when("there are no changes in the patch", func() {
+			it("can output unpatched resource in requested format", func() {
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: Builder
+metadata:
+  creationTimestamp: null
+  name: test-builder
+  namespace: some-namespace
+spec:
+  order:
+  - group:
+    - id: org.cloudfoundry.nodejs
+  - group:
+    - id: org.cloudfoundry.go
+  serviceAccount: default
+  stack:
+    kind: ClusterStack
+    name: some-stack
+  store:
+    kind: ClusterStore
+    name: some-store
+  tag: some-registry.com/test-builder
+status:
+  stack: {}
+`
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						bldr,
+					},
+					Args: []string{
+						bldr.Name,
+						"-n", bldr.Namespace,
+						"--output", "yaml",
+					},
+					ExpectedOutput: resourceYAML,
+				}.TestKpack(t, cmdFunc)
+			})
+		})
 	})
 
 	when("dry-run flag is used", func() {
@@ -260,6 +301,23 @@ status:
 				ExpectedOutput: `"test-builder" patched (dry run)
 `,
 			}.TestKpack(t, cmdFunc)
+		})
+
+		when("there are no changes in the patch", func() {
+			it("does not patch and informs of no change", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						bldr,
+					},
+					Args: []string{
+						bldr.Name,
+						"-n", bldr.Namespace,
+						"--dry-run",
+					},
+					ExpectedOutput: `"test-builder" patched (no change)
+`,
+				}.TestKpack(t, cmdFunc)
+			})
 		})
 
 		when("output flag is used", func() {

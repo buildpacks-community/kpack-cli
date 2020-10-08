@@ -85,8 +85,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				}
 			}
 
-			err = ch.PrintObj(secret)
-			if err != nil {
+			if err = ch.PrintObj(secret); err != nil {
 				return err
 			}
 
@@ -101,8 +100,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				serviceAccount.ImagePullSecrets = append(serviceAccount.ImagePullSecrets, corev1.LocalObjectReference{Name: args[0]})
 			}
 
-			err = updateManagedSecretsAnnotation(err, serviceAccount, args[0], target)
-			if err != nil {
+			if err = updateManagedSecretsAnnotation(err, serviceAccount, args[0], target); err != nil {
 				return err
 			}
 
@@ -113,8 +111,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				}
 			}
 
-			err = ch.PrintObj(serviceAccount)
-			if err != nil {
+			if err = ch.PrintObj(serviceAccount); err != nil {
 				return err
 			}
 

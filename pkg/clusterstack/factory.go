@@ -83,7 +83,7 @@ func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack) (bool, error) {
 	if wasUpdated, err := wasUpdated(stack, relocatedBuildImageRef, relocatedRunImageRef, stackId); err != nil {
 		return false, err
 	} else if !wasUpdated {
-		return false, f.Printer.Printlnf("Build and Run images already exist in stack\nClusterStack Unchanged")
+		return false, f.Printer.Printlnf("Build and Run images already exist in stack")
 	}
 	return true, nil
 }

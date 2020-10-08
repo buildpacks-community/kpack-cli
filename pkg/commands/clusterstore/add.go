@@ -84,11 +84,7 @@ func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clust
 		return err
 	}
 
-	if !storeUpdated {
-		return ch.Printlnf("ClusterStore Unchanged")
-	}
-
-	if !ch.IsDryRun() {
+	if storeUpdated && !ch.IsDryRun() {
 		updatedStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(updatedStore)
 		if err != nil {
 			return err
@@ -99,5 +95,5 @@ func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clust
 		return err
 	}
 
-	return ch.PrintResult("ClusterStore Updated")
+	return ch.PrintChangeResult(storeUpdated, "ClusterStore Updated")
 }

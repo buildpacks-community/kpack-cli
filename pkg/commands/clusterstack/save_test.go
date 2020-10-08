@@ -327,12 +327,12 @@ Uploading to 'some-registry.io/some-repo'...
 				Name: "some-stack",
 			},
 			Spec: v1alpha1.ClusterStackSpec{
-				Id: "some-old-id",
+				Id: "some-stack-id",
 				BuildImage: v1alpha1.ClusterStackSpecImage{
-					Image: "some-old-build-image",
+					Image: "some-build-image",
 				},
 				RunImage: v1alpha1.ClusterStackSpecImage{
-					Image: "some-old-run-image",
+					Image: "some-run-image",
 				},
 			},
 			Status: v1alpha1.ClusterStackStatus{
@@ -380,6 +380,27 @@ Uploading to 'some-registry.io/some-repo'...
 				ExpectedOutput: `Updating ClusterStack...
 Uploading to 'some-registry.io/some-repo'...
 "some-stack" updated
+`,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("does not update clusterstack when the images already exist", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				KpackObjects: []runtime.Object{
+					stack,
+				},
+				Args: []string{
+					"some-stack",
+					"--build-image", "some-build-image",
+					"--run-image", "some-run-image",
+				},
+				ExpectedOutput: `Updating ClusterStack...
+Uploading to 'some-registry.io/some-repo'...
+Build and Run images already exist in stack
+"some-stack" updated (no change)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -511,6 +532,51 @@ Uploading to 'some-registry.io/some-repo'...
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
+
+			when("there are no changes in the update", func() {
+				it("can output original resource in requested format", func() {
+					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
+  creationTimestamp: null
+  name: some-stack
+spec:
+  buildImage:
+    image: some-build-image
+  id: some-stack-id
+  runImage:
+    image: some-run-image
+status:
+  buildImage:
+    image: some-old-build-image
+    latestImage: some-registry.io/old-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+  id: some-old-id
+  runImage:
+    image: some-old-run-image
+    latestImage: some-registry.io/old-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+`
+
+					testhelpers.CommandTest{
+						K8sObjects: []runtime.Object{
+							config,
+						},
+						KpackObjects: []runtime.Object{
+							stack,
+						},
+						Args: []string{
+							"some-stack",
+							"--build-image", "some-build-image",
+							"--run-image", "some-run-image",
+							"--output", "yaml",
+						},
+						ExpectedErrorOutput: `Updating ClusterStack...
+Uploading to 'some-registry.io/some-repo'...
+Build and Run images already exist in stack
+`,
+						ExpectedOutput: resourceYAML,
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
+			})
 		})
 
 		when("dry-run flag is used", func() {
@@ -533,6 +599,30 @@ Uploading to 'some-registry.io/some-repo'...
 "some-stack" updated (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
+			})
+
+			when("there are no changes in the update", func() {
+				it("does not create a clusterstack and informs of no change", func() {
+					testhelpers.CommandTest{
+						K8sObjects: []runtime.Object{
+							config,
+						},
+						KpackObjects: []runtime.Object{
+							stack,
+						},
+						Args: []string{
+							"some-stack",
+							"--build-image", "some-build-image",
+							"--run-image", "some-run-image",
+							"--dry-run",
+						},
+						ExpectedOutput: `Updating ClusterStack... (dry run)
+Uploading to 'some-registry.io/some-repo'...
+Build and Run images already exist in stack
+"some-stack" updated (no change)
+`,
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
 			})
 
 			when("output flag is used", func() {
