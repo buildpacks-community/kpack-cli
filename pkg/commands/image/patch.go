@@ -4,6 +4,8 @@
 package image
 
 import (
+	"fmt"
+
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,12 +81,12 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				factory.SubPath = &subPath
 			}
 
-			img, err = patch(img, factory, ch, cs)
+			patched, img, err := patch(img, factory, ch, cs)
 			if err != nil {
 				return err
 			}
 
-			if ch.ShouldWait() {
+			if patched && ch.ShouldWait() {
 				_, err = newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 				if err != nil {
 					return err
@@ -112,27 +114,23 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	return cmd
 }
 
-func patch(img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (*v1alpha1.Image, error) {
+func patch(img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (bool, *v1alpha1.Image, error) {
 	patchedImage, patch, err := factory.MakePatch(img)
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 
-	if len(patch) == 0 {
-		return img, ch.Printlnf("nothing to patch")
-	}
-
-	if !ch.IsDryRun() {
+	hasPatch := len(patch) > 0
+	if hasPatch && !ch.IsDryRun() {
 		patchedImage, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(img.Name, types.MergePatchType, patch)
 		if err != nil {
-			return nil, err
+			return hasPatch, nil, err
 		}
 	}
 
-	err = ch.PrintObj(patchedImage)
-	if err != nil {
-		return nil, err
+	if err = ch.PrintObj(patchedImage); err != nil {
+		return hasPatch, nil, err
 	}
 
-	return patchedImage, ch.PrintResult("%q patched", img.Name)
+	return hasPatch, patchedImage, ch.PrintChangeResult(hasPatch, fmt.Sprintf("%q patched", img.Name))
 }

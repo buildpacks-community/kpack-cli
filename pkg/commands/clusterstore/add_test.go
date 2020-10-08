@@ -124,8 +124,11 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 				storeName,
 				"-b", "some/imageAlreadyInStore",
 			},
-			ExpectErr:      false,
-			ExpectedOutput: "Adding Buildpackages...\n\tBuildpackage already exists in the store\nClusterStore Unchanged\n",
+			ExpectErr: false,
+			ExpectedOutput: `Adding Buildpackages...
+	Buildpackage already exists in the store
+ClusterStore Updated (no change)
+`,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
@@ -309,6 +312,40 @@ status: {}
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
+
+		when("there are no changes in the update", func() {
+			it("can output original resource in requested format", func() {
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStore
+metadata:
+  creationTimestamp: null
+  name: some-store-name
+spec:
+  sources:
+  - image: some/imageinStore@sha256:123alreadyInStore
+status: {}
+`
+
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						store,
+					},
+					Args: []string{
+						storeName,
+						"-b", "some/imageAlreadyInStore",
+						"--output", "yaml",
+					},
+					ExpectErr: false,
+					ExpectedErrorOutput: `Adding Buildpackages...
+	Buildpackage already exists in the store
+`,
+					ExpectedOutput: resourceYAML,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
 	})
 
 	when("dry-run flag is used", func() {
@@ -332,6 +369,29 @@ status: {}
 ClusterStore Updated (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		when("there are no changes in the update", func() {
+			it("does not create a clusterstore and informs of no change", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						store,
+					},
+					Args: []string{
+						storeName,
+						"-b", "some/imageAlreadyInStore",
+						"--dry-run",
+					},
+					ExpectErr: false,
+					ExpectedOutput: `Adding Buildpackages... (dry run)
+	Buildpackage already exists in the store
+ClusterStore Updated (no change)
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
 		})
 
 		when("output flag is used", func() {

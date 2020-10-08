@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"reflect"
-	"strings"
 
 	"github.com/pivotal/kpack/pkg/apis/build"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -26,11 +25,9 @@ type CommandHelper struct {
 	output bool
 	wait   bool
 
-	outWriter io.Writer
-	errWriter io.Writer
-
+	outWriter  io.Writer
+	errWriter  io.Writer
 	objPrinter k8s.ObjectPrinter
-	strBuilder strings.Builder
 
 	typeToGVK map[reflect.Type]schema.GroupVersionKind
 }
@@ -68,7 +65,6 @@ func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
 		outWriter:  cmd.OutOrStdout(),
 		errWriter:  cmd.ErrOrStderr(),
 		objPrinter: objPrinter,
-		strBuilder: strings.Builder{},
 		typeToGVK:  getTypeToGVKLookup(),
 	}, nil
 }
@@ -108,12 +104,30 @@ func (ch CommandHelper) PrintObj(obj runtime.Object) error {
 	return err
 }
 
+func (ch CommandHelper) PrintChangeResult(change bool, format string, args ...interface{}) error {
+	if !change {
+		format += " (no change)"
+	} else if ch.dryRun {
+		format += " (dry run)"
+	}
+	_, err := ch.OutOrDiscardWriter().Write([]byte(fmt.Sprintf(format+"\n", args...)))
+	return err
+}
+
 func (ch CommandHelper) PrintResult(format string, args ...interface{}) error {
-	return ch.printDryRun(ch.OutOrDiscardWriter(), format, args...)
+	if ch.dryRun {
+		format += " (dry run)"
+	}
+	_, err := ch.OutOrDiscardWriter().Write([]byte(fmt.Sprintf(format+"\n", args...)))
+	return err
 }
 
 func (ch CommandHelper) PrintStatus(format string, args ...interface{}) error {
-	return ch.printDryRun(ch.OutOrErrWriter(), format, args...)
+	if ch.dryRun {
+		format += " (dry run)"
+	}
+	_, err := ch.OutOrErrWriter().Write([]byte(fmt.Sprintf(format+"\n", args...)))
+	return err
 }
 
 func (ch CommandHelper) Printlnf(format string, args ...interface{}) error {
@@ -139,27 +153,6 @@ func (ch CommandHelper) OutOrDiscardWriter() io.Writer {
 
 func (ch CommandHelper) Writer() io.Writer {
 	return ch.OutOrErrWriter()
-}
-
-func (ch CommandHelper) printDryRun(writer io.Writer, format string, a ...interface{}) error {
-	ch.strBuilder.Reset()
-
-	str := fmt.Sprintf(format, a...)
-	_, err := ch.strBuilder.WriteString(str)
-	if err != nil {
-		return err
-	}
-
-	if ch.dryRun {
-		_, err = ch.strBuilder.WriteString(" (dry run)")
-		if err != nil {
-			return err
-		}
-	}
-	ch.strBuilder.WriteString("\n")
-
-	_, err = writer.Write([]byte(ch.strBuilder.String()))
-	return err
 }
 
 func getBoolFlag(name string, cmd *cobra.Command) (bool, error) {

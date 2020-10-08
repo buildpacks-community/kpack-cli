@@ -88,21 +88,17 @@ func patch(bldr *v1alpha1.Builder, flags CommandFlags, ch *commands.CommandHelpe
 		return err
 	}
 
-	if len(patch) == 0 {
-		return ch.PrintResult("nothing to patch")
-	}
-
-	if !ch.IsDryRun() {
+	hasPatch := len(patch) > 0
+	if hasPatch && !ch.IsDryRun() {
 		patchedBldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Patch(patchedBldr.Name, types.MergePatchType, patch)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = ch.PrintObj(patchedBldr)
-	if err != nil {
+	if err = ch.PrintObj(patchedBldr); err != nil {
 		return err
 	}
 
-	return ch.PrintResult("%q patched", patchedBldr.Name)
+	return ch.PrintChangeResult(hasPatch, "%q patched", patchedBldr.Name)
 }

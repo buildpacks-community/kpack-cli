@@ -66,6 +66,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 			}
 
 			name := args[0]
+			shouldWait := ch.ShouldWait()
 
 			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
@@ -82,16 +83,19 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 					factory.SubPath = &subPath
 				}
 
-				img, err = patch(img, factory, ch, cs)
+				patched := false
+				patched, img, err = patch(img, factory, ch, cs)
+				if !patched {
+					shouldWait = false
+				}
 			}
 
 			if err != nil {
 				return err
 			}
 
-			if ch.ShouldWait() {
-				_, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
-				if err != nil {
+			if shouldWait {
+				if _, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img); err != nil {
 					return err
 				}
 			}

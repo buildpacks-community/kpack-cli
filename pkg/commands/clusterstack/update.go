@@ -83,13 +83,12 @@ func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *com
 		return err
 	}
 
-	if wasUpdated, err := factory.UpdateStack(stack); err != nil {
+	hasUpdates, err := factory.UpdateStack(stack)
+	if err != nil {
 		return err
-	} else if !wasUpdated {
-		return nil
 	}
 
-	if !ch.IsDryRun() {
+	if hasUpdates && !ch.IsDryRun() {
 		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(stack)
 		if err != nil {
 			return err
@@ -100,5 +99,5 @@ func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *com
 		return err
 	}
 
-	return ch.PrintResult("%q updated", stack.Name)
+	return ch.PrintChangeResult(hasUpdates, "%q updated", stack.Name)
 }

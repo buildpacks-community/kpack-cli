@@ -37,7 +37,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 		}
 
-		expectedBuilder = &v1alpha1.ClusterBuilder{
+		builder = &v1alpha1.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       v1alpha1.ClusterBuilderKind,
 				APIVersion: "kpack.io/v1alpha1",
@@ -100,37 +100,37 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					config,
 				},
 				Args: []string{
-					expectedBuilder.Name,
-					"--tag", expectedBuilder.Spec.Tag,
-					"--stack", expectedBuilder.Spec.Stack.Name,
-					"--store", expectedBuilder.Spec.Store.Name,
+					builder.Name,
+					"--tag", builder.Spec.Tag,
+					"--stack", builder.Spec.Stack.Name,
+					"--store", builder.Spec.Store.Name,
 					"--order", "./testdata/order.yaml",
 				},
 				ExpectedOutput: `"test-builder" created
 `,
 				ExpectCreates: []runtime.Object{
-					expectedBuilder,
+					builder,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
 		it("creates a ClusterBuilder with the default stack", func() {
-			expectedBuilder.Spec.Stack.Name = "default"
-			expectedBuilder.Spec.Store.Name = "default"
-			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{"kind":"ClusterStore","name":"default"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Spec.Stack.Name = "default"
+			builder.Spec.Store.Name = "default"
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{"kind":"ClusterStore","name":"default"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
 					config,
 				},
 				Args: []string{
-					expectedBuilder.Name,
-					"--tag", expectedBuilder.Spec.Tag,
+					builder.Name,
+					"--tag", builder.Spec.Tag,
 					"--order", "./testdata/order.yaml",
 				},
 				ExpectedOutput: "\"test-builder\" created\n",
 				ExpectCreates: []runtime.Object{
-					expectedBuilder,
+					builder,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -141,15 +141,15 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					config,
 				},
 				Args: []string{
-					expectedBuilder.Name,
-					"--stack", expectedBuilder.Spec.Stack.Name,
-					"--store", expectedBuilder.Spec.Store.Name,
+					builder.Name,
+					"--stack", builder.Spec.Stack.Name,
+					"--store", builder.Spec.Store.Name,
 					"--order", "./testdata/order.yaml",
 				},
 				ExpectedOutput: `"test-builder" created
 `,
 				ExpectCreates: []runtime.Object{
-					expectedBuilder,
+					builder,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -157,10 +157,10 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 		it("fails when kp-config map is not found", func() {
 			testhelpers.CommandTest{
 				Args: []string{
-					expectedBuilder.Name,
-					"--tag", expectedBuilder.Spec.Tag,
-					"--stack", expectedBuilder.Spec.Stack.Name,
-					"--store", expectedBuilder.Spec.Store.Name,
+					builder.Name,
+					"--tag", builder.Spec.Tag,
+					"--stack", builder.Spec.Stack.Name,
+					"--store", builder.Spec.Store.Name,
 					"--order", "./testdata/order.yaml",
 				},
 				ExpectErr: true,
@@ -183,10 +183,10 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					badConfig,
 				},
 				Args: []string{
-					expectedBuilder.Name,
-					"--tag", expectedBuilder.Spec.Tag,
-					"--stack", expectedBuilder.Spec.Stack.Name,
-					"--store", expectedBuilder.Spec.Store.Name,
+					builder.Name,
+					"--tag", builder.Spec.Tag,
+					"--stack", builder.Spec.Stack.Name,
+					"--store", builder.Spec.Store.Name,
 					"--order", "./testdata/order.yaml",
 				},
 				ExpectErr: true,
@@ -211,9 +211,9 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					badConfig,
 				},
 				Args: []string{
-					expectedBuilder.Name,
-					"--stack", expectedBuilder.Spec.Stack.Name,
-					"--store", expectedBuilder.Spec.Store.Name,
+					builder.Name,
+					"--stack", builder.Spec.Stack.Name,
+					"--store", builder.Spec.Store.Name,
 					"--order", "./testdata/order.yaml",
 				},
 				ExpectErr: true,
@@ -256,16 +256,16 @@ status:
 						config,
 					},
 					Args: []string{
-						expectedBuilder.Name,
-						"--tag", expectedBuilder.Spec.Tag,
-						"--stack", expectedBuilder.Spec.Stack.Name,
-						"--store", expectedBuilder.Spec.Store.Name,
+						builder.Name,
+						"--tag", builder.Spec.Tag,
+						"--stack", builder.Spec.Stack.Name,
+						"--store", builder.Spec.Store.Name,
 						"--order", "./testdata/order.yaml",
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectCreates: []runtime.Object{
-						expectedBuilder,
+						builder,
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -323,16 +323,16 @@ status:
 						config,
 					},
 					Args: []string{
-						expectedBuilder.Name,
-						"--tag", expectedBuilder.Spec.Tag,
-						"--stack", expectedBuilder.Spec.Stack.Name,
-						"--store", expectedBuilder.Spec.Store.Name,
+						builder.Name,
+						"--tag", builder.Spec.Tag,
+						"--stack", builder.Spec.Stack.Name,
+						"--store", builder.Spec.Store.Name,
 						"--order", "./testdata/order.yaml",
 						"--output", "json",
 					},
 					ExpectedOutput: resourceJSON,
 					ExpectCreates: []runtime.Object{
-						expectedBuilder,
+						builder,
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -345,10 +345,10 @@ status:
 						config,
 					},
 					Args: []string{
-						expectedBuilder.Name,
-						"--tag", expectedBuilder.Spec.Tag,
-						"--stack", expectedBuilder.Spec.Stack.Name,
-						"--store", expectedBuilder.Spec.Store.Name,
+						builder.Name,
+						"--tag", builder.Spec.Tag,
+						"--stack", builder.Spec.Stack.Name,
+						"--store", builder.Spec.Store.Name,
 						"--order", "./testdata/order.yaml",
 						"--dry-run",
 					},
@@ -391,10 +391,10 @@ status:
 							config,
 						},
 						Args: []string{
-							expectedBuilder.Name,
-							"--tag", expectedBuilder.Spec.Tag,
-							"--stack", expectedBuilder.Spec.Stack.Name,
-							"--store", expectedBuilder.Spec.Store.Name,
+							builder.Name,
+							"--tag", builder.Spec.Tag,
+							"--stack", builder.Spec.Stack.Name,
+							"--store", builder.Spec.Store.Name,
 							"--order", "./testdata/order.yaml",
 							"--dry-run",
 							"--output", "yaml",
@@ -410,10 +410,10 @@ status:
 		it("patches when the ClusterBuilder does exist", func() {
 			testhelpers.CommandTest{
 				KpackObjects: []runtime.Object{
-					expectedBuilder,
+					builder,
 				},
 				Args: []string{
-					expectedBuilder.Name,
+					builder.Name,
 					"--tag", "some-other-tag",
 					"--stack", "some-other-stack",
 					"--store", "some-other-store",
@@ -423,6 +423,19 @@ status:
 				ExpectPatches: []string{
 					`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 				},
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("does not patch if there are no changes", func() {
+			testhelpers.CommandTest{
+				KpackObjects: []runtime.Object{
+					builder,
+				},
+				Args: []string{
+					builder.Name,
+				},
+				ExpectedOutput: `"test-builder" patched (no change)
+`,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
@@ -457,10 +470,10 @@ status:
 
 				testhelpers.CommandTest{
 					KpackObjects: []runtime.Object{
-						expectedBuilder,
+						builder,
 					},
 					Args: []string{
-						expectedBuilder.Name,
+						builder.Name,
 						"--tag", "some-other-tag",
 						"--stack", "some-other-stack",
 						"--store", "some-other-store",
@@ -524,10 +537,10 @@ status:
 
 				testhelpers.CommandTest{
 					KpackObjects: []runtime.Object{
-						expectedBuilder,
+						builder,
 					},
 					Args: []string{
-						expectedBuilder.Name,
+						builder.Name,
 						"--tag", "some-other-tag",
 						"--stack", "some-other-stack",
 						"--store", "some-other-store",
@@ -540,16 +553,58 @@ status:
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
+
+			when("there are no changes in the patch", func() {
+				it("can output unpatched resource in requested format", func() {
+					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterBuilder
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+  creationTimestamp: null
+  name: test-builder
+spec:
+  order:
+  - group:
+    - id: org.cloudfoundry.nodejs
+  - group:
+    - id: org.cloudfoundry.go
+  serviceAccountRef:
+    name: some-serviceaccount
+    namespace: kpack
+  stack:
+    kind: ClusterStack
+    name: some-stack
+  store:
+    kind: ClusterStore
+    name: some-store
+  tag: some-registry/some-project/test-builder
+status:
+  stack: {}
+`
+
+					testhelpers.CommandTest{
+						KpackObjects: []runtime.Object{
+							builder,
+						},
+						Args: []string{
+							builder.Name,
+							"--output", "yaml",
+						},
+						ExpectedOutput: resourceYAML,
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
+			})
 		})
 
 		when("dry-run flag is used", func() {
 			it("does not patch a ClusterBuilder and prints result with dry run indicated", func() {
 				testhelpers.CommandTest{
 					KpackObjects: []runtime.Object{
-						expectedBuilder,
+						builder,
 					},
 					Args: []string{
-						expectedBuilder.Name,
+						builder.Name,
 						"--tag", "some-other-tag",
 						"--stack", "some-other-stack",
 						"--store", "some-other-store",
@@ -559,6 +614,22 @@ status:
 					ExpectedOutput: `"test-builder" patched (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
+			})
+
+			when("there are no changes in the patch", func() {
+				it("does not patch and informs of no change", func() {
+					testhelpers.CommandTest{
+						KpackObjects: []runtime.Object{
+							builder,
+						},
+						Args: []string{
+							builder.Name,
+							"--dry-run",
+						},
+						ExpectedOutput: `"test-builder" patched (no change)
+`,
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
 			})
 
 			when("output flag is used", func() {
@@ -592,10 +663,10 @@ status:
 
 					testhelpers.CommandTest{
 						KpackObjects: []runtime.Object{
-							expectedBuilder,
+							builder,
 						},
 						Args: []string{
-							expectedBuilder.Name,
+							builder.Name,
 							"--tag", "some-other-tag",
 							"--stack", "some-other-stack",
 							"--store", "some-other-store",
