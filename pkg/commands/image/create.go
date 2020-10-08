@@ -17,9 +17,6 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Fa
 		tag       string
 		namespace string
 		subPath   string
-		wait      bool
-		dryRun    bool
-		output    string
 	)
 
 	cmd := &cobra.Command{
@@ -89,12 +86,10 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size as a kubernetes quantity (default \"2G\")")
+	cmd.Flags().BoolP("wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
+	commands.SetDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
-	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
-	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
-
-	cmd.MarkFlagRequired("tag")
+	_ = cmd.MarkFlagRequired("tag")
 	return cmd
 }
 

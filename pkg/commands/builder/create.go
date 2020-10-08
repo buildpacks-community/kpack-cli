@@ -60,9 +60,7 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/
 	cmd.Flags().StringVarP(&flags.stack, "stack", "s", defaultStack, "stack resource to use")
 	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
-	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVar(&flags.output, "output", "", "output format. supported formats are: yaml, json")
-
+	commands.SetDryRunOutputFlags(cmd)
 	_ = cmd.MarkFlagRequired("tag")
 	return cmd
 }
@@ -73,8 +71,6 @@ type CommandFlags struct {
 	stack     string
 	store     string
 	order     string
-	dryRun    bool
-	output    string
 }
 
 func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {

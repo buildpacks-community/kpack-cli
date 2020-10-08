@@ -15,8 +15,6 @@ import (
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstore.Factory) *cobra.Command {
 	var (
 		buildpackages []string
-		dryRun        bool
-		output        string
 	)
 
 	cmd := &cobra.Command{
@@ -54,8 +52,7 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 	}
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
-	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
+	commands.SetDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	return cmd
 }
