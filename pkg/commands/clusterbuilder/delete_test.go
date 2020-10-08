@@ -40,8 +40,9 @@ func testClusterBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 				Objects: []runtime.Object{
 					clusterBuilder,
 				},
-				Args:           []string{"some-clusterbuilder"},
-				ExpectedOutput: "\"some-clusterbuilder\" deleted\n",
+				Args: []string{"some-clusterbuilder"},
+				ExpectedOutput: `ClusterBuilder "some-clusterbuilder" deleted
+`,
 				ExpectDeletes: []clientgotesting.DeleteActionImpl{
 					{
 						Name: clusterBuilder.Name,

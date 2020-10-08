@@ -106,7 +106,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--registry-verify-certs",
 							"--wait",
 						},
-						ExpectedOutput: "\"some-image\" created\n",
+						ExpectedOutput: `Image "some-image" created
+`,
 						ExpectCreates: []runtime.Object{
 							expectedImage,
 						},
@@ -130,7 +131,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--cache-size", "2G",
 							"-n", namespace,
 						},
-						ExpectedOutput: "\"some-image\" created\n",
+						ExpectedOutput: `Image "some-image" created
+`,
 						ExpectCreates: []runtime.Object{
 							expectedImage,
 						},
@@ -206,7 +208,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
 						},
-						ExpectedOutput: "\"some-image\" created\n",
+						ExpectedOutput: `Image "some-image" created
+`,
 						ExpectCreates: []runtime.Object{
 							expectedImage,
 						},
@@ -280,7 +283,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
 					},
-					ExpectedOutput: "\"some-image\" created\n",
+					ExpectedOutput: `Image "some-image" created
+`,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
 					},
@@ -328,7 +332,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 						"--blob", "some-blob",
 						"--builder", "some-builder",
 					},
-					ExpectedOutput: "\"some-image\" created\n",
+					ExpectedOutput: `Image "some-image" created
+`,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
 					},
@@ -375,7 +380,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 						"--blob", "some-blob",
 						"--cluster-builder", "some-builder",
 					},
-					ExpectedOutput: "\"some-image\" created\n",
+					ExpectedOutput: `Image "some-image" created
+`,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
 					},
@@ -587,7 +593,7 @@ status: {}
 							"--dry-run",
 							"--wait",
 						},
-						ExpectedOutput: `"some-image" created (dry run)
+						ExpectedOutput: `Image "some-image" created (dry run)
 `,
 					}.TestKpack(t, cmdFunc)
 					assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -704,7 +710,7 @@ status: {}
 					Args: []string{
 						"some-image",
 					},
-					ExpectedOutput: `"some-image" patched (no change)
+					ExpectedOutput: `Image "some-image" patched (no change)
 `,
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -722,7 +728,8 @@ status: {}
 							"some-image",
 							"--sub-path", "",
 						},
-						ExpectedOutput: "\"some-image\" patched\n",
+						ExpectedOutput: `Image "some-image" patched
+`,
 						ExpectPatches: []string{
 							`{"spec":{"source":{"subPath":null}}}`,
 						},
@@ -739,7 +746,8 @@ status: {}
 							"some-image",
 							"--sub-path", "a-new-path",
 						},
-						ExpectedOutput: "\"some-image\" patched\n",
+						ExpectedOutput: `Image "some-image" patched
+`,
 						ExpectPatches: []string{
 							`{"spec":{"source":{"subPath":"a-new-path"}}}`,
 						},
@@ -757,7 +765,8 @@ status: {}
 						"some-image",
 						"--blob", "some-blob",
 					},
-					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectedOutput: `Image "some-image" patched
+`,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
 					},
@@ -774,7 +783,8 @@ status: {}
 						"some-image",
 						"--git-revision", "some-new-revision",
 					},
-					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectedOutput: `Image "some-image" patched
+`,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
 					},
@@ -797,7 +807,8 @@ status: {}
 						"some-image",
 						"--git", "some-new-git-url",
 					},
-					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectedOutput: `Image "some-image" patched
+`,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"blob":null,"git":{"revision":"master","url":"some-new-git-url"}}}}`,
 					},
@@ -817,7 +828,8 @@ status: {}
 						"some-image",
 						"--builder", "some-builder",
 					},
-					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectedOutput: `Image "some-image" patched
+`,
 					ExpectPatches: []string{
 						`{"spec":{"builder":{"kind":"Builder","name":"some-builder","namespace":"some-default-namespace"}}}`,
 					},
@@ -836,7 +848,8 @@ status: {}
 						"some-image",
 						"-d", "key2",
 					},
-					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectedOutput: `Image "some-image" patched
+`,
 					ExpectPatches: []string{
 						`{"spec":{"build":{"env":[{"name":"key1","value":"value1"}]}}}`,
 					},
@@ -853,7 +866,8 @@ status: {}
 						"some-image",
 						"-e", "key1=some-other-value",
 					},
-					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectedOutput: `Image "some-image" patched
+`,
 					ExpectPatches: []string{
 						`{"spec":{"build":{"env":[{"name":"key1","value":"some-other-value"},{"name":"key2","value":"value2"}]}}}`,
 					},
@@ -870,7 +884,8 @@ status: {}
 						"some-image",
 						"-e", "key3=value3",
 					},
-					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectedOutput: `Image "some-image" patched
+`,
 					ExpectPatches: []string{
 						`{"spec":{"build":{"env":[{"name":"key1","value":"value1"},{"name":"key2","value":"value2"},{"name":"key3","value":"value3"}]}}}`,
 					},
@@ -889,7 +904,8 @@ status: {}
 					"some-image",
 					"--cache-size", "3G",
 				},
-				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectedOutput: `Image "some-image" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"cacheSize":"3G"}}`,
 				},
@@ -907,7 +923,8 @@ status: {}
 					"--git-revision", "some-new-revision",
 					"--wait",
 				},
-				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectedOutput: `Image "some-image" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
 				},
@@ -1075,7 +1092,7 @@ status: {}
 						"--dry-run",
 						"--wait",
 					},
-					ExpectedOutput: `"some-image" patched (dry run)
+					ExpectedOutput: `Image "some-image" patched (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -1091,7 +1108,7 @@ status: {}
 							"some-image",
 							"--dry-run",
 						},
-						ExpectedOutput: `"some-image" patched (no change)
+						ExpectedOutput: `Image "some-image" patched (no change)
 `,
 					}.TestKpack(t, cmdFunc)
 				})

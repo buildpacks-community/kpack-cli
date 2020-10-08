@@ -72,6 +72,6 @@ func deleteStore(cmd *cobra.Command, cs k8s.ClientSet, storeName string) error {
 		return err
 	}
 
-	_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" store deleted\n", storeName)
+	_, err = fmt.Fprintf(cmd.OutOrStdout(), "ClusterStore %q store deleted\n", storeName)
 	return err
 }

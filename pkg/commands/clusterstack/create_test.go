@@ -88,7 +88,7 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			ExpectedOutput: `Creating ClusterStack...
 Uploading to 'some-registry.io/some-repo'...
-"some-stack" created
+ClusterStack "some-stack" created
 `,
 			ExpectCreates: []runtime.Object{
 				expectedStack,
@@ -270,7 +270,7 @@ Uploading to 'some-registry.io/some-repo'...
 				},
 				ExpectedOutput: `Creating ClusterStack... (dry run)
 Uploading to 'some-registry.io/some-repo'...
-"some-stack" created (dry run)
+ClusterStack "some-stack" created (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})

@@ -86,5 +86,5 @@ func create(name string, buildpackages []string, factory *clusterstore.Factory, 
 		return err
 	}
 
-	return ch.PrintResult("%q created", newStore.Name)
+	return ch.PrintResult("ClusterStore %q created", newStore.Name)
 }

@@ -132,5 +132,5 @@ func patch(img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelp
 		return hasPatch, nil, err
 	}
 
-	return hasPatch, patchedImage, ch.PrintChangeResult(hasPatch, fmt.Sprintf("%q patched", img.Name))
+	return hasPatch, patchedImage, ch.PrintChangeResult(hasPatch, fmt.Sprintf("Image %q patched", img.Name))
 }

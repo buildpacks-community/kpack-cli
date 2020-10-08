@@ -125,7 +125,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			ExpectedOutput: `Updating ClusterStack...
 Uploading to 'some-registry.com/some-repo'...
-"some-stack" updated
+ClusterStack "some-stack" updated
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -143,7 +143,7 @@ Uploading to 'some-registry.com/some-repo'...
 			ExpectedOutput: `Updating ClusterStack...
 Uploading to 'some-registry.com/some-repo'...
 Build and Run images already exist in stack
-"some-stack" updated (no change)
+ClusterStack "some-stack" updated (no change)
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -394,7 +394,7 @@ Build and Run images already exist in stack
 				},
 				ExpectedOutput: `Updating ClusterStack... (dry run)
 Uploading to 'some-registry.com/some-repo'...
-"some-stack" updated (dry run)
+ClusterStack "some-stack" updated (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -417,7 +417,7 @@ Uploading to 'some-registry.com/some-repo'...
 					ExpectedOutput: `Updating ClusterStack... (dry run)
 Uploading to 'some-registry.com/some-repo'...
 Build and Run images already exist in stack
-"some-stack" updated (no change)
+ClusterStack "some-stack" updated (no change)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})

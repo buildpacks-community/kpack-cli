@@ -43,8 +43,9 @@ func testBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						builder,
 					},
-					Args:           []string{"-n", "test-namespace", "some-builder"},
-					ExpectedOutput: "\"some-builder\" deleted\n",
+					Args: []string{"-n", "test-namespace", "some-builder"},
+					ExpectedOutput: `Builder "some-builder" deleted
+`,
 					ExpectDeletes: []clientgotesting.DeleteActionImpl{
 						{
 							ActionImpl: clientgotesting.ActionImpl{
@@ -90,8 +91,9 @@ func testBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						builder,
 					},
-					Args:           []string{"some-builder"},
-					ExpectedOutput: "\"some-builder\" deleted\n",
+					Args: []string{"some-builder"},
+					ExpectedOutput: `Builder "some-builder" deleted
+`,
 					ExpectDeletes: []clientgotesting.DeleteActionImpl{
 						{
 							ActionImpl: clientgotesting.ActionImpl{

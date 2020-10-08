@@ -78,8 +78,9 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							secretOne,
 							serviceAccount,
 						},
-						Args:           []string{secretName},
-						ExpectedOutput: "\"some-secret\" deleted\n",
+						Args: []string{secretName},
+						ExpectedOutput: `Secret "some-secret" deleted
+`,
 						ExpectUpdates: []clientgotesting.UpdateActionImpl{
 							{
 								Object: expectedServiceAccount,
@@ -172,8 +173,9 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 							secretOne,
 							serviceAccount,
 						},
-						Args:           []string{secretName, "-n", namespace},
-						ExpectedOutput: "\"some-secret\" deleted\n",
+						Args: []string{secretName, "-n", namespace},
+						ExpectedOutput: `Secret "some-secret" deleted
+`,
 						ExpectUpdates: []clientgotesting.UpdateActionImpl{
 							{
 								Object: expectedServiceAccount,

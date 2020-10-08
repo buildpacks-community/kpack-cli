@@ -98,5 +98,5 @@ func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.Command
 		return err
 	}
 
-	return ch.PrintChangeResult(hasPatch, "%q patched", patchedCb.Name)
+	return ch.PrintChangeResult(hasPatch, "ClusterBuilder %q patched", patchedCb.Name)
 }

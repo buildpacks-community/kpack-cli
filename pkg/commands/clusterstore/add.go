@@ -95,5 +95,5 @@ func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clust
 		return err
 	}
 
-	return ch.PrintChangeResult(storeUpdated, "ClusterStore Updated")
+	return ch.PrintChangeResult(storeUpdated, "ClusterStore %q updated", updatedStore.Name)
 }

@@ -91,7 +91,8 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 				"--order", "./testdata/patched-order.yaml",
 				"-n", bldr.Namespace,
 			},
-			ExpectedOutput: "\"test-builder\" patched\n",
+			ExpectedOutput: `Builder "test-builder" patched
+`,
 			ExpectPatches: []string{
 				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 			},
@@ -112,7 +113,8 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 				"--store", "some-other-store",
 				"--order", "./testdata/patched-order.yaml",
 			},
-			ExpectedOutput: "\"test-builder\" patched\n",
+			ExpectedOutput: `Builder "test-builder" patched
+`,
 			ExpectPatches: []string{
 				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 			},
@@ -128,7 +130,7 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 				bldr.Name,
 				"-n", bldr.Namespace,
 			},
-			ExpectedOutput: `"test-builder" patched (no change)
+			ExpectedOutput: `Builder "test-builder" patched (no change)
 `,
 		}.TestKpack(t, cmdFunc)
 	})
@@ -298,7 +300,7 @@ status:
 					"-n", bldr.Namespace,
 					"--dry-run",
 				},
-				ExpectedOutput: `"test-builder" patched (dry run)
+				ExpectedOutput: `Builder "test-builder" patched (dry run)
 `,
 			}.TestKpack(t, cmdFunc)
 		})
@@ -314,7 +316,7 @@ status:
 						"-n", bldr.Namespace,
 						"--dry-run",
 					},
-					ExpectedOutput: `"test-builder" patched (no change)
+					ExpectedOutput: `Builder "test-builder" patched (no change)
 `,
 				}.TestKpack(t, cmdFunc)
 			})

@@ -89,7 +89,8 @@ func testClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 				"--store", "some-other-store",
 				"--order", "./testdata/patched-order.yaml",
 			},
-			ExpectedOutput: "\"test-builder\" patched\n",
+			ExpectedOutput: `ClusterBuilder "test-builder" patched
+`,
 			ExpectPatches: []string{
 				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 			},
@@ -104,7 +105,7 @@ func testClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 			Args: []string{
 				builder.Name,
 			},
-			ExpectedOutput: `"test-builder" patched (no change)
+			ExpectedOutput: `ClusterBuilder "test-builder" patched (no change)
 `,
 		}.TestKpack(t, cmdFunc)
 	})
@@ -274,7 +275,7 @@ status:
 					"--order", "./testdata/patched-order.yaml",
 					"--dry-run",
 				},
-				ExpectedOutput: `"test-builder" patched (dry run)
+				ExpectedOutput: `ClusterBuilder "test-builder" patched (dry run)
 `,
 			}.TestKpack(t, cmdFunc)
 		})
@@ -289,7 +290,7 @@ status:
 						builder.Name,
 						"--dry-run",
 					},
-					ExpectedOutput: `"test-builder" patched (no change)
+					ExpectedOutput: `ClusterBuilder "test-builder" patched (no change)
 `,
 				}.TestKpack(t, cmdFunc)
 			})

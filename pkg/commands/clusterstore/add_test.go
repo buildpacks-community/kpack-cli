@@ -108,7 +108,11 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: "Adding Buildpackages...\n\tAdded Buildpackage\n\tAdded Buildpackage\nClusterStore Updated\n",
+			ExpectedOutput: `Adding Buildpackages...
+	Added Buildpackage
+	Added Buildpackage
+ClusterStore "some-store-name" updated
+`,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
@@ -127,7 +131,7 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectErr: false,
 			ExpectedOutput: `Adding Buildpackages...
 	Buildpackage already exists in the store
-ClusterStore Updated (no change)
+ClusterStore "some-store-name" updated (no change)
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -366,7 +370,7 @@ status: {}
 				ExpectedOutput: `Adding Buildpackages... (dry run)
 	Added Buildpackage
 	Added Buildpackage
-ClusterStore Updated (dry run)
+ClusterStore "some-store-name" updated (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -388,7 +392,7 @@ ClusterStore Updated (dry run)
 					ExpectErr: false,
 					ExpectedOutput: `Adding Buildpackages... (dry run)
 	Buildpackage already exists in the store
-ClusterStore Updated (no change)
+ClusterStore "some-store-name" updated (no change)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})

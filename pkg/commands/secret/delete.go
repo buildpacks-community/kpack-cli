@@ -54,7 +54,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" deleted\n", args[0])
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "Secret %q deleted\n", args[0])
 			return err
 		},
 	}

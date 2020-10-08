@@ -105,7 +105,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						"--registry-verify-certs",
 						"--wait",
 					},
-					ExpectedOutput: "\"some-image\" created\n",
+					ExpectedOutput: `Image "some-image" created
+`,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
 					},
@@ -184,7 +185,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
 					},
-					ExpectedOutput: "\"some-image\" created\n",
+					ExpectedOutput: `Image "some-image" created
+`,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
 					},
@@ -258,7 +260,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					"--sub-path", "some-sub-path",
 					"--env", "some-key=some-val",
 				},
-				ExpectedOutput: "\"some-image\" created\n",
+				ExpectedOutput: `Image "some-image" created
+`,
 				ExpectCreates: []runtime.Object{
 					expectedImage,
 				},
@@ -306,7 +309,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					"--blob", "some-blob",
 					"--builder", "some-builder",
 				},
-				ExpectedOutput: "\"some-image\" created\n",
+				ExpectedOutput: `Image "some-image" created
+`,
 				ExpectCreates: []runtime.Object{
 					expectedImage,
 				},
@@ -353,7 +357,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					"--blob", "some-blob",
 					"--cluster-builder", "some-builder",
 				},
-				ExpectedOutput: "\"some-image\" created\n",
+				ExpectedOutput: `Image "some-image" created
+`,
 				ExpectCreates: []runtime.Object{
 					expectedImage,
 				},
@@ -555,7 +560,7 @@ status: {}
 						"--dry-run",
 						"--wait",
 					},
-					ExpectedOutput: `"some-image" created (dry run)
+					ExpectedOutput: `Image "some-image" created (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
