@@ -45,12 +45,14 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 
 ```
       --dockerhub string       dockerhub id
+      --dry-run                only print the object that would be sent, without sending it
       --gcr string             path to a file containing the GCR service account
       --git-ssh-key string     path to a file containing the GitUrl SSH private key
       --git-url string         git url
       --git-user string        git user
   -h, --help                   help for create
   -n, --namespace string       kubernetes namespace
+      --output string          output format. supported formats are: yaml, json
       --registry string        registry
       --registry-user string   registry user
 ```

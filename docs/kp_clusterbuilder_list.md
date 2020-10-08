@@ -24,5 +24,5 @@ kp cb list
 
 ### SEE ALSO
 
-* [kp clusterbuilder](kp_clusterbuilder.md)	 - Cluster Builder Commands
+* [kp clusterbuilder](kp_clusterbuilder.md)	 - ClusterBuilder Commands
 

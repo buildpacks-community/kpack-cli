@@ -1,10 +1,10 @@
 ## kp clusterbuilder
 
-Cluster Builder Commands
+ClusterBuilder Commands
 
 ### Synopsis
 
-Cluster Builder Commands
+ClusterBuilder Commands
 
 ### Options
 
@@ -19,5 +19,6 @@ Cluster Builder Commands
 * [kp clusterbuilder delete](kp_clusterbuilder_delete.md)	 - Delete a cluster builder
 * [kp clusterbuilder list](kp_clusterbuilder_list.md)	 - List available cluster builders
 * [kp clusterbuilder patch](kp_clusterbuilder_patch.md)	 - Patch an existing cluster builder configuration
+* [kp clusterbuilder save](kp_clusterbuilder_save.md)	 - Create or patch a cluster builder
 * [kp clusterbuilder status](kp_clusterbuilder_status.md)	 - Display cluster builder status
 

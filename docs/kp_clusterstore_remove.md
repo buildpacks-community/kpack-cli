@@ -30,5 +30,5 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 
 ### SEE ALSO
 
-* [kp clusterstore](kp_clusterstore.md)	 - Cluster Store Commands
+* [kp clusterstore](kp_clusterstore.md)	 - ClusterStore Commands
 

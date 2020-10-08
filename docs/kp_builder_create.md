@@ -23,9 +23,11 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/
 ### Options
 
 ```
+      --dry-run            only print the object that would be sent, without sending it
   -h, --help               help for create
   -n, --namespace string   kubernetes namespace
   -o, --order string       path to buildpack order yaml
+      --output string      output format. supported formats are: yaml, json
   -s, --stack string       stack resource to use (default "default")
       --store string       buildpack store to use (default "default")
   -t, --tag string         registry location where the builder will be created

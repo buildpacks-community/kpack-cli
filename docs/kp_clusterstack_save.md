@@ -1,10 +1,10 @@
-## kp clusterstack create
+## kp clusterstack save
 
-Create a cluster stack
+Create or update a cluster stack
 
 ### Synopsis
 
-Create a cluster-scoped stack by providing command line arguments.
+Create or update a cluster-scoped stack by providing command line arguments.
 
 The run and build images will be uploaded to the canonical repository.
 Therefore, you must have credentials to access the registry on your machine.
@@ -14,7 +14,7 @@ The canonical repository is read from the "canonical.repository" key in the "kp-
 
 
 ```
-kp clusterstack create <name> [flags]
+kp clusterstack save <name> [flags]
 ```
 
 ### Examples
@@ -29,7 +29,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 ```
   -b, --build-image string             build image tag or local tar file path
       --dry-run                        only print the object that would be sent, without sending it
-  -h, --help                           help for create
+  -h, --help                           help for save
       --output string                  output format. supported formats are: yaml, json
       --registry-ca-cert-path string   add CA certificates for registry API (format: /tmp/ca.crt)
       --registry-verify-certs          set whether to verify server's certificate chain and host name (default true)

@@ -1,10 +1,10 @@
 ## kp clusterstore
 
-Cluster Store Commands
+ClusterStore Commands
 
 ### Synopsis
 
-Cluster Store Commands
+ClusterStore Commands
 
 ### Options
 
@@ -20,5 +20,6 @@ Cluster Store Commands
 * [kp clusterstore delete](kp_clusterstore_delete.md)	 - Delete a cluster store
 * [kp clusterstore list](kp_clusterstore_list.md)	 - List cluster stores
 * [kp clusterstore remove](kp_clusterstore_remove.md)	 - Remove buildpackage(s) from cluster store
+* [kp clusterstore save](kp_clusterstore_save.md)	 - Create or update a cluster store
 * [kp clusterstore status](kp_clusterstore_status.md)	 - Display cluster store status
 

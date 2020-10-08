@@ -24,5 +24,5 @@ kp clusterstore list
 
 ### SEE ALSO
 
-* [kp clusterstore](kp_clusterstore.md)	 - Cluster Store Commands
+* [kp clusterstore](kp_clusterstore.md)	 - ClusterStore Commands
 

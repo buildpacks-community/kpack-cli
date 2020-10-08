@@ -24,5 +24,5 @@ kp cb delete my-builder
 
 ### SEE ALSO
 
-* [kp clusterbuilder](kp_clusterbuilder.md)	 - Cluster Builder Commands
+* [kp clusterbuilder](kp_clusterbuilder.md)	 - ClusterBuilder Commands
 

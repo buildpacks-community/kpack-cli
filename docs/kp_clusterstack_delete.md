@@ -24,5 +24,5 @@ kp clusterstack delete my-stack
 
 ### SEE ALSO
 
-* [kp clusterstack](kp_clusterstack.md)	 - Cluster Stack Commands
+* [kp clusterstack](kp_clusterstack.md)	 - ClusterStack Commands
 

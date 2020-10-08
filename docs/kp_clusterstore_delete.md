@@ -27,5 +27,5 @@ kp clusterstore delete my-store
 
 ### SEE ALSO
 
-* [kp clusterstore](kp_clusterstore.md)	 - Cluster Store Commands
+* [kp clusterstore](kp_clusterstore.md)	 - ClusterStore Commands
 

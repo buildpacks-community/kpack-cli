@@ -20,8 +20,12 @@ cat dependencies.yaml | kp import -f -
 ### Options
 
 ```
-  -f, --filename string   dependency descriptor filename
-  -h, --help              help for import
+      --dry-run                        only print the object that would be sent, without sending it
+  -f, --filename string                dependency descriptor filename
+  -h, --help                           help for import
+      --output string                  output format. supported formats are: yaml, json
+      --registry-ca-cert-path string   add CA certificates for registry API (format: /tmp/ca.crt)
+      --registry-verify-certs          set whether to verify server's certificate chain and host name (default true)
 ```
 
 ### SEE ALSO

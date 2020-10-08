@@ -23,12 +23,16 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 ### Options
 
 ```
-  -b, --build-image string   build image tag or local tar file path
-  -h, --help                 help for update
-  -r, --run-image string     run image tag or local tar file path
+  -b, --build-image string             build image tag or local tar file path
+      --dry-run                        only print the object that would be sent, without sending it
+  -h, --help                           help for update
+      --output string                  output format. supported formats are: yaml, json
+      --registry-ca-cert-path string   add CA certificates for registry API (format: /tmp/ca.crt)
+      --registry-verify-certs          set whether to verify server's certificate chain and host name (default true)
+  -r, --run-image string               run image tag or local tar file path
 ```
 
 ### SEE ALSO
 
-* [kp clusterstack](kp_clusterstack.md)	 - Cluster Stack Commands
+* [kp clusterstack](kp_clusterstack.md)	 - ClusterStack Commands
 
