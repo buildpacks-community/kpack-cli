@@ -92,7 +92,7 @@ func testBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--order", "./testdata/order.yaml",
 				"-n", expectedBuilder.Namespace,
 			},
-			ExpectedOutput: `"test-builder" created
+			ExpectedOutput: `Builder "test-builder" created
 `,
 			ExpectCreates: []runtime.Object{
 				expectedBuilder,
@@ -112,7 +112,8 @@ func testBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--tag", expectedBuilder.Spec.Tag,
 				"--order", "./testdata/order.yaml",
 			},
-			ExpectedOutput: "\"test-builder\" created\n",
+			ExpectedOutput: `Builder "test-builder" created
+`,
 			ExpectCreates: []runtime.Object{
 				expectedBuilder,
 			},
@@ -240,7 +241,7 @@ status:
 					"-n", expectedBuilder.Namespace,
 					"--dry-run",
 				},
-				ExpectedOutput: `"test-builder" created (dry run)
+				ExpectedOutput: `Builder "test-builder" created (dry run)
 `,
 			}.TestKpack(t, cmdFunc)
 		})

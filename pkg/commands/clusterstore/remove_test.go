@@ -74,7 +74,9 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: "Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore\nClusterStore Updated\n",
+			ExpectedOutput: `Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore
+ClusterStore "some-store" updated
+`,
 		}.TestKpack(t, cmdFunc)
 	})
 
@@ -99,7 +101,10 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: "Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore\nRemoving buildpackage some/imageinStore2@sha256:1232alreadyInStore\nClusterStore Updated\n",
+			ExpectedOutput: `Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore
+Removing buildpackage some/imageinStore2@sha256:1232alreadyInStore
+ClusterStore "some-store" updated
+`,
 		}.TestKpack(t, cmdFunc)
 	})
 

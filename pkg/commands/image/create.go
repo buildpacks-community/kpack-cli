@@ -121,5 +121,5 @@ func create(name, tag string, factory *image.Factory, ch *commands.CommandHelper
 		return nil, err
 	}
 
-	return img, ch.PrintResult("%q created", img.Name)
+	return img, ch.PrintResult("Image %q created", img.Name)
 }

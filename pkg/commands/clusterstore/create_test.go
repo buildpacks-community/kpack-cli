@@ -89,7 +89,9 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--registry-ca-cert-path", "some-cert-path",
 				"--registry-verify-certs",
 			},
-			ExpectedOutput: "Creating ClusterStore...\n\"test-store\" created\n",
+			ExpectedOutput: `Creating ClusterStore...
+ClusterStore "test-store" created
+`,
 			ExpectCreates: []runtime.Object{
 				expectedStore,
 			},
@@ -239,7 +241,7 @@ status: {}
 					"--dry-run",
 				},
 				ExpectedOutput: `Creating ClusterStore... (dry run)
-"test-store" created (dry run)
+ClusterStore "test-store" created (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})

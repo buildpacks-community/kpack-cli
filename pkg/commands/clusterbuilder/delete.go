@@ -31,7 +31,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "\"%s\" deleted\n", args[0])
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "ClusterBuilder %q deleted\n", args[0])
 			return err
 		},
 		SilenceUsage: true,

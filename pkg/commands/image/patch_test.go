@@ -88,7 +88,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				Args: []string{
 					"some-image",
 				},
-				ExpectedOutput: `"some-image" patched (no change)
+				ExpectedOutput: `Image "some-image" patched (no change)
 `,
 			}.TestKpack(t, cmdFunc)
 			assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -106,7 +106,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 						"some-image",
 						"--sub-path", "",
 					},
-					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectedOutput: `Image "some-image" patched
+`,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"subPath":null}}}`,
 					},
@@ -123,7 +124,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 						"some-image",
 						"--sub-path", "a-new-path",
 					},
-					ExpectedOutput: "\"some-image\" patched\n",
+					ExpectedOutput: `Image "some-image" patched
+`,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"subPath":"a-new-path"}}}`,
 					},
@@ -141,7 +143,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					"some-image",
 					"--blob", "some-blob",
 				},
-				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectedOutput: `Image "some-image" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
 				},
@@ -158,7 +161,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					"some-image",
 					"--git-revision", "some-new-revision",
 				},
-				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectedOutput: `Image "some-image" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
 				},
@@ -181,7 +185,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					"some-image",
 					"--git", "some-new-git-url",
 				},
-				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectedOutput: `Image "some-image" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"source":{"blob":null,"git":{"revision":"master","url":"some-new-git-url"}}}}`,
 				},
@@ -201,7 +206,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					"some-image",
 					"--builder", "some-builder",
 				},
-				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectedOutput: `Image "some-image" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"builder":{"kind":"Builder","name":"some-builder","namespace":"some-default-namespace"}}}`,
 				},
@@ -220,7 +226,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					"some-image",
 					"-d", "key2",
 				},
-				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectedOutput: `Image "some-image" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"build":{"env":[{"name":"key1","value":"value1"}]}}}`,
 				},
@@ -237,7 +244,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					"some-image",
 					"-e", "key1=some-other-value",
 				},
-				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectedOutput: `Image "some-image" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"build":{"env":[{"name":"key1","value":"some-other-value"},{"name":"key2","value":"value2"}]}}}`,
 				},
@@ -254,7 +262,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 					"some-image",
 					"-e", "key3=value3",
 				},
-				ExpectedOutput: "\"some-image\" patched\n",
+				ExpectedOutput: `Image "some-image" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"build":{"env":[{"name":"key1","value":"value1"},{"name":"key2","value":"value2"},{"name":"key3","value":"value3"}]}}}`,
 				},
@@ -273,7 +282,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				"some-image",
 				"--cache-size", "3G",
 			},
-			ExpectedOutput: "\"some-image\" patched\n",
+			ExpectedOutput: `Image "some-image" patched
+`,
 			ExpectPatches: []string{
 				`{"spec":{"cacheSize":"3G"}}`,
 			},
@@ -293,7 +303,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				"--registry-verify-certs",
 				"--wait",
 			},
-			ExpectedOutput: "\"some-image\" patched\n",
+			ExpectedOutput: `Image "some-image" patched
+`,
 			ExpectPatches: []string{
 				`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
 			},
@@ -461,7 +472,7 @@ status: {}
 					"--dry-run",
 					"--wait",
 				},
-				ExpectedOutput: `"some-image" patched (dry run)
+				ExpectedOutput: `Image "some-image" patched (dry run)
 `,
 			}.TestKpack(t, cmdFunc)
 			assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -477,7 +488,7 @@ status: {}
 						"some-image",
 						"--dry-run",
 					},
-					ExpectedOutput: `"some-image" patched (no change)
+					ExpectedOutput: `Image "some-image" patched (no change)
 `,
 				}.TestKpack(t, cmdFunc)
 			})

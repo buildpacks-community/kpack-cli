@@ -66,9 +66,10 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						store,
 					},
-					Args:           []string{storeName},
-					ExpectErr:      false,
-					ExpectedOutput: fmt.Sprintf("%q store deleted\n", storeName),
+					Args:      []string{storeName},
+					ExpectErr: false,
+					ExpectedOutput: `ClusterStore "some-store-name" store deleted
+`,
 					ExpectDeletes: []clientgotesting.DeleteActionImpl{
 						{
 							Name: storeName,
@@ -162,9 +163,10 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						store,
 					},
-					Args:           []string{storeName, "-f"},
-					ExpectErr:      false,
-					ExpectedOutput: fmt.Sprintf("%q store deleted\n", storeName),
+					Args:      []string{storeName, "-f"},
+					ExpectErr: false,
+					ExpectedOutput: `ClusterStore "some-store-name" store deleted
+`,
 					ExpectDeletes: []clientgotesting.DeleteActionImpl{
 						{
 							Name: storeName,

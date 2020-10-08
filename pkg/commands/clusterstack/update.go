@@ -99,5 +99,5 @@ func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *com
 		return err
 	}
 
-	return ch.PrintChangeResult(hasUpdates, "%q updated", stack.Name)
+	return ch.PrintChangeResult(hasUpdates, "ClusterStack %q updated", stack.Name)
 }

@@ -92,7 +92,9 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: "Creating ClusterStore...\n\"test-store\" created\n",
+				ExpectedOutput: `Creating ClusterStore...
+ClusterStore "test-store" created
+`,
 				ExpectCreates: []runtime.Object{
 					expectedStore,
 				},
@@ -242,7 +244,7 @@ status: {}
 						"--dry-run",
 					},
 					ExpectedOutput: `Creating ClusterStore... (dry run)
-"test-store" created (dry run)
+ClusterStore "test-store" created (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -318,7 +320,7 @@ status: {}
 				},
 				ExpectedOutput: `Adding Buildpackages...
 	Added Buildpackage
-ClusterStore Updated
+ClusterStore "test-store" updated
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -495,7 +497,7 @@ status: {}
 					},
 					ExpectedOutput: `Adding Buildpackages... (dry run)
 	Added Buildpackage
-ClusterStore Updated (dry run)
+ClusterStore "test-store" updated (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -516,7 +518,7 @@ ClusterStore Updated (dry run)
 						},
 						ExpectedOutput: `Adding Buildpackages... (dry run)
 	Buildpackage already exists in the store
-ClusterStore Updated (no change)
+ClusterStore "test-store" updated (no change)
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})

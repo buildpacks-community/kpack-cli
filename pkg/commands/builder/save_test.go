@@ -93,7 +93,7 @@ func testBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--order", "./testdata/order.yaml",
 					"-n", bldr.Namespace,
 				},
-				ExpectedOutput: `"test-builder" created
+				ExpectedOutput: `Builder "test-builder" created
 `,
 				ExpectCreates: []runtime.Object{
 					bldr,
@@ -113,7 +113,8 @@ func testBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--tag", bldr.Spec.Tag,
 					"--order", "./testdata/order.yaml",
 				},
-				ExpectedOutput: "\"test-builder\" created\n",
+				ExpectedOutput: `Builder "test-builder" created
+`,
 				ExpectCreates: []runtime.Object{
 					bldr,
 				},
@@ -241,7 +242,7 @@ status:
 						"-n", bldr.Namespace,
 						"--dry-run",
 					},
-					ExpectedOutput: `"test-builder" created (dry run)
+					ExpectedOutput: `Builder "test-builder" created (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
 			})
@@ -306,7 +307,8 @@ status:
 					"--order", "./testdata/patched-order.yaml",
 					"-n", bldr.Namespace,
 				},
-				ExpectedOutput: "\"test-builder\" patched\n",
+				ExpectedOutput: `Builder "test-builder" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 				},
@@ -322,7 +324,7 @@ status:
 					bldr.Name,
 					"-n", bldr.Namespace,
 				},
-				ExpectedOutput: `"test-builder" patched (no change)
+				ExpectedOutput: `Builder "test-builder" patched (no change)
 `,
 			}.TestKpack(t, cmdFunc)
 		})
@@ -499,7 +501,7 @@ status:
 						"-n", bldr.Namespace,
 						"--dry-run",
 					},
-					ExpectedOutput: `"test-builder" patched (dry run)
+					ExpectedOutput: `Builder "test-builder" patched (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
 			})
@@ -515,7 +517,7 @@ status:
 							"-n", bldr.Namespace,
 							"--dry-run",
 						},
-						ExpectedOutput: `"test-builder" patched (no change)
+						ExpectedOutput: `Builder "test-builder" patched (no change)
 `,
 					}.TestKpack(t, cmdFunc)
 				})

@@ -106,7 +106,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--store", builder.Spec.Store.Name,
 					"--order", "./testdata/order.yaml",
 				},
-				ExpectedOutput: `"test-builder" created
+				ExpectedOutput: `ClusterBuilder "test-builder" created
 `,
 				ExpectCreates: []runtime.Object{
 					builder,
@@ -128,7 +128,8 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--tag", builder.Spec.Tag,
 					"--order", "./testdata/order.yaml",
 				},
-				ExpectedOutput: "\"test-builder\" created\n",
+				ExpectedOutput: `ClusterBuilder "test-builder" created
+`,
 				ExpectCreates: []runtime.Object{
 					builder,
 				},
@@ -146,7 +147,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--store", builder.Spec.Store.Name,
 					"--order", "./testdata/order.yaml",
 				},
-				ExpectedOutput: `"test-builder" created
+				ExpectedOutput: `ClusterBuilder "test-builder" created
 `,
 				ExpectCreates: []runtime.Object{
 					builder,
@@ -352,7 +353,7 @@ status:
 						"--order", "./testdata/order.yaml",
 						"--dry-run",
 					},
-					ExpectedOutput: `"test-builder" created (dry run)
+					ExpectedOutput: `ClusterBuilder "test-builder" created (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -419,7 +420,8 @@ status:
 					"--store", "some-other-store",
 					"--order", "./testdata/patched-order.yaml",
 				},
-				ExpectedOutput: "\"test-builder\" patched\n",
+				ExpectedOutput: `ClusterBuilder "test-builder" patched
+`,
 				ExpectPatches: []string{
 					`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 				},
@@ -434,7 +436,7 @@ status:
 				Args: []string{
 					builder.Name,
 				},
-				ExpectedOutput: `"test-builder" patched (no change)
+				ExpectedOutput: `ClusterBuilder "test-builder" patched (no change)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -611,7 +613,7 @@ status:
 						"--order", "./testdata/patched-order.yaml",
 						"--dry-run",
 					},
-					ExpectedOutput: `"test-builder" patched (dry run)
+					ExpectedOutput: `ClusterBuilder "test-builder" patched (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -626,7 +628,7 @@ status:
 							builder.Name,
 							"--dry-run",
 						},
-						ExpectedOutput: `"test-builder" patched (no change)
+						ExpectedOutput: `ClusterBuilder "test-builder" patched (no change)
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})

@@ -85,5 +85,5 @@ func create(name string, factory *clusterstack.Factory, ch *commands.CommandHelp
 		return err
 	}
 
-	return ch.PrintResult("%q created", stack.Name)
+	return ch.PrintResult("ClusterStack %q created", stack.Name)
 }

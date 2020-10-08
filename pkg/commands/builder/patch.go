@@ -100,5 +100,5 @@ func patch(bldr *v1alpha1.Builder, flags CommandFlags, ch *commands.CommandHelpe
 		return err
 	}
 
-	return ch.PrintChangeResult(hasPatch, "%q patched", patchedBldr.Name)
+	return ch.PrintChangeResult(hasPatch, "Builder %q patched", patchedBldr.Name)
 }

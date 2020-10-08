@@ -58,7 +58,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 					return err
 				}
 
-				_, err = fmt.Fprintf(cmd.OutOrStderr(), "\"%s\" triggered\n", args[0])
+				_, err = fmt.Fprintf(cmd.OutOrStderr(), "Triggered build for Image %q\n", args[0])
 				return err
 			}
 		},

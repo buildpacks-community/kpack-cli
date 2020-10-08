@@ -146,5 +146,5 @@ func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.
 		return err
 	}
 
-	return ch.PrintResult("%q created", cb.Name)
+	return ch.PrintResult("ClusterBuilder %q created", cb.Name)
 }

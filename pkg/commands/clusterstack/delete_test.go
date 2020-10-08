@@ -41,7 +41,7 @@ func testClusterStackDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					stack,
 				},
 				Args:           []string{"some-stack"},
-				ExpectedOutput: "\"some-stack\" deleted\n",
+				ExpectedOutput: "ClusterStack \"some-stack\" deleted\n",
 				ExpectDeletes: []clientgotesting.DeleteActionImpl{
 					{
 						Name: stack.Name,

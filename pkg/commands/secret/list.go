@@ -40,7 +40,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 			}
 
 			if len(serviceAccount.Secrets) == 0 && len(serviceAccount.ImagePullSecrets) == 0 {
-				return errors.Errorf("no secrets found in \"%s\" namespace", cs.Namespace)
+				return errors.Errorf("no secrets found in %q namespace", cs.Namespace)
 			} else {
 				return displaySecretsTable(cmd, serviceAccount)
 			}

@@ -105,7 +105,7 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--store", expectedBuilder.Spec.Store.Name,
 				"--order", "./testdata/order.yaml",
 			},
-			ExpectedOutput: `"test-builder" created
+			ExpectedOutput: `ClusterBuilder "test-builder" created
 `,
 			ExpectCreates: []runtime.Object{
 				expectedBuilder,
@@ -127,7 +127,8 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--tag", expectedBuilder.Spec.Tag,
 				"--order", "./testdata/order.yaml",
 			},
-			ExpectedOutput: "\"test-builder\" created\n",
+			ExpectedOutput: `ClusterBuilder "test-builder" created
+`,
 			ExpectCreates: []runtime.Object{
 				expectedBuilder,
 			},
@@ -145,7 +146,7 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--store", expectedBuilder.Spec.Store.Name,
 				"--order", "./testdata/order.yaml",
 			},
-			ExpectedOutput: `"test-builder" created
+			ExpectedOutput: `ClusterBuilder "test-builder" created
 `,
 			ExpectCreates: []runtime.Object{
 				expectedBuilder,
@@ -351,7 +352,7 @@ status:
 					"--order", "./testdata/order.yaml",
 					"--dry-run",
 				},
-				ExpectedOutput: `"test-builder" created (dry run)
+				ExpectedOutput: `ClusterBuilder "test-builder" created (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})

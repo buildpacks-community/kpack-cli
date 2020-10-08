@@ -126,5 +126,5 @@ func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.
 		return err
 	}
 
-	return ch.PrintResult("%q created", bldr.Name)
+	return ch.PrintResult("Builder %q created", bldr.Name)
 }
