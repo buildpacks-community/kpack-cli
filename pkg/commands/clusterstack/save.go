@@ -14,10 +14,6 @@ import (
 )
 
 func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
-	var (
-		dryRun bool
-		output string
-	)
 
 	cmd := &cobra.Command{
 		Use:   "save <name>",
@@ -60,8 +56,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 	}
 	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
 	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
-	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
+	commands.SetDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")

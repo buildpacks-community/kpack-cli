@@ -43,8 +43,6 @@ func NewImportCommand(
 
 	var (
 		filename string
-		dryRun   bool
-		output   string
 	)
 
 	cmd := &cobra.Command{
@@ -117,8 +115,7 @@ cat dependencies.yaml | kp import -f -`,
 		},
 	}
 	cmd.Flags().StringVarP(&filename, "filename", "f", "", "dependency descriptor filename")
-	cmd.Flags().BoolVarP(&dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVar(&output, "output", "", "output format. supported formats are: yaml, json")
+	commands.SetDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &storeFactory.TLSConfig)
 	_ = cmd.MarkFlagRequired("filename")
 	return cmd

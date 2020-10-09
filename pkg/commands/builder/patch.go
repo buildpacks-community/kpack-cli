@@ -54,8 +54,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd.Flags().StringVarP(&flags.stack, "stack", "s", "", "stack resource to use")
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
-	cmd.Flags().BoolVarP(&flags.dryRun, "dry-run", "", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().StringVar(&flags.output, "output", "", "output format. supported formats are: yaml, json")
+	commands.SetDryRunOutputFlags(cmd)
 	return cmd
 }
 
