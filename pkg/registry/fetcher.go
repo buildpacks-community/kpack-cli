@@ -15,7 +15,7 @@ import (
 
 type Fetcher struct{}
 
-func (f *Fetcher) Fetch(src string, tlsCfg TLSConfig) (v1.Image, error) {
+func (f Fetcher) Fetch(src string, tlsCfg TLSConfig) (v1.Image, error) {
 	if f.isLocal(src) {
 		return tarball.ImageFromPath(src, nil)
 	} else {
@@ -37,7 +37,7 @@ func (f *Fetcher) Fetch(src string, tlsCfg TLSConfig) (v1.Image, error) {
 	}
 }
 
-func (f *Fetcher) isLocal(src string) bool {
+func (f Fetcher) isLocal(src string) bool {
 	_, err := os.Stat(src)
 	return err == nil
 }

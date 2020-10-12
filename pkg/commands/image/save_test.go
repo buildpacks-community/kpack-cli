@@ -20,7 +20,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
-	srcfakes "github.com/pivotal/build-service-cli/pkg/source/fakes"
+	srcfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -283,7 +283,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
 					},
-					ExpectedOutput: `Image "some-image" created
+					ExpectedOutput: `Uploading to 'some-registry.io/some-repo-source'...
+Image "some-image" created
 `,
 					ExpectCreates: []runtime.Object{
 						expectedImage,

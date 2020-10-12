@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/pivotal/build-service-cli/pkg/image"
-	srcfakes "github.com/pivotal/build-service-cli/pkg/source/fakes"
+	srcfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 )
 
 func TestImageFactory(t *testing.T) {

@@ -4,6 +4,7 @@
 package image
 
 import (
+	"io"
 	"sort"
 	"strings"
 
@@ -22,7 +23,13 @@ const (
 )
 
 type SourceUploader interface {
-	Upload(ref, path string, tlsCfg registry.TLSConfig) (string, error)
+	Upload(ref, path string, writer io.Writer, tlsCfg registry.TLSConfig) (string, error)
+}
+
+type Printer interface {
+	Printlnf(format string, args ...interface{}) error
+	PrintStatus(format string, args ...interface{}) error
+	Writer() io.Writer
 }
 
 type Factory struct {
@@ -38,6 +45,7 @@ type Factory struct {
 	CacheSize      string
 	DeleteEnv      []string
 	TLSConfig      registry.TLSConfig
+	Printer        Printer
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error) {
@@ -172,7 +180,12 @@ func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
 			return v1alpha1.SourceConfig{}, err
 		}
 
-		sourceRef, err := f.SourceUploader.Upload(ref.Context().Name()+"-source", f.LocalPath, f.TLSConfig)
+		imgRepo := ref.Context().Name() + "-source"
+		if err = f.Printer.PrintStatus("Uploading to '%s'...", imgRepo); err != nil {
+			return v1alpha1.SourceConfig{}, err
+		}
+
+		sourceRef, err := f.SourceUploader.Upload(imgRepo, f.LocalPath, f.Printer.Writer(), f.TLSConfig)
 		if err != nil {
 			return v1alpha1.SourceConfig{}, err
 		}

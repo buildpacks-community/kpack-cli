@@ -10,76 +10,121 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/pkg/errors"
 )
 
-type Relocator struct{}
+type relocateCfg struct {
+	imgInfo         relocateImageInfo
+	imgWriteOptions []remote.Option
+}
 
-func (r *Relocator) Relocate(writer io.Writer, image v1.Image, dest string, tlsCfg TLSConfig) (string, error) {
-	ref, err := name.ParseReference(dest, name.WeakValidation)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
+type relocateImageInfo struct {
+	refRepo      name.Reference
+	refDigestStr string
+	tag          name.Tag
+	size         int64
+}
 
-	refName := fmt.Sprintf("%s/%s", ref.Context().RegistryStr(), ref.Context().RepositoryStr())
-	ref, err = name.ParseReference(refName, name.WeakValidation)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
+type Relocator interface {
+	Relocate(srcImage v1.Image, dstRepoStr string, writer io.Writer, tlsCfg TLSConfig) (string, error)
+}
 
-	digest, err := image.Digest()
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
+type DryRunRelocator struct{}
 
-	size, err := imageSize(image)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	writer.Write([]byte(fmt.Sprintf("\tUploading '%s@%s'", ref, digest)))
-	spinner := newUploadSpinner(writer, size)
-	defer spinner.Stop()
-	go spinner.Write()
-
-	t, err := tlsCfg.Transport()
+func (d DryRunRelocator) Relocate(srcImage v1.Image, dstRepoStr string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
+	cfg, err := getRelocateCfg(srcImage, dstRepoStr, tlsCfg)
 	if err != nil {
 		return "", err
 	}
 
-	err = remote.Write(ref, image, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithTransport(t))
+	writer.Write([]byte(fmt.Sprintf("\tUploading '%s'\n", cfg.imgInfo.refDigestStr)))
+	return cfg.imgInfo.refDigestStr, err
+}
+
+type RelocatorImpl struct{}
+
+func (r RelocatorImpl) Relocate(srcImage v1.Image, dstRepoStr string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
+	cfg, err := getRelocateCfg(srcImage, dstRepoStr, tlsCfg)
 	if err != nil {
-		return "", newImageAccessError(refName, err)
+		return "", err
 	}
 
-	return fmt.Sprintf("%s@%s", refName, digest.String()), remote.Tag(ref.Context().Tag(timestampTag()), image, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithTransport(t))
+	i := cfg.imgInfo
+	writer.Write([]byte(fmt.Sprintf("\tUploading '%s'", i.refDigestStr)))
+
+	spinner := newUploadSpinner(writer, i.size)
+	defer spinner.Stop()
+	go spinner.Write()
+
+	err = remote.Write(i.refRepo, srcImage, cfg.imgWriteOptions...)
+	if err != nil {
+		return i.refDigestStr, newImageAccessError(i.refRepo.Context().RegistryStr(), err)
+	}
+
+	err = remote.Tag(i.tag, srcImage, cfg.imgWriteOptions...)
+	return i.refDigestStr, err
+}
+
+func getRelocateCfg(srcImage v1.Image, dstRepoStr string, tlsCfg TLSConfig) (relocateCfg, error) {
+	var cfg relocateCfg
+
+	imgInfo, err := getDstImageInfo(srcImage, dstRepoStr)
+	if err != nil {
+		return cfg, err
+	}
+
+	transport, err := tlsCfg.Transport()
+	if err != nil {
+		return cfg, err
+	}
+
+	cfg = relocateCfg{
+		imgInfo: imgInfo,
+		imgWriteOptions: []remote.Option{
+			remote.WithAuthFromKeychain(authn.DefaultKeychain),
+			remote.WithTransport(transport),
+		},
+	}
+	return cfg, err
+}
+
+func getDstImageInfo(srcImage v1.Image, dstRepoStr string) (relocateImageInfo, error) {
+	imgInfo := relocateImageInfo{}
+
+	refDstRepo, err := name.ParseReference(dstRepoStr, name.WeakValidation)
+	if err != nil {
+		return imgInfo, err
+	}
+
+	refContext := refDstRepo.Context()
+	refName := fmt.Sprintf("%s/%s", refContext.RegistryStr(), refContext.RepositoryStr())
+
+	refDstRepo, err = name.ParseReference(refName, name.WeakValidation)
+	if err != nil {
+		return imgInfo, err
+	}
+
+	digest, err := srcImage.Digest()
+	if err != nil {
+		return imgInfo, err
+	}
+
+	size, err := imageSize(srcImage)
+	if err != nil {
+		return imgInfo, err
+	}
+
+	imgInfo = relocateImageInfo{
+		refRepo:      refDstRepo,
+		refDigestStr: fmt.Sprintf("%s@%s", refDstRepo, digest),
+		tag:          refDstRepo.Context().Tag(timestampTag()),
+		size:         size,
+	}
+	return imgInfo, err
 }
 
 func timestampTag() string {
 	now := time.Now()
 	return fmt.Sprintf("%s%02d%02d%02d", now.Format("20060102"), now.Hour(), now.Minute(), now.Second())
-}
-
-func imageSize(image v1.Image) (int64, error) {
-	size, err := image.Size()
-	if err != nil {
-		return 0, err
-	}
-
-	layers, err := image.Layers()
-	if err != nil {
-		return 0, err
-	}
-
-	for _, layer := range layers {
-		layerSize, err := layer.Size()
-		if err != nil {
-			return 0, err
-		}
-
-		size += layerSize
-	}
-	return size, nil
 }

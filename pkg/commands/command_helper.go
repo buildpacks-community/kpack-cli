@@ -13,7 +13,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -32,18 +32,24 @@ type CommandHelper struct {
 	typeToGVK map[reflect.Type]schema.GroupVersionKind
 }
 
+const (
+	DryRunFlag = "dry-run"
+	OutputFlag = "output"
+	WaitFlag   = "wait"
+)
+
 func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
-	dryRun, err := getBoolFlag("dry-run", cmd)
+	dryRun, err := GetBoolFlag(DryRunFlag, cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	output, err := getStringFlag("output", cmd)
+	output, err := GetStringFlag(OutputFlag, cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	wait, err := getBoolFlag("wait", cmd)
+	wait, err := GetBoolFlag(WaitFlag, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +161,7 @@ func (ch CommandHelper) Writer() io.Writer {
 	return ch.OutOrErrWriter()
 }
 
-func getBoolFlag(name string, cmd *cobra.Command) (bool, error) {
+func GetBoolFlag(name string, cmd *cobra.Command) (bool, error) {
 	flag := cmd.Flags().Lookup(name)
 	if flag == nil {
 		return false, nil
@@ -172,7 +178,7 @@ func getBoolFlag(name string, cmd *cobra.Command) (bool, error) {
 	return value, nil
 }
 
-func getStringFlag(name string, cmd *cobra.Command) (string, error) {
+func GetStringFlag(name string, cmd *cobra.Command) (string, error) {
 	flag := cmd.Flags().Lookup(name)
 	if flag == nil {
 		return "", nil

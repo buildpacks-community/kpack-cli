@@ -24,6 +24,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 const (
@@ -42,7 +43,8 @@ func NewImportCommand(
 	stackFactory *clusterstack.Factory) *cobra.Command {
 
 	var (
-		filename string
+		filename  string
+		tlsConfig registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -82,10 +84,11 @@ cat dependencies.yaml | kp import -f -`,
 
 			storeFactory.Repository = repository // FIXME
 			storeFactory.Printer = ch
+			storeFactory.TLSConfig = tlsConfig
 
+			storeFactory.Printer = ch
 			stackFactory.Repository = repository
-			stackFactory.Printer = ch
-			stackFactory.TLSConfig = storeFactory.TLSConfig
+			stackFactory.TLSConfig = tlsConfig
 
 			importHelper := importHelper{
 				descriptor:        descriptor,
@@ -111,12 +114,12 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			return ch.PrintResult("Imported resources created")
+			return ch.PrintResult("Imported resources")
 		},
 	}
 	cmd.Flags().StringVarP(&filename, "filename", "f", "", "dependency descriptor filename")
 	commands.SetDryRunOutputFlags(cmd)
-	commands.SetTLSFlags(cmd, &storeFactory.TLSConfig)
+	commands.SetTLSFlags(cmd, &tlsConfig)
 	_ = cmd.MarkFlagRequired("filename")
 	return cmd
 }
@@ -179,7 +182,7 @@ type importHelper struct {
 
 func (i *importHelper) ImportClusterStores(factory *clusterstore.Factory, repository string) error {
 	for _, store := range i.descriptor.ClusterStores {
-		if err := i.ch.Printlnf("Importing ClusterStore '%s'...", store.Name); err != nil {
+		if err := i.ch.PrintStatus("Importing ClusterStore '%s'...", store.Name); err != nil {
 			return err
 		}
 
@@ -239,7 +242,7 @@ func (i *importHelper) ImportClusterStacks(factory *clusterstack.Factory) error 
 	}
 
 	for _, stack := range i.descriptor.ClusterStacks {
-		if err := i.ch.Printlnf("Importing ClusterStack '%s'...", stack.Name); err != nil {
+		if err := i.ch.PrintStatus("Importing ClusterStack '%s'...", stack.Name); err != nil {
 			return err
 		}
 
@@ -296,7 +299,7 @@ func (i *importHelper) ImportClusterBuilders(repository string, sa string) error
 	}
 
 	for _, ccb := range i.descriptor.ClusterBuilders {
-		if err := i.ch.Printlnf("Importing ClusterBuilder '%s'...", ccb.Name); err != nil {
+		if err := i.ch.PrintStatus("Importing ClusterBuilder '%s'...", ccb.Name); err != nil {
 			return err
 		}
 

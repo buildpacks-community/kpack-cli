@@ -21,7 +21,12 @@ type ImageFetcher interface {
 }
 
 type ImageRelocator interface {
-	Relocate(writer io.Writer, image v1.Image, dest string, tlsCfg registry.TLSConfig) (string, error)
+	Relocate(image v1.Image, dest string, writer io.Writer, tlsCfg registry.TLSConfig) (string, error)
+}
+
+type Printer interface {
+	Printlnf(format string, args ...interface{}) error
+	Writer() io.Writer
 }
 
 type Factory struct {
@@ -32,11 +37,6 @@ type Factory struct {
 	Repository    string
 	BuildImageRef string
 	RunImageRef   string
-}
-
-type Printer interface {
-	Printlnf(format string, args ...interface{}) error
-	Writer() io.Writer
 }
 
 func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
@@ -117,12 +117,12 @@ func (f *Factory) relocateStack() (string, string, string, error) {
 		return "", "", "", err
 	}
 
-	relocatedBuildImageRef, err := f.Relocator.Relocate(f.Printer.Writer(), buildImage, path.Join(f.Repository, BuildImageName), f.TLSConfig)
+	relocatedBuildImageRef, err := f.Relocator.Relocate(buildImage, path.Join(f.Repository, BuildImageName), f.Printer.Writer(), f.TLSConfig)
 	if err != nil {
 		return "", "", "", err
 	}
 
-	relocatedRunImageRef, err := f.Relocator.Relocate(f.Printer.Writer(), runImage, path.Join(f.Repository, RunImageName), f.TLSConfig)
+	relocatedRunImageRef, err := f.Relocator.Relocate(runImage, path.Join(f.Repository, RunImageName), f.Printer.Writer(), f.TLSConfig)
 	if err != nil {
 		return "", "", "", err
 	}
