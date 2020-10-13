@@ -4,6 +4,7 @@
 package clusterbuilder
 
 import (
+	"fmt"
 	"path"
 
 	"github.com/spf13/cobra"
@@ -65,15 +66,17 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 	cmd.Flags().StringVarP(&flags.stack, "stack", "s", defaultStack, "stack resource to use")
 	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
+	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack","b", []string{} , "list of buildpacks to use")
 	commands.SetDryRunOutputFlags(cmd)
 	return cmd
 }
 
 type CommandFlags struct {
-	tag   string
-	stack string
-	store string
-	order string
+	tag        string
+	stack      string
+	store      string
+	order      string
+	buildpacks []string
 }
 
 func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) error {
@@ -121,9 +124,19 @@ func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.
 		},
 	}
 
-	cb.Spec.Order, err = builder.ReadOrder(flags.order)
-	if err != nil {
-		return err
+	if len(flags.buildpacks) > 0 && flags.order != "" {
+		return fmt.Errorf("cannot use --order and --buildpack together")
+	}
+
+	if len(flags.buildpacks) > 0 {
+		cb.Spec.Order = builder.CreateOrder(flags.buildpacks)
+	}
+
+	if flags.order != "" {
+		cb.Spec.Order, err = builder.ReadOrder(flags.order)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = k8s.SetLastAppliedCfg(cb)

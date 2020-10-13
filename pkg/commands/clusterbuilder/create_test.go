@@ -404,4 +404,73 @@ status:
 			})
 		})
 	})
+
+	when("buildpack flag is used", func() {
+		it("creates a builder using the buildpack flag", func() {
+
+			expectedBuilder.Spec.Order = []v1alpha1.OrderEntry{
+				{
+					Group: []v1alpha1.BuildpackRef{
+						{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
+								Id: "org.cloudfoundry.go",
+							},
+						},
+						{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
+								Id: "org.cloudfoundry.nodejs",
+								Version: "1",
+							},
+						},
+						{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
+								Id: "org.cloudfoundry.ruby",
+								Version: "1.2.3",
+							},
+						},
+					},
+				},
+			}
+			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.go"},{"id":"org.cloudfoundry.nodejs","version":"1"},{"id":"org.cloudfoundry.ruby","version":"1.2.3"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					expectedBuilder.Name,
+					"--tag", expectedBuilder.Spec.Tag,
+					"--stack", expectedBuilder.Spec.Stack.Name,
+					"--store", expectedBuilder.Spec.Store.Name,
+					"--buildpack", "org.cloudfoundry.go,org.cloudfoundry.nodejs@1",
+					"--buildpack", "org.cloudfoundry.ruby@1.2.3",
+				},
+				ExpectedOutput: `ClusterBuilder "test-builder" created
+`,
+				ExpectCreates: []runtime.Object{
+					expectedBuilder,
+				},
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		when("buildpack and order flags are used together", func() {
+			it("returns an error", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					Args: []string{
+						expectedBuilder.Name,
+						"--tag", expectedBuilder.Spec.Tag,
+						"--order", "./testdata/order.yaml",
+						"--buildpack", "some-buildpack-name",
+					},
+					ExpectErr: true,
+					ExpectedOutput: `Error: cannot use --order and --buildpack together
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+	})
+
 }
