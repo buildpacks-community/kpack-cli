@@ -111,6 +111,12 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 		return err
 	}
 
+	err = statusWriter.AddBlock(
+		"",
+		"Started", getStarted(bld),
+		"Finished", getFinished(bld),
+	)
+
 	err = statusWriter.AddBlock("",
 		"Pod Name", bld.Status.PodName)
 	if err != nil {

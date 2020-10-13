@@ -32,6 +32,9 @@ func testBuildStatusCommand(t *testing.T, when spec.G, it spec.S) {
 Status:          BUILDING
 Build Reason:    TRIGGER
 
+Started:     0001-01-01 05:00:00
+Finished:    --
+
 Pod Name:    pod-three
 
 Builder:      some-repo.com/my-builder
@@ -47,6 +50,9 @@ bp-id-2         bp-version-2
 		expectedOutputForBuildNumber = `Image:           repo.com/image-1:tag
 Status:          SUCCESS
 Build Reason:    CONFIG
+
+Started:     0001-01-01 00:00:00
+Finished:    0001-01-01 00:00:00
 
 Pod Name:    pod-one
 
@@ -171,6 +177,9 @@ Status:            BUILDING
 Build Reason:      TRIGGER
 Status Reason:     some-reason
 Status Message:    some-message
+
+Started:     0001-01-01 05:00:00
+Finished:    --
 
 Pod Name:    some-pod
 
