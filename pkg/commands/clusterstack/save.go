@@ -14,6 +14,10 @@ import (
 )
 
 func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
+	var (
+		buildImageRef string
+		runImageRef   string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "save <name>",
@@ -46,16 +50,16 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 
 			cStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return create(name, factory, ch, cs)
+				return create(name, buildImageRef, runImageRef, factory, ch, cs)
 			} else if err != nil {
 				return err
 			}
 
-			return update(cStack, factory, ch, cs)
+			return update(cStack, buildImageRef, runImageRef, factory, ch, cs)
 		},
 	}
-	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
-	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
+	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
+	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
 	commands.SetDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	_ = cmd.MarkFlagRequired("build-image")

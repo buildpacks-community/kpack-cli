@@ -52,7 +52,7 @@ func CreateOrder(buildpacks []string) []v1alpha1.OrderEntry {
 
 		group = append(group, v1alpha1.BuildpackRef{
 			BuildpackInfo: v1alpha1.BuildpackInfo{
-				Id: id,
+				Id:      id,
 				Version: version,
 			},
 		})

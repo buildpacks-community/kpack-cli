@@ -5,11 +5,10 @@ package builder
 
 import (
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
@@ -82,7 +81,7 @@ type CommandFlags struct {
 
 func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
 	bldr := &v1alpha1.Builder{
-		TypeMeta: metaV1.TypeMeta{
+		TypeMeta: metav1.TypeMeta{
 			Kind:       v1alpha1.BuilderKind,
 			APIVersion: "kpack.io/v1alpha1",
 		},

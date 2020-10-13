@@ -2,7 +2,6 @@ package _import_test
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -12,6 +11,7 @@ import (
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,7 +19,6 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
-	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	storefakes "github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
 	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
@@ -40,10 +39,6 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		"some-registry.io/some-project/store-image-2": "new-registry.io/new-project/store-image-2@sha256:456def",
 	}
 
-	storeFactory := &clusterstore.Factory{
-		Uploader: fakeBuildpackageUploader,
-	}
-
 	buildImage, buildImageId, runImage, runImageId := makeStackImages(t, "some-stack-id")
 	buildImage2, buildImage2Id, runImage2, runImage2Id := makeStackImages(t, "some-other-stack-id")
 
@@ -54,11 +49,6 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	fetcher.AddImage("some-registry.io/some-project/run-image-2", runImage2)
 
 	relocator := &fakes.Relocator{}
-
-	stackFactory := &clusterstack.Factory{
-		Fetcher:   fetcher,
-		Relocator: relocator,
-	}
 
 	config := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -163,10 +153,18 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	defaultBuilder.Spec.Tag = "new-registry.io/new-project/default"
 
 	var fakeConfirmationProvider *commandsfakes.FakeConfirmationProvider
+	fakeDiffer := &commandsfakes.FakeDiffer{DiffResult: "some-diff"}
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return importcmds.NewImportCommand(clientSetProvider, timestampProvider, storeFactory, stackFactory, fakeConfirmationProvider)
+		return importcmds.NewImportCommand(
+			clientSetProvider,
+			fakeBuildpackageUploader,
+			relocator,
+			fetcher,
+			fakeDiffer,
+			timestampProvider,
+			fakeConfirmationProvider)
 	}
 
 	it.Before(func() {
@@ -187,7 +185,24 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: `Importing ClusterStore 'some-store'...
+				ExpectedOutput: `ClusterStores
+
+some-diff
+
+ClusterStacks
+
+some-diff
+
+some-diff
+
+ClusterBuilders
+
+some-diff
+
+some-diff
+
+
+Importing ClusterStore 'some-store'...
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
 Importing ClusterStack 'default'...
@@ -220,7 +235,24 @@ Imported resources
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: `Importing ClusterStore 'some-store'...
+				ExpectedOutput: `ClusterStores
+
+some-diff
+
+ClusterStacks
+
+some-diff
+
+some-diff
+
+ClusterBuilders
+
+some-diff
+
+some-diff
+
+
+Importing ClusterStore 'some-store'...
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
 Importing ClusterStack 'default'...
@@ -239,7 +271,7 @@ Imported resources
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("skips confirmation when the force flag is used", func(){
+		it("skips confirmation when the force flag is used", func() {
 			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
@@ -253,13 +285,30 @@ Imported resources
 					"--registry-verify-certs",
 					"--force",
 				},
-				ExpectedOutput: `Importing Cluster Store 'some-store'...
-Importing Cluster Stack 'some-stack'...
+				ExpectedOutput: `ClusterStores
+
+some-diff
+
+ClusterStacks
+
+some-diff
+
+some-diff
+
+ClusterBuilders
+
+some-diff
+
+some-diff
+
+
+Importing ClusterStore 'some-store'...
+Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
-Importing Cluster Stack 'default'...
+Importing ClusterStack 'default'...
 Uploading to 'new-registry.io/new-project'...
-Importing Cluster Builder 'some-cb'...
-Importing Cluster Builder 'default'...
+Importing ClusterBuilder 'some-cb'...
+Importing ClusterBuilder 'default'...
 Imported resources created
 `,
 				ExpectCreates: []runtime.Object{
@@ -275,7 +324,7 @@ Imported resources created
 	})
 
 	when("there are existing stores, stacks, or cbs", func() {
-		when("the dependency descriptor and the store have the exact same objects", func() {
+		when("the dependency descriptor and the cluster have the exact same objs", func() {
 			const newTimestamp = "new-timestamp"
 			timestampProvider.timestamp = newTimestamp
 
@@ -293,6 +342,8 @@ Imported resources created
 
 			expectedDefaultBuilder := defaultBuilder.DeepCopy()
 			expectedDefaultBuilder.Annotations[importTimestampKey] = newTimestamp
+
+			fakeDiffer.DiffResult = ""
 
 			it("updates the import timestamp", func() {
 				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
@@ -318,7 +369,20 @@ Imported resources created
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: `Importing ClusterStore 'some-store'...
+					ExpectedOutput: `ClusterStores
+
+No Changes
+
+ClusterStacks
+
+No Changes
+
+ClusterBuilders
+
+No Changes
+
+
+Importing ClusterStore 'some-store'...
 	Buildpackage already exists in the store
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
@@ -373,7 +437,20 @@ Imported resources
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: `Importing ClusterStore 'some-store'...
+					ExpectedOutput: `ClusterStores
+
+No Changes
+
+ClusterStacks
+
+No Changes
+
+ClusterBuilders
+
+No Changes
+
+
+Importing ClusterStore 'some-store'...
 	Buildpackage already exists in the store
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
@@ -472,7 +549,24 @@ Imported resources
 					Args: []string{
 						"-f", "./testdata/updated-deps.yaml",
 					},
-					ExpectedOutput: `Importing ClusterStore 'some-store'...
+					ExpectedOutput: `ClusterStores
+
+some-diff
+
+ClusterStacks
+
+some-diff
+
+some-diff
+
+ClusterBuilders
+
+some-diff
+
+some-diff
+
+
+Importing ClusterStore 'some-store'...
 	Added Buildpackage
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
@@ -516,7 +610,24 @@ Imported resources
 	})
 
 	when("output flag is used", func() {
-		const expectedOutput = `Importing ClusterStore 'some-store'...
+		const expectedOutput = `ClusterStores
+
+some-diff
+
+ClusterStacks
+
+some-diff
+
+some-diff
+
+ClusterBuilders
+
+some-diff
+
+some-diff
+
+
+Importing ClusterStore 'some-store'...
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
 Importing ClusterStack 'default'...
@@ -822,7 +933,24 @@ status:
 		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		it("does not create any resources and prints result with dry run indicated", func() {
-			const expectedOutput = `Importing ClusterStore 'some-store'... (dry run)
+			const expectedOutput = `ClusterStores
+
+some-diff
+
+ClusterStacks
+
+some-diff
+
+some-diff
+
+ClusterBuilders
+
+some-diff
+
+some-diff
+
+
+Importing ClusterStore 'some-store'... (dry run)
 Importing ClusterStack 'some-stack'... (dry run)
 Uploading to 'new-registry.io/new-project'...
 Importing ClusterStack 'default'... (dry run)
@@ -943,7 +1071,24 @@ status:
   stack: {}
 `
 
-			const expectedOutput = `Importing ClusterStore 'some-store'... (dry run)
+			const expectedOutput = `ClusterStores
+
+some-diff
+
+ClusterStacks
+
+some-diff
+
+some-diff
+
+ClusterBuilders
+
+some-diff
+
+some-diff
+
+
+Importing ClusterStore 'some-store'... (dry run)
 Importing ClusterStack 'some-stack'... (dry run)
 Uploading to 'new-registry.io/new-project'...
 Importing ClusterStack 'default'... (dry run)

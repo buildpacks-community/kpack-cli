@@ -229,23 +229,20 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	clusterStoreFactory := &clusterstore.Factory{}
-	clusterStackFactory := &clusterstack.Factory{}
-
-	importCmd := importcmds.NewImportCommand(
-		clientSetProvider,
-		importpkg.DefaultTimestampProvider(),
-		clusterStoreFactory,
-		clusterStackFactory)
-
-	importCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
-		err := configureClusterStoreFactory(cmd, clusterStoreFactory)
-		if err != nil {
-			return err
-		}
-		return configureClusterStackFactory(cmd, clusterStackFactory)
+	bpUploader := &buildpackage.Uploader{
+		Fetcher:   &registry.Fetcher{},
+		Relocator: &registry.Relocator{},
 	}
-	return importCmd
+
+	return importcmds.NewImportCommand(
+		clientSetProvider,
+		bpUploader,
+		&registry.Relocator{},
+		&registry.Fetcher{},
+		commands.Differ{},
+		importpkg.DefaultTimestampProvider(),
+		commands.NewConfirmationProvider(),
+	)
 }
 
 func getCompletionCommand() *cobra.Command {

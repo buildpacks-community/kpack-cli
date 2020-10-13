@@ -13,10 +13,18 @@ import (
 
 type FakeBuildpackageUploader map[string]string
 
-func (f FakeBuildpackageUploader) UploadBuildpackage(w io.Writer, _ string, buildpackage string, _ registry.TLSConfig) (string, error) {
-	uploadedImage, ok := f[buildpackage]
+func (f FakeBuildpackageUploader) UploadBuildpackage(w io.Writer, _ string, buildPackage string, _ registry.TLSConfig) (string, error) {
+	uploadedImage, ok := f[buildPackage]
 	if !ok {
-		return "", errors.Errorf("could not upload %s", buildpackage)
+		return "", errors.Errorf("could not upload %s", buildPackage)
+	}
+	return uploadedImage, nil
+}
+
+func (f FakeBuildpackageUploader) RelocatedBuildpackage(repository, buildPackage string, tlsCfg registry.TLSConfig) (string, error) {
+	uploadedImage, ok := f[buildPackage]
+	if !ok {
+		return "", errors.Errorf("could not get ref %s", buildPackage)
 	}
 	return uploadedImage, nil
 }

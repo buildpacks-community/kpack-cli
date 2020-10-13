@@ -12,6 +12,10 @@ import (
 )
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
+	var (
+		buildImageRef string
+		runImageRef   string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "create <name>",
@@ -42,11 +46,11 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 			name := args[0]
 			factory.Printer = ch
 
-			return create(name, factory, ch, cs)
+			return create(name, buildImageRef, runImageRef, factory, ch, cs)
 		},
 	}
-	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
-	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
+	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
+	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
 	commands.SetDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	_ = cmd.MarkFlagRequired("build-image")
@@ -54,7 +58,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func create(name string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
+func create(name, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
 	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
 		return err
@@ -64,7 +68,7 @@ func create(name string, factory *clusterstack.Factory, ch *commands.CommandHelp
 		return err
 	}
 
-	stack, err := factory.MakeStack(name)
+	stack, err := factory.MakeStack(name, buildImageRef, runImageRef)
 	if err != nil {
 		return err
 	}

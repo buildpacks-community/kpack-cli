@@ -18,6 +18,7 @@ import (
 
 type BuildpackageUploader interface {
 	UploadBuildpackage(writer io.Writer, repository, buildPackage string, tlsCfg registry.TLSConfig) (string, error)
+	RelocatedBuildpackage(repository, buildPackage string, tlsCfg registry.TLSConfig) (string, error)
 }
 
 type Printer interface {
@@ -90,6 +91,10 @@ func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, bu
 	}
 
 	return store, storeUpdated, nil
+}
+
+func (f *Factory) RelocatedBuildpackage(buildPackage string) (string, error) {
+	return f.Uploader.RelocatedBuildpackage(f.Repository, buildPackage, f.TLSConfig)
 }
 
 func (f *Factory) validate(buildpackages []string) error {

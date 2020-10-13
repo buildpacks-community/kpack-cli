@@ -4,6 +4,7 @@
 package clusterstack
 
 import (
+	"fmt"
 	"io"
 	"path"
 
@@ -30,13 +31,11 @@ type Printer interface {
 }
 
 type Factory struct {
-	Printer       Printer
-	Fetcher       ImageFetcher
-	Relocator     ImageRelocator
-	TLSConfig     registry.TLSConfig
-	Repository    string
-	BuildImageRef string
-	RunImageRef   string
+	Printer    Printer
+	Fetcher    ImageFetcher
+	Relocator  ImageRelocator
+	TLSConfig  registry.TLSConfig
+	Repository string
 }
 
 func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
@@ -44,7 +43,7 @@ func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
 		return nil, err
 	}
 
-	relocatedBuildImageRef, relocatedRunImageRef, stackId, err := f.relocateStack()
+	relocatedBuildImageRef, relocatedRunImageRef, stackId, err := f.relocateStack(buildImageRef, runImageRef)
 	if err != nil {
 		return nil, err
 	}
@@ -70,12 +69,12 @@ func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
 	}, nil
 }
 
-func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack) (bool, error) {
+func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string) (bool, error) {
 	if err := f.validate(); err != nil {
 		return false, err
 	}
 
-	relocatedBuildImageRef, relocatedRunImageRef, stackId, err := f.relocateStack()
+	relocatedBuildImageRef, relocatedRunImageRef, stackId, err := f.relocateStack(buildImageRef, runImageRef)
 	if err != nil {
 		return false, err
 	}
@@ -88,8 +87,29 @@ func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack) (bool, error) {
 	return true, nil
 }
 
-func (f *Factory) relocateStack() (string, string, string, error) {
-	buildImage, err := f.Fetcher.Fetch(f.BuildImageRef, f.TLSConfig)
+func (f *Factory) RelocatedBuildImage(imageRef string) (string, error) {
+	return f.relocatedImage(imageRef, BuildImageName)
+}
+
+func (f *Factory) RelocatedRunImage(imageRef string) (string, error) {
+	return f.relocatedImage(imageRef, RunImageName)
+}
+
+func (f *Factory) relocatedImage(imageRef, imageName string) (string, error) {
+	image, err := f.Fetcher.Fetch(imageRef, f.TLSConfig)
+	if err != nil {
+		return "", err
+	}
+
+	digest, err := image.Digest()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s@%s", path.Join(f.Repository, imageName), digest.String()), nil
+}
+
+func (f *Factory) relocateStack(buildImageRef, runImageRef string) (string, string, string, error) {
+	buildImage, err := f.Fetcher.Fetch(buildImageRef, f.TLSConfig)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -99,7 +119,7 @@ func (f *Factory) relocateStack() (string, string, string, error) {
 		return "", "", "", err
 	}
 
-	runImage, err := f.Fetcher.Fetch(f.RunImageRef, f.TLSConfig)
+	runImage, err := f.Fetcher.Fetch(runImageRef, f.TLSConfig)
 	if err != nil {
 		return "", "", "", err
 	}

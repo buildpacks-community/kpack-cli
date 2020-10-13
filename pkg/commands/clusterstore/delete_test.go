@@ -5,7 +5,6 @@ package clusterstore_test
 
 import (
 	"fmt"
-	"github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -19,6 +18,7 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 
 	"github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
+	"github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 

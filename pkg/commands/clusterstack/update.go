@@ -25,6 +25,10 @@ type ImageRelocator interface {
 }
 
 func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
+	var (
+		buildImageRef string
+		runImageRef   string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "update <name>",
@@ -55,12 +59,12 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			return update(stack, factory, ch, cs)
+			return update(stack, buildImageRef, runImageRef, factory, ch, cs)
 		},
 	}
 
-	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
-	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
+	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
+	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
 	commands.SetDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	_ = cmd.MarkFlagRequired("build-image")
@@ -68,7 +72,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
+func update(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
 	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
 	if err != nil {
 		return err
@@ -78,7 +82,7 @@ func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *com
 		return err
 	}
 
-	hasUpdates, err := factory.UpdateStack(stack)
+	hasUpdates, err := factory.UpdateStack(stack, buildImageRef, runImageRef)
 	if err != nil {
 		return err
 	}
