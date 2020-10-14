@@ -110,6 +110,43 @@ func testClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 		}.TestKpack(t, cmdFunc)
 	})
 
+	it("patches a ClusterBuilder with buildpack flags", func() {
+		testhelpers.CommandTest{
+			Objects: []runtime.Object{
+				builder,
+			},
+			Args: []string{
+				builder.Name,
+				"--tag", "some-other-tag",
+				"--stack", "some-other-stack",
+				"--store", "some-other-store",
+				"--buildpack", "org.cloudfoundry.test-bp",
+				"--buildpack", "org.cloudfoundry.fake-bp@2.0.1",
+			},
+			ExpectedOutput: `ClusterBuilder "test-builder" patched
+`,
+			ExpectPatches: []string{
+				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"},{"id":"org.cloudfoundry.fake-bp","version":"2.0.1"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
+			},
+		}.TestKpack(t, cmdFunc)
+	})
+
+	it("returns error when buildpack and order flags are used together", func() {
+
+		testhelpers.CommandTest{
+			Objects: []runtime.Object{
+				builder,
+			},
+			Args: []string{
+				builder.Name,
+				"--order", "./testdata/patched-order.yaml",
+				"--buildpack", "org.cloudfoundry.test-bp",
+			},
+			ExpectErr:      true,
+			ExpectedOutput: "Error: cannot use --order and --buildpack together\n",
+		}.TestKpack(t, cmdFunc)
+	})
+
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
 			const resourceYAML = `apiVersion: kpack.io/v1alpha1

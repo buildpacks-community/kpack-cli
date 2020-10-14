@@ -61,7 +61,7 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/
 	cmd.Flags().StringVarP(&flags.stack, "stack", "s", defaultStack, "stack resource to use")
 	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
-	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack","b", []string{} , "list of buildpacks to use")
+	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack reference(s) to a buildpack in the form of either '<buildpack>@<version>' or '<buildpack>'")
 	commands.SetDryRunOutputFlags(cmd)
 	_ = cmd.MarkFlagRequired("tag")
 	return cmd
