@@ -54,6 +54,11 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 					return errors.Errorf("Buildpackage '%s' does not exist in the ClusterStore", bpToRemove)
 				}
 			}
+
+			if err = ch.PrintStatus("Removing Buildpackages..."); err != nil {
+				return err
+			}
+
 			var updatedStoreSources []v1alpha1.StoreImage
 			for _, storeImg := range store.Spec.Sources {
 				found := false
@@ -71,15 +76,22 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 
 			store.Spec.Sources = updatedStoreSources
 
-			_, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(store)
-			if err != nil {
+			if !ch.IsDryRun() {
+				store, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(store)
+				if err != nil {
+					return err
+				}
+			}
+
+			if err = ch.PrintObj(store); err != nil {
 				return err
 			}
 
-			return ch.Printlnf("ClusterStore %q updated", store.Name)
+			return ch.PrintResult("ClusterStore %q updated", store.Name)
 		},
 	}
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "buildpackage to remove")
+	commands.SetDryRunOutputFlags(cmd)
 	return cmd
 }
 

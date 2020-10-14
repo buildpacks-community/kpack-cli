@@ -74,7 +74,8 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: `Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore
+			ExpectedOutput: `Removing Buildpackages...
+Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore
 ClusterStore "some-store" updated
 `,
 		}.TestKpack(t, cmdFunc)
@@ -101,7 +102,8 @@ ClusterStore "some-store" updated
 					},
 				},
 			},
-			ExpectedOutput: `Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore
+			ExpectedOutput: `Removing Buildpackages...
+Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore
 Removing buildpackage some/imageinStore2@sha256:1232alreadyInStore
 ClusterStore "some-store" updated
 `,
@@ -151,5 +153,180 @@ ClusterStore "some-store" updated
 			ExpectErr:      true,
 			ExpectedOutput: "Error: Buildpackage 'some/imageNotinStore@sha256:1233alreadyInStore' does not exist in the ClusterStore\n",
 		}.TestKpack(t, cmdFunc)
+	})
+
+	when("output flag is used", func() {
+		it("can output in yaml format", func() {
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStore
+metadata:
+  creationTimestamp: null
+  name: some-store
+spec:
+  sources:
+  - image: some/imageinStore2@sha256:1232alreadyInStore
+status: {}
+`
+
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					store,
+				},
+				Args: []string{
+					storeName,
+					"--buildpackage", "some/imageinStore1@sha256:1231alreadyInStore",
+					"--output", "yaml",
+				},
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: &v1alpha1.ClusterStore{
+							ObjectMeta: store.ObjectMeta,
+							Spec: v1alpha1.ClusterStoreSpec{
+								Sources: []v1alpha1.StoreImage{
+									{
+										Image: image2InStore,
+									},
+								},
+							},
+						},
+					},
+				},
+				ExpectedOutput: resourceYAML,
+				ExpectedErrorOutput: `Removing Buildpackages...
+Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore
+`,
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("can output in json format", func() {
+			const resourceJSON = `{
+    "kind": "ClusterStore",
+    "apiVersion": "kpack.io/v1alpha1",
+    "metadata": {
+        "name": "some-store",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "sources": [
+            {
+                "image": "some/imageinStore2@sha256:1232alreadyInStore"
+            }
+        ]
+    },
+    "status": {}
+}
+`
+
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					store,
+				},
+				Args: []string{
+					storeName,
+					"--buildpackage", "some/imageinStore1@sha256:1231alreadyInStore",
+					"--output", "json",
+				},
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: &v1alpha1.ClusterStore{
+							ObjectMeta: store.ObjectMeta,
+							Spec: v1alpha1.ClusterStoreSpec{
+								Sources: []v1alpha1.StoreImage{
+									{
+										Image: image2InStore,
+									},
+								},
+							},
+						},
+					},
+				},
+				ExpectedOutput: resourceJSON,
+				ExpectedErrorOutput: `Removing Buildpackages...
+Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore
+`,
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("errors when the provided store does not exist", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					store,
+				},
+				Args: []string{
+					"invalid-store",
+					"-b", "some/imageinStore1@sha256:1231alreadyInStore",
+					"-b", "some/imageNotinStore@sha256:1232notInStore",
+					"--output", "yaml",
+				},
+				ExpectErr:      true,
+				ExpectedOutput: "Error: ClusterStore 'invalid-store' does not exist\n",
+			}.TestKpack(t, cmdFunc)
+		})
+	})
+
+	when("dry-run flag is used", func() {
+		it("does not remove a buildpackage and prints result with dry run indicated", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					store,
+				},
+				Args: []string{
+					storeName,
+					"--buildpackage", "some/imageinStore1@sha256:1231alreadyInStore",
+					"--dry-run",
+				},
+				ExpectedOutput: `Removing Buildpackages... (dry run)
+Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore
+ClusterStore "some-store" updated (dry run)
+`,
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("errors when the provided store does not exist", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					store,
+				},
+				Args: []string{
+					"invalid-store",
+					"-b", "some/imageinStore1@sha256:1231alreadyInStore",
+					"-b", "some/imageNotinStore@sha256:1232notInStore",
+					"--dry-run",
+				},
+				ExpectErr:      true,
+				ExpectedOutput: "Error: ClusterStore 'invalid-store' does not exist\n",
+			}.TestKpack(t, cmdFunc)
+		})
+
+		when("output flag is used", func() {
+			it("does not update a clusterstore and prints the resource output in requested format", func() {
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStore
+metadata:
+  creationTimestamp: null
+  name: some-store
+spec:
+  sources:
+  - image: some/imageinStore2@sha256:1232alreadyInStore
+status: {}
+`
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						store,
+					},
+					Args: []string{
+						storeName,
+						"--buildpackage", "some/imageinStore1@sha256:1231alreadyInStore",
+						"--dry-run",
+						"--output", "yaml",
+					},
+					ExpectedOutput: resourceYAML,
+					ExpectedErrorOutput: `Removing Buildpackages... (dry run)
+Removing buildpackage some/imageinStore1@sha256:1231alreadyInStore
+`,
+				}.TestKpack(t, cmdFunc)
+			})
+		})
 	})
 }
