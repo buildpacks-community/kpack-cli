@@ -16,7 +16,7 @@ import (
 type Relocator struct {
 }
 
-func (r *Relocator) Relocate(_ io.Writer, image v1.Image, dest string, _ registry.TLSConfig) (string, error) {
+func (r *Relocator) Relocate(image v1.Image, dest string, _ io.Writer, _ registry.TLSConfig) (string, error) {
 	digest, err := image.Digest()
 	if err != nil {
 		return "", err

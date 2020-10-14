@@ -67,13 +67,12 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
-			name := args[0]
-
-			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
+			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
+			factory.Printer = ch
 			if cmd.Flag("sub-path").Changed {
 				factory.SubPath = &subPath
 			}

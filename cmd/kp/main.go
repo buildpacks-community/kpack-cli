@@ -29,7 +29,6 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 	"github.com/pivotal/build-service-cli/pkg/secret"
-	"github.com/pivotal/build-service-cli/pkg/source"
 )
 
 var (
@@ -88,24 +87,35 @@ func getVersionCommand() *cobra.Command {
 }
 
 func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	sourceUploader := &source.Uploader{}
 
-	imageFactory := &image.Factory{
-		SourceUploader: sourceUploader,
+	newImageWaiter := func(clientSet k8s.ClientSet) imgcmds.ImageWaiter {
+		return logs.NewImageWaiter(clientSet.KpackClient, logs.NewBuildLogsClient(clientSet.K8sClient))
 	}
+
+	factory := &image.Factory{}
+
+	configureFactoryHook := func(cmd *cobra.Command, args []string) error {
+		return configureImageFactory(cmd, factory)
+	}
+
+	createCommand := imgcmds.NewCreateCommand(clientSetProvider, factory, newImageWaiter)
+	createCommand.PreRunE = configureFactoryHook
+
+	patchCommand := imgcmds.NewPatchCommand(clientSetProvider, factory, newImageWaiter)
+	patchCommand.PreRunE = configureFactoryHook
+
+	saveCommand := imgcmds.NewSaveCommand(clientSetProvider, factory, newImageWaiter)
+	saveCommand.PreRunE = configureFactoryHook
 
 	imageRootCmd := &cobra.Command{
 		Use:     "image",
 		Short:   "Image commands",
 		Aliases: []string{"images", "imgs", "img"},
 	}
-	newImageWaiter := func(clientSet k8s.ClientSet) imgcmds.ImageWaiter {
-		return logs.NewImageWaiter(clientSet.KpackClient, logs.NewBuildLogsClient(clientSet.K8sClient))
-	}
 	imageRootCmd.AddCommand(
-		imgcmds.NewCreateCommand(clientSetProvider, imageFactory, newImageWaiter),
-		imgcmds.NewPatchCommand(clientSetProvider, imageFactory, newImageWaiter),
-		imgcmds.NewSaveCommand(clientSetProvider, imageFactory, newImageWaiter),
+		createCommand,
+		patchCommand,
+		saveCommand,
 		imgcmds.NewListCommand(clientSetProvider),
 		imgcmds.NewDeleteCommand(clientSetProvider),
 		imgcmds.NewTriggerCommand(clientSetProvider),
@@ -151,7 +161,7 @@ func getClusterBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Co
 	clusterBuilderRootCmd := &cobra.Command{
 		Use:     "clusterbuilder",
 		Short:   "ClusterBuilder Commands",
-		Aliases: []string{"clusterbuilders", "clstrbldrs", "clstrbldr", "cbs", "cb"},
+		Aliases: []string{"clusterbuilders", "clstrbldrs", "clstrbldr", "cbldrs", "cbldr", "cbs", "cb"},
 	}
 	clusterBuilderRootCmd.AddCommand(
 		clusterbuildercmds.NewCreateCommand(clientSetProvider),
@@ -182,20 +192,30 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	stackFactory := &clusterstack.Factory{
-		Fetcher:   &registry.Fetcher{},
-		Relocator: &registry.Relocator{},
+	factory := &clusterstack.Factory{}
+
+	configureFactoryHook := func(cmd *cobra.Command, args []string) error {
+		return configureClusterStackFactory(cmd, factory)
 	}
+
+	createCommand := clusterstackcmds.NewCreateCommand(clientSetProvider, factory)
+	createCommand.PreRunE = configureFactoryHook
+
+	updateCommand := clusterstackcmds.NewUpdateCommand(clientSetProvider, factory)
+	createCommand.PreRunE = configureFactoryHook
+
+	saveCommand := clusterstackcmds.NewSaveCommand(clientSetProvider, factory)
+	saveCommand.PreRunE = configureFactoryHook
 
 	stackRootCmd := &cobra.Command{
 		Use:     "clusterstack",
-		Aliases: []string{"clusterstacks", "clstrcsks", "clstrcsk", "csks","csk"},
+		Aliases: []string{"clusterstacks", "clstrcsks", "clstrcsk", "cstks", "cstk", " csks", "csk"},
 		Short:   "ClusterStack Commands",
 	}
 	stackRootCmd.AddCommand(
-		clusterstackcmds.NewCreateCommand(clientSetProvider, stackFactory),
-		clusterstackcmds.NewUpdateCommand(clientSetProvider, stackFactory),
-		clusterstackcmds.NewSaveCommand(clientSetProvider, stackFactory),
+		createCommand,
+		updateCommand,
+		saveCommand,
 		clusterstackcmds.NewListCommand(clientSetProvider),
 		clusterstackcmds.NewStatusCommand(clientSetProvider),
 		clusterstackcmds.NewDeleteCommand(clientSetProvider),
@@ -204,22 +224,30 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	bpUploader := &buildpackage.Uploader{
-		Fetcher:   &registry.Fetcher{},
-		Relocator: &registry.Relocator{},
+	factory := &clusterstore.Factory{}
+
+	configureFactoryHook := func(cmd *cobra.Command, args []string) error {
+		return configureClusterStoreFactory(cmd, factory)
 	}
 
-	factory := &clusterstore.Factory{Uploader: bpUploader}
+	createCommand := storecmds.NewCreateCommand(clientSetProvider, factory)
+	createCommand.PreRunE = configureFactoryHook
+
+	addCommand := storecmds.NewAddCommand(clientSetProvider, factory)
+	addCommand.PreRunE = configureFactoryHook
+
+	saveCommand := storecmds.NewSaveCommand(clientSetProvider, factory)
+	saveCommand.PreRunE = configureFactoryHook
 
 	storeRootCommand := &cobra.Command{
 		Use:     "clusterstore",
-		Aliases: []string{"clusterstores", "clstrcsrs", "clstrcsr", "csr"},
+		Aliases: []string{"clusterstores", "clstrcsrs", "clstrcsr", "csrs", "csr"},
 		Short:   "ClusterStore Commands",
 	}
 	storeRootCommand.AddCommand(
-		storecmds.NewCreateCommand(clientSetProvider, factory),
-		storecmds.NewAddCommand(clientSetProvider, factory),
-		storecmds.NewSaveCommand(clientSetProvider, factory),
+		createCommand,
+		addCommand,
+		saveCommand,
 		storecmds.NewDeleteCommand(clientSetProvider, commands.NewConfirmationProvider()),
 		storecmds.NewStatusCommand(clientSetProvider),
 		storecmds.NewRemoveCommand(clientSetProvider),
@@ -229,19 +257,23 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	stackFactory := &clusterstack.Factory{
-		Fetcher:   &registry.Fetcher{},
-		Relocator: &registry.Relocator{},
+	clusterStoreFactory := &clusterstore.Factory{}
+	clusterStackFactory := &clusterstack.Factory{}
+
+	importCmd := importcmds.NewImportCommand(
+		clientSetProvider,
+		importpkg.DefaultTimestampProvider(),
+		clusterStoreFactory,
+		clusterStackFactory)
+
+	importCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+		err := configureClusterStoreFactory(cmd, clusterStoreFactory)
+		if err != nil {
+			return err
+		}
+		return configureClusterStackFactory(cmd, clusterStackFactory)
 	}
-
-	bpUploader := &buildpackage.Uploader{
-		Fetcher:   &registry.Fetcher{},
-		Relocator: &registry.Relocator{},
-	}
-
-	storeFactory := &clusterstore.Factory{Uploader: bpUploader}
-
-	return importcmds.NewImportCommand(clientSetProvider, importpkg.DefaultTimestampProvider(), storeFactory, stackFactory)
+	return importCmd
 }
 
 func getCompletionCommand() *cobra.Command {
@@ -295,4 +327,58 @@ $ kp completion fish > ~/.config/fish/completions/kp.fish
 			}
 		},
 	}
+}
+
+func configureImageFactory(cmd *cobra.Command, factory *image.Factory) error {
+	dryRun, err := commands.GetBoolFlag(commands.DryRunFlag, cmd)
+	if err != nil {
+		return err
+	}
+
+	if dryRun {
+		factory.SourceUploader = registry.DryRunSourceUploader{}
+	} else {
+		factory.SourceUploader = registry.SourceUploaderImpl{}
+	}
+	return nil
+}
+
+func configureClusterStackFactory(cmd *cobra.Command, factory *clusterstack.Factory) error {
+	relocator, err := getImageRelocator(cmd)
+	if err != nil {
+		return err
+	}
+
+	factory.Relocator = relocator
+	factory.Fetcher = registry.Fetcher{}
+	return nil
+}
+
+func configureClusterStoreFactory(cmd *cobra.Command, factory *clusterstore.Factory) error {
+	relocator, err := getImageRelocator(cmd)
+	if err != nil {
+		return err
+	}
+
+	factory.Uploader = &buildpackage.Uploader{
+		Fetcher:   &registry.Fetcher{},
+		Relocator: relocator,
+	}
+	return nil
+}
+
+func getImageRelocator(cmd *cobra.Command) (registry.Relocator, error) {
+	var relocator registry.Relocator
+
+	dryRun, err := commands.GetBoolFlag(commands.DryRunFlag, cmd)
+	if err != nil {
+		return relocator, err
+	}
+
+	if dryRun {
+		relocator = registry.DryRunRelocator{}
+	} else {
+		relocator = registry.RelocatorImpl{}
+	}
+	return relocator, err
 }

@@ -59,6 +59,8 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 			}
 
 			name := args[0]
+
+			factory.Printer = ch
 			factory.SubPath = &subPath
 
 			img, err := create(name, tag, factory, ch, cs)

@@ -12,6 +12,6 @@ func SetTLSFlags(cmd *cobra.Command, cfg *registry.TLSConfig) {
 }
 
 func SetDryRunOutputFlags(cmd *cobra.Command) {
-	cmd.Flags().Bool("dry-run", false, "only print the object that would be sent, without sending it")
-	cmd.Flags().String("output", "", "output format. supported formats are: yaml, json")
+	cmd.Flags().Bool(DryRunFlag, false, "only print the object that would be sent, without sending it")
+	cmd.Flags().String(OutputFlag, "", "output format. supported formats are: yaml, json")
 }

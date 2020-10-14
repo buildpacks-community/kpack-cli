@@ -20,16 +20,16 @@ type BuildpackageUploader interface {
 	UploadBuildpackage(writer io.Writer, repository, buildPackage string, tlsCfg registry.TLSConfig) (string, error)
 }
 
+type Printer interface {
+	Printlnf(format string, args ...interface{}) error
+	Writer() io.Writer
+}
+
 type Factory struct {
 	Uploader   BuildpackageUploader
 	TLSConfig  registry.TLSConfig
 	Repository string
 	Printer    Printer
-}
-
-type Printer interface {
-	Printlnf(format string, args ...interface{}) error
-	Writer() io.Writer
 }
 
 func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.ClusterStore, error) {

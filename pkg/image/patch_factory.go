@@ -136,7 +136,7 @@ func (f *Factory) setSource(image *v1alpha1.Image) error {
 			return err
 		}
 
-		sourceRef, err := f.SourceUploader.Upload(ref.Context().Name()+"-source", f.LocalPath, f.TLSConfig)
+		sourceRef, err := f.SourceUploader.Upload(ref.Context().Name()+"-source", f.LocalPath, f.Printer.Writer(), f.TLSConfig)
 		if err != nil {
 			return err
 		}
