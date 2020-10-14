@@ -1,11 +1,13 @@
 package fakes
 
+import "github.com/pkg/errors"
+
 type FakeConfirmationProvider struct {
 	// return values for confirm request
 	confirm bool
 	err     error
-	// tracks if confirmation was requested
-	requested bool
+	// tracks confirmation message, empty if unrequested
+	requestedMsg string
 }
 
 func NewFakeConfirmationProvider(confirm bool, err error) *FakeConfirmationProvider {
@@ -15,11 +17,21 @@ func NewFakeConfirmationProvider(confirm bool, err error) *FakeConfirmationProvi
 	}
 }
 
-func (f *FakeConfirmationProvider) Confirm(_ string, _ ...string) (bool, error) {
-	f.requested = true
+func (f *FakeConfirmationProvider) Confirm(msg string, _ ...string) (bool, error) {
+	f.requestedMsg = msg
 	return f.confirm, f.err
 }
 
+func (f *FakeConfirmationProvider) WasRequestedWithMsg(msg string) error {
+	if f.requestedMsg == "" {
+		return errors.New("confirmation was not requested")
+	}
+	if f.requestedMsg != msg {
+		return errors.Errorf("wrong confirmation message. expected: %v, actual: %v", msg, f.requestedMsg)
+	}
+	return nil
+}
+
 func (f *FakeConfirmationProvider) WasRequested() bool {
-	return f.requested
+	return f.requestedMsg != ""
 }

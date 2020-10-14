@@ -2,6 +2,7 @@ package _import
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -55,8 +56,8 @@ func (id *ImportDiffer) DiffClusterStore(oldCS *v1alpha1.ClusterStore, newCS Clu
 		for _, s := range oldCS.Spec.Sources {
 			delete(newBPs, s.Image)
 		}
-		oldCSStr = `Name: default
-Sources:`
+		oldCSStr = fmt.Sprintf(`Name: %s
+Sources:`, oldCS.Name)
 	}
 
 	if len(newBPs) == 0 {

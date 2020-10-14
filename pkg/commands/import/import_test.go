@@ -219,7 +219,7 @@ Imported resources
 					defaultBuilder,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
-			require.Equal(t, true, fakeConfirmationProvider.WasRequested())
+			require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("Confirm with y:"))
 		})
 
 		it("creates stores, stacks, and cbs defined in the dependency descriptor for version 1", func() {
@@ -345,7 +345,7 @@ Imported resources created
 
 			fakeDiffer.DiffResult = ""
 
-			it("updates the import timestamp", func() {
+			it("updates the import timestamp and uses descriptive confirm message", func() {
 				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
@@ -410,6 +410,7 @@ Imported resources
 						},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
+				require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("Re-upload images with y:"))
 			})
 
 			it("does not error when original resource annotation is nil", func() {

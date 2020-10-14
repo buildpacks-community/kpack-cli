@@ -13,6 +13,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
@@ -31,15 +32,15 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 		storeName = "some-store-name"
 	)
 
-	var confirmationProvider *fakes.FakeConfirmationProvider
+	var fakeConfirmationProvider *fakes.FakeConfirmationProvider
 
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return clusterstore.NewDeleteCommand(clientSetProvider, confirmationProvider)
+		return clusterstore.NewDeleteCommand(clientSetProvider, fakeConfirmationProvider)
 	}
 
 	it.Before(func() {
-		confirmationProvider = fakes.NewFakeConfirmationProvider(true, nil)
+		fakeConfirmationProvider = fakes.NewFakeConfirmationProvider(true, nil)
 	})
 
 	when("confirmation is given by user", func() {
@@ -72,7 +73,7 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestKpack(t, cmdFunc)
-				assert.True(t, confirmationProvider.WasRequested())
+				require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("WARNING: Builders referring to buildpacks from this store will no longer schedule rebuilds for buildpack updates.\nPlease confirm store deletion by typing 'y': "))
 			})
 		})
 
@@ -89,14 +90,14 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestKpack(t, cmdFunc)
-				assert.True(t, confirmationProvider.WasRequested())
+				require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("WARNING: Builders referring to buildpacks from this store will no longer schedule rebuilds for buildpack updates.\nPlease confirm store deletion by typing 'y': "))
 			})
 		})
 	})
 
 	when("confirmation is not given by user", func() {
 		it.Before(func() {
-			confirmationProvider = fakes.NewFakeConfirmationProvider(false, nil)
+			fakeConfirmationProvider = fakes.NewFakeConfirmationProvider(false, nil)
 		})
 
 		it("skips deleting the store", func() {
@@ -106,14 +107,14 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 				ExpectErr:      false,
 				ExpectedOutput: "Skipping ClusterStore deletion\n",
 			}.TestKpack(t, cmdFunc)
-			assert.True(t, confirmationProvider.WasRequested())
+			require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("WARNING: Builders referring to buildpacks from this store will no longer schedule rebuilds for buildpack updates.\nPlease confirm store deletion by typing 'y': "))
 		})
 	})
 
 	when("confirmation process errors", func() {
 		confirmationError := errors.New("some weird error")
 		it.Before(func() {
-			confirmationProvider = fakes.NewFakeConfirmationProvider(false, confirmationError)
+			fakeConfirmationProvider = fakes.NewFakeConfirmationProvider(false, confirmationError)
 		})
 
 		it("confirms and bubbles up the error", func() {
@@ -123,7 +124,7 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 				ExpectErr:      true,
 				ExpectedOutput: fmt.Sprintf("Error: %s\n", confirmationError),
 			}.TestKpack(t, cmdFunc)
-			assert.True(t, confirmationProvider.WasRequested())
+			require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("WARNING: Builders referring to buildpacks from this store will no longer schedule rebuilds for buildpack updates.\nPlease confirm store deletion by typing 'y': "))
 		})
 	})
 
@@ -157,7 +158,7 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestKpack(t, cmdFunc)
-				assert.False(t, confirmationProvider.WasRequested())
+				assert.False(t, fakeConfirmationProvider.WasRequested())
 			})
 		})
 
@@ -174,7 +175,7 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				}.TestKpack(t, cmdFunc)
-				assert.False(t, confirmationProvider.WasRequested())
+				assert.False(t, fakeConfirmationProvider.WasRequested())
 			})
 		})
 	})

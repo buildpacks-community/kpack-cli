@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/sclevine/spec"
 )
 
@@ -58,32 +59,31 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	when("DiffClusterStore", func() {
-		it("returns a diff of only new store images", func() {
-			oldStore := &v1alpha1.ClusterStore{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-store",
-				},
-				Spec: v1alpha1.ClusterStoreSpec{
-					Sources: []v1alpha1.StoreImage{
-						{Image: "some-old-buildpackage"},
-						{Image: "some-same-buildpackage"},
-						{Image: "some-extra-buildpackage"},
-					},
-				},
-			}
-			newStore := importpkg.ClusterStore{
+		oldStore := &v1alpha1.ClusterStore{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "some-store",
-				Sources: []importpkg.Source{
-					{Image: "some-new-buildpackage"},
+			},
+			Spec: v1alpha1.ClusterStoreSpec{
+				Sources: []v1alpha1.StoreImage{
+					{Image: "some-old-buildpackage"},
+					{Image: "some-same-buildpackage"},
 					{Image: "some-extra-buildpackage"},
 				},
-			}
-
+			},
+		}
+		newStore := importpkg.ClusterStore{
+			Name: "some-store",
+			Sources: []importpkg.Source{
+				{Image: "some-new-buildpackage"},
+				{Image: "some-extra-buildpackage"},
+			},
+		}
+		it("returns a diff of only new store images", func() {
 			diff, err := importDiffer.DiffClusterStore(oldStore, newStore)
 			require.NoError(t, err)
 			require.Equal(t, "some-diff", diff)
 			diffArg0, diffArg1 := fakeDiffer.Args()
-			expectedArg0 := "Name: default\nSources:"
+			expectedArg0 := "Name: some-store\nSources:"
 			expectedArg1 := importpkg.ClusterStore{Name: "some-store", Sources: []importpkg.Source{{Image: "some-new-buildpackage"}}}
 			require.Equal(t, expectedArg0, diffArg0)
 			require.Equal(t, expectedArg1, diffArg1)
@@ -92,13 +92,23 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("diffs with empty string when old cluster store does not exist", func() {
-			newStore := importpkg.ClusterStore{}
-
 			diff, err := importDiffer.DiffClusterStore(nil, newStore)
 			require.NoError(t, err)
 			require.Equal(t, "some-diff", diff)
 			diffArg0, _ := fakeDiffer.Args()
 			require.Equal(t, "", diffArg0)
+		})
+
+		it("returns no diff with no new buildpackages", func() {
+			oldStore.Spec.Sources = []v1alpha1.StoreImage{
+				{Image: "some-new-buildpackage"},
+				{Image: "some-extra-buildpackage"},
+			}
+
+			importDiffer.Differ = commands.Differ{}
+			diff, err := importDiffer.DiffClusterStore(oldStore, newStore)
+			require.NoError(t, err)
+			require.Equal(t, "", diff)
 		})
 	})
 

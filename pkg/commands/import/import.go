@@ -37,13 +37,22 @@ func NewImportCommand(
 	)
 
 	const (
-		confirmMessage = "Confirm with y:"
+		confirmMessage          = "Confirm with y:"
+		noChangesConfirmMessage = "Re-upload images with y:"
 	)
+
+	confirmMsgMap := map[bool]string{
+		true:  confirmMessage,
+		false: noChangesConfirmMessage,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "import -f <filename>",
 		Short: "Import dependencies for stores, stacks, and cluster builders",
-		Long:  `This operation will create or update stores, stacks, and cluster builders defined in the dependency descriptor.`,
+		Long: `This operation will create or update clusterstores, clusterstacks, and clusterbuilders defined in the dependency descriptor.
+
+kp import will always attempt to upload the stack, store, and builder images, even if the resources have not changed.
+This can be used as a way to repair resources when registry images have been unexpectedly removed.`,
 		Example: `kp import -f dependencies.yaml
 cat dependencies.yaml | kp import -f -`,
 		SilenceUsage: true,
@@ -102,12 +111,13 @@ cat dependencies.yaml | kp import -f -`,
 				StackRefGetter: stackFactory,
 			}
 
-			if err := showChanges(descriptor, importDiffer, cs.KpackClient, ch); err != nil {
+			hasChanges, err := showChanges(descriptor, importDiffer, cs.KpackClient, ch)
+			if err != nil {
 				return err
 			}
 
 			if !force {
-				confirmed, err := confirmationProvider.Confirm(confirmMessage)
+				confirmed, err := confirmationProvider.Confirm(confirmMsgMap[hasChanges])
 				if err != nil {
 					return err
 				}
@@ -192,7 +202,8 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 	return deps, nil
 }
 
-func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *importpkg.ImportDiffer, kClient kpack.Interface, ch *commands.CommandHelper) error {
+func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *importpkg.ImportDiffer, kClient kpack.Interface, ch *commands.CommandHelper) (hasChanges bool, err error) {
+	hasChanges = false
 	var changes strings.Builder
 	changes.WriteString("ClusterStores\n\n")
 
@@ -200,7 +211,7 @@ func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *import
 	for _, cs := range descriptor.ClusterStores {
 		curStore, err := kClient.KpackV1alpha1().ClusterStores().Get(cs.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
+			return false, err
 		}
 		if k8serrors.IsNotFound(err) {
 			curStore = nil
@@ -208,9 +219,10 @@ func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *import
 
 		cStoreDiff, err := importDiffer.DiffClusterStore(curStore, cs)
 		if err != nil {
-			return err
+			return false, err
 		}
 		if cStoreDiff != "" {
+			hasChanges = true
 			curDiff.WriteString(cStoreDiff + "\n\n")
 		}
 	}
@@ -224,7 +236,7 @@ func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *import
 	for _, cs := range descriptor.GetClusterStacks() {
 		curStack, err := kClient.KpackV1alpha1().ClusterStacks().Get(cs.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
+			return false, err
 		}
 		if k8serrors.IsNotFound(err) {
 			curStack = nil
@@ -232,9 +244,10 @@ func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *import
 
 		cStackDiff, err := importDiffer.DiffClusterStack(curStack, cs)
 		if err != nil {
-			return err
+			return false, err
 		}
 		if cStackDiff != "" {
+			hasChanges = true
 			curDiff.WriteString(cStackDiff + "\n\n")
 		}
 	}
@@ -248,7 +261,7 @@ func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *import
 	for _, cb := range descriptor.GetClusterBuilders() {
 		curBuilder, err := kClient.KpackV1alpha1().ClusterBuilders().Get(cb.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
+			return false, err
 		}
 		if k8serrors.IsNotFound(err) {
 			curBuilder = nil
@@ -256,9 +269,10 @@ func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *import
 
 		cBuilderDiff, err := importDiffer.DiffClusterBuilder(curBuilder, cb)
 		if err != nil {
-			return err
+			return false, err
 		}
 		if cBuilderDiff != "" {
+			hasChanges = true
 			curDiff.WriteString(cBuilderDiff + "\n\n")
 		}
 	}
@@ -267,5 +281,5 @@ func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *import
 	}
 	changes.WriteString(curDiff.String())
 
-	return ch.Printlnf(changes.String())
+	return hasChanges, ch.Printlnf(changes.String())
 }
