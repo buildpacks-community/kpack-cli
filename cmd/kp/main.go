@@ -87,25 +87,11 @@ func getVersionCommand() *cobra.Command {
 }
 
 func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-
 	newImageWaiter := func(clientSet k8s.ClientSet) imgcmds.ImageWaiter {
 		return logs.NewImageWaiter(clientSet.KpackClient, logs.NewBuildLogsClient(clientSet.K8sClient))
 	}
 
 	factory := &image.Factory{}
-
-	configureFactoryHook := func(cmd *cobra.Command, args []string) error {
-		return configureImageFactory(cmd, factory)
-	}
-
-	createCommand := imgcmds.NewCreateCommand(clientSetProvider, factory, newImageWaiter)
-	createCommand.PreRunE = configureFactoryHook
-
-	patchCommand := imgcmds.NewPatchCommand(clientSetProvider, factory, newImageWaiter)
-	patchCommand.PreRunE = configureFactoryHook
-
-	saveCommand := imgcmds.NewSaveCommand(clientSetProvider, factory, newImageWaiter)
-	saveCommand.PreRunE = configureFactoryHook
 
 	imageRootCmd := &cobra.Command{
 		Use:     "image",
@@ -113,14 +99,18 @@ func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Aliases: []string{"images", "imgs", "img"},
 	}
 	imageRootCmd.AddCommand(
-		createCommand,
-		patchCommand,
-		saveCommand,
+		imgcmds.NewCreateCommand(clientSetProvider, factory, newImageWaiter),
+		imgcmds.NewPatchCommand(clientSetProvider, factory, newImageWaiter),
+		imgcmds.NewSaveCommand(clientSetProvider, factory, newImageWaiter),
 		imgcmds.NewListCommand(clientSetProvider),
 		imgcmds.NewDeleteCommand(clientSetProvider),
 		imgcmds.NewTriggerCommand(clientSetProvider),
 		imgcmds.NewStatusCommand(clientSetProvider),
 	)
+	imageRootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		return configureImageFactory(cmd, factory)
+	}
+
 	return imageRootCmd
 }
 
@@ -194,50 +184,28 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	factory := &clusterstack.Factory{}
 
-	configureFactoryHook := func(cmd *cobra.Command, args []string) error {
-		return configureClusterStackFactory(cmd, factory)
-	}
-
-	createCommand := clusterstackcmds.NewCreateCommand(clientSetProvider, factory)
-	createCommand.PreRunE = configureFactoryHook
-
-	updateCommand := clusterstackcmds.NewUpdateCommand(clientSetProvider, factory)
-	createCommand.PreRunE = configureFactoryHook
-
-	saveCommand := clusterstackcmds.NewSaveCommand(clientSetProvider, factory)
-	saveCommand.PreRunE = configureFactoryHook
-
 	stackRootCmd := &cobra.Command{
 		Use:     "clusterstack",
 		Aliases: []string{"clusterstacks", "clstrcsks", "clstrcsk", "cstks", "cstk", " csks", "csk"},
 		Short:   "ClusterStack Commands",
 	}
 	stackRootCmd.AddCommand(
-		createCommand,
-		updateCommand,
-		saveCommand,
+		clusterstackcmds.NewCreateCommand(clientSetProvider, factory),
+		clusterstackcmds.NewUpdateCommand(clientSetProvider, factory),
+		clusterstackcmds.NewSaveCommand(clientSetProvider, factory),
 		clusterstackcmds.NewListCommand(clientSetProvider),
 		clusterstackcmds.NewStatusCommand(clientSetProvider),
 		clusterstackcmds.NewDeleteCommand(clientSetProvider),
 	)
+	stackRootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		return configureClusterStackFactory(cmd, factory)
+	}
+
 	return stackRootCmd
 }
 
 func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	factory := &clusterstore.Factory{}
-
-	configureFactoryHook := func(cmd *cobra.Command, args []string) error {
-		return configureClusterStoreFactory(cmd, factory)
-	}
-
-	createCommand := storecmds.NewCreateCommand(clientSetProvider, factory)
-	createCommand.PreRunE = configureFactoryHook
-
-	addCommand := storecmds.NewAddCommand(clientSetProvider, factory)
-	addCommand.PreRunE = configureFactoryHook
-
-	saveCommand := storecmds.NewSaveCommand(clientSetProvider, factory)
-	saveCommand.PreRunE = configureFactoryHook
 
 	storeRootCommand := &cobra.Command{
 		Use:     "clusterstore",
@@ -245,14 +213,18 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short:   "ClusterStore Commands",
 	}
 	storeRootCommand.AddCommand(
-		createCommand,
-		addCommand,
-		saveCommand,
+		storecmds.NewCreateCommand(clientSetProvider, factory),
+		storecmds.NewAddCommand(clientSetProvider, factory),
+		storecmds.NewSaveCommand(clientSetProvider, factory),
 		storecmds.NewDeleteCommand(clientSetProvider, commands.NewConfirmationProvider()),
 		storecmds.NewStatusCommand(clientSetProvider),
 		storecmds.NewRemoveCommand(clientSetProvider),
 		storecmds.NewListCommand(clientSetProvider),
 	)
+	storeRootCommand.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		return configureClusterStoreFactory(cmd, factory)
+	}
+
 	return storeRootCommand
 }
 
