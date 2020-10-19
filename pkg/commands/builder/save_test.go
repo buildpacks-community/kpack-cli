@@ -121,6 +121,61 @@ func testBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestKpack(t, cmdFunc)
 		})
 
+		it("creates a Builder with buildpack flags", func() {
+			bldr.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"Builder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"},{"id":"org.cloudfoundry.go","version":"1.0.1"}]}],"serviceAccount":"default"},"status":{"stack":{}}}`
+			bldr.Spec.Order = []v1alpha1.OrderEntry{
+				{
+					Group: []v1alpha1.BuildpackRef{
+						{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
+								Id: "org.cloudfoundry.nodejs",
+							},
+						},
+						{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
+								Id:      "org.cloudfoundry.go",
+								Version: "1.0.1",
+							},
+						},
+					},
+				},
+			}
+
+			testhelpers.CommandTest{
+				Args: []string{
+					bldr.Name,
+					"--tag", bldr.Spec.Tag,
+					"--stack", bldr.Spec.Stack.Name,
+					"--store", bldr.Spec.Store.Name,
+					"--buildpack", "org.cloudfoundry.nodejs",
+					"--buildpack", "org.cloudfoundry.go@1.0.1",
+					"-n", bldr.Namespace,
+				},
+				ExpectedOutput: `Builder "test-builder" created
+`,
+				ExpectCreates: []runtime.Object{
+					bldr,
+				},
+			}.TestKpack(t, cmdFunc)
+		})
+
+		it("returns error when buildpack and order flags are used together", func() {
+			bldr.Namespace = defaultNamespace
+
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					bldr,
+				},
+				Args: []string{
+					bldr.Name,
+					"--order", "./testdata/patched-order.yaml",
+					"--buildpack", "org.cloudfoundry.test-bp",
+				},
+				ExpectErr:      true,
+				ExpectedOutput: "Error: cannot use --order and --buildpack together\n",
+			}.TestKpack(t, cmdFunc)
+		})
+
 		when("output flag is used", func() {
 			it("can output in yaml format", func() {
 				const resourceYAML = `apiVersion: kpack.io/v1alpha1
