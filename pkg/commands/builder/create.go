@@ -33,9 +33,13 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Create a builder by providing command line arguments.
 The builder will be created only if it does not exist in the provided namespace.
 
+A buildpack order must be provided with either the path to an order yaml or via the --buildpack flag.
+Multiple buildpacks provided via the --buildpack flag will be added to the same order group. 
+
 The namespace defaults to the kubernetes current-context namespace.`,
 		Example: `kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
-kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml`,
+kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml
+kp builder create my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

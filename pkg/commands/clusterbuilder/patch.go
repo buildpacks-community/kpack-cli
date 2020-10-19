@@ -22,10 +22,15 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:          "patch <name>",
-		Short:        "Patch an existing cluster builder configuration",
-		Long:         ` `,
-		Example:      `kp cb patch my-builder`,
+		Use:   "patch <name>",
+		Short: "Patch an existing cluster builder configuration",
+		Long: `Patch an existing clusterbuilder configuration by providing command line arguments.
+
+A buildpack order must be provided with either the path to an order yaml or via the --buildpack flag.
+Multiple buildpacks provided via the --buildpack flag will be added to the same order group.`,
+		Example: `kp cb patch my-builder --order /path/to/order.yaml --stack tiny --store my-store
+kp cb patch my-builder --order /path/to/order.yaml
+kp cb patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
