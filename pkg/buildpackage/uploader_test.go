@@ -32,8 +32,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 	when("UploadBuildpackage", func() {
 		when("cnb file is provided", func() {
 			it("it uploads to registry", func() {
-
-				image, err := uploader.UploadBuildpackage(ioutil.Discard, "kpackcr.org/somepath", "testdata/sample-bp.cnb", registry.TLSConfig{})
+				image, err := uploader.UploadBuildpackage("testdata/sample-bp.cnb", "kpackcr.org/somepath", registry.TLSConfig{}, ioutil.Discard)
 				require.NoError(t, err)
 
 				const expectedFixture = "kpackcr.org/somepath/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
@@ -52,7 +51,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 
 				fetcher.AddImage("some/remote-bp", testImage)
 
-				image, err := uploader.UploadBuildpackage(ioutil.Discard, "kpackcr.org/somepath", "some/remote-bp", registry.TLSConfig{})
+				image, err := uploader.UploadBuildpackage("some/remote-bp", "kpackcr.org/somepath", registry.TLSConfig{}, ioutil.Discard)
 				require.NoError(t, err)
 
 				digest, err := testImage.Digest()
@@ -68,8 +67,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 	when("UploadBuildpackage", func() {
 		when("cnb file is provided", func() {
 			it("it returns the relocated reference without relocating", func() {
-
-				ref, err := uploader.RelocatedBuildpackage("kpackcr.org/somepath", "testdata/sample-bp.cnb", registry.TLSConfig{})
+				ref, err := uploader.UploadedBuildpackageRef("testdata/sample-bp.cnb", "kpackcr.org/somepath", registry.TLSConfig{})
 				require.NoError(t, err)
 
 				const expectedFixture = "kpackcr.org/somepath/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
@@ -88,7 +86,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 
 				fetcher.AddImage("some/remote-bp", testImage)
 
-				ref, err := uploader.RelocatedBuildpackage("kpackcr.org/somepath", "some/remote-bp", registry.TLSConfig{})
+				ref, err := uploader.UploadedBuildpackageRef("some/remote-bp", "kpackcr.org/somepath", registry.TLSConfig{})
 				require.NoError(t, err)
 
 				digest, err := testImage.Digest()

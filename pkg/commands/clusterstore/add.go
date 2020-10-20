@@ -13,11 +13,13 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewAddCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstore.Factory) *cobra.Command {
+func NewAddCommand(clientSetProvider k8s.ClientSetProvider, uploader clusterstore.BuildpackageUploader) *cobra.Command {
 	var (
 		buildpackages []string
+		tlsCfg        registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -46,8 +48,20 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
+			repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
-			factory.Printer = ch
+
+			factory := &clusterstore.Factory{
+				Uploader:     uploader,
+				TLSConfig:    tlsCfg,
+				Repository:   repo,
+				Printer:      ch,
+				ValidateOnly: ch.ValidateOnly(),
+			}
 
 			s, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(name, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
@@ -62,21 +76,16 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
 	commands.SetDryRunOutputFlags(cmd)
-	commands.SetTLSFlags(cmd, &factory.TLSConfig)
+	commands.SetTLSFlags(cmd, &tlsCfg)
 	return cmd
 }
 
 func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) error {
-	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
-	if err != nil {
+	if err := ch.PrintStatus("Adding To ClusterStore..."); err != nil {
 		return err
 	}
 
-	if err = ch.PrintStatus("Adding Buildpackages..."); err != nil {
-		return err
-	}
-
-	updatedStore, storeUpdated, err := factory.AddToStore(store, repo, buildpackages...)
+	updatedStore, storeUpdated, err := factory.AddToStore(store, buildpackages...)
 	if err != nil {
 		return err
 	}

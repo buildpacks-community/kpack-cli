@@ -16,10 +16,11 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
+func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, uploader image.SourceUploader, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
 		namespace string
 		subPath   string
+		factory   image.Factory
 	)
 
 	cmd := &cobra.Command{
@@ -72,12 +73,15 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
+			factory.SourceUploader = uploader
 			factory.Printer = ch
+			factory.ValidateOnly = ch.ValidateOnly()
+
 			if cmd.Flag("sub-path").Changed {
 				factory.SubPath = &subPath
 			}
 
-			patched, img, err := patch(img, factory, ch, cs)
+			patched, img, err := patch(img, &factory, ch, cs)
 			if err != nil {
 				return err
 			}

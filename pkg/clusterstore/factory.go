@@ -17,8 +17,8 @@ import (
 )
 
 type BuildpackageUploader interface {
-	UploadBuildpackage(writer io.Writer, repository, buildPackage string, tlsCfg registry.TLSConfig) (string, error)
-	RelocatedBuildpackage(repository, buildPackage string, tlsCfg registry.TLSConfig) (string, error)
+	UploadBuildpackage(buildPackage, repository string, tlsCfg registry.TLSConfig, writer io.Writer) (string, error)
+	UploadedBuildpackageRef(buildPackage, repository string, tlsCfg registry.TLSConfig) (string, error)
 }
 
 type Printer interface {
@@ -27,15 +27,20 @@ type Printer interface {
 }
 
 type Factory struct {
-	Uploader   BuildpackageUploader
-	TLSConfig  registry.TLSConfig
-	Repository string
-	Printer    Printer
+	Uploader     BuildpackageUploader
+	TLSConfig    registry.TLSConfig
+	Repository   string
+	Printer      Printer
+	ValidateOnly bool
 }
 
 func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.ClusterStore, error) {
 	if err := f.validate(buildpackages); err != nil {
 		return nil, err
+	}
+
+	if f.ValidateOnly {
+		return nil, nil
 	}
 
 	newStore := &v1alpha1.ClusterStore{
@@ -51,7 +56,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 	}
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.Writer(), f.Repository, buildpackage, f.TLSConfig)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(buildpackage, f.Repository, f.TLSConfig, f.Printer.Writer())
 		if err != nil {
 			return nil, err
 		}
@@ -64,12 +69,18 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 	return newStore, k8s.SetLastAppliedCfg(newStore)
 }
 
-func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
+func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
 	storeUpdated := false
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(f.Printer.Writer(), repository, buildpackage, f.TLSConfig)
+		var uploadedBp string
+		var err error
+		if f.ValidateOnly {
+			uploadedBp, err = f.Uploader.UploadedBuildpackageRef(buildpackage, f.Repository, f.TLSConfig)
+		} else {
+			uploadedBp, err = f.Uploader.UploadBuildpackage(buildpackage, f.Repository, f.TLSConfig, f.Printer.Writer())
+		}
 		if err != nil {
-			return store, false, err
+			return nil, false, err
 		}
 
 		if storeContains(store, uploadedBp) {
@@ -83,8 +94,10 @@ func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, bu
 			Image: uploadedBp,
 		})
 
-		if err = f.Printer.Printlnf("\tAdded Buildpackage"); err != nil {
-			return store, false, err
+		if !f.ValidateOnly {
+			if err = f.Printer.Printlnf("\tAdded Buildpackage"); err != nil {
+				return nil, false, err
+			}
 		}
 
 		storeUpdated = true
@@ -94,7 +107,7 @@ func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, repository string, bu
 }
 
 func (f *Factory) RelocatedBuildpackage(buildPackage string) (string, error) {
-	return f.Uploader.RelocatedBuildpackage(f.Repository, buildPackage, f.TLSConfig)
+	return f.Uploader.UploadedBuildpackageRef(buildPackage, f.Repository, f.TLSConfig)
 }
 
 func (f *Factory) validate(buildpackages []string) error {

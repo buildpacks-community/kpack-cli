@@ -9,12 +9,14 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, uploader clusterstack.Uploader) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
+		tlsCfg        registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -43,8 +45,20 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
+			rep, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
-			factory.Printer = ch
+
+			factory := &clusterstack.Factory{
+				Uploader:     uploader,
+				Printer:      ch,
+				TLSConfig:    tlsCfg,
+				Repository:   rep,
+				ValidateOnly: ch.ValidateOnly(),
+			}
 
 			return create(name, buildImageRef, runImageRef, factory, ch, cs)
 		},
@@ -52,18 +66,13 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
 	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
 	commands.SetDryRunOutputFlags(cmd)
-	commands.SetTLSFlags(cmd, &factory.TLSConfig)
+	commands.SetTLSFlags(cmd, &tlsCfg)
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")
 	return cmd
 }
 
 func create(name, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
-	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
-	if err != nil {
-		return err
-	}
-
 	if err = ch.PrintStatus("Creating ClusterStack..."); err != nil {
 		return err
 	}
@@ -84,5 +93,5 @@ func create(name, buildImageRef, runImageRef string, factory *clusterstack.Facto
 		return err
 	}
 
-	return ch.PrintResult("ClusterStack %q created", stack.Name)
+	return ch.PrintResult("ClusterStack %q created", name)
 }

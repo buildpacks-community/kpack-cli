@@ -327,7 +327,7 @@ status:
 						builder.Name,
 						"--dry-run",
 					},
-					ExpectedOutput: `ClusterBuilder "test-builder" patched (no change)
+					ExpectedOutput: `ClusterBuilder "test-builder" patched (dry run) (no change)
 `,
 				}.TestKpack(t, cmdFunc)
 			})

@@ -1,14 +1,10 @@
 package _import_test
 
 import (
-	"fmt"
 	"testing"
 
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
-	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
@@ -18,11 +14,10 @@ import (
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/clusterstack"
-	storefakes "github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
+	clusterstackfakes "github.com/pivotal/build-service-cli/pkg/clusterstack/fakes"
+	clusterstorefakes "github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
 	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
-	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -34,21 +29,20 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		importTimestampKey = "kpack.io/import-timestamp"
 	)
-	fakeBuildpackageUploader := storefakes.FakeBuildpackageUploader{
+	fakeBuildpackageUploader := &clusterstorefakes.FakeBuildpackageUploader{
 		"some-registry.io/some-project/store-image":   "new-registry.io/new-project/store-image@sha256:123abc",
 		"some-registry.io/some-project/store-image-2": "new-registry.io/new-project/store-image-2@sha256:456def",
 	}
 
-	buildImage, buildImageId, runImage, runImageId := makeStackImages(t, "some-stack-id")
-	buildImage2, buildImage2Id, runImage2, runImage2Id := makeStackImages(t, "some-other-stack-id")
-
-	fetcher := &fakes.Fetcher{}
-	fetcher.AddImage("some-registry.io/some-project/build-image", buildImage)
-	fetcher.AddImage("some-registry.io/some-project/run-image", runImage)
-	fetcher.AddImage("some-registry.io/some-project/build-image-2", buildImage2)
-	fetcher.AddImage("some-registry.io/some-project/run-image-2", runImage2)
-
-	relocator := &fakes.Relocator{}
+	fakeStackUploader := &clusterstackfakes.FakeStackUploader{
+		Images: map[string]string{
+			"some-registry.io/some-project/build-image":   "some-uploaded-build-image@some-digest",
+			"some-registry.io/some-project/build-image-2": "some-uploaded-build-image-2@some-digest",
+			"some-registry.io/some-project/run-image":     "some-uploaded-run-image@some-digest",
+			"some-registry.io/some-project/run-image-2":   "some-uploaded-run-image-2@some-digest",
+		},
+		StackID: "some-stack-id",
+	}
 
 	config := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -96,10 +90,10 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		Spec: v1alpha1.ClusterStackSpec{
 			Id: "some-stack-id",
 			BuildImage: v1alpha1.ClusterStackSpecImage{
-				Image: "new-registry.io/new-project/build@" + buildImageId,
+				Image: "some-uploaded-build-image@some-digest",
 			},
 			RunImage: v1alpha1.ClusterStackSpecImage{
-				Image: "new-registry.io/new-project/run@" + runImageId,
+				Image: "some-uploaded-run-image@some-digest",
 			},
 		},
 	}
@@ -160,8 +154,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		return importcmds.NewImportCommand(
 			clientSetProvider,
 			fakeBuildpackageUploader,
-			relocator,
-			fetcher,
+			fakeStackUploader,
 			fakeDiffer,
 			timestampProvider,
 			fakeConfirmationProvider)
@@ -185,7 +178,9 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: `ClusterStores
+				ExpectedOutput: `Changes
+
+ClusterStores
 
 some-diff
 
@@ -235,7 +230,9 @@ Imported resources
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: `ClusterStores
+				ExpectedOutput: `Changes
+
+ClusterStores
 
 some-diff
 
@@ -285,7 +282,9 @@ Imported resources
 					"--registry-verify-certs",
 					"--force",
 				},
-				ExpectedOutput: `ClusterStores
+				ExpectedOutput: `Changes
+
+ClusterStores
 
 some-diff
 
@@ -309,7 +308,7 @@ Importing ClusterStack 'default'...
 Uploading to 'new-registry.io/new-project'...
 Importing ClusterBuilder 'some-cb'...
 Importing ClusterBuilder 'default'...
-Imported resources created
+Imported resources
 `,
 				ExpectCreates: []runtime.Object{
 					store,
@@ -349,11 +348,11 @@ Imported resources created
 				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
-				stack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImageId)
-				stack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImageId)
+				stack.Spec.BuildImage.Image = "some-uploaded-build-image@some-digest"
+				stack.Spec.RunImage.Image = "some-uploaded-run-image@some-digest"
 
-				defaultStack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImageId)
-				defaultStack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImageId)
+				defaultStack.Spec.BuildImage.Image = "some-uploaded-build-image@some-digest"
+				defaultStack.Spec.RunImage.Image = "some-uploaded-run-image@some-digest"
 
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
@@ -369,7 +368,9 @@ Imported resources created
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: `ClusterStores
+					ExpectedOutput: `Changes
+
+ClusterStores
 
 No Changes
 
@@ -438,7 +439,9 @@ Imported resources
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: `ClusterStores
+					ExpectedOutput: `Changes
+
+ClusterStores
 
 No Changes
 
@@ -486,6 +489,8 @@ Imported resources
 			const newTimestamp = "new-timestamp"
 			timestampProvider.timestamp = newTimestamp
 
+			fakeStackUploader.StackID = "some-other-stack-id"
+
 			expectedStore := store.DeepCopy()
 			expectedStore.Annotations[importTimestampKey] = newTimestamp
 			expectedStore.Spec.Sources = append(expectedStore.Spec.Sources, v1alpha1.StoreImage{
@@ -495,14 +500,14 @@ Imported resources
 			expectedStack := stack.DeepCopy()
 			expectedStack.Annotations[importTimestampKey] = newTimestamp
 			expectedStack.Spec.Id = "some-other-stack-id"
-			expectedStack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImage2Id)
-			expectedStack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImage2Id)
+			expectedStack.Spec.BuildImage.Image = "some-uploaded-build-image-2@some-digest"
+			expectedStack.Spec.RunImage.Image = "some-uploaded-run-image-2@some-digest"
 
 			expectedDefaultStack := defaultStack.DeepCopy()
 			expectedDefaultStack.Annotations[importTimestampKey] = newTimestamp
 			expectedDefaultStack.Spec.Id = "some-other-stack-id"
-			expectedDefaultStack.Spec.BuildImage.Image = fmt.Sprintf("new-registry.io/new-project/build@%s", buildImage2Id)
-			expectedDefaultStack.Spec.RunImage.Image = fmt.Sprintf("new-registry.io/new-project/run@%s", runImage2Id)
+			expectedDefaultStack.Spec.BuildImage.Image = "some-uploaded-build-image-2@some-digest"
+			expectedDefaultStack.Spec.RunImage.Image = "some-uploaded-run-image-2@some-digest"
 
 			expectedBuilder := builder.DeepCopy()
 			expectedBuilder.Annotations[importTimestampKey] = newTimestamp
@@ -550,7 +555,9 @@ Imported resources
 					Args: []string{
 						"-f", "./testdata/updated-deps.yaml",
 					},
-					ExpectedOutput: `ClusterStores
+					ExpectedOutput: `Changes
+
+ClusterStores
 
 some-diff
 
@@ -611,7 +618,9 @@ Imported resources
 	})
 
 	when("output flag is used", func() {
-		const expectedOutput = `ClusterStores
+		const expectedOutput = `Changes
+
+ClusterStores
 
 some-diff
 
@@ -663,10 +672,10 @@ metadata:
   name: some-stack
 spec:
   buildImage:
-    image: new-registry.io/new-project/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-build-image@some-digest
   id: some-stack-id
   runImage:
-    image: new-registry.io/new-project/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-run-image@some-digest
 status:
   buildImage: {}
   runImage: {}
@@ -680,10 +689,10 @@ metadata:
   name: default
 spec:
   buildImage:
-    image: new-registry.io/new-project/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-build-image@some-digest
   id: some-stack-id
   runImage:
-    image: new-registry.io/new-project/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-run-image@some-digest
 status:
   buildImage: {}
   runImage: {}
@@ -793,10 +802,10 @@ status:
     "spec": {
         "id": "some-stack-id",
         "buildImage": {
-            "image": "new-registry.io/new-project/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d"
+            "image": "some-uploaded-build-image@some-digest"
         },
         "runImage": {
-            "image": "new-registry.io/new-project/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d"
+            "image": "some-uploaded-run-image@some-digest"
         }
     },
     "status": {
@@ -817,10 +826,10 @@ status:
     "spec": {
         "id": "some-stack-id",
         "buildImage": {
-            "image": "new-registry.io/new-project/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d"
+            "image": "some-uploaded-build-image@some-digest"
         },
         "runImage": {
-            "image": "new-registry.io/new-project/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d"
+            "image": "some-uploaded-run-image@some-digest"
         }
     },
     "status": {
@@ -934,7 +943,9 @@ status:
 		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		it("does not create any resources and prints result with dry run indicated", func() {
-			const expectedOutput = `ClusterStores
+			const expectedOutput = `Changes
+
+ClusterStores
 
 some-diff
 
@@ -953,9 +964,7 @@ some-diff
 
 Importing ClusterStore 'some-store'... (dry run)
 Importing ClusterStack 'some-stack'... (dry run)
-Uploading to 'new-registry.io/new-project'...
 Importing ClusterStack 'default'... (dry run)
-Uploading to 'new-registry.io/new-project'...
 Importing ClusterBuilder 'some-cb'... (dry run)
 Importing ClusterBuilder 'default'... (dry run)
 Imported resources (dry run)
@@ -996,10 +1005,10 @@ metadata:
   name: some-stack
 spec:
   buildImage:
-    image: new-registry.io/new-project/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-build-image@some-digest
   id: some-stack-id
   runImage:
-    image: new-registry.io/new-project/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-run-image@some-digest
 status:
   buildImage: {}
   runImage: {}
@@ -1013,10 +1022,10 @@ metadata:
   name: default
 spec:
   buildImage:
-    image: new-registry.io/new-project/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-build-image@some-digest
   id: some-stack-id
   runImage:
-    image: new-registry.io/new-project/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-run-image@some-digest
 status:
   buildImage: {}
   runImage: {}
@@ -1072,7 +1081,9 @@ status:
   stack: {}
 `
 
-			const expectedOutput = `ClusterStores
+			const expectedOutput = `Changes
+
+ClusterStores
 
 some-diff
 
@@ -1114,40 +1125,6 @@ Importing ClusterBuilder 'default'... (dry run)
 			})
 		})
 	})
-}
-
-func makeStackImages(t *testing.T, stackId string) (v1.Image, string, v1.Image, string) {
-	buildImage, err := random.Image(0, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	buildImage, err = imagehelpers.SetStringLabel(buildImage, clusterstack.IdLabel, stackId)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	runImage, err := random.Image(0, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	runImage, err = imagehelpers.SetStringLabel(runImage, clusterstack.IdLabel, stackId)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	buildImageHash, err := buildImage.Digest()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	runImageHash, err := runImage.Digest()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return buildImage, buildImageHash.String(), runImage, runImageHash.String()
 }
 
 type FakeTimestampProvider struct {

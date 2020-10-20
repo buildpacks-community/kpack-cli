@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
 	storecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
@@ -32,13 +31,9 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		buildpackage2 = "bpfromcnb.cnb"
 		uploadedBp2   = "some-registry.io/some-repo/bpfromcnb@sha256:123imagefromcnb"
 
-		fakeBuildpackageUploader = fakes.FakeBuildpackageUploader{
+		fakeBuildpackageUploader = &fakes.FakeBuildpackageUploader{
 			buildpackage1: uploadedBp1,
 			buildpackage2: uploadedBp2,
-		}
-
-		factory = &clusterstore.Factory{
-			Uploader: fakeBuildpackageUploader,
 		}
 
 		config = &corev1.ConfigMap{
@@ -74,7 +69,7 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return storecmds.NewCreateCommand(clientSetProvider, factory)
+		return storecmds.NewCreateCommand(clientSetProvider, fakeBuildpackageUploader)
 	}
 
 	it("creates a cluster store", func() {

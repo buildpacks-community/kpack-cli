@@ -6,11 +6,8 @@ package clusterstack_test
 import (
 	"testing"
 
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
-	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -19,9 +16,8 @@ import (
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/clusterstack"
-	clstrstkcmd "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
-	"github.com/pivotal/build-service-cli/pkg/image/fakes"
+	clusterstackfakes "github.com/pivotal/build-service-cli/pkg/clusterstack/fakes"
+	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -30,21 +26,14 @@ func TestUpdateCommand(t *testing.T) {
 }
 
 func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
-	fetcher := &fakes.Fetcher{}
-
-	oldBuildImage, oldBuildImageId, oldRunImage, oldRunImageId := makeStackImages(t, "some-old-id")
-	fetcher.AddImage("some-old-build-image", oldBuildImage)
-	fetcher.AddImage("some-old-run-image", oldRunImage)
-
-	newBuildImage, newBuildImageId, newRunImage, newRunImageId := makeStackImages(t, "some-new-id")
-	fetcher.AddImage("some-new-build-image", newBuildImage)
-	fetcher.AddImage("some-new-run-image", newRunImage)
-
-	relocator := &fakes.Relocator{}
-
-	stackFactory := &clusterstack.Factory{
-		Fetcher:   fetcher,
-		Relocator: relocator,
+	fakeUploader := &clusterstackfakes.FakeStackUploader{
+		Images: map[string]string{
+			"some-old-build-image": "some-old-build-image@some-old-digest",
+			"some-old-run-image":   "some-old-run-image@some-old-digest",
+			"some-new-build-image": "some-new-uploaded-build-image@some-digest",
+			"some-new-run-image":   "some-new-uploaded-run-image@some-digest",
+		},
+		StackID: "some-new-id",
 	}
 
 	stack := &v1alpha1.ClusterStack{
@@ -64,12 +53,12 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			ResolvedClusterStack: v1alpha1.ResolvedClusterStack{
 				Id: "some-old-id",
 				BuildImage: v1alpha1.ClusterStackStatusImage{
-					LatestImage: "some-registry.com/old-repo/build@" + oldBuildImageId,
-					Image:       "some-old-build-image",
+					LatestImage: "some-old-build-image@some-old-digest",
+					Image:       "some-old-build-image@some-old-digest",
 				},
 				RunImage: v1alpha1.ClusterStackStatusImage{
-					LatestImage: "some-registry.com/old-repo/run@" + oldRunImageId,
-					Image:       "some-old-run-image",
+					LatestImage: "some-old-run-image@some-old-digest",
+					Image:       "some-old-run-image@some-old-digest",
 				},
 			},
 		},
@@ -81,14 +70,14 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			Namespace: "kpack",
 		},
 		Data: map[string]string{
-			"canonical.repository":                "some-registry.com/some-repo",
+			"canonical.repository":                "some-registry.io/some-repo",
 			"canonical.repository.serviceaccount": "some-serviceaccount",
 		},
 	}
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return clstrstkcmd.NewUpdateCommand(clientSetProvider, stackFactory)
+		return clusterstackcmds.NewUpdateCommand(clientSetProvider, fakeUploader)
 	}
 
 	it("updates the stack id, run image, and build image", func() {
@@ -113,10 +102,10 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 						Spec: v1alpha1.ClusterStackSpec{
 							Id: "some-new-id",
 							BuildImage: v1alpha1.ClusterStackSpecImage{
-								Image: "some-registry.com/some-repo/build@" + newBuildImageId,
+								Image: "some-new-uploaded-build-image@some-digest",
 							},
 							RunImage: v1alpha1.ClusterStackSpecImage{
-								Image: "some-registry.com/some-repo/run@" + newRunImageId,
+								Image: "some-new-uploaded-run-image@some-digest",
 							},
 						},
 						Status: stack.Status,
@@ -124,7 +113,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			},
 			ExpectedOutput: `Updating ClusterStack...
-Uploading to 'some-registry.com/some-repo'...
+Uploading to 'some-registry.io/some-repo'...
 ClusterStack "some-stack" updated
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
@@ -141,7 +130,7 @@ ClusterStack "some-stack" updated
 			Args:      []string{"some-stack", "--build-image", "some-old-build-image", "--run-image", "some-old-run-image"},
 			ExpectErr: false,
 			ExpectedOutput: `Updating ClusterStack...
-Uploading to 'some-registry.com/some-repo'...
+Uploading to 'some-registry.io/some-repo'...
 Build and Run images already exist in stack
 ClusterStack "some-stack" updated (no change)
 `,
@@ -183,26 +172,6 @@ ClusterStack "some-stack" updated (no change)
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
-	it("returns error when build image and run image have different stack Ids", func() {
-		_, _, runImage, _ := makeStackImages(t, "other-stack-id")
-
-		fetcher.AddImage("some-new-run-image", runImage)
-
-		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
-				config,
-			},
-			KpackObjects: []runtime.Object{
-				stack,
-			},
-			Args:      []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
-			ExpectErr: true,
-			ExpectedOutput: `Updating ClusterStack...
-Error: build stack 'some-new-id' does not match run stack 'other-stack-id'
-`,
-		}.TestK8sAndKpack(t, cmdFunc)
-	})
-
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
 			const resourceYAML = `apiVersion: kpack.io/v1alpha1
@@ -212,18 +181,18 @@ metadata:
   name: some-stack
 spec:
   buildImage:
-    image: some-registry.com/some-repo/build@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7
+    image: some-new-uploaded-build-image@some-digest
   id: some-new-id
   runImage:
-    image: some-registry.com/some-repo/run@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7
+    image: some-new-uploaded-run-image@some-digest
 status:
   buildImage:
-    image: some-old-build-image
-    latestImage: some-registry.com/old-repo/build@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6
+    image: some-old-build-image@some-old-digest
+    latestImage: some-old-build-image@some-old-digest
   id: some-old-id
   runImage:
-    image: some-old-run-image
-    latestImage: some-registry.com/old-repo/run@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6
+    image: some-old-run-image@some-old-digest
+    latestImage: some-old-run-image@some-old-digest
 `
 
 			testhelpers.CommandTest{
@@ -246,10 +215,10 @@ status:
 							Spec: v1alpha1.ClusterStackSpec{
 								Id: "some-new-id",
 								BuildImage: v1alpha1.ClusterStackSpecImage{
-									Image: "some-registry.com/some-repo/build@" + newBuildImageId,
+									Image: "some-new-uploaded-build-image@some-digest",
 								},
 								RunImage: v1alpha1.ClusterStackSpecImage{
-									Image: "some-registry.com/some-repo/run@" + newRunImageId,
+									Image: "some-new-uploaded-run-image@some-digest",
 								},
 							},
 							Status: stack.Status,
@@ -258,7 +227,7 @@ status:
 				},
 				ExpectedOutput: resourceYAML,
 				ExpectedErrorOutput: `Updating ClusterStack...
-Uploading to 'some-registry.com/some-repo'...
+Uploading to 'some-registry.io/some-repo'...
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -274,21 +243,21 @@ Uploading to 'some-registry.com/some-repo'...
     "spec": {
         "id": "some-new-id",
         "buildImage": {
-            "image": "some-registry.com/some-repo/build@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7"
+            "image": "some-new-uploaded-build-image@some-digest"
         },
         "runImage": {
-            "image": "some-registry.com/some-repo/run@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7"
+            "image": "some-new-uploaded-run-image@some-digest"
         }
     },
     "status": {
         "id": "some-old-id",
         "buildImage": {
-            "latestImage": "some-registry.com/old-repo/build@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6",
-            "image": "some-old-build-image"
+            "latestImage": "some-old-build-image@some-old-digest",
+            "image": "some-old-build-image@some-old-digest"
         },
         "runImage": {
-            "latestImage": "some-registry.com/old-repo/run@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6",
-            "image": "some-old-run-image"
+            "latestImage": "some-old-run-image@some-old-digest",
+            "image": "some-old-run-image@some-old-digest"
         }
     }
 }
@@ -314,10 +283,10 @@ Uploading to 'some-registry.com/some-repo'...
 							Spec: v1alpha1.ClusterStackSpec{
 								Id: "some-new-id",
 								BuildImage: v1alpha1.ClusterStackSpecImage{
-									Image: "some-registry.com/some-repo/build@" + newBuildImageId,
+									Image: "some-new-uploaded-build-image@some-digest",
 								},
 								RunImage: v1alpha1.ClusterStackSpecImage{
-									Image: "some-registry.com/some-repo/run@" + newRunImageId,
+									Image: "some-new-uploaded-run-image@some-digest",
 								},
 							},
 							Status: stack.Status,
@@ -326,7 +295,7 @@ Uploading to 'some-registry.com/some-repo'...
 				},
 				ExpectedOutput: resourceJSON,
 				ExpectedErrorOutput: `Updating ClusterStack...
-Uploading to 'some-registry.com/some-repo'...
+Uploading to 'some-registry.io/some-repo'...
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -346,12 +315,12 @@ spec:
     image: some-old-run-image
 status:
   buildImage:
-    image: some-old-build-image
-    latestImage: some-registry.com/old-repo/build@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6
+    image: some-old-build-image@some-old-digest
+    latestImage: some-old-build-image@some-old-digest
   id: some-old-id
   runImage:
-    image: some-old-run-image
-    latestImage: some-registry.com/old-repo/run@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6
+    image: some-old-run-image@some-old-digest
+    latestImage: some-old-run-image@some-old-digest
 `
 
 				testhelpers.CommandTest{
@@ -368,7 +337,7 @@ status:
 						"--output", "yaml",
 					},
 					ExpectedErrorOutput: `Updating ClusterStack...
-Uploading to 'some-registry.com/some-repo'...
+Uploading to 'some-registry.io/some-repo'...
 Build and Run images already exist in stack
 `,
 					ExpectedOutput: resourceYAML,
@@ -393,7 +362,6 @@ Build and Run images already exist in stack
 					"--dry-run",
 				},
 				ExpectedOutput: `Updating ClusterStack... (dry run)
-Uploading to 'some-registry.com/some-repo'...
 ClusterStack "some-stack" updated (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -415,9 +383,8 @@ ClusterStack "some-stack" updated (dry run)
 						"--dry-run",
 					},
 					ExpectedOutput: `Updating ClusterStack... (dry run)
-Uploading to 'some-registry.com/some-repo'...
 Build and Run images already exist in stack
-ClusterStack "some-stack" updated (no change)
+ClusterStack "some-stack" updated (dry run) (no change)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -432,18 +399,18 @@ metadata:
   name: some-stack
 spec:
   buildImage:
-    image: some-registry.com/some-repo/build@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7
+    image: some-new-uploaded-build-image@some-digest
   id: some-new-id
   runImage:
-    image: some-registry.com/some-repo/run@sha256:2dc4df5d1ff625346ecdb753ebc2aa2d18fc02027fd2459a1ff59b81bde904e7
+    image: some-new-uploaded-run-image@some-digest
 status:
   buildImage:
-    image: some-old-build-image
-    latestImage: some-registry.com/old-repo/build@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6
+    image: some-old-build-image@some-old-digest
+    latestImage: some-old-build-image@some-old-digest
   id: some-old-id
   runImage:
-    image: some-old-run-image
-    latestImage: some-registry.com/old-repo/run@sha256:f845e3c8d069d56623cbd2d98e811bb63c81bfa0b51d86fe2e51f322046f38b6
+    image: some-old-run-image@some-old-digest
+    latestImage: some-old-run-image@some-old-digest
 `
 
 				testhelpers.CommandTest{
@@ -462,44 +429,10 @@ status:
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Updating ClusterStack... (dry run)
-Uploading to 'some-registry.com/some-repo'...
+Uploading to 'some-registry.io/some-repo'...
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
 		})
 	})
-}
-
-func makeStackImages(t *testing.T, stackId string) (v1.Image, string, v1.Image, string) {
-	buildImage, err := random.Image(0, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	buildImage, err = imagehelpers.SetStringLabel(buildImage, clusterstack.IdLabel, stackId)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	runImage, err := random.Image(0, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	runImage, err = imagehelpers.SetStringLabel(runImage, clusterstack.IdLabel, stackId)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	buildImageHash, err := buildImage.Digest()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	runImageHash, err := runImage.Digest()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return buildImage, buildImageHash.String(), runImage, runImageHash.String()
 }

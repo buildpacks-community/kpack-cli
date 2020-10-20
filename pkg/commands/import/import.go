@@ -9,12 +9,19 @@ import (
 	"os"
 	"strings"
 
+	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/ghodss/yaml"
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type ConfirmationProvider interface {
@@ -23,16 +30,15 @@ type ConfirmationProvider interface {
 
 func NewImportCommand(
 	clientSetProvider k8s.ClientSetProvider,
-	uploader clusterstore.BuildpackageUploader,
-	relocator clusterstack.ImageRelocator,
-	fetcher clusterstack.ImageFetcher,
+	bpUploader clusterstore.BuildpackageUploader,
+	stackUploader clusterstack.Uploader,
 	differ importpkg.Differ,
 	timestampProvider TimestampProvider,
 	confirmationProvider ConfirmationProvider) *cobra.Command {
 
 	var (
-		filename string
-		force    bool
+		filename  string
+		force     bool
 		tlsConfig registry.TLSConfig
 	)
 
@@ -85,30 +91,31 @@ cat dependencies.yaml | kp import -f -`,
 			}
 
 			storeFactory := &clusterstore.Factory{
-				Uploader:   uploader,
-				TLSConfig:  tlsConfig,
-				Repository: repository,
-				Printer:    ch,
+				Uploader:     bpUploader,
+				TLSConfig:    tlsConfig,
+				Repository:   repository,
+				Printer:      ch,
+				ValidateOnly: ch.ValidateOnly(),
 			}
 
 			stackFactory := &clusterstack.Factory{
-				Relocator:  relocator,
-				Fetcher:    fetcher,
-				TLSConfig:  tlsConfig,
-				Repository: repository,
-				Printer:    ch,
-			}
-
-			importer := Importer{
-				Client:            cs.KpackClient,
-				CommandHelper:     ch,
-				TimestampProvider: timestampProvider,
+				Uploader:     stackUploader,
+				TLSConfig:    tlsConfig,
+				Repository:   repository,
+				Printer:      ch,
+				ValidateOnly: ch.ValidateOnly(),
 			}
 
 			importDiffer := &importpkg.ImportDiffer{
 				Differ:         differ,
 				StoreRefGetter: storeFactory,
 				StackRefGetter: stackFactory,
+			}
+
+			importer := importer{
+				client:            cs.KpackClient,
+				commandHelper:     ch,
+				timestampProvider: timestampProvider,
 			}
 
 			hasChanges, err := showChanges(descriptor, importDiffer, cs.KpackClient, ch)
@@ -205,6 +212,7 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *importpkg.ImportDiffer, kClient kpack.Interface, ch *commands.CommandHelper) (hasChanges bool, err error) {
 	hasChanges = false
 	var changes strings.Builder
+	changes.WriteString("Changes\n\n")
 	changes.WriteString("ClusterStores\n\n")
 
 	var curDiff strings.Builder

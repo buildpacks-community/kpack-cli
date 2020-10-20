@@ -13,22 +13,20 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pivotal/build-service-cli/pkg/buildpackage"
-	"github.com/pivotal/build-service-cli/pkg/clusterstack"
-	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	buildcmds "github.com/pivotal/build-service-cli/pkg/commands/build"
 	buildercmds "github.com/pivotal/build-service-cli/pkg/commands/builder"
 	clusterbuildercmds "github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
 	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
-	storecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
+	clusterstorecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
-	"github.com/pivotal/build-service-cli/pkg/image"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 	"github.com/pivotal/build-service-cli/pkg/secret"
+	"github.com/pivotal/build-service-cli/pkg/stackimage"
 )
 
 var (
@@ -91,25 +89,23 @@ func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		return logs.NewImageWaiter(clientSet.KpackClient, logs.NewBuildLogsClient(clientSet.K8sClient))
 	}
 
-	factory := &image.Factory{}
+	uploader := &registry.SourceUploader{}
 
 	imageRootCmd := &cobra.Command{
 		Use:     "image",
 		Short:   "Image commands",
 		Aliases: []string{"images", "imgs", "img"},
 	}
+
 	imageRootCmd.AddCommand(
-		imgcmds.NewCreateCommand(clientSetProvider, factory, newImageWaiter),
-		imgcmds.NewPatchCommand(clientSetProvider, factory, newImageWaiter),
-		imgcmds.NewSaveCommand(clientSetProvider, factory, newImageWaiter),
+		imgcmds.NewCreateCommand(clientSetProvider, uploader, newImageWaiter),
+		imgcmds.NewPatchCommand(clientSetProvider, uploader, newImageWaiter),
+		imgcmds.NewSaveCommand(clientSetProvider, uploader, newImageWaiter),
 		imgcmds.NewListCommand(clientSetProvider),
 		imgcmds.NewDeleteCommand(clientSetProvider),
 		imgcmds.NewTriggerCommand(clientSetProvider),
 		imgcmds.NewStatusCommand(clientSetProvider),
 	)
-	imageRootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		return configureImageFactory(cmd, factory)
-	}
 
 	return imageRootCmd
 }
@@ -182,7 +178,11 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	factory := &clusterstack.Factory{}
+
+	stackUploader := &stackimage.Uploader{
+		Fetcher:   &registry.Fetcher{},
+		Relocator: &registry.Relocator{},
+	}
 
 	stackRootCmd := &cobra.Command{
 		Use:     "clusterstack",
@@ -190,22 +190,22 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short:   "ClusterStack Commands",
 	}
 	stackRootCmd.AddCommand(
-		clusterstackcmds.NewCreateCommand(clientSetProvider, factory),
-		clusterstackcmds.NewUpdateCommand(clientSetProvider, factory),
-		clusterstackcmds.NewSaveCommand(clientSetProvider, factory),
+		clusterstackcmds.NewCreateCommand(clientSetProvider, stackUploader),
+		clusterstackcmds.NewUpdateCommand(clientSetProvider, stackUploader),
+		clusterstackcmds.NewSaveCommand(clientSetProvider, stackUploader),
 		clusterstackcmds.NewListCommand(clientSetProvider),
 		clusterstackcmds.NewStatusCommand(clientSetProvider),
 		clusterstackcmds.NewDeleteCommand(clientSetProvider),
 	)
-	stackRootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		return configureClusterStackFactory(cmd, factory)
-	}
 
 	return stackRootCmd
 }
 
 func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	factory := &clusterstore.Factory{}
+	bpUploader := &buildpackage.Uploader{
+		Fetcher:   &registry.Fetcher{},
+		Relocator: &registry.Relocator{},
+	}
 
 	storeRootCommand := &cobra.Command{
 		Use:     "clusterstore",
@@ -213,17 +213,14 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short:   "ClusterStore Commands",
 	}
 	storeRootCommand.AddCommand(
-		storecmds.NewCreateCommand(clientSetProvider, factory),
-		storecmds.NewAddCommand(clientSetProvider, factory),
-		storecmds.NewSaveCommand(clientSetProvider, factory),
-		storecmds.NewDeleteCommand(clientSetProvider, commands.NewConfirmationProvider()),
-		storecmds.NewStatusCommand(clientSetProvider),
-		storecmds.NewRemoveCommand(clientSetProvider),
-		storecmds.NewListCommand(clientSetProvider),
+		clusterstorecmds.NewCreateCommand(clientSetProvider, bpUploader),
+		clusterstorecmds.NewAddCommand(clientSetProvider, bpUploader),
+		clusterstorecmds.NewSaveCommand(clientSetProvider, bpUploader),
+		clusterstorecmds.NewDeleteCommand(clientSetProvider, commands.NewConfirmationProvider()),
+		clusterstorecmds.NewStatusCommand(clientSetProvider),
+		clusterstorecmds.NewRemoveCommand(clientSetProvider),
+		clusterstorecmds.NewListCommand(clientSetProvider),
 	)
-	storeRootCommand.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		return configureClusterStoreFactory(cmd, factory)
-	}
 
 	return storeRootCommand
 }
@@ -234,11 +231,15 @@ func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Relocator: &registry.Relocator{},
 	}
 
+	stackUploader := &stackimage.Uploader{
+		Fetcher:   &registry.Fetcher{},
+		Relocator: &registry.Relocator{},
+	}
+
 	return importcmds.NewImportCommand(
 		clientSetProvider,
 		bpUploader,
-		&registry.Relocator{},
-		&registry.Fetcher{},
+		stackUploader,
 		commands.Differ{},
 		importpkg.DefaultTimestampProvider(),
 		commands.NewConfirmationProvider(),
@@ -296,58 +297,4 @@ $ kp completion fish > ~/.config/fish/completions/kp.fish
 			}
 		},
 	}
-}
-
-func configureImageFactory(cmd *cobra.Command, factory *image.Factory) error {
-	dryRun, err := commands.GetBoolFlag(commands.DryRunFlag, cmd)
-	if err != nil {
-		return err
-	}
-
-	if dryRun {
-		factory.SourceUploader = registry.DryRunSourceUploader{}
-	} else {
-		factory.SourceUploader = registry.SourceUploaderImpl{}
-	}
-	return nil
-}
-
-func configureClusterStackFactory(cmd *cobra.Command, factory *clusterstack.Factory) error {
-	relocator, err := getImageRelocator(cmd)
-	if err != nil {
-		return err
-	}
-
-	factory.Relocator = relocator
-	factory.Fetcher = registry.Fetcher{}
-	return nil
-}
-
-func configureClusterStoreFactory(cmd *cobra.Command, factory *clusterstore.Factory) error {
-	relocator, err := getImageRelocator(cmd)
-	if err != nil {
-		return err
-	}
-
-	factory.Uploader = &buildpackage.Uploader{
-		Fetcher:   &registry.Fetcher{},
-		Relocator: relocator,
-	}
-	return nil
-}
-
-func getImageRelocator(cmd *cobra.Command) (registry.Relocator, error) {
-	var relocator registry.Relocator
-
-	dryRun, err := commands.GetBoolFlag(commands.DryRunFlag, cmd)
-	if err != nil {
-		return relocator, err
-	}
-
-	if dryRun {
-		relocator = registry.DryRunRelocator{}
-	} else {
-		relocator = registry.RelocatorImpl{}
-	}
-	return relocator, err
 }

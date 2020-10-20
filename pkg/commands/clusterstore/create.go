@@ -10,11 +10,13 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstore.Factory) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, uploader clusterstore.BuildpackageUploader) *cobra.Command {
 	var (
 		buildpackages []string
+		tlsCfg        registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -44,8 +46,20 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
+			rep, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
-			factory.Printer = ch
+
+			factory := &clusterstore.Factory{
+				Uploader:     uploader,
+				TLSConfig:    tlsCfg,
+				Repository:   rep,
+				Printer:      ch,
+				ValidateOnly: ch.ValidateOnly(),
+			}
 
 			return create(name, buildpackages, factory, ch, cs)
 		},
@@ -53,16 +67,11 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
 	commands.SetDryRunOutputFlags(cmd)
-	commands.SetTLSFlags(cmd, &factory.TLSConfig)
+	commands.SetTLSFlags(cmd, &tlsCfg)
 	return cmd
 }
 
 func create(name string, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
-	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
-	if err != nil {
-		return err
-	}
-
 	if err = ch.PrintStatus("Creating ClusterStore..."); err != nil {
 		return err
 	}
@@ -83,5 +92,5 @@ func create(name string, buildpackages []string, factory *clusterstore.Factory, 
 		return err
 	}
 
-	return ch.PrintResult("ClusterStore %q created", newStore.Name)
+	return ch.PrintResult("ClusterStore %q created", name)
 }
