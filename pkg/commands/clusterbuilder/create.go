@@ -36,13 +36,16 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Create a cluster builder by providing command line arguments.
 The cluster builder will be created only if it does not exist.
 
+A buildpack order must be provided with either the path to an order yaml or via the --buildpack flag.
+Multiple buildpacks provided via the --buildpack flag will be added to the same order group. 
+
 Tag when not specified, defaults to a combination of the canonical repository and specified builder name.
 The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
 		Example: `kp cb create my-builder --order /path/to/order.yaml --stack tiny --store my-store
-kp cb create my-builder --order /path/to/order.yaml
+kp cb create my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
 kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
-kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml`,
+kp cb create my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -66,7 +69,7 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/or
 	cmd.Flags().StringVarP(&flags.stack, "stack", "s", defaultStack, "stack resource to use")
 	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
-	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack","b", []string{} , "list of buildpacks to use")
+	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'\n  repeat for each buildpack in order, or supply once with comma-separated list")
 	commands.SetDryRunOutputFlags(cmd)
 	return cmd
 }

@@ -155,6 +155,61 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
+		it("creates a ClusterBuilder with buildpack flags", func() {
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"},{"id":"org.cloudfoundry.go","version":"1.0.1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Spec.Order = []v1alpha1.OrderEntry{
+				{
+					Group: []v1alpha1.BuildpackRef{
+						{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
+								Id: "org.cloudfoundry.nodejs",
+							},
+						},
+						{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
+								Id:      "org.cloudfoundry.go",
+								Version: "1.0.1",
+							},
+						},
+					},
+				},
+			}
+
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					builder.Name,
+					"--tag", builder.Spec.Tag,
+					"--stack", builder.Spec.Stack.Name,
+					"--store", builder.Spec.Store.Name,
+					"--buildpack", "org.cloudfoundry.nodejs",
+					"--buildpack", "org.cloudfoundry.go@1.0.1",
+				},
+				ExpectedOutput: `ClusterBuilder "test-builder" created
+`,
+				ExpectCreates: []runtime.Object{
+					builder,
+				},
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		it("returns error when buildpack and order flags are used together", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				Args: []string{
+					builder.Name,
+					"--order", "./testdata/patched-order.yaml",
+					"--buildpack", "org.cloudfoundry.test-bp",
+				},
+				ExpectErr:      true,
+				ExpectedOutput: "Error: cannot use --order and --buildpack together\n",
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
 		it("fails when kp-config map is not found", func() {
 			testhelpers.CommandTest{
 				Args: []string{

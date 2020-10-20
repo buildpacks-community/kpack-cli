@@ -4,7 +4,8 @@
 package builder
 
 import (
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"fmt"
+
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -12,6 +13,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/builder"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 )
 
 func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
@@ -20,10 +22,17 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:          "patch <name>",
-		Short:        "Patch an existing builder configuration",
-		Long:         ` `,
-		Example:      `kp builder patch my-builder`,
+		Use:   "patch <name>",
+		Short: "Patch an existing builder configuration",
+		Long: `Patch an existing builder configuration by providing command line arguments.
+
+A buildpack order must be provided with either the path to an order yaml or via the --buildpack flag.
+Multiple buildpacks provided via the --buildpack flag will be added to the same order group. 
+
+The namespace defaults to the kubernetes current-context namespace.`,
+		Example: `kp builder patch my-builder --order /path/to/order.yaml --stack tiny --store my-store
+kp builder patch my-builder --order /path/to/order.yaml
+kp builder patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -54,6 +63,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	cmd.Flags().StringVarP(&flags.stack, "stack", "s", "", "stack resource to use")
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
+	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'\n  repeat for each buildpack in order, or supply once with comma-separated list")
 	commands.SetDryRunOutputFlags(cmd)
 	return cmd
 }
@@ -73,6 +83,10 @@ func patch(bldr *v1alpha1.Builder, flags CommandFlags, ch *commands.CommandHelpe
 		patchedBldr.Spec.Store.Name = flags.store
 	}
 
+	if len(flags.buildpacks) > 0 && flags.order != "" {
+		return fmt.Errorf("cannot use --order and --buildpack together")
+	}
+
 	if flags.order != "" {
 		orderEntries, err := builder.ReadOrder(flags.order)
 		if err != nil {
@@ -80,6 +94,10 @@ func patch(bldr *v1alpha1.Builder, flags CommandFlags, ch *commands.CommandHelpe
 		}
 
 		patchedBldr.Spec.Order = orderEntries
+	}
+
+	if len(flags.buildpacks) > 0 {
+		patchedBldr.Spec.Order = builder.CreateOrder(flags.buildpacks)
 	}
 
 	patch, err := k8s.CreatePatch(bldr, patchedBldr)
