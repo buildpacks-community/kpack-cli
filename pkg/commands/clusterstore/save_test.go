@@ -313,7 +313,7 @@ status: {}
 						},
 					},
 				},
-				ExpectedOutput: `Adding To ClusterStore...
+				ExpectedOutput: `Adding to ClusterStore...
 	Added Buildpackage
 ClusterStore "test-store" updated
 `,
@@ -367,7 +367,7 @@ status: {}
 						},
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Adding To ClusterStore...
+					ExpectedErrorOutput: `Adding to ClusterStore...
 	Added Buildpackage
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -431,7 +431,7 @@ status: {}
 						},
 					},
 					ExpectedOutput: resourceJSON,
-					ExpectedErrorOutput: `Adding To ClusterStore...
+					ExpectedErrorOutput: `Adding to ClusterStore...
 	Added Buildpackage
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -467,7 +467,7 @@ status: {}
 							"-b", buildpackage1,
 							"--output", "yaml",
 						},
-						ExpectedErrorOutput: `Adding To ClusterStore...
+						ExpectedErrorOutput: `Adding to ClusterStore...
 	Buildpackage already exists in the store
 `,
 						ExpectedOutput: resourceYAML,
@@ -490,7 +490,7 @@ status: {}
 						"--buildpackage", "patch/bp",
 						"--dry-run",
 					},
-					ExpectedOutput: `Adding To ClusterStore... (dry run)
+					ExpectedOutput: `Adding to ClusterStore... (dry run)
 	Added Buildpackage
 ClusterStore "test-store" updated (dry run)
 `,
@@ -511,7 +511,7 @@ ClusterStore "test-store" updated (dry run)
 							"--buildpackage", buildpackage1,
 							"--dry-run",
 						},
-						ExpectedOutput: `Adding To ClusterStore... (dry run)
+						ExpectedOutput: `Adding to ClusterStore... (dry run)
 	Buildpackage already exists in the store
 ClusterStore "test-store" updated (dry run)
 `,
@@ -550,7 +550,7 @@ status: {}
 							"--output", "yaml",
 						},
 						ExpectedOutput: resourceYAML,
-						ExpectedErrorOutput: `Adding To ClusterStore... (dry run)
+						ExpectedErrorOutput: `Adding to ClusterStore... (dry run)
 	Added Buildpackage
 `,
 					}.TestK8sAndKpack(t, cmdFunc)

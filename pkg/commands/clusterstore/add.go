@@ -81,7 +81,7 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 }
 
 func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) error {
-	if err := ch.PrintStatus("Adding To ClusterStore..."); err != nil {
+	if err := ch.PrintStatus("Adding to ClusterStore..."); err != nil {
 		return err
 	}
 

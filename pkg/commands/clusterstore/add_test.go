@@ -103,7 +103,7 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
-			ExpectedOutput: `Adding To ClusterStore...
+			ExpectedOutput: `Adding to ClusterStore...
 	Added Buildpackage
 	Added Buildpackage
 ClusterStore "some-store-name" updated
@@ -124,7 +124,7 @@ ClusterStore "some-store-name" updated
 				"-b", "some/imageAlreadyInStore",
 			},
 			ExpectErr: false,
-			ExpectedOutput: `Adding To ClusterStore...
+			ExpectedOutput: `Adding to ClusterStore...
 	Buildpackage already exists in the store
 ClusterStore "some-store-name" updated (no change)
 `,
@@ -239,7 +239,7 @@ status: {}
 					},
 				},
 				ExpectedOutput: resourceYAML,
-				ExpectedErrorOutput: `Adding To ClusterStore...
+				ExpectedErrorOutput: `Adding to ClusterStore...
 	Added Buildpackage
 	Added Buildpackage
 `,
@@ -305,7 +305,7 @@ status: {}
 					},
 				},
 				ExpectedOutput: resourceJSON,
-				ExpectedErrorOutput: `Adding To ClusterStore...
+				ExpectedErrorOutput: `Adding to ClusterStore...
 	Added Buildpackage
 	Added Buildpackage
 `,
@@ -338,7 +338,7 @@ status: {}
 						"--output", "yaml",
 					},
 					ExpectErr: false,
-					ExpectedErrorOutput: `Adding To ClusterStore...
+					ExpectedErrorOutput: `Adding to ClusterStore...
 	Buildpackage already exists in the store
 `,
 					ExpectedOutput: resourceYAML,
@@ -362,7 +362,7 @@ status: {}
 					"-b", "bpfromcnb.cnb",
 					"--dry-run",
 				},
-				ExpectedOutput: `Adding To ClusterStore... (dry run)
+				ExpectedOutput: `Adding to ClusterStore... (dry run)
 ClusterStore "some-store-name" updated (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -383,7 +383,7 @@ ClusterStore "some-store-name" updated (dry run)
 						"--dry-run",
 					},
 					ExpectErr: false,
-					ExpectedOutput: `Adding To ClusterStore... (dry run)
+					ExpectedOutput: `Adding to ClusterStore... (dry run)
 	Buildpackage already exists in the store
 ClusterStore "some-store-name" updated (dry run)
 `,
@@ -421,7 +421,7 @@ status: {}
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Adding To ClusterStore... (dry run)
+					ExpectedErrorOutput: `Adding to ClusterStore... (dry run)
 	Added Buildpackage
 	Added Buildpackage
 `,
