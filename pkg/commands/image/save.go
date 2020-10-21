@@ -14,11 +14,12 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
+func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, uploader image.SourceUploader, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
 		tag       string
 		namespace string
 		subPath   string
+		factory   image.Factory
 	)
 
 	cmd := &cobra.Command{
@@ -64,7 +65,10 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 
 			name := args[0]
 			shouldWait := ch.ShouldWait()
+
+			factory.SourceUploader = uploader
 			factory.Printer = ch
+			factory.ValidateOnly = ch.ValidateOnly()
 
 			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
@@ -73,7 +77,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 				}
 
 				factory.SubPath = &subPath
-				img, err = create(name, tag, factory, ch, cs)
+				img, err = create(name, tag, &factory, ch, cs)
 			} else if err != nil {
 				return err
 			} else {
@@ -82,7 +86,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 				}
 
 				var patched bool
-				patched, img, err = patch(img, factory, ch, cs)
+				patched, img, err = patch(img, &factory, ch, cs)
 				if !patched {
 					shouldWait = false
 				}

@@ -418,13 +418,13 @@ status:
 						},
 						{
 							BuildpackInfo: v1alpha1.BuildpackInfo{
-								Id: "org.cloudfoundry.nodejs",
+								Id:      "org.cloudfoundry.nodejs",
 								Version: "1",
 							},
 						},
 						{
 							BuildpackInfo: v1alpha1.BuildpackInfo{
-								Id: "org.cloudfoundry.ruby",
+								Id:      "org.cloudfoundry.ruby",
 								Version: "1.2.3",
 							},
 						},

@@ -11,9 +11,15 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
+func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, uploader clusterstack.Uploader) *cobra.Command {
+	var (
+		buildImageRef string
+		runImageRef   string
+		tlsCfg        registry.TLSConfig
+	)
 
 	cmd := &cobra.Command{
 		Use:   "save <name>",
@@ -41,23 +47,35 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
+			rep, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
-			factory.Printer = ch
+
+			factory := &clusterstack.Factory{
+				Uploader:     uploader,
+				Printer:      ch,
+				TLSConfig:    tlsCfg,
+				Repository:   rep,
+				ValidateOnly: ch.ValidateOnly(),
+			}
 
 			cStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return create(name, factory, ch, cs)
+				return create(name, buildImageRef, runImageRef, factory, ch, cs)
 			} else if err != nil {
 				return err
 			}
 
-			return update(cStack, factory, ch, cs)
+			return update(cStack, buildImageRef, runImageRef, factory, ch, cs)
 		},
 	}
-	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
-	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
+	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
+	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
 	commands.SetDryRunOutputFlags(cmd)
-	commands.SetTLSFlags(cmd, &factory.TLSConfig)
+	commands.SetTLSFlags(cmd, &tlsCfg)
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")
 	return cmd

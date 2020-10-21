@@ -4,6 +4,7 @@
 package buildpackage
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -20,7 +21,7 @@ import (
 )
 
 const (
-	buildpackageMetadataLabel = "io.buildpacks.buildpackage.metadata"
+	metadataLabel = "io.buildpacks.buildpackage.metadata"
 )
 
 type Relocator interface {
@@ -36,16 +37,38 @@ type Uploader struct {
 	Fetcher   Fetcher
 }
 
-func (u Uploader) UploadBuildpackage(writer io.Writer, repository, buildPackage string, tlsCfg registry.TLSConfig) (string, error) {
-	tempDir, err := ioutil.TempDir("", "cnb-upload")
+func (u *Uploader) UploadBuildpackage(buildPackage, repository string, tlsCfg registry.TLSConfig, writer io.Writer) (string, error) {
+	image, tag, err := u.destinationTag(buildPackage, repository, tlsCfg)
 	if err != nil {
 		return "", err
+	}
+
+	return u.Relocator.Relocate(image, tag, writer, tlsCfg)
+}
+
+func (u *Uploader) UploadedBuildpackageRef(buildPackage, repository string, tlsCfg registry.TLSConfig) (string, error) {
+	image, tag, err := u.destinationTag(buildPackage, repository, tlsCfg)
+	if err != nil {
+		return "", err
+	}
+
+	digest, err := image.Digest()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s@%s", tag, digest.String()), nil
+}
+
+func (u *Uploader) destinationTag(buildPackage, repository string, tlsCfg registry.TLSConfig) (v1.Image, string, error) {
+	tempDir, err := ioutil.TempDir("", "cnb-upload")
+	if err != nil {
+		return nil, "", err
 	}
 	defer os.RemoveAll(tempDir)
 
 	image, err := u.read(buildPackage, tempDir, tlsCfg)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
 	type buildpackageMetadata struct {
@@ -53,12 +76,11 @@ func (u Uploader) UploadBuildpackage(writer io.Writer, repository, buildPackage 
 	}
 
 	metadata := buildpackageMetadata{}
-	err = imagehelpers.GetLabel(image, buildpackageMetadataLabel, &metadata)
+	err = imagehelpers.GetLabel(image, metadataLabel, &metadata)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
-
-	return u.Relocator.Relocate(image, path.Join(repository, strings.ReplaceAll(metadata.Id, "/", "_")), writer, tlsCfg)
+	return image, path.Join(repository, strings.ReplaceAll(metadata.Id, "/", "_")), nil
 }
 
 func (u *Uploader) read(buildPackage, tempDir string, tlsCfg registry.TLSConfig) (v1.Image, error) {

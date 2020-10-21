@@ -14,9 +14,11 @@ import (
 )
 
 type Relocator struct {
+	callCount int
 }
 
 func (r *Relocator) Relocate(image v1.Image, dest string, _ io.Writer, _ registry.TLSConfig) (string, error) {
+	r.callCount++
 	digest, err := image.Digest()
 	if err != nil {
 		return "", err
@@ -29,4 +31,8 @@ func (r *Relocator) Relocate(image v1.Image, dest string, _ io.Writer, _ registr
 	}
 
 	return fmt.Sprintf("%s/%s@%s", destRef.Context().RegistryStr(), destRef.Context().RepositoryStr(), sha), nil
+}
+
+func (r *Relocator) CallCount() int {
+	return r.callCount
 }

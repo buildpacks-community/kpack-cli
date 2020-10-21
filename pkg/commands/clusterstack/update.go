@@ -14,6 +14,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type ImageFetcher interface {
@@ -24,7 +25,12 @@ type ImageRelocator interface {
 	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
 }
 
-func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstack.Factory) *cobra.Command {
+func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, uploader clusterstack.Uploader) *cobra.Command {
+	var (
+		buildImageRef string
+		runImageRef   string
+		tlsCfg        registry.TLSConfig
+	)
 
 	cmd := &cobra.Command{
 		Use:   "update <name>",
@@ -48,37 +54,43 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			factory.Printer = ch
+			rep, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			if err != nil {
+				return err
+			}
+
+			factory := &clusterstack.Factory{
+				Uploader:     uploader,
+				Printer:      ch,
+				TLSConfig:    tlsCfg,
+				Repository:   rep,
+				ValidateOnly: ch.ValidateOnly(),
+			}
 
 			stack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			return update(stack, factory, ch, cs)
+			return update(stack, buildImageRef, runImageRef, factory, ch, cs)
 		},
 	}
 
-	cmd.Flags().StringVarP(&factory.BuildImageRef, "build-image", "b", "", "build image tag or local tar file path")
-	cmd.Flags().StringVarP(&factory.RunImageRef, "run-image", "r", "", "run image tag or local tar file path")
+	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
+	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
 	commands.SetDryRunOutputFlags(cmd)
-	commands.SetTLSFlags(cmd, &factory.TLSConfig)
+	commands.SetTLSFlags(cmd, &tlsCfg)
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")
 	return cmd
 }
 
-func update(stack *v1alpha1.ClusterStack, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
-	factory.Repository, err = k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
-	if err != nil {
+func update(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) error {
+	if err := ch.PrintStatus("Updating ClusterStack..."); err != nil {
 		return err
 	}
 
-	if err = ch.PrintStatus("Updating ClusterStack..."); err != nil {
-		return err
-	}
-
-	hasUpdates, err := factory.UpdateStack(stack)
+	hasUpdates, err := factory.UpdateStack(stack, buildImageRef, runImageRef)
 	if err != nil {
 		return err
 	}

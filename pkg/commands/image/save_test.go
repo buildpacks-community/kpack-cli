@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
-	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	srcfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
@@ -36,14 +35,11 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			ImageRef: "some-registry.io/some-repo-source:source-id",
 		}
 
-		imageFactory := &image.Factory{
-			SourceUploader: sourceUploader,
-		}
 		fakeImageWaiter := &fakes.FakeImageWaiter{}
 
 		cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 			clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-			return imgcmds.NewSaveCommand(clientSetProvider, imageFactory, func(set k8s.ClientSet) imgcmds.ImageWaiter {
+			return imgcmds.NewSaveCommand(clientSetProvider, sourceUploader, func(set k8s.ClientSet) imgcmds.ImageWaiter {
 				return fakeImageWaiter
 			})
 		}
@@ -657,14 +653,11 @@ status: {}
 			ImageRef: "",
 		}
 
-		patchFactory := &image.Factory{
-			SourceUploader: sourceUploader,
-		}
 		fakeImageWaiter := &fakes.FakeImageWaiter{}
 
 		cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 			clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-			return imgcmds.NewPatchCommand(clientSetProvider, patchFactory, func(set k8s.ClientSet) imgcmds.ImageWaiter {
+			return imgcmds.NewPatchCommand(clientSetProvider, sourceUploader, func(set k8s.ClientSet) imgcmds.ImageWaiter {
 				return fakeImageWaiter
 			})
 		}
@@ -1109,7 +1102,7 @@ status: {}
 							"some-image",
 							"--dry-run",
 						},
-						ExpectedOutput: `Image "some-image" patched (no change)
+						ExpectedOutput: `Image "some-image" patched (dry run)
 `,
 					}.TestKpack(t, cmdFunc)
 				})

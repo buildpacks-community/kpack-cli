@@ -7,18 +7,15 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
+	"strings"
 
-	"github.com/ghodss/yaml"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/ghodss/yaml"
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
@@ -27,30 +24,41 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-const (
-	importNamespace    = "kpack"
-	importTimestampKey = "kpack.io/import-timestamp"
-)
-
-type TimestampProvider interface {
-	GetTimestamp() string
+type ConfirmationProvider interface {
+	Confirm(message string, okayResponses ...string) (bool, error)
 }
 
 func NewImportCommand(
 	clientSetProvider k8s.ClientSetProvider,
+	bpUploader clusterstore.BuildpackageUploader,
+	stackUploader clusterstack.Uploader,
+	differ importpkg.Differ,
 	timestampProvider TimestampProvider,
-	storeFactory *clusterstore.Factory,
-	stackFactory *clusterstack.Factory) *cobra.Command {
+	confirmationProvider ConfirmationProvider) *cobra.Command {
 
 	var (
 		filename  string
+		force     bool
 		tlsConfig registry.TLSConfig
 	)
+
+	const (
+		confirmMessage          = "Confirm with y:"
+		noChangesConfirmMessage = "Re-upload images with y:"
+	)
+
+	confirmMsgMap := map[bool]string{
+		true:  confirmMessage,
+		false: noChangesConfirmMessage,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "import -f <filename>",
 		Short: "Import dependencies for stores, stacks, and cluster builders",
-		Long:  `This operation will create or update stores, stacks, and cluster builders defined in the dependency descriptor.`,
+		Long: `This operation will create or update clusterstores, clusterstacks, and clusterbuilders defined in the dependency descriptor.
+
+kp import will always attempt to upload the stack, store, and builder images, even if the resources have not changed.
+This can be used as a way to repair resources when registry images have been unexpectedly removed.`,
 		Example: `kp import -f dependencies.yaml
 cat dependencies.yaml | kp import -f -`,
 		SilenceUsage: true,
@@ -82,35 +90,63 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			storeFactory.Repository = repository // FIXME
-			storeFactory.Printer = ch
-			storeFactory.TLSConfig = tlsConfig
+			storeFactory := &clusterstore.Factory{
+				Uploader:     bpUploader,
+				TLSConfig:    tlsConfig,
+				Repository:   repository,
+				Printer:      ch,
+				ValidateOnly: ch.ValidateOnly(),
+			}
 
-			storeFactory.Printer = ch
-			stackFactory.Repository = repository
-			stackFactory.TLSConfig = tlsConfig
+			stackFactory := &clusterstack.Factory{
+				Uploader:     stackUploader,
+				TLSConfig:    tlsConfig,
+				Repository:   repository,
+				Printer:      ch,
+				ValidateOnly: ch.ValidateOnly(),
+			}
 
-			importHelper := importHelper{
-				descriptor:        descriptor,
+			importDiffer := &importpkg.ImportDiffer{
+				Differ:         differ,
+				StoreRefGetter: storeFactory,
+				StackRefGetter: stackFactory,
+			}
+
+			importer := importer{
 				client:            cs.KpackClient,
+				commandHelper:     ch,
 				timestampProvider: timestampProvider,
-				objects:           []runtime.Object{},
-				ch:                ch,
 			}
 
-			if err := importHelper.ImportClusterStores(storeFactory, repository); err != nil {
+			hasChanges, err := showChanges(descriptor, importDiffer, cs.KpackClient, ch)
+			if err != nil {
 				return err
 			}
 
-			if err := importHelper.ImportClusterStacks(stackFactory); err != nil {
+			if !force {
+				confirmed, err := confirmationProvider.Confirm(confirmMsgMap[hasChanges])
+				if err != nil {
+					return err
+				}
+
+				if !confirmed {
+					return ch.Printlnf("Skipping import")
+				}
+			}
+
+			if err := importer.importClusterStores(descriptor.ClusterStores, storeFactory); err != nil {
 				return err
 			}
 
-			if err := importHelper.ImportClusterBuilders(repository, serviceAccount); err != nil {
+			if err := importer.importClusterStacks(descriptor.GetClusterStacks(), stackFactory); err != nil {
 				return err
 			}
 
-			if err := ch.PrintObjs(importHelper.objects); err != nil {
+			if err := importer.importClusterBuilders(descriptor.GetClusterBuilders(), repository, serviceAccount); err != nil {
+				return err
+			}
+
+			if err := ch.PrintObjs(importer.objects()); err != nil {
 				return err
 			}
 
@@ -118,6 +154,7 @@ cat dependencies.yaml | kp import -f -`,
 		},
 	}
 	cmd.Flags().StringVarP(&filename, "filename", "f", "", "dependency descriptor filename")
+	cmd.Flags().BoolVar(&force, "force", false, "force import without confirmation")
 	commands.SetDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsConfig)
 	_ = cmd.MarkFlagRequired("filename")
@@ -172,208 +209,85 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 	return deps, nil
 }
 
-type importHelper struct {
-	descriptor        importpkg.DependencyDescriptor
-	client            kpack.Interface
-	timestampProvider TimestampProvider
-	objects           []runtime.Object
-	ch                *commands.CommandHelper
-}
+func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *importpkg.ImportDiffer, kClient kpack.Interface, ch *commands.CommandHelper) (hasChanges bool, err error) {
+	hasChanges = false
+	var changes strings.Builder
+	changes.WriteString("Changes\n\n")
+	changes.WriteString("ClusterStores\n\n")
 
-func (i *importHelper) ImportClusterStores(factory *clusterstore.Factory, repository string) error {
-	for _, store := range i.descriptor.ClusterStores {
-		if err := i.ch.PrintStatus("Importing ClusterStore '%s'...", store.Name); err != nil {
-			return err
-		}
-
-		var buildpackages []string
-		for _, s := range store.Sources {
-			buildpackages = append(buildpackages, s.Image)
-		}
-
-		curStore, err := i.client.KpackV1alpha1().ClusterStores().Get(store.Name, metav1.GetOptions{})
+	var curDiff strings.Builder
+	for _, cs := range descriptor.ClusterStores {
+		curStore, err := kClient.KpackV1alpha1().ClusterStores().Get(cs.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
+			return false, err
 		}
-
 		if k8serrors.IsNotFound(err) {
-			newStore, err := factory.MakeStore(store.Name, buildpackages...)
-			if err != nil {
-				return err
-			}
-
-			newStore.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
-
-			if !i.ch.IsDryRun() {
-				if newStore, err = i.client.KpackV1alpha1().ClusterStores().Create(newStore); err != nil {
-					return err
-				}
-			}
-			i.trackObj(newStore)
-		} else {
-			updatedStore, _, err := factory.AddToStore(curStore, repository, buildpackages...)
-			if err != nil {
-				return err
-			}
-
-			curStore.Annotations = k8s.MergeAnnotations(curStore.Annotations, map[string]string{importTimestampKey: i.timestampProvider.GetTimestamp()})
-
-			if !i.ch.IsDryRun() {
-				if updatedStore, err = i.client.KpackV1alpha1().ClusterStores().Update(updatedStore); err != nil {
-					return err
-				}
-			}
-			i.trackObj(updatedStore)
-		}
-	}
-	return nil
-}
-
-func (i *importHelper) ImportClusterStacks(factory *clusterstack.Factory) error {
-	for _, stack := range i.descriptor.ClusterStacks {
-		if stack.Name == i.descriptor.DefaultClusterStack {
-			i.descriptor.ClusterStacks = append(i.descriptor.ClusterStacks, importpkg.ClusterStack{
-				Name:       "default",
-				BuildImage: stack.BuildImage,
-				RunImage:   stack.RunImage,
-			})
-			break
-		}
-	}
-
-	for _, stack := range i.descriptor.ClusterStacks {
-		if err := i.ch.PrintStatus("Importing ClusterStack '%s'...", stack.Name); err != nil {
-			return err
+			curStore = nil
 		}
 
-		factory.Printer = i.ch
-		factory.BuildImageRef = stack.BuildImage.Image // FIXME
-		factory.RunImageRef = stack.RunImage.Image     // FIXME
-
-		newStack, err := factory.MakeStack(stack.Name)
+		cStoreDiff, err := importDiffer.DiffClusterStore(curStore, cs)
 		if err != nil {
-			return err
+			return false, err
 		}
+		if cStoreDiff != "" {
+			hasChanges = true
+			curDiff.WriteString(cStoreDiff + "\n\n")
+		}
+	}
+	if curDiff.String() == "" {
+		curDiff.WriteString("No Changes\n\n")
+	}
+	changes.WriteString(curDiff.String())
 
-		newStack.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
-
-		curStack, err := i.client.KpackV1alpha1().ClusterStacks().Get(stack.Name, metav1.GetOptions{})
+	changes.WriteString("ClusterStacks\n\n")
+	curDiff.Reset()
+	for _, cs := range descriptor.GetClusterStacks() {
+		curStack, err := kClient.KpackV1alpha1().ClusterStacks().Get(cs.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
+			return false, err
 		}
-
 		if k8serrors.IsNotFound(err) {
-			if !i.ch.IsDryRun() {
-				if newStack, err = i.client.KpackV1alpha1().ClusterStacks().Create(newStack); err != nil {
-					return err
-				}
-			}
-			i.trackObj(newStack)
-		} else {
-			updateStack := curStack.DeepCopy()
-			updateStack.Spec = newStack.Spec
-			updateStack.Annotations = k8s.MergeAnnotations(updateStack.Annotations, newStack.Annotations)
-
-			if !i.ch.IsDryRun() {
-				if updateStack, err = i.client.KpackV1alpha1().ClusterStacks().Update(updateStack); err != nil {
-					return err
-				}
-			}
-			i.trackObj(updateStack)
-		}
-	}
-	return nil
-}
-
-func (i *importHelper) ImportClusterBuilders(repository string, sa string) error {
-	for _, cb := range i.descriptor.ClusterBuilders {
-		if cb.Name == i.descriptor.DefaultClusterBuilder {
-			i.descriptor.ClusterBuilders = append(i.descriptor.ClusterBuilders, importpkg.ClusterBuilder{
-				Name:         "default",
-				ClusterStack: cb.ClusterStack,
-				ClusterStore: cb.ClusterStore,
-				Order:        cb.Order,
-			})
-			break
-		}
-	}
-
-	for _, ccb := range i.descriptor.ClusterBuilders {
-		if err := i.ch.PrintStatus("Importing ClusterBuilder '%s'...", ccb.Name); err != nil {
-			return err
+			curStack = nil
 		}
 
-		newCB, err := i.makeClusterBuilder(ccb, repository, sa)
+		cStackDiff, err := importDiffer.DiffClusterStack(curStack, cs)
 		if err != nil {
-			return err
+			return false, err
 		}
+		if cStackDiff != "" {
+			hasChanges = true
+			curDiff.WriteString(cStackDiff + "\n\n")
+		}
+	}
+	if curDiff.String() == "" {
+		curDiff.WriteString("No Changes\n\n")
+	}
+	changes.WriteString(curDiff.String())
 
-		newCB.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
-
-		curCCB, err := i.client.KpackV1alpha1().ClusterBuilders().Get(ccb.Name, metav1.GetOptions{})
+	changes.WriteString("ClusterBuilders\n\n")
+	curDiff.Reset()
+	for _, cb := range descriptor.GetClusterBuilders() {
+		curBuilder, err := kClient.KpackV1alpha1().ClusterBuilders().Get(cb.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
+			return false, err
 		}
-
 		if k8serrors.IsNotFound(err) {
-			if !i.ch.IsDryRun() {
-				if newCB, err = i.client.KpackV1alpha1().ClusterBuilders().Create(newCB); err != nil {
-					return err
-				}
-			}
-			i.trackObj(newCB)
-		} else {
-			updateCB := curCCB.DeepCopy()
-			updateCB.Spec = newCB.Spec
-			updateCB.Annotations = k8s.MergeAnnotations(updateCB.Annotations, newCB.Annotations)
+			curBuilder = nil
+		}
 
-			if !i.ch.IsDryRun() {
-				if updateCB, err = i.client.KpackV1alpha1().ClusterBuilders().Update(updateCB); err != nil {
-					return err
-				}
-			}
-			i.trackObj(updateCB)
+		cBuilderDiff, err := importDiffer.DiffClusterBuilder(curBuilder, cb)
+		if err != nil {
+			return false, err
+		}
+		if cBuilderDiff != "" {
+			hasChanges = true
+			curDiff.WriteString(cBuilderDiff + "\n\n")
 		}
 	}
-	return nil
-}
-
-func (i *importHelper) trackObj(obj runtime.Object) {
-	i.objects = append(i.objects, obj)
-}
-
-func (i importHelper) makeClusterBuilder(ccb importpkg.ClusterBuilder, repository string, sa string) (*v1alpha1.ClusterBuilder, error) {
-	newCCB := &v1alpha1.ClusterBuilder{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha1.ClusterBuilderKind,
-			APIVersion: "kpack.io/v1alpha1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        ccb.Name,
-			Annotations: map[string]string{},
-		},
-		Spec: v1alpha1.ClusterBuilderSpec{
-			BuilderSpec: v1alpha1.BuilderSpec{
-				Tag: path.Join(repository, ccb.Name),
-				Stack: corev1.ObjectReference{
-					Name: ccb.ClusterStack,
-					Kind: v1alpha1.ClusterStackKind,
-				},
-				Store: corev1.ObjectReference{
-					Name: ccb.ClusterStore,
-					Kind: v1alpha1.ClusterStoreKind,
-				},
-				Order: ccb.Order,
-			},
-		},
+	if curDiff.String() == "" {
+		curDiff.WriteString("No Changes\n\n")
 	}
+	changes.WriteString(curDiff.String())
 
-	if sa != "" {
-		newCCB.Spec.ServiceAccountRef = corev1.ObjectReference{
-			Namespace: importNamespace,
-			Name:      sa,
-		}
-	}
-
-	return newCCB, k8s.SetLastAppliedCfg(newCCB)
+	return hasChanges, ch.Printlnf(changes.String())
 }

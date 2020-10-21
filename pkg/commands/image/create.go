@@ -12,11 +12,12 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, factory *image.Factory, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, uploader image.SourceUploader, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
 		tag       string
 		namespace string
 		subPath   string
+		factory   image.Factory
 	)
 
 	cmd := &cobra.Command{
@@ -60,10 +61,12 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 
 			name := args[0]
 
-			factory.Printer = ch
 			factory.SubPath = &subPath
+			factory.SourceUploader = uploader
+			factory.Printer = ch
+			factory.ValidateOnly = ch.ValidateOnly()
 
-			img, err := create(name, tag, factory, ch, cs)
+			img, err := create(name, tag, &factory, ch, cs)
 			if err != nil {
 				return err
 			}
@@ -101,8 +104,7 @@ func create(name, tag string, factory *image.Factory, ch *commands.CommandHelper
 		return nil, err
 	}
 
-	k8s.SetLastAppliedCfg(img)
-	if err != nil {
+	if err := k8s.SetLastAppliedCfg(img); err != nil {
 		return nil, err
 	}
 

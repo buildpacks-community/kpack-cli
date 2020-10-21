@@ -5,10 +5,9 @@ package clusterstack
 
 import (
 	"io"
-	"path"
+	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,12 +15,11 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-type ImageFetcher interface {
-	Fetch(src string, tlsCfg registry.TLSConfig) (v1.Image, error)
-}
-
-type ImageRelocator interface {
-	Relocate(image v1.Image, dest string, writer io.Writer, tlsCfg registry.TLSConfig) (string, error)
+type Uploader interface {
+	ValidateStackIDs(buildImageTag, runImageTag string, tlsCfg registry.TLSConfig) (string, error)
+	UploadStackImages(buildImageTag, runImageTag, dest string, tlsCfg registry.TLSConfig, writer io.Writer) (string, string, error)
+	UploadedBuildImageRef(imageTag, dest string, tlsCfg registry.TLSConfig) (string, error)
+	UploadedRunImageRef(imageTag, dest string, tlsCfg registry.TLSConfig) (string, error)
 }
 
 type Printer interface {
@@ -30,21 +28,27 @@ type Printer interface {
 }
 
 type Factory struct {
-	Printer       Printer
-	Fetcher       ImageFetcher
-	Relocator     ImageRelocator
-	TLSConfig     registry.TLSConfig
-	Repository    string
-	BuildImageRef string
-	RunImageRef   string
+	Uploader     Uploader
+	Printer      Printer
+	TLSConfig    registry.TLSConfig
+	Repository   string
+	ValidateOnly bool
 }
 
-func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
-	if err := f.validate(); err != nil {
+func (f *Factory) MakeStack(name, buildImageTag, runImageTag string) (*v1alpha1.ClusterStack, error) {
+	stackID, err := f.validate(buildImageTag, runImageTag)
+	if err != nil {
 		return nil, err
 	}
 
-	relocatedBuildImageRef, relocatedRunImageRef, stackId, err := f.relocateStack()
+	if f.ValidateOnly {
+		return nil, nil
+	}
+
+	if err := f.Printer.Printlnf("Uploading to '%s'...", f.Repository); err != nil {
+		return nil, err
+	}
+	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(buildImageTag, runImageTag, f.Repository, f.TLSConfig, f.Printer.Writer())
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +63,7 @@ func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
 			Annotations: map[string]string{},
 		},
 		Spec: v1alpha1.ClusterStackSpec{
-			Id: stackId,
+			Id: stackID,
 			BuildImage: v1alpha1.ClusterStackSpecImage{
 				Image: relocatedBuildImageRef,
 			},
@@ -70,17 +74,30 @@ func (f *Factory) MakeStack(name string) (*v1alpha1.ClusterStack, error) {
 	}, nil
 }
 
-func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack) (bool, error) {
-	if err := f.validate(); err != nil {
-		return false, err
-	}
-
-	relocatedBuildImageRef, relocatedRunImageRef, stackId, err := f.relocateStack()
+func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack, buildImageTag, runImageTag string) (bool, error) {
+	stackID, err := f.validate(buildImageTag, runImageTag)
 	if err != nil {
 		return false, err
 	}
 
-	if wasUpdated, err := wasUpdated(stack, relocatedBuildImageRef, relocatedRunImageRef, stackId); err != nil {
+	var relocatedBuildImageRef, relocatedRunImageRef string
+	if f.ValidateOnly {
+		relocatedBuildImageRef, err = f.Uploader.UploadedBuildImageRef(buildImageTag, f.Repository, f.TLSConfig)
+		if err != nil {
+			return false, err
+		}
+		relocatedRunImageRef, err = f.Uploader.UploadedRunImageRef(runImageTag, f.Repository, f.TLSConfig)
+	} else {
+		if err := f.Printer.Printlnf("Uploading to '%s'...", f.Repository); err != nil {
+			return false, err
+		}
+		relocatedBuildImageRef, relocatedRunImageRef, err = f.Uploader.UploadStackImages(buildImageTag, runImageTag, f.Repository, f.TLSConfig, f.Printer.Writer())
+	}
+	if err != nil {
+		return false, err
+	}
+
+	if wasUpdated, err := wasUpdated(stack, relocatedBuildImageRef, relocatedRunImageRef, stackID); err != nil {
 		return false, err
 	} else if !wasUpdated {
 		return false, f.Printer.Printlnf("Build and Run images already exist in stack")
@@ -88,70 +105,40 @@ func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack) (bool, error) {
 	return true, nil
 }
 
-func (f *Factory) relocateStack() (string, string, string, error) {
-	buildImage, err := f.Fetcher.Fetch(f.BuildImageRef, f.TLSConfig)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	buildStackId, err := GetStackId(buildImage)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	runImage, err := f.Fetcher.Fetch(f.RunImageRef, f.TLSConfig)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	runStackId, err := GetStackId(runImage)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	if buildStackId != runStackId {
-		return "", "", "", errors.Errorf("build stack '%s' does not match run stack '%s'", buildStackId, runStackId)
-	}
-
-	if err = f.Printer.Printlnf("Uploading to '%s'...", f.Repository); err != nil {
-		return "", "", "", err
-	}
-
-	relocatedBuildImageRef, err := f.Relocator.Relocate(buildImage, path.Join(f.Repository, BuildImageName), f.Printer.Writer(), f.TLSConfig)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	relocatedRunImageRef, err := f.Relocator.Relocate(runImage, path.Join(f.Repository, RunImageName), f.Printer.Writer(), f.TLSConfig)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	return relocatedBuildImageRef, relocatedRunImageRef, buildStackId, nil
+func (f *Factory) RelocatedBuildImage(tag string) (string, error) {
+	return f.Uploader.UploadedBuildImageRef(tag, f.Repository, f.TLSConfig)
 }
 
-func (f *Factory) validate() error {
+func (f *Factory) RelocatedRunImage(tag string) (string, error) {
+	return f.Uploader.UploadedRunImageRef(tag, f.Repository, f.TLSConfig)
+}
+
+func (f *Factory) validate(buildTag, runTag string) (string, error) {
 	_, err := name.ParseReference(f.Repository, name.WeakValidation)
-	return err
+	if err != nil {
+		return "", err
+	}
+
+	return f.Uploader.ValidateStackIDs(buildTag, runTag, f.TLSConfig)
 }
 
 func wasUpdated(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef, stackId string) (bool, error) {
-	oldBuildDigest, err := GetDigest(stack.Status.BuildImage.LatestImage)
+	oldBuildDigest, err := getDigest(stack.Status.BuildImage.LatestImage)
 	if err != nil {
 		return false, err
 	}
 
-	newBuildDigest, err := GetDigest(buildImageRef)
+	newBuildDigest, err := getDigest(buildImageRef)
 	if err != nil {
 		return false, err
 	}
 
-	oldRunDigest, err := GetDigest(stack.Status.RunImage.LatestImage)
+	oldRunDigest, err := getDigest(stack.Status.RunImage.LatestImage)
 	if err != nil {
 		return false, err
 	}
 
-	newRunDigest, err := GetDigest(runImageRef)
+	newRunDigest, err := getDigest(runImageRef)
 	if err != nil {
 		return false, err
 	}
@@ -164,4 +151,12 @@ func wasUpdated(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef, stackI
 	}
 
 	return false, nil
+}
+
+func getDigest(ref string) (string, error) {
+	s := strings.Split(ref, "@")
+	if len(s) != 2 {
+		return "", errors.New("failed to get image digest")
+	}
+	return s[1], nil
 }

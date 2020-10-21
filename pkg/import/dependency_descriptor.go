@@ -107,3 +107,32 @@ func (d DependencyDescriptor) Validate() error {
 
 	return nil
 }
+
+func (d DependencyDescriptor) GetClusterStacks() []ClusterStack {
+	for _, stack := range d.ClusterStacks {
+		if stack.Name == d.DefaultClusterStack {
+			d.ClusterStacks = append(d.ClusterStacks, ClusterStack{
+				Name:       "default",
+				BuildImage: stack.BuildImage,
+				RunImage:   stack.RunImage,
+			})
+			break
+		}
+	}
+	return d.ClusterStacks
+}
+
+func (d DependencyDescriptor) GetClusterBuilders() []ClusterBuilder {
+	for _, cb := range d.ClusterBuilders {
+		if cb.Name == d.DefaultClusterBuilder {
+			d.ClusterBuilders = append(d.ClusterBuilders, ClusterBuilder{
+				Name:         "default",
+				ClusterStack: cb.ClusterStack,
+				ClusterStore: cb.ClusterStore,
+				Order:        cb.Order,
+			})
+			break
+		}
+	}
+	return d.ClusterBuilders
+}

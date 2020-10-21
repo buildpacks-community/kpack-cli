@@ -15,52 +15,52 @@ func TestDescriptor(t *testing.T) {
 }
 
 func testDescriptor(t *testing.T, when spec.G, it spec.S) {
-	when("#Validate", func() {
-		desc := importpkg.DependencyDescriptor{
-			DefaultClusterStack:   "some-stack",
-			DefaultClusterBuilder: "some-ccb",
-			ClusterStores: []importpkg.ClusterStore{
-				{
-					Name: "some-store",
-					Sources: []importpkg.Source{
-						{
-							Image: "some-store-image",
-						},
+	desc := importpkg.DependencyDescriptor{
+		DefaultClusterStack:   "some-stack",
+		DefaultClusterBuilder: "some-cb",
+		ClusterStores: []importpkg.ClusterStore{
+			{
+				Name: "some-store",
+				Sources: []importpkg.Source{
+					{
+						Image: "some-store-image",
 					},
 				},
 			},
-			ClusterStacks: []importpkg.ClusterStack{
-				{
-					Name: "some-stack",
-					BuildImage: importpkg.Source{
-						Image: "build-image",
-					},
-					RunImage: importpkg.Source{
-						Image: "run-image",
-					},
+		},
+		ClusterStacks: []importpkg.ClusterStack{
+			{
+				Name: "some-stack",
+				BuildImage: importpkg.Source{
+					Image: "build-image",
+				},
+				RunImage: importpkg.Source{
+					Image: "run-image",
 				},
 			},
-			ClusterBuilders: []importpkg.ClusterBuilder{
-				{
-					Name:         "some-ccb",
-					ClusterStack: "some-stack",
-					ClusterStore: "some-store",
-					Order: []v1alpha1.OrderEntry{
-						{
-							Group: []v1alpha1.BuildpackRef{
-								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
-										Id:      "some-buildpack",
-										Version: "1.2.3",
-									},
-									Optional: false,
+		},
+		ClusterBuilders: []importpkg.ClusterBuilder{
+			{
+				Name:         "some-cb",
+				ClusterStack: "some-stack",
+				ClusterStore: "some-store",
+				Order: []v1alpha1.OrderEntry{
+					{
+						Group: []v1alpha1.BuildpackRef{
+							{
+								BuildpackInfo: v1alpha1.BuildpackInfo{
+									Id:      "some-buildpack",
+									Version: "1.2.3",
 								},
+								Optional: false,
 							},
 						},
 					},
 				},
 			},
-		}
+		},
+	}
+	when("#Validate", func() {
 
 		it("validates successfully", func() {
 			require.NoError(t, desc.Validate())
@@ -86,9 +86,9 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
-		when("there is a duplicate ccb name", func() {
+		when("there is a duplicate cb name", func() {
 			desc.ClusterBuilders = append(desc.ClusterBuilders, importpkg.ClusterBuilder{
-				Name:         "some-ccb",
+				Name:         "some-cb",
 				ClusterStack: "some-stack",
 				ClusterStore: "some-store",
 			})
@@ -106,7 +106,7 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
-		when("the default ccb does not exist", func() {
+		when("the default cb does not exist", func() {
 			desc.DefaultClusterStack = "does-not-exist"
 
 			it("fails validation", func() {
@@ -114,7 +114,7 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
-		when("the ccb uses a stack that does not exist", func() {
+		when("the cb uses a stack that does not exist", func() {
 			desc.ClusterBuilders[0].ClusterStack = "does-not-exist"
 
 			it("fails validation", func() {
@@ -122,12 +122,33 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
-		when("the ccb uses a store that does not exist", func() {
+		when("the cb uses a store that does not exist", func() {
 			desc.ClusterBuilders[0].ClusterStore = "does-not-exist"
 
 			it("fails validation", func() {
 				require.Error(t, desc.Validate())
 			})
+		})
+	})
+
+	when("#GetClusterStacks", func() {
+		it("returns the cluster stacks and the default cluster stack", func() {
+			stacks := desc.GetClusterStacks()
+			expectedStacks := []importpkg.ClusterStack{
+				{Name: "some-stack", BuildImage: importpkg.Source{Image: "build-image"}, RunImage: importpkg.Source{Image: "run-image"}},
+				{Name: "default", BuildImage: importpkg.Source{Image: "build-image"}, RunImage: importpkg.Source{Image: "run-image"}}}
+			require.Equal(t, expectedStacks, stacks)
+		})
+	})
+
+	when("#GetClusterBuilders", func() {
+		it("returns the cluster builders and the default cluster builder", func() {
+			builders := desc.GetClusterBuilders()
+			expectedBuilders := []importpkg.ClusterBuilder{
+				{Name: "some-cb", ClusterStack: "some-stack", ClusterStore: "some-store", Order: []v1alpha1.OrderEntry{{Group: []v1alpha1.BuildpackRef{{BuildpackInfo: v1alpha1.BuildpackInfo{Id: "some-buildpack", Version: "1.2.3"}, Optional: false}}}}},
+				{Name: "default", ClusterStack: "some-stack", ClusterStore: "some-store", Order: []v1alpha1.OrderEntry{{Group: []v1alpha1.BuildpackRef{{BuildpackInfo: v1alpha1.BuildpackInfo{Id: "some-buildpack", Version: "1.2.3"}, Optional: false}}}}},
+			}
+			require.Equal(t, expectedBuilders, builders)
 		})
 	})
 }

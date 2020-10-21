@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -34,26 +34,9 @@ type uploadCfg struct {
 	imgWriteOptions []remote.Option
 }
 
-type SourceUploader interface {
-	Upload(dstImgRefStr, srcPath string, writer io.Writer, tlsCfg TLSConfig) (string, error)
-}
+type SourceUploader struct{}
 
-type DryRunSourceUploader struct{}
-
-func (s DryRunSourceUploader) Upload(dstImgRefStr, srcPath string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
-	cfg, err := getImageUploadCfg(dstImgRefStr, srcPath, tlsCfg)
-	_ = os.RemoveAll(cfg.srcTarPath)
-	if err != nil {
-		return "", err
-	}
-
-	writer.Write([]byte(fmt.Sprintf("\tUploading '%s'", cfg.imgInfo.refDigestStr)))
-	return cfg.imgInfo.refDigestStr, err
-}
-
-type SourceUploaderImpl struct{}
-
-func (s SourceUploaderImpl) Upload(dstImgRefStr, srcPath string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
+func (s SourceUploader) Upload(dstImgRefStr, srcPath string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
 	cfg, err := getImageUploadCfg(dstImgRefStr, srcPath, tlsCfg)
 	defer os.RemoveAll(cfg.srcTarPath)
 	if err != nil {

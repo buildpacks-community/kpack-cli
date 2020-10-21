@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
 	storecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
@@ -37,10 +36,6 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 		fakeBuildpackageUploader = fakes.FakeBuildpackageUploader{
 			buildpackage1: uploadedBp1,
 			buildpackage2: uploadedBp2,
-		}
-
-		factory = &clusterstore.Factory{
-			Uploader: fakeBuildpackageUploader,
 		}
 
 		config = &corev1.ConfigMap{
@@ -76,7 +71,7 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return storecmds.NewSaveCommand(clientSetProvider, factory)
+		return storecmds.NewSaveCommand(clientSetProvider, fakeBuildpackageUploader)
 	}
 
 	when("creating", func() {
@@ -318,7 +313,7 @@ status: {}
 						},
 					},
 				},
-				ExpectedOutput: `Adding Buildpackages...
+				ExpectedOutput: `Adding To ClusterStore...
 	Added Buildpackage
 ClusterStore "test-store" updated
 `,
@@ -372,7 +367,7 @@ status: {}
 						},
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Adding Buildpackages...
+					ExpectedErrorOutput: `Adding To ClusterStore...
 	Added Buildpackage
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -436,7 +431,7 @@ status: {}
 						},
 					},
 					ExpectedOutput: resourceJSON,
-					ExpectedErrorOutput: `Adding Buildpackages...
+					ExpectedErrorOutput: `Adding To ClusterStore...
 	Added Buildpackage
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -472,7 +467,7 @@ status: {}
 							"-b", buildpackage1,
 							"--output", "yaml",
 						},
-						ExpectedErrorOutput: `Adding Buildpackages...
+						ExpectedErrorOutput: `Adding To ClusterStore...
 	Buildpackage already exists in the store
 `,
 						ExpectedOutput: resourceYAML,
@@ -495,7 +490,7 @@ status: {}
 						"--buildpackage", "patch/bp",
 						"--dry-run",
 					},
-					ExpectedOutput: `Adding Buildpackages... (dry run)
+					ExpectedOutput: `Adding To ClusterStore... (dry run)
 	Added Buildpackage
 ClusterStore "test-store" updated (dry run)
 `,
@@ -516,9 +511,9 @@ ClusterStore "test-store" updated (dry run)
 							"--buildpackage", buildpackage1,
 							"--dry-run",
 						},
-						ExpectedOutput: `Adding Buildpackages... (dry run)
+						ExpectedOutput: `Adding To ClusterStore... (dry run)
 	Buildpackage already exists in the store
-ClusterStore "test-store" updated (no change)
+ClusterStore "test-store" updated (dry run)
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})
@@ -555,7 +550,7 @@ status: {}
 							"--output", "yaml",
 						},
 						ExpectedOutput: resourceYAML,
-						ExpectedErrorOutput: `Adding Buildpackages... (dry run)
+						ExpectedErrorOutput: `Adding To ClusterStore... (dry run)
 	Added Buildpackage
 `,
 					}.TestK8sAndKpack(t, cmdFunc)

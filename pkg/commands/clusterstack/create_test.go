@@ -15,9 +15,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/pivotal/build-service-cli/pkg/clusterstack"
+	clusterstackfakes "github.com/pivotal/build-service-cli/pkg/clusterstack/fakes"
 	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
-	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -26,17 +25,12 @@ func TestCreateCommand(t *testing.T) {
 }
 
 func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
-	buildImage, buildImageId, runImage, runImageId := makeStackImages(t, "some-stack-id")
-
-	fetcher := &fakes.Fetcher{}
-	fetcher.AddImage("some-build-image", buildImage)
-	fetcher.AddImage("some-run-image", runImage)
-
-	relocator := &fakes.Relocator{}
-
-	stackFactory := &clusterstack.Factory{
-		Fetcher:   fetcher,
-		Relocator: relocator,
+	fakeUploader := &clusterstackfakes.FakeStackUploader{
+		Images: map[string]string{
+			"some-build-image": "some-uploaded-build-image",
+			"some-run-image":   "some-uploaded-run-image",
+		},
+		StackID: "some-stack-id",
 	}
 
 	config := &corev1.ConfigMap{
@@ -52,29 +46,29 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return clusterstackcmds.NewCreateCommand(clientSetProvider, stackFactory)
+		return clusterstackcmds.NewCreateCommand(clientSetProvider, fakeUploader)
+	}
+
+	expectedStack := &v1alpha1.ClusterStack{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       v1alpha1.ClusterStackKind,
+			APIVersion: "kpack.io/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "some-stack",
+		},
+		Spec: v1alpha1.ClusterStackSpec{
+			Id: "some-stack-id",
+			BuildImage: v1alpha1.ClusterStackSpecImage{
+				Image: "some-uploaded-build-image",
+			},
+			RunImage: v1alpha1.ClusterStackSpecImage{
+				Image: "some-uploaded-run-image",
+			},
+		},
 	}
 
 	it("creates a stack", func() {
-		expectedStack := &v1alpha1.ClusterStack{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterStackKind,
-				APIVersion: "kpack.io/v1alpha1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "some-stack",
-			},
-			Spec: v1alpha1.ClusterStackSpec{
-				Id: "some-stack-id",
-				BuildImage: v1alpha1.ClusterStackSpecImage{
-					Image: "some-registry.io/some-repo/build@" + buildImageId,
-				},
-				RunImage: v1alpha1.ClusterStackSpecImage{
-					Image: "some-registry.io/some-repo/run@" + runImageId,
-				},
-			},
-		}
-
 		testhelpers.CommandTest{
 			K8sObjects: []runtime.Object{
 				config,
@@ -133,47 +127,7 @@ ClusterStack "some-stack" created
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
-	it("validates build stack ID is equal to run stack ID", func() {
-		_, _, runImage, _ := makeStackImages(t, "some-other-stack-id")
-
-		fetcher.AddImage("some-other-run-image", runImage)
-
-		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
-				config,
-			},
-			Args: []string{
-				"some-stack",
-				"--build-image", "some-build-image",
-				"--run-image", "some-other-run-image",
-			},
-			ExpectErr: true,
-			ExpectedOutput: `Creating ClusterStack...
-Error: build stack 'some-stack-id' does not match run stack 'some-other-stack-id'
-`,
-		}.TestK8sAndKpack(t, cmdFunc)
-	})
-
 	when("output flag is used", func() {
-		expectedStack := &v1alpha1.ClusterStack{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterStackKind,
-				APIVersion: "kpack.io/v1alpha1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "some-stack",
-			},
-			Spec: v1alpha1.ClusterStackSpec{
-				Id: "some-stack-id",
-				BuildImage: v1alpha1.ClusterStackSpecImage{
-					Image: "some-registry.io/some-repo/build@" + buildImageId,
-				},
-				RunImage: v1alpha1.ClusterStackSpecImage{
-					Image: "some-registry.io/some-repo/run@" + runImageId,
-				},
-			},
-		}
-
 		it("can output in yaml format", func() {
 			const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
@@ -182,10 +136,10 @@ metadata:
   name: some-stack
 spec:
   buildImage:
-    image: some-registry.io/some-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-build-image
   id: some-stack-id
   runImage:
-    image: some-registry.io/some-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-run-image
 status:
   buildImage: {}
   runImage: {}
@@ -222,10 +176,10 @@ Uploading to 'some-registry.io/some-repo'...
     "spec": {
         "id": "some-stack-id",
         "buildImage": {
-            "image": "some-registry.io/some-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d"
+            "image": "some-uploaded-build-image"
         },
         "runImage": {
-            "image": "some-registry.io/some-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d"
+            "image": "some-uploaded-run-image"
         }
     },
     "status": {
@@ -269,7 +223,6 @@ Uploading to 'some-registry.io/some-repo'...
 					"--dry-run",
 				},
 				ExpectedOutput: `Creating ClusterStack... (dry run)
-Uploading to 'some-registry.io/some-repo'...
 ClusterStack "some-stack" created (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -284,10 +237,10 @@ metadata:
   name: some-stack
 spec:
   buildImage:
-    image: some-registry.io/some-repo/build@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-build-image
   id: some-stack-id
   runImage:
-    image: some-registry.io/some-repo/run@sha256:9dc5608d0f7f31ecd4cd26c00ec56629180dc29bba3423e26fc87317e1c2846d
+    image: some-uploaded-run-image
 status:
   buildImage: {}
   runImage: {}

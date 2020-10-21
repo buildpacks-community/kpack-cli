@@ -4,18 +4,20 @@
 package clusterstore
 
 import (
-	"github.com/pivotal/build-service-cli/pkg/clusterstore"
-	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/clusterstore"
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, factory *clusterstore.Factory) *cobra.Command {
+func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, uploader clusterstore.BuildpackageUploader) *cobra.Command {
 	var (
 		buildpackages []string
+		tlsCfg        registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -45,8 +47,19 @@ kp clusterstore save my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
+			rep, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
-			factory.Printer = ch
+
+			factory := &clusterstore.Factory{
+				Uploader:   uploader,
+				TLSConfig:  tlsCfg,
+				Repository: rep,
+				Printer:    ch,
+			}
 
 			clusterStore, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(name, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
@@ -61,6 +74,6 @@ kp clusterstore save my-store -b ../path/to/my-local-buildpackage.cnb`,
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
 	commands.SetDryRunOutputFlags(cmd)
-	commands.SetTLSFlags(cmd, &factory.TLSConfig)
+	commands.SetTLSFlags(cmd, &tlsCfg)
 	return cmd
 }

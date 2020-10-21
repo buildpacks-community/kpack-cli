@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 )
 
@@ -26,44 +26,29 @@ type relocateImageInfo struct {
 	size         int64
 }
 
-type Relocator interface {
-	Relocate(srcImage v1.Image, dstRepoStr string, writer io.Writer, tlsCfg TLSConfig) (string, error)
-}
+type Relocator struct{}
 
-type DryRunRelocator struct{}
-
-func (d DryRunRelocator) Relocate(srcImage v1.Image, dstRepoStr string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
+func (r Relocator) Relocate(srcImage v1.Image, dstRepoStr string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
 	cfg, err := getRelocateCfg(srcImage, dstRepoStr, tlsCfg)
 	if err != nil {
 		return "", err
 	}
 
-	writer.Write([]byte(fmt.Sprintf("\tUploading '%s'\n", cfg.imgInfo.refDigestStr)))
-	return cfg.imgInfo.refDigestStr, err
-}
-
-type RelocatorImpl struct{}
-
-func (r RelocatorImpl) Relocate(srcImage v1.Image, dstRepoStr string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
-	cfg, err := getRelocateCfg(srcImage, dstRepoStr, tlsCfg)
-	if err != nil {
+	if _, err := writer.Write([]byte(fmt.Sprintf("\tUploading '%s'", cfg.imgInfo.refDigestStr))); err != nil {
 		return "", err
 	}
 
-	i := cfg.imgInfo
-	writer.Write([]byte(fmt.Sprintf("\tUploading '%s'", i.refDigestStr)))
-
-	spinner := newUploadSpinner(writer, i.size)
+	spinner := newUploadSpinner(writer, cfg.imgInfo.size)
 	defer spinner.Stop()
 	go spinner.Write()
 
-	err = remote.Write(i.refRepo, srcImage, cfg.imgWriteOptions...)
+	err = remote.Write(cfg.imgInfo.refRepo, srcImage, cfg.imgWriteOptions...)
 	if err != nil {
-		return i.refDigestStr, newImageAccessError(i.refRepo.Context().RegistryStr(), err)
+		return cfg.imgInfo.refDigestStr, newImageAccessError(cfg.imgInfo.refRepo.Context().RegistryStr(), err)
 	}
 
-	err = remote.Tag(i.tag, srcImage, cfg.imgWriteOptions...)
-	return i.refDigestStr, err
+	err = remote.Tag(cfg.imgInfo.tag, srcImage, cfg.imgWriteOptions...)
+	return cfg.imgInfo.refDigestStr, err
 }
 
 func getRelocateCfg(srcImage v1.Image, dstRepoStr string, tlsCfg TLSConfig) (relocateCfg, error) {

@@ -13,7 +13,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -79,6 +79,10 @@ func (ch CommandHelper) IsDryRun() bool {
 	return ch.dryRun
 }
 
+func (ch CommandHelper) ValidateOnly() bool {
+	return ch.dryRun && !ch.output
+}
+
 func (ch CommandHelper) ShouldWait() bool {
 	return ch.wait && !ch.dryRun && !ch.output
 }
@@ -111,10 +115,10 @@ func (ch CommandHelper) PrintObj(obj runtime.Object) error {
 }
 
 func (ch CommandHelper) PrintChangeResult(change bool, format string, args ...interface{}) error {
-	if !change {
-		format += " (no change)"
-	} else if ch.dryRun {
+	if ch.dryRun {
 		format += " (dry run)"
+	} else if !change {
+		format += " (no change)"
 	}
 	_, err := ch.OutOrDiscardWriter().Write([]byte(fmt.Sprintf(format+"\n", args...)))
 	return err
