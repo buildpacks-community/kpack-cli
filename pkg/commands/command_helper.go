@@ -117,8 +117,7 @@ func (ch CommandHelper) PrintObj(obj runtime.Object) error {
 func (ch CommandHelper) PrintChangeResult(change bool, format string, args ...interface{}) error {
 	if ch.dryRun {
 		format += " (dry run)"
-	}
-	if !change {
+	} else if !change {
 		format += " (no change)"
 	}
 	_, err := ch.OutOrDiscardWriter().Write([]byte(fmt.Sprintf(format+"\n", args...)))

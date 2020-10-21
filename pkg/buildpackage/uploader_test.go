@@ -64,7 +64,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	when("UploadBuildpackage", func() {
+	when("UploadedBuildpackageRef", func() {
 		when("cnb file is provided", func() {
 			it("it returns the relocated reference without relocating", func() {
 				ref, err := uploader.UploadedBuildpackageRef("testdata/sample-bp.cnb", "kpackcr.org/somepath", registry.TLSConfig{})

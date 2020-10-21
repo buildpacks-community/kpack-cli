@@ -356,7 +356,7 @@ status:
 						"-n", bldr.Namespace,
 						"--dry-run",
 					},
-					ExpectedOutput: `Builder "test-builder" patched (dry run) (no change)
+					ExpectedOutput: `Builder "test-builder" patched (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
 			})

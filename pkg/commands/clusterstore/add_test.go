@@ -385,7 +385,7 @@ ClusterStore "some-store-name" updated (dry run)
 					ExpectErr: false,
 					ExpectedOutput: `Adding To ClusterStore... (dry run)
 	Buildpackage already exists in the store
-ClusterStore "some-store-name" updated (dry run) (no change)
+ClusterStore "some-store-name" updated (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})

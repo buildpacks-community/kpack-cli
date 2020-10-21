@@ -384,7 +384,7 @@ ClusterStack "some-stack" updated (dry run)
 					},
 					ExpectedOutput: `Updating ClusterStack... (dry run)
 Build and Run images already exist in stack
-ClusterStack "some-stack" updated (dry run) (no change)
+ClusterStack "some-stack" updated (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})

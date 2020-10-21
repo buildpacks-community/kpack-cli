@@ -484,7 +484,7 @@ status: {}
 						"some-image",
 						"--dry-run",
 					},
-					ExpectedOutput: `Image "some-image" patched (dry run) (no change)
+					ExpectedOutput: `Image "some-image" patched (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
 			})
