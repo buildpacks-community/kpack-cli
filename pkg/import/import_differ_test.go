@@ -18,34 +18,21 @@ func TestImportDiffer(t *testing.T) {
 	spec.Run(t, "TestImportDiffer", testImportDiffer)
 }
 
-type void struct{}
-
-type FakeRefGetter struct {
-	relocatedBP    map[string]void
-	relocatedBuild map[string]void
-	relocatedRun   map[string]void
-}
+type FakeRefGetter struct{}
 
 func NewFakeRefGetter() *FakeRefGetter {
-	return &FakeRefGetter{
-		relocatedBP:    map[string]void{},
-		relocatedBuild: map[string]void{},
-		relocatedRun:   map[string]void{},
-	}
+	return &FakeRefGetter{}
 }
 
 func (rg *FakeRefGetter) RelocatedBuildpackage(image string) (string, error) {
-	rg.relocatedBP[image] = void{}
 	return image, nil
 }
 
 func (rg *FakeRefGetter) RelocatedBuildImage(image string) (string, error) {
-	rg.relocatedBuild[image] = void{}
 	return image, nil
 }
 
 func (rg *FakeRefGetter) RelocatedRunImage(image string) (string, error) {
-	rg.relocatedRun[image] = void{}
 	return image, nil
 }
 
@@ -78,6 +65,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 				{Image: "some-extra-buildpackage"},
 			},
 		}
+
 		it("returns a diff of only new store images", func() {
 			diff, err := importDiffer.DiffClusterStore(oldStore, newStore)
 			require.NoError(t, err)
@@ -87,8 +75,6 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 			expectedArg1 := importpkg.ClusterStore{Name: "some-store", Sources: []importpkg.Source{{Image: "some-new-buildpackage"}}}
 			require.Equal(t, expectedArg0, diffArg0)
 			require.Equal(t, expectedArg1, diffArg1)
-			require.Contains(t, fakeRefGetter.relocatedBP, "some-new-buildpackage")
-			require.Contains(t, fakeRefGetter.relocatedBP, "some-extra-buildpackage")
 		})
 
 		it("diffs with empty string when old cluster store does not exist", func() {
@@ -145,8 +131,6 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 			}
 			require.Equal(t, expectedArg0, diffArg0)
 			require.Equal(t, newStack, diffArg1)
-			require.Contains(t, fakeRefGetter.relocatedBuild, "some-new-build-image")
-			require.Contains(t, fakeRefGetter.relocatedRun, "some-new-run-image")
 		})
 
 		it("diffs against nil when old cluster stack does not exist", func() {
