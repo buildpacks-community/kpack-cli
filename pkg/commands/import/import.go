@@ -37,9 +37,10 @@ func NewImportCommand(
 	confirmationProvider ConfirmationProvider) *cobra.Command {
 
 	var (
-		filename  string
-		force     bool
-		tlsConfig registry.TLSConfig
+		filename    string
+		showChanges bool
+		force       bool
+		tlsConfig   registry.TLSConfig
 	)
 
 	const (
@@ -118,19 +119,21 @@ cat dependencies.yaml | kp import -f -`,
 				timestampProvider: timestampProvider,
 			}
 
-			hasChanges, err := showChanges(descriptor, importDiffer, cs.KpackClient, ch)
-			if err != nil {
-				return err
-			}
-
-			if !force {
-				confirmed, err := confirmationProvider.Confirm(confirmMsgMap[hasChanges])
+			if showChanges {
+				hasChanges, err := showSummary(descriptor, importDiffer, cs.KpackClient, ch)
 				if err != nil {
 					return err
 				}
 
-				if !confirmed {
-					return ch.Printlnf("Skipping import")
+				if !force {
+					confirmed, err := confirmationProvider.Confirm(confirmMsgMap[hasChanges])
+					if err != nil {
+						return err
+					}
+
+					if !confirmed {
+						return ch.Printlnf("Skipping import")
+					}
 				}
 			}
 
@@ -154,7 +157,8 @@ cat dependencies.yaml | kp import -f -`,
 		},
 	}
 	cmd.Flags().StringVarP(&filename, "filename", "f", "", "dependency descriptor filename")
-	cmd.Flags().BoolVar(&force, "force", false, "force import without confirmation")
+	cmd.Flags().BoolVar(&showChanges, "show-changes", false, "show a summary of resource changes before importing")
+	cmd.Flags().BoolVar(&force, "force", false, "import without confirmation when showing changes")
 	commands.SetDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsConfig)
 	_ = cmd.MarkFlagRequired("filename")
@@ -209,7 +213,7 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 	return deps, nil
 }
 
-func showChanges(descriptor importpkg.DependencyDescriptor, importDiffer *importpkg.ImportDiffer, kClient kpack.Interface, ch *commands.CommandHelper) (hasChanges bool, err error) {
+func showSummary(descriptor importpkg.DependencyDescriptor, importDiffer *importpkg.ImportDiffer, kClient kpack.Interface, ch *commands.CommandHelper) (hasChanges bool, err error) {
 	hasChanges = false
 	var changes strings.Builder
 	changes.WriteString("Changes\n\n")

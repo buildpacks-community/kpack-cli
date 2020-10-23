@@ -178,26 +178,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: `Changes
-
-ClusterStores
-
-some-diff
-
-ClusterStacks
-
-some-diff
-
-some-diff
-
-ClusterBuilders
-
-some-diff
-
-some-diff
-
-
-Importing ClusterStore 'some-store'...
+				ExpectedOutput: `Importing ClusterStore 'some-store'...
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
 Importing ClusterStack 'default'...
@@ -214,7 +195,6 @@ Imported resources
 					defaultBuilder,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
-			require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("Confirm with y:"))
 		})
 
 		it("creates stores, stacks, and cbs defined in the dependency descriptor for version 1", func() {
@@ -230,26 +210,7 @@ Imported resources
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: `Changes
-
-ClusterStores
-
-some-diff
-
-ClusterStacks
-
-some-diff
-
-some-diff
-
-ClusterBuilders
-
-some-diff
-
-some-diff
-
-
-Importing ClusterStore 'some-store'...
+				ExpectedOutput: `Importing ClusterStore 'some-store'...
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
 Importing ClusterStack 'default'...
@@ -268,21 +229,20 @@ Imported resources
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("skips confirmation when the force flag is used", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+		when("the show changes flag is used", func() {
+			it("shows a summary of changes for each resource", func() {
+				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
-			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
-					config,
-				},
-				Args: []string{
-					"-f", "./testdata/deps.yaml",
-					"--registry-ca-cert-path", "some-cert-path",
-					"--registry-verify-certs",
-					"--force",
-				},
-				ExpectedOutput: `Changes
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					Args: []string{
+						"-f", "./testdata/deps.yaml",
+						"--show-changes",
+					},
+					ExpectedOutput: `Changes
 
 ClusterStores
 
@@ -310,15 +270,68 @@ Importing ClusterBuilder 'some-cb'...
 Importing ClusterBuilder 'default'...
 Imported resources
 `,
-				ExpectCreates: []runtime.Object{
-					store,
-					stack,
-					defaultStack,
-					builder,
-					defaultBuilder,
-				},
-			}.TestK8sAndKpack(t, cmdFunc)
-			require.Equal(t, false, fakeConfirmationProvider.WasRequested())
+					ExpectCreates: []runtime.Object{
+						store,
+						stack,
+						defaultStack,
+						builder,
+						defaultBuilder,
+					},
+				}.TestK8sAndKpack(t, cmdFunc)
+				require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("Confirm with y:"))
+			})
+
+			it("skips confirmation when the force flag is used", func() {
+				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-cb","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/some-cb","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					Args: []string{
+						"-f", "./testdata/deps.yaml",
+						"--show-changes",
+						"--force",
+					},
+					ExpectedOutput: `Changes
+
+ClusterStores
+
+some-diff
+
+ClusterStacks
+
+some-diff
+
+some-diff
+
+ClusterBuilders
+
+some-diff
+
+some-diff
+
+
+Importing ClusterStore 'some-store'...
+Importing ClusterStack 'some-stack'...
+Uploading to 'new-registry.io/new-project'...
+Importing ClusterStack 'default'...
+Uploading to 'new-registry.io/new-project'...
+Importing ClusterBuilder 'some-cb'...
+Importing ClusterBuilder 'default'...
+Imported resources
+`,
+					ExpectCreates: []runtime.Object{
+						store,
+						stack,
+						defaultStack,
+						builder,
+						defaultBuilder,
+					},
+				}.TestK8sAndKpack(t, cmdFunc)
+				require.Equal(t, false, fakeConfirmationProvider.WasRequested())
+			})
 		})
 	})
 
@@ -368,22 +381,7 @@ Imported resources
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: `Changes
-
-ClusterStores
-
-No Changes
-
-ClusterStacks
-
-No Changes
-
-ClusterBuilders
-
-No Changes
-
-
-Importing ClusterStore 'some-store'...
+					ExpectedOutput: `Importing ClusterStore 'some-store'...
 	Buildpackage already exists in the store
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
@@ -411,7 +409,6 @@ Imported resources
 						},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
-				require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("Re-upload images with y:"))
 			})
 
 			it("does not error when original resource annotation is nil", func() {
@@ -439,22 +436,7 @@ Imported resources
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: `Changes
-
-ClusterStores
-
-No Changes
-
-ClusterStacks
-
-No Changes
-
-ClusterBuilders
-
-No Changes
-
-
-Importing ClusterStore 'some-store'...
+					ExpectedOutput: `Importing ClusterStore 'some-store'...
 	Buildpackage already exists in the store
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
@@ -555,26 +537,7 @@ Imported resources
 					Args: []string{
 						"-f", "./testdata/updated-deps.yaml",
 					},
-					ExpectedOutput: `Changes
-
-ClusterStores
-
-some-diff
-
-ClusterStacks
-
-some-diff
-
-some-diff
-
-ClusterBuilders
-
-some-diff
-
-some-diff
-
-
-Importing ClusterStore 'some-store'...
+					ExpectedOutput: `Importing ClusterStore 'some-store'...
 	Added Buildpackage
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
@@ -618,26 +581,7 @@ Imported resources
 	})
 
 	when("output flag is used", func() {
-		const expectedOutput = `Changes
-
-ClusterStores
-
-some-diff
-
-ClusterStacks
-
-some-diff
-
-some-diff
-
-ClusterBuilders
-
-some-diff
-
-some-diff
-
-
-Importing ClusterStore 'some-store'...
+		const expectedOutput = `Importing ClusterStore 'some-store'...
 Importing ClusterStack 'some-stack'...
 Uploading to 'new-registry.io/new-project'...
 Importing ClusterStack 'default'...
@@ -943,26 +887,7 @@ status:
 		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"new-registry.io/new-project/default","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"buildpack-1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		it("does not create any resources and prints result with dry run indicated", func() {
-			const expectedOutput = `Changes
-
-ClusterStores
-
-some-diff
-
-ClusterStacks
-
-some-diff
-
-some-diff
-
-ClusterBuilders
-
-some-diff
-
-some-diff
-
-
-Importing ClusterStore 'some-store'... (dry run)
+			const expectedOutput = `Importing ClusterStore 'some-store'... (dry run)
 Importing ClusterStack 'some-stack'... (dry run)
 Importing ClusterStack 'default'... (dry run)
 Importing ClusterBuilder 'some-cb'... (dry run)
@@ -1081,26 +1006,7 @@ status:
   stack: {}
 `
 
-			const expectedOutput = `Changes
-
-ClusterStores
-
-some-diff
-
-ClusterStacks
-
-some-diff
-
-some-diff
-
-ClusterBuilders
-
-some-diff
-
-some-diff
-
-
-Importing ClusterStore 'some-store'... (dry run)
+			const expectedOutput = `Importing ClusterStore 'some-store'... (dry run)
 Importing ClusterStack 'some-stack'... (dry run)
 Uploading to 'new-registry.io/new-project'...
 Importing ClusterStack 'default'... (dry run)
