@@ -38,7 +38,13 @@ type Uploader struct {
 }
 
 func (u *Uploader) UploadBuildpackage(buildPackage, repository string, tlsCfg registry.TLSConfig, writer io.Writer) (string, error) {
-	image, tag, err := u.destinationTag(buildPackage, repository, tlsCfg)
+	tempDir, err := ioutil.TempDir("", "cnb-upload")
+	if err != nil {
+		return "", err
+	}
+	defer os.RemoveAll(tempDir)
+
+	image, tag, err := u.destinationTag(buildPackage, repository, tempDir, tlsCfg)
 	if err != nil {
 		return "", err
 	}
@@ -47,7 +53,13 @@ func (u *Uploader) UploadBuildpackage(buildPackage, repository string, tlsCfg re
 }
 
 func (u *Uploader) UploadedBuildpackageRef(buildPackage, repository string, tlsCfg registry.TLSConfig) (string, error) {
-	image, tag, err := u.destinationTag(buildPackage, repository, tlsCfg)
+	tempDir, err := ioutil.TempDir("", "cnb-upload")
+	if err != nil {
+		return "", err
+	}
+	defer os.RemoveAll(tempDir)
+
+	image, tag, err := u.destinationTag(buildPackage, repository, tempDir, tlsCfg)
 	if err != nil {
 		return "", err
 	}
@@ -59,13 +71,7 @@ func (u *Uploader) UploadedBuildpackageRef(buildPackage, repository string, tlsC
 	return fmt.Sprintf("%s@%s", tag, digest.String()), nil
 }
 
-func (u *Uploader) destinationTag(buildPackage, repository string, tlsCfg registry.TLSConfig) (v1.Image, string, error) {
-	tempDir, err := ioutil.TempDir("", "cnb-upload")
-	if err != nil {
-		return nil, "", err
-	}
-	defer os.RemoveAll(tempDir)
-
+func (u *Uploader) destinationTag(buildPackage, repository, tempDir string, tlsCfg registry.TLSConfig) (v1.Image, string, error) {
 	image, err := u.read(buildPackage, tempDir, tlsCfg)
 	if err != nil {
 		return nil, "", err
