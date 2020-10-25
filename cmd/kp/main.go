@@ -12,7 +12,6 @@ import (
 	"github.com/pivotal/kpack/pkg/logs"
 	"github.com/spf13/cobra"
 
-	"github.com/pivotal/build-service-cli/pkg/buildpackage"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	buildcmds "github.com/pivotal/build-service-cli/pkg/commands/build"
 	buildercmds "github.com/pivotal/build-service-cli/pkg/commands/builder"
@@ -26,7 +25,6 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 	"github.com/pivotal/build-service-cli/pkg/secret"
-	"github.com/pivotal/build-service-cli/pkg/stackimage"
 )
 
 var (
@@ -89,24 +87,20 @@ func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		return logs.NewImageWaiter(clientSet.KpackClient, logs.NewBuildLogsClient(clientSet.K8sClient))
 	}
 
-	uploader := &registry.SourceUploader{}
-
 	imageRootCmd := &cobra.Command{
 		Use:     "image",
 		Short:   "Image commands",
 		Aliases: []string{"images", "imgs", "img"},
 	}
-
 	imageRootCmd.AddCommand(
-		imgcmds.NewCreateCommand(clientSetProvider, uploader, newImageWaiter),
-		imgcmds.NewPatchCommand(clientSetProvider, uploader, newImageWaiter),
-		imgcmds.NewSaveCommand(clientSetProvider, uploader, newImageWaiter),
+		imgcmds.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}, newImageWaiter),
+		imgcmds.NewPatchCommand(clientSetProvider, registry.DefaultUtilProvider{}, newImageWaiter),
+		imgcmds.NewSaveCommand(clientSetProvider, registry.DefaultUtilProvider{}, newImageWaiter),
 		imgcmds.NewListCommand(clientSetProvider),
 		imgcmds.NewDeleteCommand(clientSetProvider),
 		imgcmds.NewTriggerCommand(clientSetProvider),
 		imgcmds.NewStatusCommand(clientSetProvider),
 	)
-
 	return imageRootCmd
 }
 
@@ -178,44 +172,32 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-
-	stackUploader := &stackimage.Uploader{
-		Fetcher:   &registry.Fetcher{},
-		Relocator: &registry.Relocator{},
-	}
-
 	stackRootCmd := &cobra.Command{
 		Use:     "clusterstack",
 		Aliases: []string{"clusterstacks", "clstrcsks", "clstrcsk", "cstks", "cstk", " csks", "csk"},
 		Short:   "ClusterStack Commands",
 	}
 	stackRootCmd.AddCommand(
-		clusterstackcmds.NewCreateCommand(clientSetProvider, stackUploader),
-		clusterstackcmds.NewUpdateCommand(clientSetProvider, stackUploader),
-		clusterstackcmds.NewSaveCommand(clientSetProvider, stackUploader),
+		clusterstackcmds.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}),
+		clusterstackcmds.NewUpdateCommand(clientSetProvider, registry.DefaultUtilProvider{}),
+		clusterstackcmds.NewSaveCommand(clientSetProvider, registry.DefaultUtilProvider{}),
 		clusterstackcmds.NewListCommand(clientSetProvider),
 		clusterstackcmds.NewStatusCommand(clientSetProvider),
 		clusterstackcmds.NewDeleteCommand(clientSetProvider),
 	)
-
 	return stackRootCmd
 }
 
 func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	bpUploader := &buildpackage.Uploader{
-		Fetcher:   &registry.Fetcher{},
-		Relocator: &registry.Relocator{},
-	}
-
 	storeRootCommand := &cobra.Command{
 		Use:     "clusterstore",
 		Aliases: []string{"clusterstores", "clstrcsrs", "clstrcsr", "csrs", "csr"},
 		Short:   "ClusterStore Commands",
 	}
 	storeRootCommand.AddCommand(
-		clusterstorecmds.NewCreateCommand(clientSetProvider, bpUploader),
-		clusterstorecmds.NewAddCommand(clientSetProvider, bpUploader),
-		clusterstorecmds.NewSaveCommand(clientSetProvider, bpUploader),
+		clusterstorecmds.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}),
+		clusterstorecmds.NewAddCommand(clientSetProvider, registry.DefaultUtilProvider{}),
+		clusterstorecmds.NewSaveCommand(clientSetProvider, registry.DefaultUtilProvider{}),
 		clusterstorecmds.NewDeleteCommand(clientSetProvider, commands.NewConfirmationProvider()),
 		clusterstorecmds.NewStatusCommand(clientSetProvider),
 		clusterstorecmds.NewRemoveCommand(clientSetProvider),
@@ -226,21 +208,11 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-	bpUploader := &buildpackage.Uploader{
-		Fetcher:   &registry.Fetcher{},
-		Relocator: &registry.Relocator{},
-	}
-
-	stackUploader := &stackimage.Uploader{
-		Fetcher:   &registry.Fetcher{},
-		Relocator: &registry.Relocator{},
-	}
 
 	return importcmds.NewImportCommand(
-		clientSetProvider,
-		bpUploader,
-		stackUploader,
 		commands.Differ{},
+		clientSetProvider,
+		registry.DefaultUtilProvider{},
 		importpkg.DefaultTimestampProvider(),
 		commands.NewConfirmationProvider(),
 	)

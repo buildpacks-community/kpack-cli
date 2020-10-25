@@ -5,6 +5,8 @@ package image
 
 import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/registry"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -14,7 +16,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, uploader image.SourceUploader, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
+func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
 		tag       string
 		namespace string
@@ -66,9 +68,8 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 			name := args[0]
 			shouldWait := ch.ShouldWait()
 
-			factory.SourceUploader = uploader
+			factory.SourceUploader = rup.SourceUploader(ch.CanChangeState())
 			factory.Printer = ch
-			factory.ValidateOnly = ch.ValidateOnly()
 
 			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
@@ -116,7 +117,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 	cmd.Flags().BoolP("wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
-	commands.SetDryRunOutputFlags(cmd)
+	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	return cmd
 }

@@ -64,10 +64,6 @@ func (i *importer) importClusterStores(clusterStores []importpkg.ClusterStore, f
 				return err
 			}
 
-			if factory.ValidateOnly {
-				continue
-			}
-
 			newStore.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
 			if !i.commandHelper.IsDryRun() {
@@ -104,10 +100,6 @@ func (i *importer) importClusterStacks(clusterStacks []importpkg.ClusterStack, f
 		newStack, err := factory.MakeStack(stack.Name, stack.BuildImage.Image, stack.RunImage.Image)
 		if err != nil {
 			return err
-		}
-
-		if factory.ValidateOnly {
-			continue
 		}
 
 		newStack.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()

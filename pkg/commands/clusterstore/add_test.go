@@ -16,8 +16,8 @@ import (
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/clusterstore/fakes"
 	storecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
+	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -26,16 +26,25 @@ func TestClusterStoreAddCommand(t *testing.T) {
 }
 
 func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
-	const (
-		imageAlreadyInStore = "some/imageinStore@sha256:123alreadyInStore"
-		storeName           = "some-store-name"
-	)
-
-	fakeBuildpackageUploader := &fakes.FakeBuildpackageUploader{
-		"some/newbp":    "some/path/newbp@sha256:123newbp",
-		"bpfromcnb.cnb": "some/path/bpfromcnb@sha256:123imagefromcnb",
-
-		"some/imageAlreadyInStore": "some/path/imageInStoreDifferentPath@sha256:123alreadyInStore",
+	fakeRelocator := &registryfakes.Relocator{}
+	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
+		FakeRelocator: fakeRelocator,
+		FakeFetcher: registryfakes.NewBuildpackImagesFetcher(
+			registryfakes.BuildpackImgInfo{
+				Id: "old-buildpack-id",
+				ImageInfo: registryfakes.ImageInfo{
+					Ref:    "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
+					Digest: "old-buildpack-digest",
+				},
+			},
+			registryfakes.BuildpackImgInfo{
+				Id: "new-buildpack-id",
+				ImageInfo: registryfakes.ImageInfo{
+					Ref:    "some-registry.io/repo/new-buildpack",
+					Digest: "new-buildpack-digest",
+				},
+			},
+		),
 	}
 
 	config := &corev1.ConfigMap{
@@ -44,27 +53,25 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			Namespace: "kpack",
 		},
 		Data: map[string]string{
-			"canonical.repository":                "some-registry.io/some-repo",
+			"canonical.repository":                "canonical-registry.io/canonical-repo",
 			"canonical.repository.serviceaccount": "some-serviceaccount",
 		},
 	}
 
-	store := &v1alpha1.ClusterStore{
+	existingStore := &v1alpha1.ClusterStore{
 		ObjectMeta: v1.ObjectMeta{
-			Name: storeName,
+			Name: "store-name",
 		},
 		Spec: v1alpha1.ClusterStoreSpec{
 			Sources: []v1alpha1.StoreImage{
-				{
-					Image: imageAlreadyInStore,
-				},
+				{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 			},
 		},
 	}
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return storecmds.NewAddCommand(clientSetProvider, fakeBuildpackageUploader)
+		return storecmds.NewAddCommand(clientSetProvider, fakeRegistryUtilProvider)
 	}
 
 	it("adds a buildpackage to store", func() {
@@ -73,12 +80,12 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 				config,
 			},
 			KpackObjects: []runtime.Object{
-				store,
+				existingStore,
 			},
 			Args: []string{
-				storeName,
-				"--buildpackage", "some/newbp",
-				"-b", "bpfromcnb.cnb",
+				"store-name",
+				"--buildpackage", "some-registry.io/repo/new-buildpack",
+				"-b", localCNBPath,
 				"--registry-ca-cert-path", "some-cert-path",
 				"--registry-verify-certs",
 			},
@@ -86,27 +93,23 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
 					Object: &v1alpha1.ClusterStore{
-						ObjectMeta: store.ObjectMeta,
+						ObjectMeta: existingStore.ObjectMeta,
 						Spec: v1alpha1.ClusterStoreSpec{
 							Sources: []v1alpha1.StoreImage{
-								{
-									Image: imageAlreadyInStore,
-								},
-								{
-									Image: "some/path/newbp@sha256:123newbp",
-								},
-								{
-									Image: "some/path/bpfromcnb@sha256:123imagefromcnb",
-								},
+								{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
+								{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
+								{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
 							},
 						},
 					},
 				},
 			},
 			ExpectedOutput: `Adding to ClusterStore...
+	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
+	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
-ClusterStore "some-store-name" updated
+ClusterStore "store-name" updated
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -117,16 +120,17 @@ ClusterStore "some-store-name" updated
 				config,
 			},
 			KpackObjects: []runtime.Object{
-				store,
+				existingStore,
 			},
 			Args: []string{
-				storeName,
-				"-b", "some/imageAlreadyInStore",
+				"store-name",
+				"-b", "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
 			},
 			ExpectErr: false,
 			ExpectedOutput: `Adding to ClusterStore...
+	Uploading 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
 	Buildpackage already exists in the store
-ClusterStore "some-store-name" updated (no change)
+ClusterStore "store-name" updated (no change)
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -137,7 +141,7 @@ ClusterStore "some-store-name" updated (no change)
 				config,
 			},
 			KpackObjects: []runtime.Object{
-				store,
+				existingStore,
 			},
 			Args: []string{
 				"invalid-store",
@@ -151,10 +155,10 @@ ClusterStore "some-store-name" updated (no change)
 	it("errors when kp-config configmap is not found", func() {
 		testhelpers.CommandTest{
 			KpackObjects: []runtime.Object{
-				store,
+				existingStore,
 			},
 			Args: []string{
-				storeName,
+				"store-name",
 				"-b", "some/someimage",
 			},
 			ExpectErr: true,
@@ -177,10 +181,10 @@ ClusterStore "some-store-name" updated (no change)
 				badConfig,
 			},
 			KpackObjects: []runtime.Object{
-				store,
+				existingStore,
 			},
 			Args: []string{
-				storeName,
+				"store-name",
 				"-b", "some/someimage",
 			},
 			ExpectErr: true,
@@ -195,12 +199,12 @@ ClusterStore "some-store-name" updated (no change)
 kind: ClusterStore
 metadata:
   creationTimestamp: null
-  name: some-store-name
+  name: store-name
 spec:
   sources:
-  - image: some/imageinStore@sha256:123alreadyInStore
-  - image: some/path/newbp@sha256:123newbp
-  - image: some/path/bpfromcnb@sha256:123imagefromcnb
+  - image: canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest
+  - image: canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest
+  - image: canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
 status: {}
 `
 
@@ -209,30 +213,24 @@ status: {}
 					config,
 				},
 				KpackObjects: []runtime.Object{
-					store,
+					existingStore,
 				},
 				Args: []string{
-					storeName,
-					"--buildpackage", "some/newbp",
-					"-b", "bpfromcnb.cnb",
+					"store-name",
+					"--buildpackage", "some-registry.io/repo/new-buildpack",
+					"-b", localCNBPath,
 					"--output", "yaml",
 				},
 				ExpectErr: false,
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
 						Object: &v1alpha1.ClusterStore{
-							ObjectMeta: store.ObjectMeta,
+							ObjectMeta: existingStore.ObjectMeta,
 							Spec: v1alpha1.ClusterStoreSpec{
 								Sources: []v1alpha1.StoreImage{
-									{
-										Image: imageAlreadyInStore,
-									},
-									{
-										Image: "some/path/newbp@sha256:123newbp",
-									},
-									{
-										Image: "some/path/bpfromcnb@sha256:123imagefromcnb",
-									},
+									{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
+									{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
+									{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
 								},
 							},
 						},
@@ -240,7 +238,9 @@ status: {}
 				},
 				ExpectedOutput: resourceYAML,
 				ExpectedErrorOutput: `Adding to ClusterStore...
+	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
+	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -251,19 +251,19 @@ status: {}
     "kind": "ClusterStore",
     "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
-        "name": "some-store-name",
+        "name": "store-name",
         "creationTimestamp": null
     },
     "spec": {
         "sources": [
             {
-                "image": "some/imageinStore@sha256:123alreadyInStore"
+                "image": "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"
             },
             {
-                "image": "some/path/newbp@sha256:123newbp"
+                "image": "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"
             },
             {
-                "image": "some/path/bpfromcnb@sha256:123imagefromcnb"
+                "image": "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
             }
         ]
     },
@@ -276,29 +276,23 @@ status: {}
 					config,
 				},
 				KpackObjects: []runtime.Object{
-					store,
+					existingStore,
 				},
 				Args: []string{
-					storeName,
-					"--buildpackage", "some/newbp",
-					"-b", "bpfromcnb.cnb",
+					"store-name",
+					"--buildpackage", "some-registry.io/repo/new-buildpack",
+					"-b", localCNBPath,
 					"--output", "json",
 				},
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
 						Object: &v1alpha1.ClusterStore{
-							ObjectMeta: store.ObjectMeta,
+							ObjectMeta: existingStore.ObjectMeta,
 							Spec: v1alpha1.ClusterStoreSpec{
 								Sources: []v1alpha1.StoreImage{
-									{
-										Image: imageAlreadyInStore,
-									},
-									{
-										Image: "some/path/newbp@sha256:123newbp",
-									},
-									{
-										Image: "some/path/bpfromcnb@sha256:123imagefromcnb",
-									},
+									{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
+									{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
+									{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
 								},
 							},
 						},
@@ -306,7 +300,9 @@ status: {}
 				},
 				ExpectedOutput: resourceJSON,
 				ExpectedErrorOutput: `Adding to ClusterStore...
+	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
+	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -318,10 +314,10 @@ status: {}
 kind: ClusterStore
 metadata:
   creationTimestamp: null
-  name: some-store-name
+  name: store-name
 spec:
   sources:
-  - image: some/imageinStore@sha256:123alreadyInStore
+  - image: canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest
 status: {}
 `
 
@@ -330,15 +326,16 @@ status: {}
 						config,
 					},
 					KpackObjects: []runtime.Object{
-						store,
+						existingStore,
 					},
 					Args: []string{
-						storeName,
-						"-b", "some/imageAlreadyInStore",
+						"store-name",
+						"-b", "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
 						"--output", "yaml",
 					},
 					ExpectErr: false,
 					ExpectedErrorOutput: `Adding to ClusterStore...
+	Uploading 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
 	Buildpackage already exists in the store
 `,
 					ExpectedOutput: resourceYAML,
@@ -348,22 +345,28 @@ status: {}
 	})
 
 	when("dry-run flag is used", func() {
+		fakeRelocator.SetSkip(true)
+
 		it("does not create a clusterstore and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
 					config,
 				},
 				KpackObjects: []runtime.Object{
-					store,
+					existingStore,
 				},
 				Args: []string{
-					storeName,
-					"--buildpackage", "some/newbp",
-					"-b", "bpfromcnb.cnb",
+					"store-name",
+					"--buildpackage", "some-registry.io/repo/new-buildpack",
+					"-b", localCNBPath,
 					"--dry-run",
 				},
 				ExpectedOutput: `Adding to ClusterStore... (dry run)
-ClusterStore "some-store-name" updated (dry run)
+	Skipping 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Added Buildpackage
+	Skipping 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Added Buildpackage
+ClusterStore "store-name" updated (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -375,17 +378,18 @@ ClusterStore "some-store-name" updated (dry run)
 						config,
 					},
 					KpackObjects: []runtime.Object{
-						store,
+						existingStore,
 					},
 					Args: []string{
-						storeName,
-						"-b", "some/imageAlreadyInStore",
+						"store-name",
+						"-b", "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
 						"--dry-run",
 					},
 					ExpectErr: false,
 					ExpectedOutput: `Adding to ClusterStore... (dry run)
+	Skipping 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
 	Buildpackage already exists in the store
-ClusterStore "some-store-name" updated (dry run)
+ClusterStore "store-name" updated (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -397,12 +401,12 @@ ClusterStore "some-store-name" updated (dry run)
 kind: ClusterStore
 metadata:
   creationTimestamp: null
-  name: some-store-name
+  name: store-name
 spec:
   sources:
-  - image: some/imageinStore@sha256:123alreadyInStore
-  - image: some/path/newbp@sha256:123newbp
-  - image: some/path/bpfromcnb@sha256:123imagefromcnb
+  - image: canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest
+  - image: canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest
+  - image: canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
 status: {}
 `
 
@@ -411,18 +415,110 @@ status: {}
 						config,
 					},
 					KpackObjects: []runtime.Object{
-						store,
+						existingStore,
 					},
 					Args: []string{
-						storeName,
-						"--buildpackage", "some/newbp",
-						"-b", "bpfromcnb.cnb",
+						"store-name",
+						"--buildpackage", "some-registry.io/repo/new-buildpack",
+						"-b", localCNBPath,
 						"--dry-run",
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Adding to ClusterStore... (dry run)
+	Skipping 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
+	Skipping 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Added Buildpackage
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+	})
+
+	when("dry-run-with-image-upload flag is used", func() {
+		it("does not create a clusterstore and prints result with dry run indicated", func() {
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					config,
+				},
+				KpackObjects: []runtime.Object{
+					existingStore,
+				},
+				Args: []string{
+					"store-name",
+					"--buildpackage", "some-registry.io/repo/new-buildpack",
+					"-b", localCNBPath,
+					"--dry-run-with-image-upload",
+				},
+				ExpectedOutput: `Adding to ClusterStore... (dry run with image upload)
+	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Added Buildpackage
+	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Added Buildpackage
+ClusterStore "store-name" updated (dry run with image upload)
+`,
+			}.TestK8sAndKpack(t, cmdFunc)
+		})
+
+		when("there are no changes in the update", func() {
+			it("does not create a clusterstore and informs of no change", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						existingStore,
+					},
+					Args: []string{
+						"store-name",
+						"-b", "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
+						"--dry-run-with-image-upload",
+					},
+					ExpectErr: false,
+					ExpectedOutput: `Adding to ClusterStore... (dry run with image upload)
+	Uploading 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
+	Buildpackage already exists in the store
+ClusterStore "store-name" updated (dry run with image upload)
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+
+		when("output flag is used", func() {
+			it("does not create a clusterstore and prints the resource output", func() {
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStore
+metadata:
+  creationTimestamp: null
+  name: store-name
+spec:
+  sources:
+  - image: canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest
+  - image: canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest
+  - image: canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
+status: {}
+`
+
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						existingStore,
+					},
+					Args: []string{
+						"store-name",
+						"--buildpackage", "some-registry.io/repo/new-buildpack",
+						"-b", localCNBPath,
+						"--dry-run-with-image-upload",
+						"--output", "yaml",
+					},
+					ExpectedOutput: resourceYAML,
+					ExpectedErrorOutput: `Adding to ClusterStore... (dry run with image upload)
+	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Added Buildpackage
+	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 `,
 				}.TestK8sAndKpack(t, cmdFunc)

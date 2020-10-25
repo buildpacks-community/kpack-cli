@@ -10,9 +10,10 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
+	"github.com/pivotal/build-service-cli/pkg/stackimage"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, uploader clusterstack.Uploader) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -45,31 +46,39 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			rep, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			factory, err := newClusterStackFactory(cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
-
-			factory := &clusterstack.Factory{
-				Uploader:     uploader,
-				Printer:      ch,
-				TLSConfig:    tlsCfg,
-				Repository:   rep,
-				ValidateOnly: ch.ValidateOnly(),
-			}
-
 			return create(name, buildImageRef, runImageRef, factory, ch, cs)
 		},
 	}
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
 	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
-	commands.SetDryRunOutputFlags(cmd)
+	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsCfg)
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")
 	return cmd
+}
+
+func newClusterStackFactory(cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*clusterstack.Factory, error) {
+	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return &clusterstack.Factory{
+		Uploader: &stackimage.Uploader{
+			Fetcher:   rup.Fetcher(),
+			Relocator: rup.Relocator(ch.CanChangeState()),
+		},
+		Printer:    ch,
+		TLSConfig:  tlsCfg,
+		Repository: repo,
+	}, nil
 }
 
 func create(name, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {

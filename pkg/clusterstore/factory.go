@@ -27,20 +27,15 @@ type Printer interface {
 }
 
 type Factory struct {
-	Uploader     BuildpackageUploader
-	TLSConfig    registry.TLSConfig
-	Repository   string
-	Printer      Printer
-	ValidateOnly bool
+	Uploader   BuildpackageUploader
+	TLSConfig  registry.TLSConfig
+	Repository string
+	Printer    Printer
 }
 
 func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.ClusterStore, error) {
 	if err := f.validate(buildpackages); err != nil {
 		return nil, err
-	}
-
-	if f.ValidateOnly {
-		return nil, nil
 	}
 
 	newStore := &v1alpha1.ClusterStore{
@@ -72,13 +67,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
 	storeUpdated := false
 	for _, buildpackage := range buildpackages {
-		var uploadedBp string
-		var err error
-		if f.ValidateOnly {
-			uploadedBp, err = f.Uploader.UploadedBuildpackageRef(buildpackage, f.Repository, f.TLSConfig)
-		} else {
-			uploadedBp, err = f.Uploader.UploadBuildpackage(buildpackage, f.Repository, f.TLSConfig, f.Printer.Writer())
-		}
+		uploadedBp, err := f.Uploader.UploadBuildpackage(buildpackage, f.Repository, f.TLSConfig, f.Printer.Writer())
 		if err != nil {
 			return nil, false, err
 		}
@@ -94,10 +83,8 @@ func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, buildpackages ...stri
 			Image: uploadedBp,
 		})
 
-		if !f.ValidateOnly {
-			if err = f.Printer.Printlnf("\tAdded Buildpackage"); err != nil {
-				return nil, false, err
-			}
+		if err = f.Printer.Printlnf("\tAdded Buildpackage"); err != nil {
+			return nil, false, err
 		}
 
 		storeUpdated = true
@@ -116,7 +103,6 @@ func (f *Factory) validate(buildpackages []string) error {
 	}
 
 	_, err := name.ParseReference(f.Repository, name.WeakValidation)
-
 	return err
 }
 

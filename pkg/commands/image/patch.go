@@ -14,9 +14,10 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/image"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, uploader image.SourceUploader, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
+func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
 	var (
 		namespace string
 		subPath   string
@@ -73,9 +74,8 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
-			factory.SourceUploader = uploader
+			factory.SourceUploader = rup.SourceUploader(ch.CanChangeState())
 			factory.Printer = ch
-			factory.ValidateOnly = ch.ValidateOnly()
 
 			if cmd.Flag("sub-path").Changed {
 				factory.SubPath = &subPath
@@ -108,12 +108,16 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
 	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size as a kubernetes quantity")
 	cmd.Flags().BoolP("wait", "w", false, "wait for image patch to be reconciled and tail resulting build logs")
-	commands.SetDryRunOutputFlags(cmd)
+	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &factory.TLSConfig)
 	return cmd
 }
 
 func patch(img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (bool, *v1alpha1.Image, error) {
+	if err := ch.PrintStatus("Patching Image..."); err != nil {
+		return false, nil, err
+	}
+
 	patchedImage, patch, err := factory.MakePatch(img)
 	if err != nil {
 		return false, nil, err

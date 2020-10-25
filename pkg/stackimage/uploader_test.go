@@ -13,8 +13,8 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/registry"
+	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 )
 
 func TestBuildpackageUploader(t *testing.T) {
@@ -22,8 +22,8 @@ func TestBuildpackageUploader(t *testing.T) {
 }
 
 func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
-	fetcher := &fakes.Fetcher{}
-	relocator := &fakes.Relocator{}
+	fetcher := &registryfakes.Fetcher{}
+	relocator := &registryfakes.Relocator{}
 	uploader := &Uploader{
 		Fetcher:   fetcher,
 		Relocator: relocator,

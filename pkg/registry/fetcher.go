@@ -13,10 +13,14 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 )
 
-type Fetcher struct{}
+type Fetcher interface {
+	Fetch(src string, tlsCfg TLSConfig) (v1.Image, error)
+}
 
-func (f Fetcher) Fetch(src string, tlsCfg TLSConfig) (v1.Image, error) {
-	if f.isLocal(src) {
+type DefaultFetcher struct{}
+
+func (d DefaultFetcher) Fetch(src string, tlsCfg TLSConfig) (v1.Image, error) {
+	if d.isLocal(src) {
 		return tarball.ImageFromPath(src, nil)
 	} else {
 		imageRef, err := name.ParseReference(src, name.WeakValidation)
@@ -37,7 +41,7 @@ func (f Fetcher) Fetch(src string, tlsCfg TLSConfig) (v1.Image, error) {
 	}
 }
 
-func (f Fetcher) isLocal(src string) bool {
+func (d DefaultFetcher) isLocal(src string) bool {
 	_, err := os.Stat(src)
 	return err == nil
 }
