@@ -25,7 +25,7 @@ type ImageRelocator interface {
 	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
 }
 
-func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, uploader clusterstack.Uploader) *cobra.Command {
+func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -54,20 +54,12 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			rep, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			stack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			factory := &clusterstack.Factory{
-				Uploader:     uploader,
-				Printer:      ch,
-				TLSConfig:    tlsCfg,
-				Repository:   rep,
-				ValidateOnly: ch.ValidateOnly(),
-			}
-
-			stack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(args[0], metav1.GetOptions{})
+			factory, err := newClusterStackFactory(cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
@@ -78,7 +70,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
 	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
-	commands.SetDryRunOutputFlags(cmd)
+	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsCfg)
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")

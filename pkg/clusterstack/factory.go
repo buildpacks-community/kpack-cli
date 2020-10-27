@@ -24,15 +24,15 @@ type Uploader interface {
 
 type Printer interface {
 	Printlnf(format string, args ...interface{}) error
+	PrintStatus(format string, args ...interface{}) error
 	Writer() io.Writer
 }
 
 type Factory struct {
-	Uploader     Uploader
-	Printer      Printer
-	TLSConfig    registry.TLSConfig
-	Repository   string
-	ValidateOnly bool
+	Uploader   Uploader
+	Printer    Printer
+	TLSConfig  registry.TLSConfig
+	Repository string
 }
 
 func (f *Factory) MakeStack(name, buildImageTag, runImageTag string) (*v1alpha1.ClusterStack, error) {
@@ -41,13 +41,10 @@ func (f *Factory) MakeStack(name, buildImageTag, runImageTag string) (*v1alpha1.
 		return nil, err
 	}
 
-	if f.ValidateOnly {
-		return nil, nil
-	}
-
-	if err := f.Printer.Printlnf("Uploading to '%s'...", f.Repository); err != nil {
+	if err := f.Printer.PrintStatus("Uploading to '%s'...", f.Repository); err != nil {
 		return nil, err
 	}
+
 	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(buildImageTag, runImageTag, f.Repository, f.TLSConfig, f.Printer.Writer())
 	if err != nil {
 		return nil, err
@@ -80,19 +77,11 @@ func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack, buildImageTag, runIm
 		return false, err
 	}
 
-	var relocatedBuildImageRef, relocatedRunImageRef string
-	if f.ValidateOnly {
-		relocatedBuildImageRef, err = f.Uploader.UploadedBuildImageRef(buildImageTag, f.Repository, f.TLSConfig)
-		if err != nil {
-			return false, err
-		}
-		relocatedRunImageRef, err = f.Uploader.UploadedRunImageRef(runImageTag, f.Repository, f.TLSConfig)
-	} else {
-		if err := f.Printer.Printlnf("Uploading to '%s'...", f.Repository); err != nil {
-			return false, err
-		}
-		relocatedBuildImageRef, relocatedRunImageRef, err = f.Uploader.UploadStackImages(buildImageTag, runImageTag, f.Repository, f.TLSConfig, f.Printer.Writer())
+	if err := f.Printer.PrintStatus("Uploading to '%s'...", f.Repository); err != nil {
+		return false, err
 	}
+
+	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(buildImageTag, runImageTag, f.Repository, f.TLSConfig, f.Printer.Writer())
 	if err != nil {
 		return false, err
 	}
@@ -156,7 +145,7 @@ func wasUpdated(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef, stackI
 func getDigest(ref string) (string, error) {
 	s := strings.Split(ref, "@")
 	if len(s) != 2 {
-		return "", errors.New("failed to get image digest")
+		return "", errors.Errorf("failed to get image digest from reference %q", ref)
 	}
 	return s[1], nil
 }

@@ -46,7 +46,6 @@ type Factory struct {
 	DeleteEnv      []string
 	TLSConfig      registry.TLSConfig
 	Printer        Printer
-	ValidateOnly   bool
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error) {
@@ -179,10 +178,6 @@ func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
 		ref, err := name.ParseReference(tag)
 		if err != nil {
 			return v1alpha1.SourceConfig{}, err
-		}
-
-		if f.ValidateOnly {
-			return v1alpha1.SourceConfig{}, nil
 		}
 
 		imgRepo := ref.Context().Name() + "-source"

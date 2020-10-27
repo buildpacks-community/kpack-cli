@@ -17,8 +17,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	clusterstackfakes "github.com/pivotal/build-service-cli/pkg/clusterstack/fakes"
 	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
+	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -27,12 +27,11 @@ func TestSaveCommand(t *testing.T) {
 }
 
 func testSaveCommand(t *testing.T, when spec.G, it spec.S) {
-	fakeUploader := &clusterstackfakes.FakeStackUploader{
-		Images: map[string]string{
-			"some-build-image": "some-uploaded-build-image",
-			"some-run-image":   "some-uploaded-run-image",
-		},
-		StackID: "some-stack-id",
+	fakeFetcher := &registryfakes.Fetcher{}
+	fakeRelocator := &registryfakes.Relocator{}
+	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
+		FakeRelocator: fakeRelocator,
+		FakeFetcher:   fakeFetcher,
 	}
 
 	config := &corev1.ConfigMap{
@@ -41,32 +40,44 @@ func testSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			Namespace: "kpack",
 		},
 		Data: map[string]string{
-			"canonical.repository":                "some-registry.io/some-repo",
+			"canonical.repository":                "canonical-registry.io/canonical-repo",
 			"canonical.repository.serviceaccount": "some-serviceaccount",
 		},
 	}
 
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return clusterstackcmds.NewSaveCommand(clientSetProvider, fakeUploader)
+		return clusterstackcmds.NewSaveCommand(clientSetProvider, fakeRegistryUtilProvider)
 	}
 
 	when("creating", func() {
+		fakeFetcher.AddStackImages(registryfakes.StackInfo{
+			StackID: "stack-id",
+			BuildImg: registryfakes.ImageInfo{
+				Ref:    "some-registry.io/repo/some-build-image",
+				Digest: "build-image-digest",
+			},
+			RunImg: registryfakes.ImageInfo{
+				Ref:    "some-registry.io/repo/some-run-image",
+				Digest: "run-image-digest",
+			},
+		})
+
 		expectedStack := &v1alpha1.ClusterStack{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       v1alpha1.ClusterStackKind,
 				APIVersion: "kpack.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "some-stack",
+				Name: "stack-name",
 			},
 			Spec: v1alpha1.ClusterStackSpec{
-				Id: "some-stack-id",
+				Id: "stack-id",
 				BuildImage: v1alpha1.ClusterStackSpecImage{
-					Image: "some-uploaded-build-image",
+					Image: "canonical-registry.io/canonical-repo/build@sha256:build-image-digest",
 				},
 				RunImage: v1alpha1.ClusterStackSpecImage{
-					Image: "some-uploaded-run-image",
+					Image: "canonical-registry.io/canonical-repo/run@sha256:run-image-digest",
 				},
 			},
 		}
@@ -77,15 +88,17 @@ func testSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					config,
 				},
 				Args: []string{
-					"some-stack",
-					"--build-image", "some-build-image",
-					"--run-image", "some-run-image",
+					"stack-name",
+					"--build-image", "some-registry.io/repo/some-build-image",
+					"--run-image", "some-registry.io/repo/some-run-image",
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
 				ExpectedOutput: `Creating ClusterStack...
-Uploading to 'some-registry.io/some-repo'...
-ClusterStack "some-stack" created
+Uploading to 'canonical-registry.io/canonical-repo'...
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+ClusterStack "stack-name" created
 `,
 				ExpectCreates: []runtime.Object{
 					expectedStack,
@@ -96,9 +109,9 @@ ClusterStack "some-stack" created
 		it("fails when kp-config configmap is not found", func() {
 			testhelpers.CommandTest{
 				Args: []string{
-					"some-stack",
-					"--build-image", "some-build-image",
-					"--run-image", "some-run-image",
+					"stack-name",
+					"--build-image", "some-registry.io/repo/some-build-image",
+					"--run-image", "some-registry.io/repo/some-run-image",
 				},
 				ExpectErr: true,
 				ExpectedOutput: `Error: failed to get canonical repository: configmaps "kp-config" not found
@@ -120,9 +133,9 @@ ClusterStack "some-stack" created
 					badConfig,
 				},
 				Args: []string{
-					"some-stack",
-					"--build-image", "some-build-image",
-					"--run-image", "some-run-image",
+					"stack-name",
+					"--build-image", "some-registry.io/repo/some-build-image",
+					"--run-image", "some-registry.io/repo/some-run-image",
 				},
 				ExpectErr: true,
 				ExpectedOutput: `Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
@@ -136,13 +149,13 @@ ClusterStack "some-stack" created
 kind: ClusterStack
 metadata:
   creationTimestamp: null
-  name: some-stack
+  name: stack-name
 spec:
   buildImage:
-    image: some-uploaded-build-image
-  id: some-stack-id
+    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+  id: stack-id
   runImage:
-    image: some-uploaded-run-image
+    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
 status:
   buildImage: {}
   runImage: {}
@@ -153,14 +166,16 @@ status:
 						config,
 					},
 					Args: []string{
-						"some-stack",
-						"--build-image", "some-build-image",
-						"--run-image", "some-run-image",
+						"stack-name",
+						"--build-image", "some-registry.io/repo/some-build-image",
+						"--run-image", "some-registry.io/repo/some-run-image",
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Creating ClusterStack...
-Uploading to 'some-registry.io/some-repo'...
+Uploading to 'canonical-registry.io/canonical-repo'...
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
 `,
 					ExpectCreates: []runtime.Object{
 						expectedStack,
@@ -173,16 +188,16 @@ Uploading to 'some-registry.io/some-repo'...
     "kind": "ClusterStack",
     "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
-        "name": "some-stack",
+        "name": "stack-name",
         "creationTimestamp": null
     },
     "spec": {
-        "id": "some-stack-id",
+        "id": "stack-id",
         "buildImage": {
-            "image": "some-uploaded-build-image"
+            "image": "canonical-registry.io/canonical-repo/build@sha256:build-image-digest"
         },
         "runImage": {
-            "image": "some-uploaded-run-image"
+            "image": "canonical-registry.io/canonical-repo/run@sha256:run-image-digest"
         }
     },
     "status": {
@@ -197,14 +212,16 @@ Uploading to 'some-registry.io/some-repo'...
 						config,
 					},
 					Args: []string{
-						"some-stack",
-						"--build-image", "some-build-image",
-						"--run-image", "some-run-image",
+						"stack-name",
+						"--build-image", "some-registry.io/repo/some-build-image",
+						"--run-image", "some-registry.io/repo/some-run-image",
 						"--output", "json",
 					},
 					ExpectedOutput: resourceJSON,
 					ExpectedErrorOutput: `Creating ClusterStack...
-Uploading to 'some-registry.io/some-repo'...
+Uploading to 'canonical-registry.io/canonical-repo'...
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
 `,
 					ExpectCreates: []runtime.Object{
 						expectedStack,
@@ -214,19 +231,24 @@ Uploading to 'some-registry.io/some-repo'...
 		})
 
 		when("dry-run flag is used", func() {
+			fakeRelocator.SetSkip(true)
+
 			it("does not create a clusterstack and prints result with dry run indicated", func() {
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
 						config,
 					},
 					Args: []string{
-						"some-stack",
-						"--build-image", "some-build-image",
-						"--run-image", "some-run-image",
+						"stack-name",
+						"--build-image", "some-registry.io/repo/some-build-image",
+						"--run-image", "some-registry.io/repo/some-run-image",
 						"--dry-run",
 					},
 					ExpectedOutput: `Creating ClusterStack... (dry run)
-ClusterStack "some-stack" created (dry run)
+Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
+	Skipping 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Skipping 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+ClusterStack "stack-name" created (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -237,13 +259,13 @@ ClusterStack "some-stack" created (dry run)
 kind: ClusterStack
 metadata:
   creationTimestamp: null
-  name: some-stack
+  name: stack-name
 spec:
   buildImage:
-    image: some-uploaded-build-image
-  id: some-stack-id
+    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+  id: stack-id
   runImage:
-    image: some-uploaded-run-image
+    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
 status:
   buildImage: {}
   runImage: {}
@@ -254,15 +276,78 @@ status:
 							config,
 						},
 						Args: []string{
-							"some-stack",
-							"--build-image", "some-build-image",
-							"--run-image", "some-run-image",
+							"stack-name",
+							"--build-image", "some-registry.io/repo/some-build-image",
+							"--run-image", "some-registry.io/repo/some-run-image",
 							"--dry-run",
 							"--output", "yaml",
 						},
 						ExpectedOutput: resourceYAML,
 						ExpectedErrorOutput: `Creating ClusterStack... (dry run)
-Uploading to 'some-registry.io/some-repo'...
+Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
+	Skipping 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Skipping 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+`,
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
+			})
+		})
+
+		when("dry-run-with-image-upload flag is used", func() {
+			it("does not create a clusterstack and prints result with dry run indicated", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					Args: []string{
+						"stack-name",
+						"--build-image", "some-registry.io/repo/some-build-image",
+						"--run-image", "some-registry.io/repo/some-run-image",
+						"--dry-run-with-image-upload",
+					},
+					ExpectedOutput: `Creating ClusterStack... (dry run with image upload)
+Uploading to 'canonical-registry.io/canonical-repo'... (dry run with image upload)
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+ClusterStack "stack-name" created (dry run with image upload)
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it("does not create a clusterstack and prints the resource output", func() {
+					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
+  creationTimestamp: null
+  name: stack-name
+spec:
+  buildImage:
+    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+  id: stack-id
+  runImage:
+    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
+status:
+  buildImage: {}
+  runImage: {}
+`
+
+					testhelpers.CommandTest{
+						K8sObjects: []runtime.Object{
+							config,
+						},
+						Args: []string{
+							"stack-name",
+							"--build-image", "some-registry.io/repo/some-build-image",
+							"--run-image", "some-registry.io/repo/some-run-image",
+							"--dry-run-with-image-upload",
+							"--output", "yaml",
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectedErrorOutput: `Creating ClusterStack... (dry run with image upload)
+Uploading to 'canonical-registry.io/canonical-repo'... (dry run with image upload)
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})
@@ -271,39 +356,53 @@ Uploading to 'some-registry.io/some-repo'...
 	})
 
 	when("updating", func() {
-		fakeUploader := &clusterstackfakes.FakeStackUploader{
-			Images: map[string]string{
-				"some-old-build-image": "some-old-build-image@some-old-digest",
-				"some-old-run-image":   "some-old-run-image@some-old-digest",
-				"some-new-build-image": "some-new-uploaded-build-image@some-digest",
-				"some-new-run-image":   "some-new-uploaded-run-image@some-digest",
+		fakeFetcher.AddStackImages(registryfakes.StackInfo{
+			StackID: "stack-id",
+			BuildImg: registryfakes.ImageInfo{
+				Ref:    "canonical-registry.io/canonical-repo/build@sha256:build-image-digest",
+				Digest: "build-image-digest",
 			},
-			StackID: "some-new-id",
-		}
+			RunImg: registryfakes.ImageInfo{
+				Ref:    "canonical-registry.io/canonical-repo/run@sha256:run-image-digest",
+				Digest: "run-image-digest",
+			},
+		})
+
+		fakeFetcher.AddStackImages(registryfakes.StackInfo{
+			StackID: "stack-id",
+			BuildImg: registryfakes.ImageInfo{
+				Ref:    "some-registry.io/repo/new-build",
+				Digest: "new-build-image-digest",
+			},
+			RunImg: registryfakes.ImageInfo{
+				Ref:    "some-registry.io/repo/new-run",
+				Digest: "new-run-image-digest",
+			},
+		})
 
 		stack := &v1alpha1.ClusterStack{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "some-stack",
+				Name: "stack-name",
 			},
 			Spec: v1alpha1.ClusterStackSpec{
-				Id: "some-old-id",
+				Id: "stack-id",
 				BuildImage: v1alpha1.ClusterStackSpecImage{
-					Image: "some-old-build-image",
+					Image: "canonical-registry.io/canonical-repo/build@sha256:build-image-digest",
 				},
 				RunImage: v1alpha1.ClusterStackSpecImage{
-					Image: "some-old-run-image",
+					Image: "canonical-registry.io/canonical-repo/run@sha256:run-image-digest",
 				},
 			},
 			Status: v1alpha1.ClusterStackStatus{
 				ResolvedClusterStack: v1alpha1.ResolvedClusterStack{
-					Id: "some-old-id",
+					Id: "stack-id",
 					BuildImage: v1alpha1.ClusterStackStatusImage{
-						LatestImage: "some-old-build-image@some-old-digest",
-						Image:       "some-old-build-image@some-old-digest",
+						LatestImage: "canonical-registry.io/canonical-repo/build@sha256:build-image-digest",
+						Image:       "canonical-registry.io/canonical-repo/build@sha256:build-image-digest",
 					},
 					RunImage: v1alpha1.ClusterStackStatusImage{
-						LatestImage: "some-old-run-image@some-old-digest",
-						Image:       "some-old-run-image@some-old-digest",
+						LatestImage: "canonical-registry.io/canonical-repo/run@sha256:run-image-digest",
+						Image:       "canonical-registry.io/canonical-repo/run@sha256:run-image-digest",
 					},
 				},
 			},
@@ -311,7 +410,7 @@ Uploading to 'some-registry.io/some-repo'...
 
 		cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 			clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-			return clusterstackcmds.NewUpdateCommand(clientSetProvider, fakeUploader)
+			return clusterstackcmds.NewUpdateCommand(clientSetProvider, fakeRegistryUtilProvider)
 		}
 
 		it("updates the stack id, run image, and build image", func() {
@@ -322,9 +421,10 @@ Uploading to 'some-registry.io/some-repo'...
 				KpackObjects: []runtime.Object{
 					stack,
 				},
-				Args: []string{"some-stack",
-					"--build-image", "some-new-build-image",
-					"--run-image", "some-new-run-image",
+				Args: []string{
+					"stack-name",
+					"--build-image", "some-registry.io/repo/new-build",
+					"--run-image", "some-registry.io/repo/new-run",
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
@@ -334,12 +434,12 @@ Uploading to 'some-registry.io/some-repo'...
 						Object: &v1alpha1.ClusterStack{
 							ObjectMeta: stack.ObjectMeta,
 							Spec: v1alpha1.ClusterStackSpec{
-								Id: "some-new-id",
+								Id: "stack-id",
 								BuildImage: v1alpha1.ClusterStackSpecImage{
-									Image: "some-new-uploaded-build-image@some-digest",
+									Image: "canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest",
 								},
 								RunImage: v1alpha1.ClusterStackSpecImage{
-									Image: "some-new-uploaded-run-image@some-digest",
+									Image: "canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest",
 								},
 							},
 							Status: stack.Status,
@@ -347,13 +447,27 @@ Uploading to 'some-registry.io/some-repo'...
 					},
 				},
 				ExpectedOutput: `Updating ClusterStack...
-Uploading to 'some-registry.io/some-repo'...
-ClusterStack "some-stack" updated
+Uploading to 'canonical-registry.io/canonical-repo'...
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest'
+ClusterStack "stack-name" updated
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
 		it("does not add stack images with the same digest", func() {
+			fakeFetcher.AddStackImages(registryfakes.StackInfo{
+				StackID: "stack-id",
+				BuildImg: registryfakes.ImageInfo{
+					Ref:    "some-registry.io/repo/new-build",
+					Digest: "build-image-digest",
+				},
+				RunImg: registryfakes.ImageInfo{
+					Ref:    "some-registry.io/repo/new-run",
+					Digest: "run-image-digest",
+				},
+			})
+
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
 					config,
@@ -361,12 +475,18 @@ ClusterStack "some-stack" updated
 				KpackObjects: []runtime.Object{
 					stack,
 				},
-				Args:      []string{"some-stack", "--build-image", "some-old-build-image", "--run-image", "some-old-run-image"},
+				Args: []string{
+					"stack-name",
+					"--build-image", "some-registry.io/repo/new-build",
+					"--run-image", "some-registry.io/repo/new-run",
+				},
 				ExpectErr: false,
 				ExpectedOutput: `Updating ClusterStack...
-Uploading to 'some-registry.io/some-repo'...
+Uploading to 'canonical-registry.io/canonical-repo'...
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
 Build and Run images already exist in stack
-ClusterStack "some-stack" updated (no change)
+ClusterStack "stack-name" updated (no change)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -376,7 +496,11 @@ ClusterStack "some-stack" updated (no change)
 				KpackObjects: []runtime.Object{
 					stack,
 				},
-				Args:      []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
+				Args: []string{
+					"stack-name",
+					"--build-image", "some-registry.io/repo/new-build",
+					"--run-image", "some-registry.io/repo/new-run",
+				},
 				ExpectErr: true,
 				ExpectedOutput: `Error: failed to get canonical repository: configmaps "kp-config" not found
 `,
@@ -399,7 +523,11 @@ ClusterStack "some-stack" updated (no change)
 				KpackObjects: []runtime.Object{
 					stack,
 				},
-				Args:      []string{"some-stack", "--build-image", "some-new-build-image", "--run-image", "some-new-run-image"},
+				Args: []string{
+					"stack-name",
+					"--build-image", "some-registry.io/repo/new-build",
+					"--run-image", "some-registry.io/repo/new-run",
+				},
 				ExpectErr: true,
 				ExpectedOutput: `Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
 `,
@@ -412,21 +540,21 @@ ClusterStack "some-stack" updated (no change)
 kind: ClusterStack
 metadata:
   creationTimestamp: null
-  name: some-stack
+  name: stack-name
 spec:
   buildImage:
-    image: some-new-uploaded-build-image@some-digest
-  id: some-new-id
+    image: canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest
+  id: stack-id
   runImage:
-    image: some-new-uploaded-run-image@some-digest
+    image: canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest
 status:
   buildImage:
-    image: some-old-build-image@some-old-digest
-    latestImage: some-old-build-image@some-old-digest
-  id: some-old-id
+    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+    latestImage: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+  id: stack-id
   runImage:
-    image: some-old-run-image@some-old-digest
-    latestImage: some-old-run-image@some-old-digest
+    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
+    latestImage: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
 `
 
 				testhelpers.CommandTest{
@@ -437,9 +565,9 @@ status:
 						stack,
 					},
 					Args: []string{
-						"some-stack",
-						"--build-image", "some-new-build-image",
-						"--run-image", "some-new-run-image",
+						"stack-name",
+						"--build-image", "some-registry.io/repo/new-build",
+						"--run-image", "some-registry.io/repo/new-run",
 						"--output", "yaml",
 					},
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
@@ -447,12 +575,12 @@ status:
 							Object: &v1alpha1.ClusterStack{
 								ObjectMeta: stack.ObjectMeta,
 								Spec: v1alpha1.ClusterStackSpec{
-									Id: "some-new-id",
+									Id: "stack-id",
 									BuildImage: v1alpha1.ClusterStackSpecImage{
-										Image: "some-new-uploaded-build-image@some-digest",
+										Image: "canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest",
 									},
 									RunImage: v1alpha1.ClusterStackSpecImage{
-										Image: "some-new-uploaded-run-image@some-digest",
+										Image: "canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest",
 									},
 								},
 								Status: stack.Status,
@@ -461,7 +589,9 @@ status:
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Updating ClusterStack...
-Uploading to 'some-registry.io/some-repo'...
+Uploading to 'canonical-registry.io/canonical-repo'...
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest'
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -471,27 +601,27 @@ Uploading to 'some-registry.io/some-repo'...
     "kind": "ClusterStack",
     "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
-        "name": "some-stack",
+        "name": "stack-name",
         "creationTimestamp": null
     },
     "spec": {
-        "id": "some-new-id",
+        "id": "stack-id",
         "buildImage": {
-            "image": "some-new-uploaded-build-image@some-digest"
+            "image": "canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest"
         },
         "runImage": {
-            "image": "some-new-uploaded-run-image@some-digest"
+            "image": "canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest"
         }
     },
     "status": {
-        "id": "some-old-id",
+        "id": "stack-id",
         "buildImage": {
-            "latestImage": "some-old-build-image@some-old-digest",
-            "image": "some-old-build-image@some-old-digest"
+            "latestImage": "canonical-registry.io/canonical-repo/build@sha256:build-image-digest",
+            "image": "canonical-registry.io/canonical-repo/build@sha256:build-image-digest"
         },
         "runImage": {
-            "latestImage": "some-old-run-image@some-old-digest",
-            "image": "some-old-run-image@some-old-digest"
+            "latestImage": "canonical-registry.io/canonical-repo/run@sha256:run-image-digest",
+            "image": "canonical-registry.io/canonical-repo/run@sha256:run-image-digest"
         }
     }
 }
@@ -505,9 +635,9 @@ Uploading to 'some-registry.io/some-repo'...
 						stack,
 					},
 					Args: []string{
-						"some-stack",
-						"--build-image", "some-new-build-image",
-						"--run-image", "some-new-run-image",
+						"stack-name",
+						"--build-image", "some-registry.io/repo/new-build",
+						"--run-image", "some-registry.io/repo/new-run",
 						"--output", "json",
 					},
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
@@ -515,12 +645,12 @@ Uploading to 'some-registry.io/some-repo'...
 							Object: &v1alpha1.ClusterStack{
 								ObjectMeta: stack.ObjectMeta,
 								Spec: v1alpha1.ClusterStackSpec{
-									Id: "some-new-id",
+									Id: "stack-id",
 									BuildImage: v1alpha1.ClusterStackSpecImage{
-										Image: "some-new-uploaded-build-image@some-digest",
+										Image: "canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest",
 									},
 									RunImage: v1alpha1.ClusterStackSpecImage{
-										Image: "some-new-uploaded-run-image@some-digest",
+										Image: "canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest",
 									},
 								},
 								Status: stack.Status,
@@ -529,32 +659,46 @@ Uploading to 'some-registry.io/some-repo'...
 					},
 					ExpectedOutput: resourceJSON,
 					ExpectedErrorOutput: `Updating ClusterStack...
-Uploading to 'some-registry.io/some-repo'...
+Uploading to 'canonical-registry.io/canonical-repo'...
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest'
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
 
 			when("there are no changes in the update", func() {
+				fakeFetcher.AddStackImages(registryfakes.StackInfo{
+					StackID: "stack-id",
+					BuildImg: registryfakes.ImageInfo{
+						Ref:    "some-registry.io/repo/new-build",
+						Digest: "build-image-digest",
+					},
+					RunImg: registryfakes.ImageInfo{
+						Ref:    "some-registry.io/repo/new-run",
+						Digest: "run-image-digest",
+					},
+				})
+
 				it("can output original resource in requested format", func() {
 					const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
 metadata:
   creationTimestamp: null
-  name: some-stack
+  name: stack-name
 spec:
   buildImage:
-    image: some-old-build-image
-  id: some-old-id
+    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+  id: stack-id
   runImage:
-    image: some-old-run-image
+    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
 status:
   buildImage:
-    image: some-old-build-image@some-old-digest
-    latestImage: some-old-build-image@some-old-digest
-  id: some-old-id
+    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+    latestImage: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+  id: stack-id
   runImage:
-    image: some-old-run-image@some-old-digest
-    latestImage: some-old-run-image@some-old-digest
+    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
+    latestImage: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
 `
 
 					testhelpers.CommandTest{
@@ -565,13 +709,15 @@ status:
 							stack,
 						},
 						Args: []string{
-							"some-stack",
-							"--build-image", "some-old-build-image",
-							"--run-image", "some-old-run-image",
+							"stack-name",
+							"--build-image", "some-registry.io/repo/new-build",
+							"--run-image", "some-registry.io/repo/new-run",
 							"--output", "yaml",
 						},
 						ExpectedErrorOutput: `Updating ClusterStack...
-Uploading to 'some-registry.io/some-repo'...
+Uploading to 'canonical-registry.io/canonical-repo'...
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
 Build and Run images already exist in stack
 `,
 						ExpectedOutput: resourceYAML,
@@ -581,6 +727,8 @@ Build and Run images already exist in stack
 		})
 
 		when("dry-run flag is used", func() {
+			fakeRelocator.SetSkip(true)
+
 			it("does not update the clusterstack and prints result with dry run indicated", func() {
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
@@ -590,13 +738,16 @@ Build and Run images already exist in stack
 						stack,
 					},
 					Args: []string{
-						"some-stack",
-						"--build-image", "some-new-build-image",
-						"--run-image", "some-new-run-image",
+						"stack-name",
+						"--build-image", "some-registry.io/repo/new-build",
+						"--run-image", "some-registry.io/repo/new-run",
 						"--dry-run",
 					},
 					ExpectedOutput: `Updating ClusterStack... (dry run)
-ClusterStack "some-stack" updated (dry run)
+Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
+	Skipping 'canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest'
+	Skipping 'canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest'
+ClusterStack "stack-name" updated (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -607,21 +758,21 @@ ClusterStack "some-stack" updated (dry run)
 kind: ClusterStack
 metadata:
   creationTimestamp: null
-  name: some-stack
+  name: stack-name
 spec:
   buildImage:
-    image: some-new-uploaded-build-image@some-digest
-  id: some-new-id
+    image: canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest
+  id: stack-id
   runImage:
-    image: some-new-uploaded-run-image@some-digest
+    image: canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest
 status:
   buildImage:
-    image: some-old-build-image@some-old-digest
-    latestImage: some-old-build-image@some-old-digest
-  id: some-old-id
+    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+    latestImage: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+  id: stack-id
   runImage:
-    image: some-old-run-image@some-old-digest
-    latestImage: some-old-run-image@some-old-digest
+    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
+    latestImage: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
 `
 
 					testhelpers.CommandTest{
@@ -632,15 +783,89 @@ status:
 							stack,
 						},
 						Args: []string{
-							"some-stack",
-							"--build-image", "some-new-build-image",
-							"--run-image", "some-new-run-image",
+							"stack-name",
+							"--build-image", "some-registry.io/repo/new-build",
+							"--run-image", "some-registry.io/repo/new-run",
 							"--dry-run",
 							"--output", "yaml",
 						},
 						ExpectedOutput: resourceYAML,
 						ExpectedErrorOutput: `Updating ClusterStack... (dry run)
-Uploading to 'some-registry.io/some-repo'...
+Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
+	Skipping 'canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest'
+	Skipping 'canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest'
+`,
+					}.TestK8sAndKpack(t, cmdFunc)
+				})
+			})
+		})
+
+		when("dry-run--with-image-upload flag is used", func() {
+			it("does not update the clusterstack and prints result with dry run indicated", func() {
+				testhelpers.CommandTest{
+					K8sObjects: []runtime.Object{
+						config,
+					},
+					KpackObjects: []runtime.Object{
+						stack,
+					},
+					Args: []string{
+						"stack-name",
+						"--build-image", "some-registry.io/repo/new-build",
+						"--run-image", "some-registry.io/repo/new-run",
+						"--dry-run-with-image-upload",
+					},
+					ExpectedOutput: `Updating ClusterStack... (dry run with image upload)
+Uploading to 'canonical-registry.io/canonical-repo'... (dry run with image upload)
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest'
+ClusterStack "stack-name" updated (dry run with image upload)
+`,
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+
+			when("output flag is used", func() {
+				it("does not update the clusterstack and prints the resource output", func() {
+					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: ClusterStack
+metadata:
+  creationTimestamp: null
+  name: stack-name
+spec:
+  buildImage:
+    image: canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest
+  id: stack-id
+  runImage:
+    image: canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest
+status:
+  buildImage:
+    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+    latestImage: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+  id: stack-id
+  runImage:
+    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
+    latestImage: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
+`
+
+					testhelpers.CommandTest{
+						K8sObjects: []runtime.Object{
+							config,
+						},
+						KpackObjects: []runtime.Object{
+							stack,
+						},
+						Args: []string{
+							"stack-name",
+							"--build-image", "some-registry.io/repo/new-build",
+							"--run-image", "some-registry.io/repo/new-run",
+							"--dry-run-with-image-upload",
+							"--output", "yaml",
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectedErrorOutput: `Updating ClusterStack... (dry run with image upload)
+Uploading to 'canonical-registry.io/canonical-repo'... (dry run with image upload)
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest'
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})

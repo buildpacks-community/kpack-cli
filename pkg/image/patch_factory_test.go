@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/image"
-	srcfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
+	"github.com/pivotal/build-service-cli/pkg/registry/fakes"
 )
 
 func TestPatchFactory(t *testing.T) {
@@ -22,12 +22,8 @@ func TestPatchFactory(t *testing.T) {
 }
 
 func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
-	uploader := &srcfakes.SourceUploader{
-		ImageRef: "",
-	}
-
 	factory := image.Factory{
-		SourceUploader: uploader,
+		SourceUploader: fakes.NewSourceUploader(""),
 	}
 
 	img := &v1alpha1.Image{

@@ -21,22 +21,26 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/archive"
 )
 
-type uploadImageInfo struct {
-	image        v1.Image
-	refTag       name.Reference
-	refDigestStr string
-	size         int64
+type SourceUploader interface {
+	Upload(dstImgRefStr, srcPath string, writer io.Writer, tlsCfg TLSConfig) (string, error)
 }
 
-type uploadCfg struct {
-	imgInfo         uploadImageInfo
-	srcTarPath      string
-	imgWriteOptions []remote.Option
+type DiscardSourceUploader struct{}
+
+func (d DiscardSourceUploader) Upload(dstImgRefStr, srcPath string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
+	cfg, err := getImageUploadCfg(dstImgRefStr, srcPath, tlsCfg)
+	_ = os.RemoveAll(cfg.srcTarPath)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = writer.Write([]byte(fmt.Sprintf("\tSkipping '%s'\n", cfg.imgInfo.refDigestStr)))
+	return cfg.imgInfo.refDigestStr, err
 }
 
-type SourceUploader struct{}
+type DefaultSourceUploader struct{}
 
-func (s SourceUploader) Upload(dstImgRefStr, srcPath string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
+func (d DefaultSourceUploader) Upload(dstImgRefStr, srcPath string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
 	cfg, err := getImageUploadCfg(dstImgRefStr, srcPath, tlsCfg)
 	defer os.RemoveAll(cfg.srcTarPath)
 	if err != nil {
@@ -44,7 +48,9 @@ func (s SourceUploader) Upload(dstImgRefStr, srcPath string, writer io.Writer, t
 	}
 
 	i := cfg.imgInfo
-	writer.Write([]byte(fmt.Sprintf("\tUploading '%s'", i.refDigestStr)))
+	if _, err := writer.Write([]byte(fmt.Sprintf("\tUploading '%s'", i.refDigestStr))); err != nil {
+		return i.refDigestStr, err
+	}
 
 	spinner := newUploadSpinner(writer, i.size)
 	defer spinner.Stop()
@@ -56,6 +62,19 @@ func (s SourceUploader) Upload(dstImgRefStr, srcPath string, writer io.Writer, t
 	}
 
 	return i.refDigestStr, err
+}
+
+type uploadImageInfo struct {
+	image        v1.Image
+	refTag       name.Reference
+	refDigestStr string
+	size         int64
+}
+
+type uploadCfg struct {
+	imgInfo         uploadImageInfo
+	srcTarPath      string
+	imgWriteOptions []remote.Option
 }
 
 func getImageUploadCfg(imgRefStr, srcPath string, tlsCfg TLSConfig) (uploadCfg, error) {

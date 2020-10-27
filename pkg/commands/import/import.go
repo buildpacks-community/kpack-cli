@@ -16,12 +16,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/ghodss/yaml"
+
+	"github.com/pivotal/build-service-cli/pkg/buildpackage"
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
+	"github.com/pivotal/build-service-cli/pkg/stackimage"
 )
 
 type ConfirmationProvider interface {
@@ -29,10 +32,9 @@ type ConfirmationProvider interface {
 }
 
 func NewImportCommand(
-	clientSetProvider k8s.ClientSetProvider,
-	bpUploader clusterstore.BuildpackageUploader,
-	stackUploader clusterstack.Uploader,
 	differ importpkg.Differ,
+	clientSetProvider k8s.ClientSetProvider,
+	rup registry.UtilProvider,
 	timestampProvider TimestampProvider,
 	confirmationProvider ConfirmationProvider) *cobra.Command {
 
@@ -92,19 +94,23 @@ cat dependencies.yaml | kp import -f -`,
 			}
 
 			storeFactory := &clusterstore.Factory{
-				Uploader:     bpUploader,
-				TLSConfig:    tlsConfig,
-				Repository:   repository,
-				Printer:      ch,
-				ValidateOnly: ch.ValidateOnly(),
+				Uploader: &buildpackage.Uploader{
+					Fetcher:   rup.Fetcher(),
+					Relocator: rup.Relocator(ch.CanChangeState()),
+				},
+				TLSConfig:  tlsConfig,
+				Repository: repository,
+				Printer:    ch,
 			}
 
 			stackFactory := &clusterstack.Factory{
-				Uploader:     stackUploader,
-				TLSConfig:    tlsConfig,
-				Repository:   repository,
-				Printer:      ch,
-				ValidateOnly: ch.ValidateOnly(),
+				Uploader: &stackimage.Uploader{
+					Fetcher:   rup.Fetcher(),
+					Relocator: rup.Relocator(ch.CanChangeState()),
+				},
+				TLSConfig:  tlsConfig,
+				Repository: repository,
+				Printer:    ch,
 			}
 
 			importDiffer := &importpkg.ImportDiffer{
@@ -159,7 +165,7 @@ cat dependencies.yaml | kp import -f -`,
 	cmd.Flags().StringVarP(&filename, "filename", "f", "", "dependency descriptor filename")
 	cmd.Flags().BoolVar(&showChanges, "show-changes", false, "show a summary of resource changes before importing")
 	cmd.Flags().BoolVar(&force, "force", false, "import without confirmation when showing changes")
-	commands.SetDryRunOutputFlags(cmd)
+	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsConfig)
 	_ = cmd.MarkFlagRequired("filename")
 	return cmd

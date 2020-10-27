@@ -8,13 +8,12 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, uploader clusterstack.Uploader) *cobra.Command {
+func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -47,20 +46,12 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			rep, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			factory, err := newClusterStackFactory(cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
-
-			factory := &clusterstack.Factory{
-				Uploader:     uploader,
-				Printer:      ch,
-				TLSConfig:    tlsCfg,
-				Repository:   rep,
-				ValidateOnly: ch.ValidateOnly(),
-			}
 
 			cStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
@@ -74,7 +65,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 	}
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
 	cmd.Flags().StringVarP(&runImageRef, "run-image", "r", "", "run image tag or local tar file path")
-	commands.SetDryRunOutputFlags(cmd)
+	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsCfg)
 	_ = cmd.MarkFlagRequired("build-image")
 	_ = cmd.MarkFlagRequired("run-image")

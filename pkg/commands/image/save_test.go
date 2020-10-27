@@ -19,7 +19,7 @@ import (
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
-	srcfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
+	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -28,18 +28,19 @@ func TestImageSaveCommand(t *testing.T) {
 }
 
 func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
+	fakeSourceUploader := registryfakes.NewSourceUploader("some-registry.io/some-repo-source:source-id")
+	registryUtilProvider := registryfakes.UtilProvider{
+		FakeSourceUploader: fakeSourceUploader,
+	}
+
+	const defaultNamespace = "some-default-namespace"
+
+	fakeImageWaiter := &fakes.FakeImageWaiter{}
+
 	when("creating", func() {
-		const defaultNamespace = "some-default-namespace"
-
-		sourceUploader := &srcfakes.SourceUploader{
-			ImageRef: "some-registry.io/some-repo-source:source-id",
-		}
-
-		fakeImageWaiter := &fakes.FakeImageWaiter{}
-
 		cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 			clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-			return imgcmds.NewSaveCommand(clientSetProvider, sourceUploader, func(set k8s.ClientSet) imgcmds.ImageWaiter {
+			return imgcmds.NewSaveCommand(clientSetProvider, registryUtilProvider, func(set k8s.ClientSet) imgcmds.ImageWaiter {
 				return fakeImageWaiter
 			})
 		}
@@ -102,7 +103,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--registry-verify-certs",
 							"--wait",
 						},
-						ExpectedOutput: `Image "some-image" created
+						ExpectedOutput: `Creating Image...
+Image "some-image" created
 `,
 						ExpectCreates: []runtime.Object{
 							expectedImage,
@@ -127,7 +129,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--cache-size", "2G",
 							"-n", namespace,
 						},
-						ExpectedOutput: `Image "some-image" created
+						ExpectedOutput: `Creating Image...
+Image "some-image" created
 `,
 						ExpectCreates: []runtime.Object{
 							expectedImage,
@@ -146,8 +149,10 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--git", "some-git-url",
 							"-n", namespace,
 						},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: image source must be one of git, blob, or local-path\n",
+						ExpectErr: true,
+						ExpectedOutput: `Creating Image...
+Error: image source must be one of git, blob, or local-path
+`,
 					}.TestKpack(t, cmdFunc)
 
 					assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -204,7 +209,8 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
 						},
-						ExpectedOutput: `Image "some-image" created
+						ExpectedOutput: `Creating Image...
+Image "some-image" created
 `,
 						ExpectCreates: []runtime.Object{
 							expectedImage,
@@ -224,8 +230,10 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							"--blob", "some-blob",
 							"--git", "some-git-url",
 						},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: image source must be one of git, blob, or local-path\n",
+						ExpectErr: true,
+						ExpectedOutput: `Creating Image...
+Error: image source must be one of git, blob, or local-path
+`,
 					}.TestKpack(t, cmdFunc)
 
 					assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -279,7 +287,9 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
 					},
-					ExpectedOutput: `Uploading to 'some-registry.io/some-repo-source'...
+					ExpectedOutput: `Creating Image...
+Uploading to 'some-registry.io/some-repo-source'...
+	Uploading 'some-registry.io/some-repo-source:source-id'
 Image "some-image" created
 `,
 					ExpectCreates: []runtime.Object{
@@ -329,7 +339,8 @@ Image "some-image" created
 						"--blob", "some-blob",
 						"--builder", "some-builder",
 					},
-					ExpectedOutput: `Image "some-image" created
+					ExpectedOutput: `Creating Image...
+Image "some-image" created
 `,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
@@ -377,7 +388,8 @@ Image "some-image" created
 						"--blob", "some-blob",
 						"--cluster-builder", "some-builder",
 					},
-					ExpectedOutput: `Image "some-image" created
+					ExpectedOutput: `Creating Image...
+Image "some-image" created
 `,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
@@ -386,16 +398,6 @@ Image "some-image" created
 
 				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
-		})
-
-		it("errors when tag is not provided", func() {
-			testhelpers.CommandTest{
-				Args: []string{
-					"some-image",
-				},
-				ExpectErr:      true,
-				ExpectedOutput: "Error: --tag is required to create the resource\n",
-			}.TestKpack(t, cmdFunc)
 		})
 
 		when("output flag is used", func() {
@@ -408,8 +410,10 @@ Image "some-image" created
 							"--blob", "some-blob",
 							"--git", "some-git-url",
 						},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: image source must be one of git, blob, or local-path\n",
+						ExpectErr: true,
+						ExpectedOutput: `Creating Image...
+Error: image source must be one of git, blob, or local-path
+`,
 					}.TestKpack(t, cmdFunc)
 					assert.Len(t, fakeImageWaiter.Calls, 0)
 				})
@@ -493,6 +497,8 @@ status: {}
 							"--wait",
 						},
 						ExpectedOutput: resourceYAML,
+						ExpectedErrorOutput: `Creating Image...
+`,
 						ExpectCreates: []runtime.Object{
 							expectedImage,
 						},
@@ -552,6 +558,8 @@ status: {}
 							"--wait",
 						},
 						ExpectedOutput: resourceJSON,
+						ExpectedErrorOutput: `Creating Image...
+`,
 						ExpectCreates: []runtime.Object{
 							expectedImage,
 						},
@@ -571,8 +579,10 @@ status: {}
 							"--blob", "some-blob",
 							"--git", "some-git-url",
 						},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: image source must be one of git, blob, or local-path\n",
+						ExpectErr: true,
+						ExpectedOutput: `Creating Image...
+Error: image source must be one of git, blob, or local-path
+`,
 					}.TestKpack(t, cmdFunc)
 				})
 			})
@@ -590,7 +600,8 @@ status: {}
 							"--dry-run",
 							"--wait",
 						},
-						ExpectedOutput: `Image "some-image" created (dry run)
+						ExpectedOutput: `Creating Image... (dry run)
+Image "some-image" created (dry run)
 `,
 					}.TestKpack(t, cmdFunc)
 					assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -638,6 +649,99 @@ status: {}
 								"--wait",
 							},
 							ExpectedOutput: resourceYAML,
+							ExpectedErrorOutput: `Creating Image... (dry run)
+`,
+						}.TestKpack(t, cmdFunc)
+						assert.Len(t, fakeImageWaiter.Calls, 0)
+					})
+				})
+			})
+		})
+
+		when("dry-run-with-image-upload flag is used", func() {
+			when("the image config is invalid", func() {
+				it("returns an error", func() {
+					testhelpers.CommandTest{
+						Args: []string{
+							"some-image",
+							"--tag", "some-registry.io/some-repo",
+							"--blob", "some-blob",
+							"--git", "some-git-url",
+							"--dry-run-with-image-upload",
+						},
+						ExpectErr: true,
+						ExpectedOutput: `Creating Image... (dry run with image upload)
+Error: image source must be one of git, blob, or local-path
+`,
+					}.TestKpack(t, cmdFunc)
+				})
+			})
+
+			when("the image config is valid", func() {
+				it("does not creates an image and prints result message with dry run indicated", func() {
+					testhelpers.CommandTest{
+						Args: []string{
+							"some-image",
+							"--tag", "some-registry.io/some-repo",
+							"--local-path", "some-local-path",
+							"--sub-path", "some-sub-path",
+							"--env", "some-key=some-val",
+							"--dry-run-with-image-upload",
+							"--wait",
+						},
+						ExpectedOutput: `Creating Image... (dry run with image upload)
+Uploading to 'some-registry.io/some-repo-source'... (dry run with image upload)
+	Uploading 'some-registry.io/some-repo-source:source-id'
+Image "some-image" created (dry run with image upload)
+`,
+					}.TestKpack(t, cmdFunc)
+					assert.Len(t, fakeImageWaiter.Calls, 0)
+				})
+
+				when("output flag is used", func() {
+					it("does not create an image and prints the resource output", func() {
+						const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: Image
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+  creationTimestamp: null
+  name: some-image
+  namespace: some-default-namespace
+spec:
+  build:
+    env:
+    - name: some-key
+      value: some-val
+    resources: {}
+  builder:
+    kind: ClusterBuilder
+    name: default
+  serviceAccount: default
+  source:
+    git:
+      revision: some-git-rev
+      url: some-git-url
+    subPath: some-sub-path
+  tag: some-registry.io/some-repo
+status: {}
+`
+
+						testhelpers.CommandTest{
+							Args: []string{
+								"some-image",
+								"--tag", "some-registry.io/some-repo",
+								"--git", "some-git-url",
+								"--git-revision", "some-git-rev",
+								"--sub-path", "some-sub-path",
+								"--env", "some-key=some-val",
+								"--output", "yaml",
+								"--dry-run-with-image-upload",
+								"--wait",
+							},
+							ExpectedOutput: resourceYAML,
+							ExpectedErrorOutput: `Creating Image... (dry run with image upload)
+`,
 						}.TestKpack(t, cmdFunc)
 						assert.Len(t, fakeImageWaiter.Calls, 0)
 					})
@@ -647,22 +751,14 @@ status: {}
 	})
 
 	when("patching", func() {
-		const defaultNamespace = "some-default-namespace"
-
-		sourceUploader := &srcfakes.SourceUploader{
-			ImageRef: "",
-		}
-
-		fakeImageWaiter := &fakes.FakeImageWaiter{}
-
 		cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 			clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-			return imgcmds.NewPatchCommand(clientSetProvider, sourceUploader, func(set k8s.ClientSet) imgcmds.ImageWaiter {
+			return imgcmds.NewPatchCommand(clientSetProvider, registryUtilProvider, func(set k8s.ClientSet) imgcmds.ImageWaiter {
 				return fakeImageWaiter
 			})
 		}
 
-		img := &v1alpha1.Image{
+		existingImage := &v1alpha1.Image{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "some-image",
 				Namespace: defaultNamespace,
@@ -696,15 +792,16 @@ status: {}
 		}
 
 		when("no parameters are provided", func() {
-			it("does not create a patch", func() {
+			it("informs user of no change in patch and does not wait", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
 					},
-					ExpectedOutput: `Image "some-image" patched (no change)
+					ExpectedOutput: `Patching Image...
+Image "some-image" patched (no change)
 `,
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -716,13 +813,14 @@ status: {}
 				it("can patch it with an empty string", func() {
 					testhelpers.CommandTest{
 						Objects: []runtime.Object{
-							img,
+							existingImage,
 						},
 						Args: []string{
 							"some-image",
 							"--sub-path", "",
 						},
-						ExpectedOutput: `Image "some-image" patched
+						ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 						ExpectPatches: []string{
 							`{"spec":{"source":{"subPath":null}}}`,
@@ -734,13 +832,14 @@ status: {}
 				it("can patch it with a non-empty string", func() {
 					testhelpers.CommandTest{
 						Objects: []runtime.Object{
-							img,
+							existingImage,
 						},
 						Args: []string{
 							"some-image",
 							"--sub-path", "a-new-path",
 						},
-						ExpectedOutput: `Image "some-image" patched
+						ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 						ExpectPatches: []string{
 							`{"spec":{"source":{"subPath":"a-new-path"}}}`,
@@ -753,13 +852,14 @@ status: {}
 			it("can change source types", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
 						"--blob", "some-blob",
 					},
-					ExpectedOutput: `Image "some-image" patched
+					ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
@@ -771,13 +871,14 @@ status: {}
 			it("can change git revision if existing source is git", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
 						"--git-revision", "some-new-revision",
 					},
-					ExpectedOutput: `Image "some-image" patched
+					ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
@@ -787,7 +888,7 @@ status: {}
 			})
 
 			it("git revision defaults to master if not provided with git", func() {
-				img.Spec.Source = v1alpha1.SourceConfig{
+				existingImage.Spec.Source = v1alpha1.SourceConfig{
 					Blob: &v1alpha1.Blob{
 						URL: "some-blob",
 					},
@@ -795,13 +896,14 @@ status: {}
 
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
 						"--git", "some-new-git-url",
 					},
-					ExpectedOutput: `Image "some-image" patched
+					ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"blob":null,"git":{"revision":"master","url":"some-new-git-url"}}}}`,
@@ -816,13 +918,14 @@ status: {}
 			it("can patch the builder", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
 						"--builder", "some-builder",
 					},
-					ExpectedOutput: `Image "some-image" patched
+					ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 					ExpectPatches: []string{
 						`{"spec":{"builder":{"kind":"Builder","name":"some-builder","namespace":"some-default-namespace"}}}`,
@@ -836,13 +939,14 @@ status: {}
 			it("can delete env vars", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
 						"-d", "key2",
 					},
-					ExpectedOutput: `Image "some-image" patched
+					ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 					ExpectPatches: []string{
 						`{"spec":{"build":{"env":[{"name":"key1","value":"value1"}]}}}`,
@@ -854,13 +958,14 @@ status: {}
 			it("can update existing env vars", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
 						"-e", "key1=some-other-value",
 					},
-					ExpectedOutput: `Image "some-image" patched
+					ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 					ExpectPatches: []string{
 						`{"spec":{"build":{"env":[{"name":"key1","value":"some-other-value"},{"name":"key2","value":"value2"}]}}}`,
@@ -872,13 +977,14 @@ status: {}
 			it("can add new env vars", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
 						"-e", "key3=value3",
 					},
-					ExpectedOutput: `Image "some-image" patched
+					ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 					ExpectPatches: []string{
 						`{"spec":{"build":{"env":[{"name":"key1","value":"value1"},{"name":"key2","value":"value2"},{"name":"key3","value":"value3"}]}}}`,
@@ -892,13 +998,14 @@ status: {}
 		it("can patch cache size", func() {
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
-					img,
+					existingImage,
 				},
 				Args: []string{
 					"some-image",
 					"--cache-size", "3G",
 				},
-				ExpectedOutput: `Image "some-image" patched
+				ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 				ExpectPatches: []string{
 					`{"spec":{"cacheSize":"3G"}}`,
@@ -910,21 +1017,24 @@ status: {}
 		it("will wait on the image update if requested", func() {
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
-					img,
+					existingImage,
 				},
 				Args: []string{
 					"some-image",
 					"--git-revision", "some-new-revision",
+					"--registry-ca-cert-path", "some-cert-path",
+					"--registry-verify-certs",
 					"--wait",
 				},
-				ExpectedOutput: `Image "some-image" patched
+				ExpectedOutput: `Patching Image...
+Image "some-image" patched
 `,
 				ExpectPatches: []string{
 					`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 
-			expectedWaitImage := img.DeepCopy()
+			expectedWaitImage := existingImage.DeepCopy()
 			expectedWaitImage.Spec.Source.Git.Revision = "some-new-revision"
 
 			assert.Len(t, fakeImageWaiter.Calls, 1)
@@ -960,7 +1070,7 @@ status: {}
 
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
@@ -969,6 +1079,8 @@ status: {}
 						"--wait",
 					},
 					ExpectedOutput: resourceYAML,
+					ExpectedErrorOutput: `Patching Image...
+`,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
 					},
@@ -1017,7 +1129,7 @@ status: {}
 
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
@@ -1026,6 +1138,8 @@ status: {}
 						"--wait",
 					},
 					ExpectedOutput: resourceJSON,
+					ExpectedErrorOutput: `Patching Image...
+`,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
 					},
@@ -1034,16 +1148,7 @@ status: {}
 			})
 
 			when("there are no changes in the patch", func() {
-				it("can output the unpatched resource in requested format and does not wait", func() {
-					testhelpers.CommandTest{
-						Objects: []runtime.Object{
-							img,
-						},
-						Args: []string{
-							"some-image",
-							"--output", "yaml",
-						},
-						ExpectedOutput: `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: Image
 metadata:
   creationTimestamp: null
@@ -1067,7 +1172,20 @@ spec:
     subPath: some-path
   tag: some-tag
 status: {}
+`
+
+				it("can output unpatched resource in requested format and does not wait", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							existingImage,
+						},
+						Args: []string{
+							"some-image",
+							"--output", "yaml",
+						},
+						ExpectedErrorOutput: `Patching Image...
 `,
+						ExpectedOutput: resourceYAML,
 					}.TestKpack(t, cmdFunc)
 					assert.Len(t, fakeImageWaiter.Calls, 0)
 				})
@@ -1075,18 +1193,24 @@ status: {}
 		})
 
 		when("dry-run flag is used", func() {
+			fakeSourceUploader.SetSkipUpload(true)
+
 			it("does not patch and prints result message with dry run indicated", func() {
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
-						img,
+						existingImage,
 					},
 					Args: []string{
 						"some-image",
-						"--blob", "some-blob",
+						"--local-path", "some-local-path",
+						"--sub-path", "some-sub-path",
+						"--env", "some-key=some-val",
 						"--dry-run",
 						"--wait",
 					},
-					ExpectedOutput: `Image "some-image" patched (dry run)
+					ExpectedOutput: `Patching Image... (dry run)
+	Skipping 'some-registry.io/some-repo-source:source-id'
+Image "some-image" patched (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -1096,13 +1220,14 @@ status: {}
 				it("does not patch and informs of no change", func() {
 					testhelpers.CommandTest{
 						Objects: []runtime.Object{
-							img,
+							existingImage,
 						},
 						Args: []string{
 							"some-image",
 							"--dry-run",
 						},
-						ExpectedOutput: `Image "some-image" patched (dry run)
+						ExpectedOutput: `Patching Image... (dry run)
+Image "some-image" patched (dry run)
 `,
 					}.TestKpack(t, cmdFunc)
 				})
@@ -1128,25 +1253,116 @@ spec:
     kind: ClusterBuilder
     name: some-ccb
   source:
-    blob:
-      url: some-blob
-    subPath: some-path
+    registry:
+      image: some-registry.io/some-repo-source:source-id
+    subPath: some-sub-path
   tag: some-tag
 status: {}
 `
 
 					testhelpers.CommandTest{
 						Objects: []runtime.Object{
-							img,
+							existingImage,
 						},
 						Args: []string{
 							"some-image",
-							"--blob", "some-blob",
-							"--output", "yaml",
+							"--local-path", "some-local-path",
+							"--sub-path", "some-sub-path",
 							"--dry-run",
+							"--output", "yaml",
 							"--wait",
 						},
 						ExpectedOutput: resourceYAML,
+						ExpectedErrorOutput: `Patching Image... (dry run)
+	Skipping 'some-registry.io/some-repo-source:source-id'
+`,
+					}.TestKpack(t, cmdFunc)
+					assert.Len(t, fakeImageWaiter.Calls, 0)
+				})
+			})
+		})
+
+		when("dry-run-with-image-upload flag is used", func() {
+			it("does not patch and prints result message with dry run indicated", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						existingImage,
+					},
+					Args: []string{
+						"some-image",
+						"--local-path", "some-local-path",
+						"--sub-path", "some-sub-path",
+						"--dry-run-with-image-upload",
+						"--wait",
+					},
+					ExpectedOutput: `Patching Image... (dry run with image upload)
+	Uploading 'some-registry.io/some-repo-source:source-id'
+Image "some-image" patched (dry run with image upload)
+`,
+				}.TestKpack(t, cmdFunc)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+
+			when("there are no changes in the patch", func() {
+				it("does not patch and informs of no change", func() {
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							existingImage,
+						},
+						Args: []string{
+							"some-image",
+							"--dry-run-with-image-upload",
+						},
+						ExpectedOutput: `Patching Image... (dry run with image upload)
+Image "some-image" patched (dry run with image upload)
+`,
+					}.TestKpack(t, cmdFunc)
+				})
+			})
+
+			when("output flag is used", func() {
+				it("does not patch and prints the resource output", func() {
+					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+kind: Image
+metadata:
+  creationTimestamp: null
+  name: some-image
+  namespace: some-default-namespace
+spec:
+  build:
+    env:
+    - name: key1
+      value: value1
+    - name: key2
+      value: value2
+    resources: {}
+  builder:
+    kind: ClusterBuilder
+    name: some-ccb
+  source:
+    registry:
+      image: some-registry.io/some-repo-source:source-id
+    subPath: some-sub-path
+  tag: some-tag
+status: {}
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							existingImage,
+						},
+						Args: []string{
+							"some-image",
+							"--local-path", "some-local-path",
+							"--sub-path", "some-sub-path",
+							"--dry-run-with-image-upload",
+							"--output", "yaml",
+							"--wait",
+						},
+						ExpectedOutput: resourceYAML,
+						ExpectedErrorOutput: `Patching Image... (dry run with image upload)
+	Uploading 'some-registry.io/some-repo-source:source-id'
+`,
 					}.TestKpack(t, cmdFunc)
 					assert.Len(t, fakeImageWaiter.Calls, 0)
 				})

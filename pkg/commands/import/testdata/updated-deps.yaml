@@ -1,21 +1,21 @@
 apiVersion: kp.kpack.io/v1alpha2
 kind: DependencyDescriptor
-defaultClusterBuilder: some-cb
-defaultClusterStack: some-stack
+defaultClusterBuilder: clusterbuilder-name
+defaultClusterStack: stack-name
 clusterStores:
-  - name: some-store
-    sources:
-      - image: some-registry.io/some-project/store-image-2
+- name: store-name
+  sources:
+  - image: some-registry.io/repo/another-buildpack-image
 clusterStacks:
-  - name: some-stack
-    buildImage:
-      image: some-registry.io/some-project/build-image-2
-    runImage:
-      image: some-registry.io/some-project/run-image-2
+- name: stack-name
+  buildImage:
+    image: some-registry.io/repo/another-build-image
+  runImage:
+    image: some-registry.io/repo/another-run-image
 clusterBuilders:
-  - name: some-cb
-    clusterStack: some-stack
-    clusterStore: some-store
-    order:
-      - group:
-          - id: buildpack-2
+- name: clusterbuilder-name
+  clusterStack: stack-name
+  clusterStore: store-name
+  order:
+  - group:
+    - id: another-buildpack-id

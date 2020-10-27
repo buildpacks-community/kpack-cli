@@ -6,6 +6,7 @@ package clusterstore
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/pivotal/build-service-cli/pkg/buildpackage"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, uploader clusterstore.BuildpackageUploader) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
 	var (
 		buildpackages []string
 		tlsCfg        registry.TLSConfig
@@ -46,29 +47,37 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			rep, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+			factory, err := newClusterStoreFactory(cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
-
-			factory := &clusterstore.Factory{
-				Uploader:     uploader,
-				TLSConfig:    tlsCfg,
-				Repository:   rep,
-				Printer:      ch,
-				ValidateOnly: ch.ValidateOnly(),
-			}
-
 			return create(name, buildpackages, factory, ch, cs)
 		},
 	}
 
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "location of the buildpackage")
-	commands.SetDryRunOutputFlags(cmd)
+	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsCfg)
 	return cmd
+}
+
+func newClusterStoreFactory(cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*clusterstore.Factory, error) {
+	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return &clusterstore.Factory{
+		Uploader: &buildpackage.Uploader{
+			Fetcher:   rup.Fetcher(),
+			Relocator: rup.Relocator(ch.CanChangeState()),
+		},
+		TLSConfig:  tlsCfg,
+		Repository: repo,
+		Printer:    ch,
+	}, nil
 }
 
 func create(name string, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {

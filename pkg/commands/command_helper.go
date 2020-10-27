@@ -21,9 +21,10 @@ import (
 )
 
 type CommandHelper struct {
-	dryRun bool
-	output bool
-	wait   bool
+	dryRun          bool
+	dryRunImgUpload bool
+	output          bool
+	wait            bool
 
 	outWriter  io.Writer
 	errWriter  io.Writer
@@ -33,13 +34,19 @@ type CommandHelper struct {
 }
 
 const (
-	DryRunFlag = "dry-run"
-	OutputFlag = "output"
-	WaitFlag   = "wait"
+	DryRunFlag          = "dry-run"
+	DryRunImgUploadFlag = "dry-run-with-image-upload"
+	OutputFlag          = "output"
+	WaitFlag            = "wait"
 )
 
 func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
 	dryRun, err := GetBoolFlag(DryRunFlag, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	dryRunImgUpload, err := GetBoolFlag(DryRunImgUploadFlag, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -65,26 +72,31 @@ func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
 	}
 
 	return &CommandHelper{
-		dryRun:     dryRun,
-		output:     outputResource,
-		wait:       wait,
-		outWriter:  cmd.OutOrStdout(),
-		errWriter:  cmd.ErrOrStderr(),
-		objPrinter: objPrinter,
-		typeToGVK:  getTypeToGVKLookup(),
+		dryRun:          dryRun,
+		dryRunImgUpload: dryRunImgUpload,
+		output:          outputResource,
+		wait:            wait,
+		outWriter:       cmd.OutOrStdout(),
+		errWriter:       cmd.ErrOrStderr(),
+		objPrinter:      objPrinter,
+		typeToGVK:       getTypeToGVKLookup(),
 	}, nil
 }
 
 func (ch CommandHelper) IsDryRun() bool {
-	return ch.dryRun
+	return ch.dryRun || ch.dryRunImgUpload
 }
 
 func (ch CommandHelper) ValidateOnly() bool {
 	return ch.dryRun && !ch.output
 }
 
+func (ch CommandHelper) CanChangeState() bool {
+	return !ch.dryRun
+}
+
 func (ch CommandHelper) ShouldWait() bool {
-	return ch.wait && !ch.dryRun && !ch.output
+	return ch.wait && !ch.IsDryRun() && !ch.output
 }
 
 func (ch CommandHelper) PrintObjs(objs []runtime.Object) error {
@@ -115,7 +127,9 @@ func (ch CommandHelper) PrintObj(obj runtime.Object) error {
 }
 
 func (ch CommandHelper) PrintChangeResult(change bool, format string, args ...interface{}) error {
-	if ch.dryRun {
+	if ch.dryRunImgUpload {
+		format += " (dry run with image upload)"
+	} else if ch.dryRun {
 		format += " (dry run)"
 	} else if !change {
 		format += " (no change)"
@@ -125,7 +139,9 @@ func (ch CommandHelper) PrintChangeResult(change bool, format string, args ...in
 }
 
 func (ch CommandHelper) PrintResult(format string, args ...interface{}) error {
-	if ch.dryRun {
+	if ch.dryRunImgUpload {
+		format += " (dry run with image upload)"
+	} else if ch.dryRun {
 		format += " (dry run)"
 	}
 	_, err := ch.OutOrDiscardWriter().Write([]byte(fmt.Sprintf(format+"\n", args...)))
@@ -133,7 +149,9 @@ func (ch CommandHelper) PrintResult(format string, args ...interface{}) error {
 }
 
 func (ch CommandHelper) PrintStatus(format string, args ...interface{}) error {
-	if ch.dryRun {
+	if ch.dryRunImgUpload {
+		format += " (dry run with image upload)"
+	} else if ch.dryRun {
 		format += " (dry run)"
 	}
 	_, err := ch.OutOrErrWriter().Write([]byte(fmt.Sprintf(format+"\n", args...)))

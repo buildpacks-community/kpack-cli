@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/pivotal/build-service-cli/pkg/image"
-	srcfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
+	"github.com/pivotal/build-service-cli/pkg/registry/fakes"
 )
 
 func TestImageFactory(t *testing.T) {
@@ -20,9 +20,7 @@ func TestImageFactory(t *testing.T) {
 
 func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 	factory := &image.Factory{
-		SourceUploader: &srcfakes.SourceUploader{
-			ImageRef: "",
-		},
+		SourceUploader: fakes.NewSourceUploader(""),
 	}
 
 	it("sets type metadata", func() {
