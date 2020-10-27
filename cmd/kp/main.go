@@ -174,7 +174,7 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	stackRootCmd := &cobra.Command{
 		Use:     "clusterstack",
-		Aliases: []string{"clusterstacks", "clstrcsks", "clstrcsk", "cstks", "cstk", " csks", "csk"},
+		Aliases: []string{"clusterstacks", "clstrcsks", "clstrcsk", "cstacks", "cstack", "cstks", "cstk", "csks", "csk"},
 		Short:   "ClusterStack Commands",
 	}
 	stackRootCmd.AddCommand(
@@ -191,7 +191,7 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	storeRootCommand := &cobra.Command{
 		Use:     "clusterstore",
-		Aliases: []string{"clusterstores", "clstrcsrs", "clstrcsr", "csrs", "csr"},
+		Aliases: []string{"clusterstores", "clstrcsrs", "clstrcsr", "cstores", "cstore", "cstrs", "cstr", "csrs", "csr"},
 		Short:   "ClusterStore Commands",
 	}
 	storeRootCommand.AddCommand(
