@@ -45,14 +45,18 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 
 ```
       --dockerhub string       dockerhub id
-      --dry-run                only print the object that would be sent, without sending it
+      --dry-run                perform validation with no side-effects; no objects are sent to the server.
+                                 The --dry-run flag can be used in combination with the --output flag to
+                                 view the Kubernetes resource(s) without sending anything to the server.
       --gcr string             path to a file containing the GCR service account
       --git-ssh-key string     path to a file containing the GitUrl SSH private key
       --git-url string         git url
       --git-user string        git user
   -h, --help                   help for create
   -n, --namespace string       kubernetes namespace
-      --output string          output format. supported formats are: yaml, json
+      --output string          print Kubernetes resources in the specified format; supported formats are: yaml, json.
+                                 The output can be used with the "kubectl apply -f" command. To allow this, the command 
+                                 updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
       --registry string        registry
       --registry-user string   registry user
 ```

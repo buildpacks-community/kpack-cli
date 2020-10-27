@@ -25,7 +25,13 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 
 ```
   -b, --buildpackage stringArray   buildpackage to remove
+      --dry-run                    perform validation with no side-effects; no objects are sent to the server.
+                                     The --dry-run flag can be used in combination with the --output flag to
+                                     view the Kubernetes resource(s) without sending anything to the server.
   -h, --help                       help for remove
+      --output string              print Kubernetes resources in the specified format; supported formats are: yaml, json.
+                                     The output can be used with the "kubectl apply -f" command. To allow this, the command 
+                                     updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
 ```
 
 ### SEE ALSO
