@@ -22,10 +22,11 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		image            = "test-image"
 		defaultNamespace = "some-default-namespace"
-		expectedOutput   = `BUILD    STATUS      IMAGE                   REASON
-1        SUCCESS     repo.com/image-1:tag    CONFIG
-2        FAILURE     repo.com/image-2:tag    COMMIT+
-3        BUILDING    repo.com/image-3:tag    TRIGGER
+		expectedOutput   = `BUILD    STATUS      IMAGE                         REASON
+1        SUCCESS     repo.com/image-1:tag          CONFIG
+2        FAILURE     repo.com/image-2:tag          COMMIT+
+3        BUILDING    repo.com/image-3:tag          TRIGGER
+1        BUILDING    repo.com/other-image-1:tag    UNKNOWN
 
 `
 	)
@@ -41,7 +42,7 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 				it("lists the builds", func() {
 					testhelpers.CommandTest{
 						Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
-						Args:           []string{image},
+						Args:           nil,
 						ExpectedOutput: expectedOutput,
 					}.TestKpack(t, cmdFunc)
 				})
@@ -50,12 +51,13 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are no builds", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						Args:           []string{image},
+						Args:           nil,
 						ExpectErr:      true,
 						ExpectedOutput: "Error: no builds found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})
+
 		})
 
 		when("in a given namespace", func() {
@@ -65,7 +67,7 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 				it("lists the builds", func() {
 					testhelpers.CommandTest{
 						Objects:        testhelpers.MakeTestBuilds(image, namespace),
-						Args:           []string{image, "-n", namespace},
+						Args:           []string{"-n", namespace},
 						ExpectedOutput: expectedOutput,
 					}.TestKpack(t, cmdFunc)
 				})
@@ -74,7 +76,35 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are no builds", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						Args:           []string{image, "-n", namespace},
+						Args:           []string{"-n", namespace},
+						ExpectErr:      true,
+						ExpectedOutput: "Error: no builds found\n",
+					}.TestKpack(t, cmdFunc)
+				})
+			})
+		})
+
+		when("an image is specified", func() {
+			const expectedOutput = `BUILD    STATUS      IMAGE                   REASON
+1        SUCCESS     repo.com/image-1:tag    CONFIG
+2        FAILURE     repo.com/image-2:tag    COMMIT+
+3        BUILDING    repo.com/image-3:tag    TRIGGER
+
+`
+			when("there are builds", func() {
+				it("lists the builds of the image", func() {
+					testhelpers.CommandTest{
+						Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+						Args:           []string{image},
+						ExpectedOutput: expectedOutput,
+					}.TestKpack(t, cmdFunc)
+				})
+			})
+
+			when("there are no builds", func() {
+				it("prints an appropriate message", func() {
+					testhelpers.CommandTest{
+						Args:           []string{image},
 						ExpectErr:      true,
 						ExpectedOutput: "Error: no builds found\n",
 					}.TestKpack(t, cmdFunc)
