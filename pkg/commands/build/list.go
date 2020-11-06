@@ -22,14 +22,14 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "list <image-name>",
-		Short: "List builds for an image",
-		Long: `Prints a table of the most important information about builds for an image in the provided namespace.
+		Use:   "list [image-name]",
+		Short: "List builds",
+		Long: `Prints a table of the most important information about builds in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.`,
 
-		Example:      "kp build list my-image\nkp build list my-image -n my-namespace",
-		Args:         commands.ExactArgsWithUsage(1),
+		Example:      "kp build list\nkp build list my-image\nkp build list my-image -n my-namespace",
+		Args:         commands.OptionalArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)
@@ -37,9 +37,13 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
-				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
-			})
+			opts := metav1.ListOptions{}
+
+			if len(args) > 0 {
+				opts.LabelSelector = v1alpha1.ImageLabel + "=" + args[0]
+			}
+
+			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(opts)
 			if err != nil {
 				return err
 			}

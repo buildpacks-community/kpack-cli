@@ -133,14 +133,18 @@ func MakeTestBuilds(image string, namespace string) []runtime.Object {
 			PodName:     "pod-three",
 		},
 	}
-	ignoredBuild := &v1alpha1.Build{
+	otherBuild := &v1alpha1.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ignored",
 			Namespace: namespace,
 			Labels: map[string]string{
 				v1alpha1.ImageLabel: "some-other-image",
+				v1alpha1.BuildNumberLabel: "1",
 			},
 		},
+		Status: v1alpha1.BuildStatus{
+			LatestImage: "repo.com/other-image-1:tag",
+		},
 	}
-	return []runtime.Object{buildOne, buildThree, buildTwo, ignoredBuild}
+	return []runtime.Object{buildOne, buildThree, buildTwo, otherBuild}
 }

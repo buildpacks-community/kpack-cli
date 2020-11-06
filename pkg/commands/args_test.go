@@ -29,3 +29,24 @@ Actual:
 %v`, expectedMsg, err)
 	}
 }
+
+func TestOptionalArgsWithUsage(t *testing.T) {
+	cmd := cobra.Command{
+		Args: commands.OptionalArgsWithUsage(1),
+	}
+	cmd.SetUsageFunc(func(cmd *cobra.Command) error {
+		_, err := fmt.Fprintln(cmd.OutOrStdout(), "some usage")
+		return err
+	})
+
+	expectedMsg := "accepts 0 or 1 arg(s), received 2\n\nsome usage\n"
+	err := cmd.ValidateArgs([]string{"some-arg-1", "some-arg-2"})
+
+	if err == nil || err.Error() != expectedMsg {
+		t.Errorf(`Did not return expected usage error from using wrong number of args.
+Expected:
+%v
+Actual:
+%v`, expectedMsg, err)
+	}
+}
