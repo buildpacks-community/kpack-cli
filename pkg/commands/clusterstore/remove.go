@@ -51,7 +51,7 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 
 			bpToStoreImage := map[string]v1alpha1.StoreImage{}
 			for _, bp := range buildpackages {
-				if ok, storeImage := getStoreImage(store, bp); !ok {
+				if storeImage, ok := getStoreImage(store, bp); !ok {
 					return errors.Errorf("Buildpackage '%s' does not exist in the ClusterStore", bp)
 				} else {
 					bpToStoreImage[bp] = storeImage
@@ -83,13 +83,13 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 	return cmd
 }
 
-func getStoreImage(store *v1alpha1.ClusterStore, buildpackage string) (bool, v1alpha1.StoreImage) {
+func getStoreImage(store *v1alpha1.ClusterStore, buildpackage string) (v1alpha1.StoreImage, bool) {
 	for _, bp := range store.Status.Buildpacks {
 		if fmt.Sprintf("%s@%s", bp.Id, bp.Version) == buildpackage {
-			return true, bp.StoreImage
+			return bp.StoreImage, true
 		}
 	}
-	return false, v1alpha1.StoreImage{}
+	return v1alpha1.StoreImage{}, false
 }
 
 func removeBuildpackages(ch *commands.CommandHelper, store *v1alpha1.ClusterStore, buildpackages []string, bpToStoreImage map[string]v1alpha1.StoreImage) {
