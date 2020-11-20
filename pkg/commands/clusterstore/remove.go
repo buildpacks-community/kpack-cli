@@ -4,6 +4,8 @@
 package clusterstore
 
 import (
+	"fmt"
+
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -21,11 +23,9 @@ func NewRemoveCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Use:   "remove <store> -b <buildpackage> [-b <buildpackage>...]",
 		Short: "Remove buildpackage(s) from cluster store",
 		Long: `Removes existing buildpackage(s) from a specific cluster-scoped buildpack store.
-
-This relies on the image(s) specified to exist in the store and removes the associated buildpackage(s)
 `,
-		Example: `kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271
-kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_httpd@sha256:7a09cfeae4763207b9efeacecf914a57e4f5d6c4459226f6133ecaccb5c46271 -b my-registry.com/my-buildpackage/buildpacks_nginx@sha256:eacecf914a57e4f5d6c4459226f6133ecaccb5c462717a09cfeae4763207b9ef
+		Example: `kp clusterstore remove my-store -b buildpackage@1.0.0
+kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.0
 `,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
@@ -49,9 +49,12 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 				return err
 			}
 
-			for _, bpToRemove := range buildpackages {
-				if !storeContainsBuildpackage(store, bpToRemove) {
-					return errors.Errorf("Buildpackage '%s' does not exist in the ClusterStore", bpToRemove)
+			bpToStoreImage := map[string]v1alpha1.StoreImage{}
+			for _, bp := range buildpackages {
+				if storeImage, ok := getStoreImage(store, bp); !ok {
+					return errors.Errorf("Buildpackage '%s' does not exist in the ClusterStore", bp)
+				} else {
+					bpToStoreImage[bp] = storeImage
 				}
 			}
 
@@ -59,22 +62,7 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 				return err
 			}
 
-			var updatedStoreSources []v1alpha1.StoreImage
-			for _, storeImg := range store.Spec.Sources {
-				found := false
-				for _, bpToRemove := range buildpackages {
-					if storeImg.Image == bpToRemove {
-						found = true
-						ch.Printlnf("Removing buildpackage %s", bpToRemove)
-						break
-					}
-				}
-				if !found {
-					updatedStoreSources = append(updatedStoreSources, storeImg)
-				}
-			}
-
-			store.Spec.Sources = updatedStoreSources
+			removeBuildpackages(ch, store, buildpackages, bpToStoreImage)
 
 			if !ch.IsDryRun() {
 				store, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(store)
@@ -95,11 +83,24 @@ kp clusterstore remove my-store -b my-registry.com/my-buildpackage/buildpacks_ht
 	return cmd
 }
 
-func storeContainsBuildpackage(store *v1alpha1.ClusterStore, buildpackage string) bool {
-	for _, source := range store.Spec.Sources {
-		if source.Image == buildpackage {
-			return true
+func getStoreImage(store *v1alpha1.ClusterStore, buildpackage string) (v1alpha1.StoreImage, bool) {
+	for _, bp := range store.Status.Buildpacks {
+		if fmt.Sprintf("%s@%s", bp.Id, bp.Version) == buildpackage {
+			return bp.StoreImage, true
 		}
 	}
-	return false
+	return v1alpha1.StoreImage{}, false
+}
+
+func removeBuildpackages(ch *commands.CommandHelper, store *v1alpha1.ClusterStore, buildpackages []string, bpToStoreImage map[string]v1alpha1.StoreImage) {
+	for _, bp := range buildpackages {
+		ch.Printlnf("Removing buildpackage %s", bp)
+
+		for i, img := range store.Spec.Sources {
+			if img.Image == bpToStoreImage[bp].Image {
+				store.Spec.Sources = append(store.Spec.Sources[:i], store.Spec.Sources[i+1:]...)
+				break
+			}
+		}
+	}
 }
