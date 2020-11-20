@@ -138,7 +138,7 @@ func MakeTestBuilds(image string, namespace string) []runtime.Object {
 			Name:      "ignored",
 			Namespace: namespace,
 			Labels: map[string]string{
-				v1alpha1.ImageLabel: "some-other-image",
+				v1alpha1.ImageLabel:       "some-other-image",
 				v1alpha1.BuildNumberLabel: "1",
 			},
 		},

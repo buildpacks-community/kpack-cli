@@ -75,7 +75,7 @@ func getStatusText(s *v1alpha1.ClusterStack) string {
 		if cond.Status == corev1.ConditionTrue {
 			return "Ready"
 		} else if cond.Status == corev1.ConditionFalse {
-			return "Not Ready"
+			return "Not Ready - " + cond.Message
 		}
 	}
 	return "Unknown"

@@ -7,9 +7,11 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -45,6 +47,7 @@ func testClusterStackStatusCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			},
 		}
+
 		it("returns stack details", func() {
 			const expectedOutput = `Status:         Unknown
 Id:             some-stack-id
@@ -74,6 +77,29 @@ Mixins:         mixin1, mixin2
 				Args:           []string{"some-stack", "--verbose"},
 				ExpectedOutput: expectedOutput,
 			}.TestKpack(t, cmdFunc)
+		})
+
+		when("the status is not ready", func() {
+			it("prints the status message", func() {
+				stck.Status.Conditions = append(stck.Status.Conditions, corev1alpha1.Condition{
+					Type:    corev1alpha1.ConditionReady,
+					Status:  corev1.ConditionFalse,
+					Message: "some sample message",
+				})
+
+				const expectedOutput = `Status:         Not Ready - some sample message
+Id:             some-stack-id
+Run Image:      some-build-image
+Build Image:    some-run-image
+
+`
+
+				testhelpers.CommandTest{
+					Objects:        append([]runtime.Object{stck}),
+					Args:           []string{"some-stack"},
+					ExpectedOutput: expectedOutput,
+				}.TestKpack(t, cmdFunc)
+			})
 		})
 	})
 
