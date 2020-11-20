@@ -6,7 +6,7 @@ package stackimage
 import (
 	"fmt"
 	"io"
-	"path/filepath"
+	"path"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
@@ -44,12 +44,12 @@ func (u *Uploader) UploadStackImages(buildImageTag, runImageTag, dest string, tl
 		return "", "", err
 	}
 
-	relocatedBuildImageRef, err := u.Relocator.Relocate(buildImage, filepath.Join(dest, BuildImageName), writer, tlsCfg)
+	relocatedBuildImageRef, err := u.Relocator.Relocate(buildImage, path.Join(dest, BuildImageName), writer, tlsCfg)
 	if err != nil {
 		return "", "", err
 	}
 
-	relocatedRunImageRef, err := u.Relocator.Relocate(runImage, filepath.Join(dest, RunImageName), writer, tlsCfg)
+	relocatedRunImageRef, err := u.Relocator.Relocate(runImage, path.Join(dest, RunImageName), writer, tlsCfg)
 	if err != nil {
 		return "", "", err
 	}
@@ -95,7 +95,7 @@ func (u *Uploader) UploadedBuildImageRef(imageTag, dest string, tlsCfg registry.
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s@%s", filepath.Join(dest, BuildImageName), digest.String()), nil
+	return fmt.Sprintf("%s@%s", path.Join(dest, BuildImageName), digest.String()), nil
 }
 
 func (u *Uploader) UploadedRunImageRef(imageTag, dest string, tlsCfg registry.TLSConfig) (string, error) {
@@ -108,7 +108,7 @@ func (u *Uploader) UploadedRunImageRef(imageTag, dest string, tlsCfg registry.TL
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s@%s", filepath.Join(dest, RunImageName), digest.String()), nil
+	return fmt.Sprintf("%s@%s", path.Join(dest, RunImageName), digest.String()), nil
 }
 
 func getStackId(img v1.Image) (string, error) {
