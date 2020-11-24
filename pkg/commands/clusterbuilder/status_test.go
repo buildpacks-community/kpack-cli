@@ -25,7 +25,7 @@ func TestClusterBuilderStatusCommand(t *testing.T) {
 
 func testClusterBuilderStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
-		expectedReadyOutput = `Status:       Ready
+		expectedReadyOutputUsingSpecOrder = `Status:       Ready
 Image:        some-registry.com/test-builder-1:tag
 Stack:        io.buildpacks.stacks.centos
 Run Image:    gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234
@@ -40,6 +40,23 @@ Group #1
   org.cloudfoundry.nodejs    
 Group #2                     
   org.cloudfoundry.go        
+
+`
+		expectedReadyOutputUsingStatusOrder = `Status:       Ready
+Image:        some-registry.com/test-builder-1:tag
+Stack:        io.buildpacks.stacks.centos
+Run Image:    gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234
+
+BUILDPACK ID               VERSION    HOMEPAGE
+org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
+org.cloudfoundry.go        v0.0.3     https://github.com/paketo-buildpacks/go
+
+
+DETECTION ORDER                    
+Group #1                           
+  org.cloudfoundry.nodejs@0.2.1    
+Group #2                           
+  org.cloudfoundry.go@0.0.3        
 
 `
 		expectedNotReadyOutput = `Status:    Not Ready
@@ -239,12 +256,47 @@ Reason:    this builder is not ready for the purpose of a test
 	when("getting clusterbuilder status", func() {
 		when("the clusterbuilder exists", func() {
 			when("the builder is ready", func() {
-				it("shows the build status", func() {
-					testhelpers.CommandTest{
-						Objects:        []runtime.Object{readyClusterBuilder},
-						Args:           []string{"test-builder-1"},
-						ExpectedOutput: expectedReadyOutput,
-					}.TestKpack(t, cmdFunc)
+				when("the order is not in the builder status", func() {
+					it("shows the build status falling back to spec.order", func() {
+						testhelpers.CommandTest{
+							Objects:        []runtime.Object{readyClusterBuilder},
+							Args:           []string{"test-builder-1"},
+							ExpectedOutput: expectedReadyOutputUsingSpecOrder,
+						}.TestKpack(t, cmdFunc)
+					})
+				})
+				when("the order is in the builder status", func() {
+					it("shows the build status using status.order", func() {
+						readyClusterBuilder.Status.Order = []v1alpha1.OrderEntry{
+							{
+								Group: []v1alpha1.BuildpackRef{
+									{
+										BuildpackInfo: v1alpha1.BuildpackInfo{
+											Id: "org.cloudfoundry.nodejs",
+											Version: "0.2.1",
+										},
+									},
+								},
+							},
+							{
+								Group: []v1alpha1.BuildpackRef{
+									{
+										BuildpackInfo: v1alpha1.BuildpackInfo{
+											Id: "org.cloudfoundry.go",
+											Version: "0.0.3",
+										},
+									},
+								},
+							},
+						}
+
+						testhelpers.CommandTest{
+							Objects:        []runtime.Object{readyClusterBuilder},
+							Args:           []string{"test-builder-1"},
+							ExpectedOutput: expectedReadyOutputUsingStatusOrder,
+						}.TestKpack(t, cmdFunc)
+					})
+
 				})
 			})
 
