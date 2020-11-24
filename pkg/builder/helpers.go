@@ -4,6 +4,7 @@
 package builder
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -59,4 +60,19 @@ func CreateOrder(buildpacks []string) []v1alpha1.OrderEntry {
 	}
 
 	return []v1alpha1.OrderEntry{{Group: group}}
+}
+
+func CreateDetectionOrderRow(ref v1alpha1.BuildpackRef) (string, string) {
+	data := fmt.Sprintf("  %s",ref.Id)
+	optional := ""
+
+	if ref.Version != "" {
+		data = fmt.Sprintf("%s@%s", data, ref.Version)
+	}
+
+	if ref.Optional {
+		optional = "(Optional)"
+	}
+
+	return data, optional
 }

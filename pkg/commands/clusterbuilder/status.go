@@ -5,6 +5,7 @@ package clusterbuilder
 
 import (
 	"fmt"
+	"github.com/pivotal/build-service-cli/pkg/builder"
 	"io"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -119,22 +120,20 @@ func printBuilderReadyStatus(bldr *v1alpha1.ClusterBuilder, writer io.Writer) er
 		return nil
 	}
 
-	for i, entry := range bldr.Spec.Order {
+	order := bldr.Status.Order
+	if len(order) == 0 {
+		order = bldr.Spec.Order
+	}
+
+	for i, entry := range order {
 		err := orderTableWriter.AddRow(fmt.Sprintf("Group #%d", i+1), "")
 		if err != nil {
 			return err
 		}
 		for _, ref := range entry.Group {
-			if ref.Optional {
-				err := orderTableWriter.AddRow("  "+ref.Id, "(Optional)")
-				if err != nil {
-					return err
-				}
-			} else {
-				err := orderTableWriter.AddRow("  "+ref.Id, "")
-				if err != nil {
-					return err
-				}
+			err := orderTableWriter.AddRow(builder.CreateDetectionOrderRow(ref))
+			if err != nil {
+				return err
 			}
 		}
 	}
