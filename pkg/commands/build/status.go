@@ -99,11 +99,14 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 		"Build Reason", bld.Annotations[v1alpha1.BuildReasonAnnotation],
 	}
 
-	if cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded); cond.Reason != "" {
-		statusItems = append(statusItems, "Status Reason", cond.Reason)
-	}
-	if cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded); cond.Message != "" {
-		statusItems = append(statusItems, "Status Message", cond.Message)
+	cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded)
+	if cond != nil {
+		if cond.Reason != "" {
+			statusItems = append(statusItems, "Status Reason", cond.Reason)
+		}
+		if cond.Message != "" {
+			statusItems = append(statusItems, "Status Message", cond.Message)
+		}
 	}
 
 	err := statusWriter.AddBlock("", statusItems...)
