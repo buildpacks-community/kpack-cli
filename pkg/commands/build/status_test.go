@@ -245,6 +245,52 @@ bp-id-2         bp-version-2
 					ExpectedOutput: expectedOutput,
 				}.TestKpack(t, cmdFunc)
 			})
+			it("does not display when the condition is empty", func() {
+				bld := &v1alpha1.Build{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "bld-three",
+						Namespace:         "some-default-namespace",
+						CreationTimestamp: metav1.Time{Time: time.Time{}.Add(5 * time.Hour)},
+						Labels: map[string]string{
+							v1alpha1.ImageLabel:       image,
+							v1alpha1.BuildNumberLabel: "3",
+						},
+						Annotations: map[string]string{
+							v1alpha1.BuildReasonAnnotation: "TRIGGER",
+						},
+					},
+					Spec: v1alpha1.BuildSpec{
+						Builder: v1alpha1.BuildBuilderSpec{
+							Image: "some-repo.com/my-builder",
+						},
+					},
+					Status: v1alpha1.BuildStatus{
+						Status: corev1alpha1.Status{
+							Conditions: corev1alpha1.Conditions{},
+						},
+						BuildMetadata: v1alpha1.BuildpackMetadataList{
+							{
+								Id:      "bp-id-1",
+								Version: "bp-version-1",
+							},
+							{
+								Id:      "bp-id-2",
+								Version: "bp-version-2",
+							},
+						},
+						Stack: v1alpha1.BuildStack{
+							RunImage: "some-repo.com/run-image",
+						},
+						LatestImage: "repo.com/image-3:tag",
+						PodName:     "pod-three",
+					},
+				}
+				testhelpers.CommandTest{
+					Objects:        []runtime.Object{bld},
+					Args:           []string{image},
+					ExpectedOutput: expectedOutputForMostRecent,
+				}.TestKpack(t, cmdFunc)
+			})
 		})
 	})
 }
