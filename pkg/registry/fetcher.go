@@ -5,6 +5,7 @@ package registry
 
 import (
 	"os"
+	"runtime"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -26,6 +27,12 @@ func (d DefaultFetcher) Fetch(src string, tlsCfg TLSConfig) (v1.Image, error) {
 		imageRef, err := name.ParseReference(src, name.WeakValidation)
 		if err != nil {
 			return nil, err
+		}
+
+		// Do not verify with custom CA on windows when reading from registry
+		// https://github.com/golang/go/issues/16736
+		if runtime.GOOS == "windows" {
+			tlsCfg.CaCertPath = ""
 		}
 
 		t, err := tlsCfg.Transport()
