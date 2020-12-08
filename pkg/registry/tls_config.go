@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"runtime"
 	"time"
 )
 
@@ -29,8 +30,7 @@ func (t *TLSConfig) Transport() (*http.Transport, error) {
 		}
 	}
 
-	// Use the DefaultTransport
-	return &http.Transport{
+	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
@@ -46,5 +46,13 @@ func (t *TLSConfig) Transport() (*http.Transport, error) {
 			RootCAs:            pool,
 			InsecureSkipVerify: t.VerifyCerts == false,
 		},
-	}, nil
+	}
+
+	// Do not set RootCAs when custom CA is not set on windows
+	// https://github.com/golang/go/issues/16736
+	if runtime.GOOS == "windows" && t.CaCertPath == "" {
+		transport.TLSClientConfig.RootCAs = nil
+	}
+
+	return transport, nil
 }

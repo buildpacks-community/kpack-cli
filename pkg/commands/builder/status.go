@@ -5,7 +5,6 @@ package builder
 
 import (
 	"fmt"
-	"github.com/pivotal/build-service-cli/pkg/builder"
 	"io"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -14,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/builder"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )

@@ -272,7 +272,7 @@ Reason:    this builder is not ready for the purpose of a test
 								Group: []v1alpha1.BuildpackRef{
 									{
 										BuildpackInfo: v1alpha1.BuildpackInfo{
-											Id: "org.cloudfoundry.nodejs",
+											Id:      "org.cloudfoundry.nodejs",
 											Version: "0.2.1",
 										},
 									},
@@ -282,7 +282,7 @@ Reason:    this builder is not ready for the purpose of a test
 								Group: []v1alpha1.BuildpackRef{
 									{
 										BuildpackInfo: v1alpha1.BuildpackInfo{
-											Id: "org.cloudfoundry.go",
+											Id:      "org.cloudfoundry.go",
 											Version: "0.0.3",
 										},
 									},

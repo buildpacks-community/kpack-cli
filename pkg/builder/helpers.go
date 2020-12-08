@@ -63,7 +63,7 @@ func CreateOrder(buildpacks []string) []v1alpha1.OrderEntry {
 }
 
 func CreateDetectionOrderRow(ref v1alpha1.BuildpackRef) (string, string) {
-	data := fmt.Sprintf("  %s",ref.Id)
+	data := fmt.Sprintf("  %s", ref.Id)
 	optional := ""
 
 	if ref.Version != "" {
