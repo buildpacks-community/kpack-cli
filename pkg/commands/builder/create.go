@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
 	"github.com/pivotal/build-service-cli/pkg/commands"
@@ -21,7 +22,7 @@ const (
 	defaultStore = "default"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		flags CommandFlags
 	)
@@ -55,7 +56,7 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --buildpack my
 			name := args[0]
 			flags.namespace = cs.Namespace
 
-			return create(name, flags, ch, cs)
+			return create(name, flags, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -79,7 +80,7 @@ type CommandFlags struct {
 	buildpacks []string
 }
 
-func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
+func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
 	bldr := &v1alpha1.Builder{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       v1alpha1.BuilderKind,
@@ -129,6 +130,9 @@ func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.
 	if !ch.IsDryRun() {
 		bldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(bldr)
 		if err != nil {
+			return err
+		}
+		if err := w.Wait(bldr); err != nil {
 			return err
 		}
 	}

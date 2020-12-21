@@ -7,12 +7,13 @@ import (
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewSaveCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		flags CommandFlags
 	)
@@ -43,6 +44,8 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildp
 				return err
 			}
 
+			w := newWaiter(cs.DynamicClient)
+
 			ch, err := commands.NewCommandHelper(cmd)
 			if err != nil {
 				return err
@@ -59,13 +62,12 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildp
 				if flags.store == "" {
 					flags.store = defaultStore
 				}
-
-				return create(name, flags, ch, cs)
+				return create(name, flags, ch, cs, w)
 			} else if err != nil {
 				return err
 			}
 
-			return patch(cb, flags, ch, cs)
+			return patch(cb, flags, ch, cs, w)
 		},
 	}
 

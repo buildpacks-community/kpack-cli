@@ -6,16 +6,19 @@ package builder_test
 import (
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/commands/builder"
+	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -73,9 +76,13 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 	)
 
+	fakeWaiter := &commandsfakes.FakeWaiter{}
+
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-		return builder.NewPatchCommand(clientSetProvider)
+		return builder.NewPatchCommand(clientSetProvider, func(dynamic.Interface) commands.ResourceWaiter {
+			return fakeWaiter
+		})
 	}
 
 	it("patches a Builder", func() {
@@ -97,6 +104,7 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 			},
 		}.TestKpack(t, cmdFunc)
+		require.Len(t, fakeWaiter.WaitCalls, 1)
 	})
 
 	it("patches a Builder in the default namespace", func() {
@@ -343,6 +351,7 @@ status:
 				ExpectedOutput: `Builder "test-builder" patched (dry run)
 `,
 			}.TestKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 0)
 		})
 
 		when("there are no changes in the patch", func() {

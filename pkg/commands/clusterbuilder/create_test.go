@@ -10,13 +10,17 @@ import (
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
+	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -88,9 +92,13 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 	)
 
+	fakeWaiter := &commandsfakes.FakeWaiter{}
+
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return clusterbuilder.NewCreateCommand(clientSetProvider)
+		return clusterbuilder.NewCreateCommand(clientSetProvider, func(dynamic.Interface) commands.ResourceWaiter {
+			return fakeWaiter
+		})
 	}
 
 	it("creates a ClusterBuilder", func() {
@@ -111,6 +119,8 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				expectedBuilder,
 			},
 		}.TestK8sAndKpack(t, cmdFunc)
+		require.Len(t, fakeWaiter.WaitCalls, 1)
+		require.Equal(t, fakeWaiter.WaitCalls[0], expectedBuilder)
 	})
 
 	it("creates a ClusterBuilder with the default stack", func() {

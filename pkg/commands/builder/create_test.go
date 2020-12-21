@@ -6,17 +6,20 @@ package builder_test
 import (
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/commands/builder"
+	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -77,9 +80,13 @@ func testBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 	)
 
+	fakeWaiter := &commandsfakes.FakeWaiter{}
+
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-		return builder.NewCreateCommand(clientSetProvider)
+		return builder.NewCreateCommand(clientSetProvider, func(dynamic.Interface) commands.ResourceWaiter {
+			return fakeWaiter
+		})
 	}
 
 	it("creates a Builder", func() {
@@ -98,6 +105,8 @@ func testBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				expectedBuilder,
 			},
 		}.TestKpack(t, cmdFunc)
+		require.Len(t, fakeWaiter.WaitCalls, 1)
+		require.Equal(t, fakeWaiter.WaitCalls[0], expectedBuilder)
 	})
 
 	it("creates a Builder with the default namespace, store, and stack", func() {
@@ -244,6 +253,7 @@ status:
 				ExpectedOutput: `Builder "test-builder" created (dry run)
 `,
 			}.TestKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 0)
 		})
 
 		when("output flag is used", func() {

@@ -6,17 +6,19 @@ package builder_test
 import (
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/commands/builder"
+	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -33,7 +35,7 @@ func testBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 				Kind:       v1alpha1.BuilderKind,
 				APIVersion: "kpack.io/v1alpha1",
 			},
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder",
 				Namespace: "some-namespace",
 				Annotations: map[string]string{
@@ -77,9 +79,13 @@ func testBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 	)
 
+	fakeWaiter := &commandsfakes.FakeWaiter{}
+
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-		return builder.NewSaveCommand(clientSetProvider)
+		return builder.NewSaveCommand(clientSetProvider, func(dynamic.Interface) commands.ResourceWaiter {
+			return fakeWaiter
+		})
 	}
 
 	when("creating", func() {
@@ -99,6 +105,7 @@ func testBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					bldr,
 				},
 			}.TestKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 1)
 		})
 
 		it("creates a Builder with the default namespace, store, and stack", func() {
@@ -300,6 +307,7 @@ status:
 					ExpectedOutput: `Builder "test-builder" created (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
+				require.Len(t, fakeWaiter.WaitCalls, 0)
 			})
 
 			when("output flag is used", func() {
@@ -368,6 +376,7 @@ status:
 					`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 				},
 			}.TestKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 1)
 		})
 
 		it("does not patch if there are no changes", func() {
@@ -559,6 +568,7 @@ status:
 					ExpectedOutput: `Builder "test-builder" patched (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
+				require.Len(t, fakeWaiter.WaitCalls, 0)
 			})
 
 			when("there are no changes in the patch", func() {

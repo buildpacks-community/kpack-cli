@@ -12,7 +12,10 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
+	"github.com/pivotal/build-service-cli/pkg/stackimage"
 )
 
 type Uploader interface {
@@ -33,6 +36,23 @@ type Factory struct {
 	Printer    Printer
 	TLSConfig  registry.TLSConfig
 	Repository string
+}
+
+func NewFactory(cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*Factory, error) {
+	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Factory{
+		Uploader: &stackimage.Uploader{
+			Fetcher:   rup.Fetcher(),
+			Relocator: rup.Relocator(ch.CanChangeState()),
+		},
+		Printer:    ch,
+		TLSConfig:  tlsCfg,
+		Repository: repo,
+	}, nil
 }
 
 func (f *Factory) MakeStack(name, buildImageTag, runImageTag string) (*v1alpha1.ClusterStack, error) {

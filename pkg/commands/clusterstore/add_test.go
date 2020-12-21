@@ -10,13 +10,17 @@ import (
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	storecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
+	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
+	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
@@ -69,9 +73,13 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
+	fakeWaiter := &commandsfakes.FakeWaiter{}
+
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return storecmds.NewAddCommand(clientSetProvider, fakeRegistryUtilProvider)
+		return clusterstore.NewAddCommand(clientSetProvider, fakeRegistryUtilProvider, func(dynamic.Interface) commands.ResourceWaiter {
+			return fakeWaiter
+		})
 	}
 
 	it("adds a buildpackage to store", func() {
@@ -112,6 +120,7 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 ClusterStore "store-name" updated
 `,
 		}.TestK8sAndKpack(t, cmdFunc)
+		require.Len(t, fakeWaiter.WaitCalls, 1)
 	})
 
 	it("does not add buildpackage with the same digest", func() {
@@ -369,6 +378,7 @@ status: {}
 ClusterStore "store-name" updated (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 0)
 		})
 
 		when("there are no changes in the update", func() {

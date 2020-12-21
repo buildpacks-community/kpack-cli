@@ -11,9 +11,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
 	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
@@ -183,6 +185,8 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	var fakeConfirmationProvider *commandsfakes.FakeConfirmationProvider
 	fakeDiffer := &commandsfakes.FakeDiffer{DiffResult: "some-diff"}
 
+	fakeWaiter := &commandsfakes.FakeWaiter{}
+
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
 		return importcmds.NewImportCommand(
@@ -190,7 +194,11 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			clientSetProvider,
 			fakeRegistryUtilProvider,
 			timestampProvider,
-			fakeConfirmationProvider)
+			fakeConfirmationProvider,
+			func(dynamic.Interface) commands.ResourceWaiter {
+				return fakeWaiter
+			},
+		)
 	}
 
 	it.Before(func() {
@@ -233,6 +241,21 @@ Imported resources
 					defaultBuilder,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 3)
+			require.Equal(t, fakeWaiter.WaitCalls[0], store)
+			require.Equal(t, fakeWaiter.WaitCalls[1], stack)
+			require.Equal(t, fakeWaiter.WaitCalls[2], defaultStack)
+			require.Len(t, fakeWaiter.BuilderWaitCalls, 2)
+			require.Equal(t, fakeWaiter.BuilderWaitCalls[0], commandsfakes.BuilderWaitCall{
+				Object:    builder,
+				CStoreGen: 0,
+				CStackGen: 0,
+			})
+			require.Equal(t, fakeWaiter.BuilderWaitCalls[1], commandsfakes.BuilderWaitCall{
+				Object:    defaultBuilder,
+				CStoreGen: 0,
+				CStackGen: 0,
+			})
 		})
 
 		it("creates stores, stacks, and cbs defined in the dependency descriptor for version 1", func() {
@@ -392,10 +415,11 @@ Imported resources
 		when("the dependency descriptor and the cluster have the exact same objs", func() {
 			const newTimestamp = "new-timestamp"
 			timestampProvider.timestamp = newTimestamp
-
+			store.Generation = 12
 			expectedStore := store.DeepCopy()
 			expectedStore.Annotations[importTimestampKey] = newTimestamp
 
+			stack.Generation = 13
 			expectedStack := stack.DeepCopy()
 			expectedStack.Annotations[importTimestampKey] = newTimestamp
 
@@ -457,6 +481,18 @@ Imported resources
 						{Object: expectedDefaultBuilder},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
+				require.Len(t, fakeWaiter.WaitCalls, 3)
+				require.Len(t, fakeWaiter.BuilderWaitCalls, 2)
+				require.Equal(t, fakeWaiter.BuilderWaitCalls[0], commandsfakes.BuilderWaitCall{
+					Object:    expectedBuilder,
+					CStoreGen: 12,
+					CStackGen: 13,
+				})
+				require.Equal(t, fakeWaiter.BuilderWaitCalls[1], commandsfakes.BuilderWaitCall{
+					Object:    expectedDefaultBuilder,
+					CStoreGen: 12,
+					CStackGen: 13,
+				})
 			})
 
 			it("does not error when original resource annotation is nil", func() {
@@ -605,7 +641,7 @@ Imported resources
 		})
 	})
 
-	it("errors when the apiVersion is unexpected", func() {
+	it("errors when the descriptor apiVersion is unexpected", func() {
 		testhelpers.CommandTest{
 			K8sObjects: []runtime.Object{},
 			Args: []string{
@@ -955,6 +991,8 @@ Imported resources (dry run)
 				},
 				ExpectedOutput: expectedOutput,
 			}.TestK8sAndKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 0)
+			require.Len(t, fakeWaiter.BuilderWaitCalls, 0)
 		})
 
 		when("output flag is used", func() {

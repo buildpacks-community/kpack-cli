@@ -7,13 +7,15 @@ import (
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 
+	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
+func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -41,12 +43,14 @@ kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../
 				return err
 			}
 
+			w := newWaiter(cs.DynamicClient)
+
 			ch, err := commands.NewCommandHelper(cmd)
 			if err != nil {
 				return err
 			}
 
-			factory, err := newClusterStackFactory(cs, ch, rup, tlsCfg)
+			factory, err := clusterstack.NewFactory(cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
@@ -55,12 +59,12 @@ kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../
 
 			cStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return create(name, buildImageRef, runImageRef, factory, ch, cs)
+				return create(name, buildImageRef, runImageRef, factory, ch, cs, w)
 			} else if err != nil {
 				return err
 			}
 
-			return update(cStack, buildImageRef, runImageRef, factory, ch, cs)
+			return update(cStack, buildImageRef, runImageRef, factory, ch, cs, w)
 		},
 	}
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")

@@ -9,13 +9,13 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ghodss/yaml"
 	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/ghodss/yaml"
+	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/buildpackage"
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
@@ -36,7 +36,8 @@ func NewImportCommand(
 	clientSetProvider k8s.ClientSetProvider,
 	rup registry.UtilProvider,
 	timestampProvider TimestampProvider,
-	confirmationProvider ConfirmationProvider) *cobra.Command {
+	confirmationProvider ConfirmationProvider,
+	newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 
 	var (
 		filename    string
@@ -123,6 +124,7 @@ cat dependencies.yaml | kp import -f -`,
 				client:            cs.KpackClient,
 				commandHelper:     ch,
 				timestampProvider: timestampProvider,
+				waiter:            newWaiter(cs.DynamicClient),
 			}
 
 			if showChanges {
@@ -143,15 +145,17 @@ cat dependencies.yaml | kp import -f -`,
 				}
 			}
 
-			if err := importer.importClusterStores(descriptor.ClusterStores, storeFactory); err != nil {
+			storeToGen, err := importer.importClusterStores(descriptor.ClusterStores, storeFactory)
+			if err != nil {
 				return err
 			}
 
-			if err := importer.importClusterStacks(descriptor.GetClusterStacks(), stackFactory); err != nil {
+			stackToGen, err := importer.importClusterStacks(descriptor.GetClusterStacks(), stackFactory)
+			if err != nil {
 				return err
 			}
 
-			if err := importer.importClusterBuilders(descriptor.GetClusterBuilders(), repository, serviceAccount); err != nil {
+			if err := importer.importClusterBuilders(descriptor.GetClusterBuilders(), repository, serviceAccount, storeToGen, stackToGen); err != nil {
 				return err
 			}
 

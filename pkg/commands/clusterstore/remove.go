@@ -11,12 +11,13 @@ import (
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
-func NewRemoveCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+func NewRemoveCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var buildpackages []string
 
 	cmd := &cobra.Command{
@@ -34,6 +35,8 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 			if err != nil {
 				return err
 			}
+
+			w := newWaiter(cs.DynamicClient)
 
 			ch, err := commands.NewCommandHelper(cmd)
 			if err != nil {
@@ -67,6 +70,9 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 			if !ch.IsDryRun() {
 				store, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(store)
 				if err != nil {
+					return err
+				}
+				if err := w.Wait(store); err != nil {
 					return err
 				}
 			}

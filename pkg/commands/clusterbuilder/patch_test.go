@@ -10,11 +10,15 @@ import (
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
+	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -72,9 +76,13 @@ func testClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 	)
 
+	fakeWaiter := &commandsfakes.FakeWaiter{}
+
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return clusterbuilder.NewPatchCommand(clientSetProvider)
+		return clusterbuilder.NewPatchCommand(clientSetProvider, func(dynamic.Interface) commands.ResourceWaiter {
+			return fakeWaiter
+		})
 	}
 
 	it("patches a ClusterBuilder", func() {
@@ -95,6 +103,8 @@ func testClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 				`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 			},
 		}.TestKpack(t, cmdFunc)
+
+		require.Len(t, fakeWaiter.WaitCalls, 1)
 	})
 
 	it("does not patch if there are no changes", func() {

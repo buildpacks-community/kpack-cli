@@ -5,16 +5,15 @@ package clusterstore
 
 import (
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/dynamic"
 
-	"github.com/pivotal/build-service-cli/pkg/buildpackage"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
-
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		buildpackages []string
 		tlsCfg        registry.TLSConfig
@@ -47,13 +46,13 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			factory, err := newClusterStoreFactory(cs, ch, rup, tlsCfg)
+			factory, err := clusterstore.NewFactory(cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
-			return create(name, buildpackages, factory, ch, cs)
+			return create(name, buildpackages, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -63,24 +62,7 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 	return cmd
 }
 
-func newClusterStoreFactory(cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*clusterstore.Factory, error) {
-	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
-	if err != nil {
-		return nil, err
-	}
-
-	return &clusterstore.Factory{
-		Uploader: &buildpackage.Uploader{
-			Fetcher:   rup.Fetcher(),
-			Relocator: rup.Relocator(ch.CanChangeState()),
-		},
-		TLSConfig:  tlsCfg,
-		Repository: repo,
-		Printer:    ch,
-	}, nil
-}
-
-func create(name string, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
+func create(name string, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
 	if err = ch.PrintStatus("Creating ClusterStore..."); err != nil {
 		return err
 	}
@@ -93,6 +75,9 @@ func create(name string, buildpackages []string, factory *clusterstore.Factory, 
 	if !ch.IsDryRun() {
 		newStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Create(newStore)
 		if err != nil {
+			return err
+		}
+		if err := w.Wait(newStore); err != nil {
 			return err
 		}
 	}
