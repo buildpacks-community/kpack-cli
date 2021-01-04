@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -188,14 +189,24 @@ func (f *Factory) makeGcrSecret(name string, namespace string) (*corev1.Secret, 
 	}, GcrUrl, nil
 }
 
-func (f *Factory) makeRegistrySecret(name string, namespace string) (*corev1.Secret, string, error) {
+func (f *Factory) makeRegistrySecret(secretName string, namespace string) (*corev1.Secret, string, error) {
 	password, err := f.CredentialFetcher.FetchPassword("REGISTRY_PASSWORD", "registry password: ")
 	if err != nil {
 		return nil, "", err
 	}
 
+	reg := f.Registry
+	// Handle path in registry
+	if strings.ContainsRune(reg, '/') {
+		r, err := name.NewRepository(reg, name.WeakValidation)
+		if err != nil {
+			return nil, "", err
+		}
+		reg = r.RegistryStr()
+	}
+
 	configJson := DockerConfigJson{Auths: DockerCredentials{
-		f.Registry: authn.AuthConfig{
+		reg: authn.AuthConfig{
 			Username: f.RegistryUser,
 			Password: password,
 		},
@@ -207,7 +218,7 @@ func (f *Factory) makeRegistrySecret(name string, namespace string) (*corev1.Sec
 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      secretName,
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
