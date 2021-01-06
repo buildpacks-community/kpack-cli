@@ -118,7 +118,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 		when("creating a generic registry secret", func() {
 			var (
-				registry               = "my-registry.io/my-repo"
+				registry               = "my-registry.io"
 				registryUser           = "my-registry-user"
 				registryPassword       = "dummy-password"
 				secretName             = "my-registry-cred"
@@ -405,7 +405,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 		when("creating a generic registry secret", func() {
 			var (
-				registry               = "my-registry.io/my-repo"
+				registry               = "my-registry.io"
 				registryUser           = "my-registry-user"
 				registryPassword       = "dummy-password"
 				secretName             = "my-registry-cred"
