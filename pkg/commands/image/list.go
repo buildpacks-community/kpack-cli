@@ -4,19 +4,20 @@
 package image
 
 import (
+	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
 func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
-		namespace string
+		namespace     string
+		allNamespaces bool
+		filters       []string
 	)
 
 	cmd := &cobra.Command{
@@ -25,17 +26,30 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Prints a table of the most important information about images in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.`,
-		Example: "kp image list\nkp image list -n my-namespace",
+		Example: `kp image list
+kp image list -A
+kp image list -n my-namespace
+kp image list --filter ready=true`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
 				return err
 			}
 
-			imageList, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).List(metav1.ListOptions{})
+			var imagesNamespace string
+
+			if allNamespaces {
+				imagesNamespace = ""
+			} else {
+				imagesNamespace = cs.Namespace
+			}
+
+			imageList, err := cs.KpackClient.KpackV1alpha1().Images(imagesNamespace).List(metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
+
+			imageList = Filter(imageList, filters)
 
 			if len(imageList.Items) == 0 {
 				return errors.New("no images found")
@@ -47,18 +61,27 @@ The namespace defaults to the kubernetes current-context namespace.`,
 		SilenceUsage: true,
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
+	cmd.Flags().BoolVarP(&allNamespaces, "all-namespaces", "A", false, "Return objects found in all namespaces")
+	cmd.Flags().StringArrayVar(&filters, "filter", nil,
+		`Each new filter argument requires an additoinal filter flag.
+Multiple values can be provided using comma separation.
+Supported filters and values:
+builder=string
+clusterbuilder=string
+latest-reason=commit, trigger, config, stack, buildpack
+ready=true, false, unknown`)
 
 	return cmd
 }
 
 func displayImagesTable(cmd *cobra.Command, imageList *v1alpha1.ImageList) error {
-	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY", "LATEST IMAGE")
+	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY", "LATEST REASON", "LATEST IMAGE", "NAMESPACE")
 	if err != nil {
 		return err
 	}
 
 	for _, img := range imageList.Items {
-		err := writer.AddRow(img.Name, getReadyText(img), img.Status.LatestImage)
+		err := writer.AddRow(img.Name, getReadyText(img), img.Status.LatestBuildReason, img.Status.LatestImage, img.Namespace)
 		if err != nil {
 			return err
 		}
