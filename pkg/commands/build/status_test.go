@@ -4,7 +4,9 @@
 package build_test
 
 import (
+	"strings"
 	"testing"
+	"text/template"
 	"time"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -12,10 +14,12 @@ import (
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/commands/build"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
@@ -28,9 +32,9 @@ func testBuildStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		image                       = "test-image"
 		defaultNamespace            = "some-default-namespace"
-		expectedOutputForMostRecent = `Image:           repo.com/image-3:tag
-Status:          BUILDING
-Build Reason:    TRIGGER
+		expectedOutputForMostRecent = `Image:     repo.com/image-3:tag
+Status:    BUILDING
+Reason:    TRIGGER
 
 Started:     0001-01-01 05:00:00
 Finished:    --
@@ -47,9 +51,9 @@ bp-id-1         bp-version-1
 bp-id-2         bp-version-2
 
 `
-		expectedOutputForBuildNumber = `Image:           repo.com/image-1:tag
-Status:          SUCCESS
-Build Reason:    CONFIG
+		expectedOutputForBuildNumber = `Image:     repo.com/image-1:tag
+Status:    SUCCESS
+Reason:    CONFIG
 
 Started:     0001-01-01 00:00:00
 Finished:    0001-01-01 00:00:00
@@ -174,7 +178,7 @@ bp-id-2         bp-version-2
 			it("displays status reason and status message", func() {
 				expectedOutput := `Image:             repo.com/image-3:tag
 Status:            BUILDING
-Build Reason:      TRIGGER
+Reason:            TRIGGER
 Status Reason:     some-reason
 Status Message:    some-message
 
@@ -245,6 +249,7 @@ bp-id-2         bp-version-2
 					ExpectedOutput: expectedOutput,
 				}.TestKpack(t, cmdFunc)
 			})
+
 			it("does not display when the condition is empty", func() {
 				bld := &v1alpha1.Build{
 					ObjectMeta: metav1.ObjectMeta{
@@ -291,6 +296,525 @@ bp-id-2         bp-version-2
 					ExpectedOutput: expectedOutputForMostRecent,
 				}.TestKpack(t, cmdFunc)
 			})
+
+			when("changes are available on a build", func() {
+				outputTemplateStr := `Image:     repo.com/image-3:tag
+Status:    BUILDING
+Reason:    {{.Reason}}
+           {{.Change}}
+
+Started:     0001-01-01 05:00:00
+Finished:    --
+
+Pod Name:    some-pod
+
+Builder:      some-repo.com/my-builder
+Run Image:    some-repo.com/run-image
+
+Source:    Local Source
+
+BUILDPACK ID    BUILDPACK VERSION
+bp-id-1         bp-version-1
+bp-id-2         bp-version-2
+
+`
+
+				og := newOutputGenerator(t, outputTemplateStr)
+				diffBuilder := testhelpers.NewDiffBuilder(t)
+				diffPadding := strings.Repeat(" ", len("Reason:")+commands.StatusWriterPadding)
+
+				bld := &v1alpha1.Build{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "bld-three",
+						Namespace:         "some-default-namespace",
+						CreationTimestamp: metav1.Time{Time: time.Time{}.Add(5 * time.Hour)},
+						Labels: map[string]string{
+							v1alpha1.ImageLabel:       image,
+							v1alpha1.BuildNumberLabel: "3",
+						},
+						Annotations: map[string]string{
+							v1alpha1.BuildReasonAnnotation: "TRIGGER",
+						},
+					},
+					Spec: v1alpha1.BuildSpec{
+						Builder: v1alpha1.BuildBuilderSpec{
+							Image: "some-repo.com/my-builder",
+						},
+					},
+					Status: v1alpha1.BuildStatus{
+						Status: corev1alpha1.Status{
+							Conditions: corev1alpha1.Conditions{},
+						},
+						BuildMetadata: v1alpha1.BuildpackMetadataList{
+							{
+								Id:      "bp-id-1",
+								Version: "bp-version-1",
+							},
+							{
+								Id:      "bp-id-2",
+								Version: "bp-version-2",
+							},
+						},
+						Stack: v1alpha1.BuildStack{
+							RunImage: "some-repo.com/run-image",
+						},
+						LatestImage: "repo.com/image-3:tag",
+						PodName:     "some-pod",
+					},
+				}
+
+				it("generates reason from the changes string", func() {
+					bld.Annotations[v1alpha1.BuildReasonAnnotation] = "ignored-reason"
+					bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+[
+  {
+    "reason": "expected-reason",
+    "new": "new-change"
+  }
+]`)
+
+					change := diffBuilder.New("new-change").Out()
+					expectedOutput := og.output(t, "expected-reason", change)
+
+					testhelpers.CommandTest{
+						Objects:        []runtime.Object{bld},
+						Args:           []string{image},
+						ExpectedOutput: expectedOutput,
+					}.TestKpack(t, cmdFunc)
+				})
+
+				when("single change", func() {
+					when("TRIGGER", func() {
+						it.Before(func() {
+							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+[
+  {
+    "reason": "TRIGGER",
+    "new": "A new build was manually triggered on Fri, 20 Nov 2020 15:38:15 -0500"
+  }
+]`)
+						})
+
+						it("displays the correct reason and changes diff", func() {
+							change := diffBuilder.New("A new build was manually triggered on Fri, 20 Nov 2020 15:38:15 -0500").Out()
+							expectedOutput := og.output(t, "TRIGGER", change)
+
+							testhelpers.CommandTest{
+								Objects:        []runtime.Object{bld},
+								Args:           []string{image},
+								ExpectedOutput: expectedOutput,
+							}.TestKpack(t, cmdFunc)
+						})
+					})
+
+					when("COMMIT", func() {
+						it.Before(func() {
+							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+[
+  {
+    "reason": "COMMIT",
+    "old": "old-revision",
+    "new": "new-revision"
+  }
+]`)
+						})
+
+						it("displays the correct reason and changes diff", func() {
+							change := diffBuilder.SetPrefix("").
+								Old("old-revision").SetPrefix(diffPadding).
+								New("new-revision").Out()
+							expectedOutput := og.output(t, "COMMIT", change)
+
+							testhelpers.CommandTest{
+								Objects:        []runtime.Object{bld},
+								Args:           []string{image},
+								ExpectedOutput: expectedOutput,
+							}.TestKpack(t, cmdFunc)
+						})
+					})
+
+					when("CONFIG", func() {
+						it.Before(func() {
+							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+[
+  {
+    "reason": "CONFIG",
+    "old": {
+      "env": [
+        {
+          "name": "env-var-name",
+          "value": "env-var-value"
+        },
+        {
+          "name": "another-env-var-name",
+          "value": "another-env-var-value"
+        }
+      ],
+      "resources": {
+        "limits": {
+          "cpu": "500m",
+          "memory": "2G"
+        },
+        "requests": {
+          "cpu": "100m",
+          "memory": "512M"
+        }
+      },
+      "source": {
+        "git": {
+          "url": "some-git-url",
+          "revision": "some-git-revision"
+        },
+        "subPath": "some-sub-path"
+      }
+    },
+    "new": {
+      "env": [
+        {
+          "name": "new-env-var-name",
+          "value": "new-env-var-value"
+        },
+        {
+          "name": "another-env-var-name",
+          "value": "another-env-var-value"
+        }
+      ],
+      "resources": {
+        "limits": {
+          "cpu": "300m",
+          "memory": "1G"
+        },
+        "requests": {
+          "cpu": "200m",
+          "memory": "512M"
+        }
+      },
+      "bindings": [
+        {
+          "name": "binding-name",
+          "metadataRef": {
+            "name": "some-metadata-ref"
+          },
+          "secretRef": {
+            "name": "some-secret-ref"
+          }
+        }
+      ],
+      "source": {
+        "blob": {
+          "url": "some-blob-url"
+        }
+      }
+    }
+  }
+]`)
+						})
+
+						it("displays the correct reason and changes diff", func() {
+							change := diffBuilder.SetPrefix("").
+								New("bindings:").SetPrefix(diffPadding).
+								New("- metadataRef:").
+								New("    name: some-metadata-ref").
+								New("  name: binding-name").
+								New("  secretRef:").
+								New("    name: some-secret-ref").
+								NoD("env:").
+								Old("- name: env-var-name").
+								Old("  value: env-var-value").
+								New("- name: new-env-var-name").
+								New("  value: new-env-var-value").
+								NoD("- name: another-env-var-name").
+								NoD("  value: another-env-var-value").
+								NoD("resources:").
+								NoD("  limits:").
+								Old("    cpu: 500m").
+								Old("    memory: 2G").
+								New("    cpu: 300m").
+								New("    memory: 1G").
+								NoD("  requests:").
+								Old("    cpu: 100m").
+								New("    cpu: 200m").
+								NoD("    memory: 512M").
+								NoD("source:").
+								Old("  git:").
+								Old("    revision: some-git-revision").
+								Old("    url: some-git-url").
+								Old("  subPath: some-sub-path").
+								New("  blob:").
+								New("    url: some-blob-url").Out()
+							expectedOutput := og.output(t, "CONFIG", change)
+
+							testhelpers.CommandTest{
+								Objects:        []runtime.Object{bld},
+								Args:           []string{image},
+								ExpectedOutput: expectedOutput,
+							}.TestKpack(t, cmdFunc)
+						})
+					})
+
+					when("BUILDPACK", func() {
+						it.Before(func() {
+							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+[
+  {
+    "reason": "BUILDPACK",
+    "old": [
+      {
+        "id": "another-buildpack-id",
+        "version": "another-buildpack-old-version"
+      },
+      {
+        "id": "some-buildpack-id",
+        "version": "some-buildpack-old-version"
+      }
+    ],
+    "new": [
+      {
+        "id": "some-buildpack-id",
+        "version": "some-buildpack-new-version"
+      }
+    ]
+  }
+]`)
+						})
+
+						it("displays the correct reason and changes diff", func() {
+							change := diffBuilder.SetPrefix("").
+								Old("- id: another-buildpack-id").SetPrefix(diffPadding).
+								Old("  version: another-buildpack-old-version").
+								NoD("- id: some-buildpack-id").
+								Old("  version: some-buildpack-old-version").
+								New("  version: some-buildpack-new-version").Out()
+							expectedOutput := og.output(t, "BUILDPACK", change)
+
+							testhelpers.CommandTest{
+								Objects:        []runtime.Object{bld},
+								Args:           []string{image},
+								ExpectedOutput: expectedOutput,
+							}.TestKpack(t, cmdFunc)
+						})
+					})
+
+					when("STACK", func() {
+						it.Before(func() {
+							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+[
+  {
+    "reason": "STACK",
+    "old": "sha256:87302783be0a0cab9fde5b68c9954b7e9150ca0d514ba542e9810c3c6f2984ad",
+    "new": "sha256:87302783be0a0cab9fde5b68c9954b7e9150ca0d514ba542e9810c3c6f2984ae"
+  }
+]`)
+						})
+
+						it("displays the correct reason and changes diff", func() {
+							change := diffBuilder.SetPrefix("").
+								Old("sha256:87302783be0a0cab9fde5b68c9954b7e9150ca0d514ba542e9810c3c6f2984ad").SetPrefix(diffPadding).
+								New("sha256:87302783be0a0cab9fde5b68c9954b7e9150ca0d514ba542e9810c3c6f2984ae").Out()
+							expectedOutput := og.output(t, "STACK", change)
+
+							testhelpers.CommandTest{
+								Objects:        []runtime.Object{bld},
+								Args:           []string{image},
+								ExpectedOutput: expectedOutput,
+							}.TestKpack(t, cmdFunc)
+						})
+					})
+				})
+
+				when("multiple changes", func() {
+					it.Before(func() {
+						bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+[
+  {
+    "reason": "TRIGGER",
+    "old": "",
+    "new": "A new build was manually triggered on Fri, 20 Nov 2020 15:38:15 -0500"
+  },
+  {
+    "reason": "COMMIT",
+    "old": "old-revision",
+    "new": "new-revision"
+  },
+  {
+    "reason": "CONFIG",
+    "old": {
+      "env": [
+        {
+          "name": "env-var-name",
+          "value": "env-var-value"
+        },
+        {
+          "name": "another-env-var-name",
+          "value": "another-env-var-value"
+        }
+      ],
+      "resources": {
+        "limits": {
+          "cpu": "500m",
+          "memory": "2G"
+        },
+        "requests": {
+          "cpu": "100m",
+          "memory": "512M"
+        }
+      },
+      "source": {
+        "git": {
+          "url": "some-git-url",
+          "revision": "some-git-revision"
+        },
+        "subPath": "some-sub-path"
+      }
+    },
+    "new": {
+      "env": [
+        {
+          "name": "new-env-var-name",
+          "value": "new-env-var-value"
+        },
+        {
+          "name": "another-env-var-name",
+          "value": "another-env-var-value"
+        }
+      ],
+      "resources": {
+        "limits": {
+          "cpu": "300m",
+          "memory": "1G"
+        },
+        "requests": {
+          "cpu": "200m",
+          "memory": "512M"
+        }
+      },
+      "bindings": [
+        {
+          "name": "binding-name",
+          "metadataRef": {
+            "name": "some-metadata-ref"
+          },
+          "secretRef": {
+            "name": "some-secret-ref"
+          }
+        }
+      ],
+      "source": {
+        "blob": {
+          "url": "some-blob-url"
+        }
+      }
+    }
+  },
+  {
+    "reason": "BUILDPACK",
+    "old": [
+      {
+        "id": "another-buildpack-id",
+        "version": "another-buildpack-old-version"
+      },
+      {
+        "id": "some-buildpack-id",
+        "version": "some-buildpack-old-version"
+      }
+    ],
+    "new": [
+      {
+        "id": "some-buildpack-id",
+        "version": "some-buildpack-new-version"
+      }
+    ]
+  },
+  {
+    "reason": "STACK",
+    "old": "sha256:87302783be0a0cab9fde5b68c9954b7e9150ca0d514ba542e9810c3c6f2984ad",
+    "new": "sha256:87302783be0a0cab9fde5b68c9954b7e9150ca0d514ba542e9810c3c6f2984ae"
+  }
+]`)
+					})
+
+					it("displays the correct reason and changes diff", func() {
+						change := diffBuilder.SetPrefix("").
+							New("A new build was manually triggered on Fri, 20 Nov 2020 15:38:15 -0500").SetPrefix(diffPadding).
+							Old("old-revision").
+							New("new-revision").
+							New("bindings:").
+							New("- metadataRef:").
+							New("    name: some-metadata-ref").
+							New("  name: binding-name").
+							New("  secretRef:").
+							New("    name: some-secret-ref").
+							NoD("env:").
+							Old("- name: env-var-name").
+							Old("  value: env-var-value").
+							New("- name: new-env-var-name").
+							New("  value: new-env-var-value").
+							NoD("- name: another-env-var-name").
+							NoD("  value: another-env-var-value").
+							NoD("resources:").
+							NoD("  limits:").
+							Old("    cpu: 500m").
+							Old("    memory: 2G").
+							New("    cpu: 300m").
+							New("    memory: 1G").
+							NoD("  requests:").
+							Old("    cpu: 100m").
+							New("    cpu: 200m").
+							NoD("    memory: 512M").
+							NoD("source:").
+							Old("  git:").
+							Old("    revision: some-git-revision").
+							Old("    url: some-git-url").
+							Old("  subPath: some-sub-path").
+							New("  blob:").
+							New("    url: some-blob-url").
+							Old("- id: another-buildpack-id").SetPrefix(diffPadding).
+							Old("  version: another-buildpack-old-version").
+							NoD("- id: some-buildpack-id").
+							Old("  version: some-buildpack-old-version").
+							New("  version: some-buildpack-new-version").
+							Old("sha256:87302783be0a0cab9fde5b68c9954b7e9150ca0d514ba542e9810c3c6f2984ad").
+							New("sha256:87302783be0a0cab9fde5b68c9954b7e9150ca0d514ba542e9810c3c6f2984ae").Out()
+						expectedOutput := og.output(t, "TRIGGER,COMMIT,CONFIG,BUILDPACK,STACK", change)
+
+						testhelpers.CommandTest{
+							Objects:        []runtime.Object{bld},
+							Args:           []string{image},
+							ExpectedOutput: expectedOutput,
+						}.TestKpack(t, cmdFunc)
+					})
+				})
+			})
 		})
 	})
+}
+
+type outputGenerator struct {
+	template *template.Template
+}
+
+func newOutputGenerator(t *testing.T, templateStr string) outputGenerator {
+	template, err := template.New("output").Parse(templateStr)
+	assert.NoError(t, err)
+
+	return outputGenerator{
+		template: template,
+	}
+}
+
+type templateInput struct {
+	Reason string
+	Change string
+}
+
+func (o outputGenerator) output(t *testing.T, reason, change string) string {
+	var sb strings.Builder
+
+	err := o.template.Execute(&sb, templateInput{
+		Reason: reason,
+		Change: change,
+	})
+
+	assert.NoError(t, err)
+	return sb.String()
 }

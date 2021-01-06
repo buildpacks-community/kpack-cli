@@ -4,11 +4,16 @@
 package build
 
 import (
+	"encoding/json"
+	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	"github.com/pivotal/kpack/pkg/differ"
+	"github.com/pivotal/kpack/pkg/buildchange"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -93,10 +98,15 @@ func findBuild(buildList *v1alpha1.BuildList, buildNumberString string, img, nam
 func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 	statusWriter := commands.NewStatusWriter(cmd.OutOrStdout())
 
+	reason, err := buildReason(bld)
+	if err != nil {
+		return errors.Wrapf(err, "error printing build reason")
+	}
+
 	statusItems := []string{
 		"Image", bld.Status.LatestImage,
 		"Status", getStatus(bld),
-		"Build Reason", bld.Annotations[v1alpha1.BuildReasonAnnotation],
+		"Reason", reason,
 	}
 
 	cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded)
@@ -109,7 +119,7 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 		}
 	}
 
-	err := statusWriter.AddBlock("", statusItems...)
+	err = statusWriter.AddBlock("", statusItems...)
 	if err != nil {
 		return err
 	}
@@ -179,4 +189,55 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 	}
 
 	return tableWriter.Write()
+}
+
+func buildReason(bld v1alpha1.Build) (string, error) {
+	var err error
+	var reasonsStr, changesStr string
+
+	changes, ok := bld.Annotations[v1alpha1.BuildChangesAnnotation]
+	if ok {
+		reasonsStr, changesStr, err = reasonsAndChanges(changes)
+		if err != nil {
+			return "", errors.Wrapf(err, "error generating build reason from string '%s'", changes)
+		}
+	} else {
+		reasonsStr = bld.Annotations[v1alpha1.BuildReasonAnnotation]
+	}
+
+	var buildReasonStr string
+	if changesStr == "" {
+		buildReasonStr = reasonsStr
+	} else {
+		buildReasonStr = fmt.Sprintf("%s\n%s", reasonsStr, changesStr)
+	}
+
+	return buildReasonStr, nil
+}
+
+func reasonsAndChanges(changesJson string) (string, string, error) {
+	var changes []buildchange.GenericChange
+	if err := json.Unmarshal([]byte(changesJson), &changes); err != nil {
+		return "", "", err
+	}
+
+	var reasons []string
+	var sb strings.Builder
+
+	o := differ.DefaultOptions()
+	o.Prefix = "\t"
+	d := differ.NewDiffer(o)
+
+	for _, change := range changes {
+		reasons = append(reasons, change.Reason)
+		diff, err := d.Diff(change.Old, change.New)
+		if err != nil {
+			return "", "", err
+		}
+		sb.WriteString(diff)
+	}
+
+	reasonsStr := strings.Join(reasons, ",")
+	changesStr := strings.TrimSuffix(sb.String(), "\n")
+	return reasonsStr, changesStr, nil
 }

@@ -15,9 +15,12 @@ type StatusWriter struct {
 	writer *tabwriter.Writer
 }
 
+const StatusWriterTabWidth = 4
+const StatusWriterPadding = 4
+
 func NewStatusWriter(out io.Writer) *StatusWriter {
 	return &StatusWriter{
-		writer: tabwriter.NewWriter(out, 0, 4, 4, ' ', 0),
+		writer: tabwriter.NewWriter(out, 0, StatusWriterTabWidth, StatusWriterPadding, ' ', 0),
 	}
 }
 

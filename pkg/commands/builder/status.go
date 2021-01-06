@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/pivotal/build-service-cli/pkg/builder"
+
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
