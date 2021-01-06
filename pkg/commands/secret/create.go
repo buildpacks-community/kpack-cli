@@ -47,7 +47,7 @@ The flags for this command determine the type of secret that will be created:
   Use the "GIT_PASSWORD" env var to bypass the password prompt.`,
 		Example: `kp secret create my-docker-hub-creds --dockerhub dockerhub-id
 kp secret create my-gcr-creds --gcr /path/to/gcr/service-account.json
-kp secret create my-registry-cred --registry example-registry.io/my-repo --registry-user my-registry-user
+kp secret create my-registry-cred --registry example-registry.io --registry-user my-registry-user
 kp secret create my-git-ssh-cred --git-url git@github.com --git-ssh-key /path/to/git/ssh-private-key.pem
 kp secret create my-git-cred --git-url https://github.com --git-user my-git-user`,
 		Args:         commands.ExactArgsWithUsage(1),
