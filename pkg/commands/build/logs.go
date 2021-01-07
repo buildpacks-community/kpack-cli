@@ -51,7 +51,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return errors.New("no builds found")
 			} else {
 				sort.Slice(buildList.Items, build.Sort(buildList.Items))
-				bld, err := findBuild(buildList, buildNumber, args[0], cs.Namespace)
+				bld, err := findBuild(buildList, buildNumber)
 				if err != nil {
 					return err
 				}

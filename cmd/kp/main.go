@@ -112,7 +112,7 @@ func getBuildCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	}
 	buildRootCmd.AddCommand(
 		buildcmds.NewListCommand(clientSetProvider),
-		buildcmds.NewStatusCommand(clientSetProvider),
+		buildcmds.NewStatusCommand(clientSetProvider, registry.DefaultUtilProvider{}),
 		buildcmds.NewLogsCommand(clientSetProvider),
 	)
 	return buildRootCmd

@@ -12,8 +12,8 @@ import (
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
-	"github.com/pivotal/kpack/pkg/differ"
 	"github.com/pivotal/kpack/pkg/buildchange"
+	"github.com/pivotal/kpack/pkg/differ"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,12 +21,20 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/build"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+const (
+	buildMetadataKey = "io.buildpacks.build.metadata"
+	bomKey           = "bom"
+)
+
+func NewStatusCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
 	var (
 		namespace   string
 		buildNumber string
+		bom         bool
+		tlsConfig   registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -35,7 +43,12 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Prints detailed information about the status of a specific build of an image in the provided namespace.
 
 The build defaults to the latest build number.
-The namespace defaults to the kubernetes current-context namespace.`,
+The namespace defaults to the kubernetes current-context namespace.
+
+When using the --bom flag, only the built image's bill of materials will be printed.
+Using the --bom flag will read metadata from the build's built image in the registry
+Therefore, you must have credentials to access the registry on your machine when using the --bom flag.
+--registry-ca-cert-path and --registry-verify-certs are only used when using the --bom flag.`,
 		Example:      "kp build status my-image\nkp build status my-image -b 2 -n my-namespace",
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
@@ -56,21 +69,28 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return errors.New("no builds found")
 			} else {
 				sort.Slice(buildList.Items, build.Sort(buildList.Items))
-				bld, err := findBuild(buildList, buildNumber, args[0], cs.Namespace)
+				bld, err := findBuild(buildList, buildNumber)
 				if err != nil {
 					return err
 				}
-				return displayBuildStatus(cmd, bld)
+
+				if bom {
+					return displayBOM(cmd, bld, rup, tlsConfig)
+				} else {
+					return displayBuildStatus(cmd, bld)
+				}
 			}
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&buildNumber, "build", "b", "", "build number")
+	cmd.Flags().BoolVar(&bom, "bom", false, "only print the built image bill of materials")
+	commands.SetTLSFlags(cmd, &tlsConfig)
 
 	return cmd
 }
 
-func findBuild(buildList *v1alpha1.BuildList, buildNumberString string, img, namespace string) (v1alpha1.Build, error) {
+func findBuild(buildList *v1alpha1.BuildList, buildNumberString string) (v1alpha1.Build, error) {
 
 	if buildNumberString == "" {
 		return buildList.Items[len(buildList.Items)-1], nil
@@ -240,4 +260,50 @@ func reasonsAndChanges(changesJson string) (string, string, error) {
 	reasonsStr := strings.Join(reasons, ",")
 	changesStr := strings.TrimSuffix(sb.String(), "\n")
 	return reasonsStr, changesStr, nil
+}
+
+func displayBOM(cmd *cobra.Command, bld v1alpha1.Build, rup registry.UtilProvider, tlsConfig registry.TLSConfig) error {
+	cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded)
+	if cond == nil || !cond.IsTrue() {
+		return errors.Errorf("build has failed or has not finished")
+	}
+
+	h, err := commands.NewCommandHelper(cmd)
+	if err != nil {
+		return err
+	}
+
+	fetcher := rup.Fetcher()
+
+	image, err := fetcher.Fetch(bld.Status.LatestImage, tlsConfig)
+	if err != nil {
+		return err
+	}
+
+	c, err := image.ConfigFile()
+	if err != nil {
+		return err
+	}
+
+	bldMetadataStr, ok := c.Config.Labels[buildMetadataKey]
+	if !ok {
+		return errors.New("could not find cnb metadata on build image")
+	}
+
+	bldMetadata := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(bldMetadataStr), &bldMetadata); err != nil {
+		return err
+	}
+
+	bom, ok := bldMetadata[bomKey]
+	if !ok {
+		return errors.New("could not find bom on build image metadata")
+	}
+
+	output, err := json.Marshal(bom)
+	if err != nil {
+		return err
+	}
+
+	return h.Printlnf(string(output))
 }

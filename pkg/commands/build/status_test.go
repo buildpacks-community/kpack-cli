@@ -21,6 +21,7 @@ import (
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/commands/build"
+	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -74,7 +75,14 @@ bp-id-2         bp-version-2
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
-		return build.NewStatusCommand(clientSetProvider)
+
+		fakeFetcher := registryfakes.Fetcher{}
+		fakeFetcher.AddImage("repo.com/image-1:tag", registryfakes.NewFakeLabeledImage("io.buildpacks.build.metadata", "{\"bom\":{\"some\":\"metadata\"}}", "some-digest"))
+
+		fakeRegistryUtilProvider := &registryfakes.UtilProvider{
+			FakeFetcher: &fakeFetcher,
+		}
+		return build.NewStatusCommand(clientSetProvider, fakeRegistryUtilProvider)
 	}
 
 	when("getting build status", func() {
@@ -784,6 +792,25 @@ bp-id-2         bp-version-2
 						}.TestKpack(t, cmdFunc)
 					})
 				})
+			})
+		})
+
+		when("using the --bom flag", func() {
+			it("prints the registry image bom only", func() {
+				testhelpers.CommandTest{
+					Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+					Args:           []string{image, "-b", "1", "--bom"},
+					ExpectedOutput: "{\"some\":\"metadata\"}\n",
+				}.TestKpack(t, cmdFunc)
+			})
+
+			it("returns error when build is not successful", func() {
+				testhelpers.CommandTest{
+					Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+					Args:           []string{image, "--bom"},
+					ExpectErr:      true,
+					ExpectedOutput: "Error: build has failed or has not finished\n",
+				}.TestKpack(t, cmdFunc)
 			})
 		})
 	})
