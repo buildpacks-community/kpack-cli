@@ -1,10 +1,9 @@
 // Copyright 2020-Present VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package image_test
+package image
 
 import (
-	"github.com/pivotal/build-service-cli/pkg/commands/image"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/stretchr/testify/require"
@@ -68,7 +67,7 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 					Namespace: "some-namespace",
 				},
 				Status: v1alpha1.ImageStatus{
-					LatestBuildReason: "COMMIT",
+					LatestBuildReason: "COMMIT,BUILDPACK",
 				},
 			},
 		},
@@ -76,7 +75,7 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 
 	when("the builder filter is specified", func() {
 		it("filters images", func() {
-			imgs := image.Filter(images, []string{"builder=some-builder"})
+			imgs := filterImageList(images, []string{"builder=some-builder"})
 			require.Len(t, imgs.Items, 1)
 			require.Equal(t, "test-image-1", imgs.Items[0].ObjectMeta.Name)
 		})
@@ -84,7 +83,7 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 
 	when("the clusterbuilder filter is specified", func() {
 		it("filters images", func() {
-			imgs := image.Filter(images, []string{"clusterbuilder=some-cluster-builder"})
+			imgs := filterImageList(images, []string{"clusterbuilder=some-cluster-builder"})
 			require.Len(t, imgs.Items, 1)
 			require.Equal(t, "test-image-2", imgs.Items[0].ObjectMeta.Name)
 		})
@@ -92,7 +91,7 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 
 	when("the status filter is specified", func() {
 		it("filters images", func() {
-			imgs := image.Filter(images, []string{"ready=true,some-other-status"})
+			imgs := filterImageList(images, []string{"ready=true,some-other-status"})
 			require.Len(t, imgs.Items, 1)
 			require.Equal(t, "test-image-3", imgs.Items[0].ObjectMeta.Name)
 		})
@@ -100,7 +99,7 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 
 	when("the latest-reason filter is specified", func() {
 		it("filters images", func() {
-			imgs := image.Filter(images, []string{"latest-reason=commit,some-other-build-reason"})
+			imgs := filterImageList(images, []string{"latest-reason=commit,some-other-build-reason"})
 			require.Len(t, imgs.Items, 1)
 			require.Equal(t, "test-image-4", imgs.Items[0].ObjectMeta.Name)
 		})
@@ -143,7 +142,7 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 
 	when("multiple filters are specified", func() {
 		it("filters images matching all criteria", func() {
-			imgs := image.Filter(imagesWithSameBuilder, []string{"builder=some-builder", "latest-reason=commit"})
+			imgs := filterImageList(imagesWithSameBuilder, []string{"builder=some-builder", "latest-reason=commit"})
 			require.Len(t, imgs.Items, 1)
 			require.Equal(t, "test-image-1", imgs.Items[0].ObjectMeta.Name)
 		})
