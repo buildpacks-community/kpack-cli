@@ -29,7 +29,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 		Example: `kp image list
 kp image list -A
 kp image list -n my-namespace
-kp image list --filter ready=true`,
+kp image list --filter ready=true --filter latest-reason=commit,trigger`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet(namespace)
 			if err != nil {
@@ -49,7 +49,7 @@ kp image list --filter ready=true`,
 				return err
 			}
 
-			imageList = Filter(imageList, filters)
+			imageList = filterImageList(imageList, filters)
 
 			if len(imageList.Items) == 0 {
 				return errors.New("no images found")
@@ -63,13 +63,13 @@ kp image list --filter ready=true`,
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().BoolVarP(&allNamespaces, "all-namespaces", "A", false, "Return objects found in all namespaces")
 	cmd.Flags().StringArrayVar(&filters, "filter", nil,
-		`Each new filter argument requires an additoinal filter flag.
+		`Each new filter argument requires an additional filter flag.
 Multiple values can be provided using comma separation.
 Supported filters and values:
-builder=string
-clusterbuilder=string
-latest-reason=commit, trigger, config, stack, buildpack
-ready=true, false, unknown`)
+  builder=string
+  clusterbuilder=string
+  latest-reason=commit, trigger, config, stack, buildpack
+  ready=true, false, unknown`)
 
 	return cmd
 }
