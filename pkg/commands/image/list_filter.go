@@ -1,6 +1,7 @@
 package image
 
 import (
+	"fmt"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"regexp"
@@ -14,10 +15,14 @@ type filter struct {
 	values     []string
 }
 
-func filterImageList(images *v1alpha1.ImageList, flags []string) *v1alpha1.ImageList {
-	filters := parseFilters(flags)
+func filterImageList(images *v1alpha1.ImageList, flags []string) (*v1alpha1.ImageList, error) {
+	filters, err := parseFilters(flags)
+	if err != nil {
+		return nil, err
+	}
+
 	if len(filters) == 0 {
-		return images
+		return images, nil
 	}
 
 	var filteredItems []v1alpha1.Image
@@ -28,16 +33,16 @@ func filterImageList(images *v1alpha1.ImageList, flags []string) *v1alpha1.Image
 	}
 
 	images.Items = filteredItems
-	return images
+	return images, nil
 }
 
-func parseFilters(flags []string) []filter {
+func parseFilters(flags []string) ([]filter, error) {
 	var (
 		filters             []filter
-		builderRegex        = regexp.MustCompile(`^builder=(.*)$`)
-		clusterBuilderRegex = regexp.MustCompile(`^clusterbuilder=(.*)$`)
-		latestReasonRegex   = regexp.MustCompile(`^latest-reason=(.*)$`)
-		statusRegex         = regexp.MustCompile(`^ready=(.*)$`)
+		builderRegex        = regexp.MustCompile(`^builder=(.+)$`)
+		clusterBuilderRegex = regexp.MustCompile(`^clusterbuilder=(.+)$`)
+		latestReasonRegex   = regexp.MustCompile(`^latest-reason=(.+)$`)
+		statusRegex         = regexp.MustCompile(`^ready=(.+)$`)
 	)
 
 	for _, flag := range flags {
@@ -46,6 +51,7 @@ func parseFilters(flags []string) []filter {
 			filters = append(filters, filter{values: m[1:], filterFunc: func(image v1alpha1.Image, values []string) bool {
 				return image.Spec.Builder.Kind == v1alpha1.BuilderKind && image.Spec.Builder.Name == values[0]
 			}})
+			continue
 		}
 
 		m = clusterBuilderRegex.FindStringSubmatch(flag)
@@ -53,20 +59,25 @@ func parseFilters(flags []string) []filter {
 			filters = append(filters, filter{values: m[1:], filterFunc: func(image v1alpha1.Image, values []string) bool {
 				return image.Spec.Builder.Kind == v1alpha1.ClusterBuilderKind && image.Spec.Builder.Name == values[0]
 			}})
+			continue
 		}
 
 		m = latestReasonRegex.FindStringSubmatch(flag)
 		if len(m) == 2 {
 			filters = append(filters, filter{values: strings.Split(m[1], ","), filterFunc: matchesLatestReason})
+			continue
 		}
 
 		m = statusRegex.FindStringSubmatch(flag)
 		if len(m) == 2 {
 			filters = append(filters, filter{values: strings.Split(m[1], ","), filterFunc: matchesStatus})
+			continue
 		}
+
+		return nil, fmt.Errorf(`invalid filter argument "%s"`, flag)
 	}
 
-	return filters
+	return filters, nil
 }
 
 func matchesAll(image v1alpha1.Image, fs []filter) bool {
