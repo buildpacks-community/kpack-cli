@@ -75,7 +75,9 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 
 	when("the builder filter is specified", func() {
 		it("filters images", func() {
-			imgs := filterImageList(images, []string{"builder=some-builder"})
+			imgs, err := filterImageList(images, []string{"builder=some-builder"})
+			require.NoError(t, err)
+
 			require.Len(t, imgs.Items, 1)
 			require.Equal(t, "test-image-1", imgs.Items[0].ObjectMeta.Name)
 		})
@@ -83,7 +85,9 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 
 	when("the clusterbuilder filter is specified", func() {
 		it("filters images", func() {
-			imgs := filterImageList(images, []string{"clusterbuilder=some-cluster-builder"})
+			imgs, err := filterImageList(images, []string{"clusterbuilder=some-cluster-builder"})
+			require.NoError(t, err)
+
 			require.Len(t, imgs.Items, 1)
 			require.Equal(t, "test-image-2", imgs.Items[0].ObjectMeta.Name)
 		})
@@ -91,7 +95,9 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 
 	when("the status filter is specified", func() {
 		it("filters images", func() {
-			imgs := filterImageList(images, []string{"ready=true,some-other-status"})
+			imgs, err := filterImageList(images, []string{"ready=true,some-other-status"})
+			require.NoError(t, err)
+
 			require.Len(t, imgs.Items, 1)
 			require.Equal(t, "test-image-3", imgs.Items[0].ObjectMeta.Name)
 		})
@@ -99,7 +105,9 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 
 	when("the latest-reason filter is specified", func() {
 		it("filters images", func() {
-			imgs := filterImageList(images, []string{"latest-reason=commit,some-other-build-reason"})
+			imgs, err := filterImageList(images, []string{"latest-reason=commit,some-other-build-reason"})
+			require.NoError(t, err)
+
 			require.Len(t, imgs.Items, 1)
 			require.Equal(t, "test-image-4", imgs.Items[0].ObjectMeta.Name)
 		})
@@ -142,9 +150,18 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 
 	when("multiple filters are specified", func() {
 		it("filters images matching all criteria", func() {
-			imgs := filterImageList(imagesWithSameBuilder, []string{"builder=some-builder", "latest-reason=commit"})
+			imgs, err := filterImageList(imagesWithSameBuilder, []string{"builder=some-builder", "latest-reason=commit"})
+			require.NoError(t, err)
+
 			require.Len(t, imgs.Items, 1)
 			require.Equal(t, "test-image-1", imgs.Items[0].ObjectMeta.Name)
+		})
+	})
+
+	when("an invalid filter is specified", func() {
+		it("returns a helpful error message", func() {
+			_, err := filterImageList(imagesWithSameBuilder, []string{"some-invalid-filter=some-value"})
+			require.Error(t, err, "invalid filter argument \"some-invalid-filter=some-value\"")
 		})
 	})
 

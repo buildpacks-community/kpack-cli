@@ -49,7 +49,10 @@ kp image list --filter ready=true --filter latest-reason=commit,trigger`,
 				return err
 			}
 
-			imageList = filterImageList(imageList, filters)
+			imageList, err = filterImageList(imageList, filters)
+			if err != nil {
+				return err
+			}
 
 			if len(imageList.Items) == 0 {
 				return errors.New("no images found")
