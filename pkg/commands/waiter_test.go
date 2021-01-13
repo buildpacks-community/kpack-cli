@@ -2,10 +2,11 @@ package commands
 
 import (
 	"errors"
+	"testing"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"knative.dev/pkg/kmeta"
-	"testing"
 
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/assert"
@@ -33,9 +34,6 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 		dynamicClient       = dynamicfake.NewSimpleDynamicClient(scheme.Scheme)
 		waiter              = NewWaiter(dynamicClient)
 	)
-
-	it.Before(func() {
-	})
 
 	when("Wait", func() {
 		var resourceToWatch *v1alpha1.Builder
@@ -124,7 +122,7 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				Status:                  conditionReady(corev1.ConditionTrue, generation),
 			}
 
-			assert.NoError(t, waiter.Wait(cbToWatch))
+			assert.NoError(t, waiter.BuilderWait(cbToWatch, storeGeneration, stackGeneration))
 		})
 
 		it("returns an error when resource has failed", func() {
@@ -134,10 +132,10 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				Status:                  conditionReady(corev1.ConditionFalse, generation),
 			}
 
-			assert.EqualError(t, waiter.Wait(cbToWatch), "ClusterBuilder \"some-name\" not ready: some-message")
+			assert.EqualError(t, waiter.BuilderWait(cbToWatch, storeGeneration, stackGeneration), "ClusterBuilder \"some-name\" not ready: some-message")
 		})
 
-		it("waits for the correct generation", func() {
+		it("waits for the correct generations", func() {
 			cbToWatch.Status = v1alpha1.BuilderStatus{
 				ObservedStoreGeneration: storeGeneration - 1,
 				ObservedStackGeneration: stackGeneration - 1,
@@ -156,6 +154,16 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			})
+
+			assert.NoError(t, waiter.BuilderWait(cbToWatch, storeGeneration, stackGeneration))
+		})
+
+		it("returns no error when observedStack/Store generation is 0 (is not supported)", func() {
+			cbToWatch.Status = v1alpha1.BuilderStatus{
+				ObservedStoreGeneration: 0,
+				ObservedStackGeneration: 0,
+				Status:                  conditionReady(corev1.ConditionTrue, generation),
+			}
 
 			assert.NoError(t, waiter.BuilderWait(cbToWatch, storeGeneration, stackGeneration))
 		})

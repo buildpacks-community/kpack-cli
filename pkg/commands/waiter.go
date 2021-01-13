@@ -145,9 +145,10 @@ func builderHasResolved(builderGeneration, expectedStoreGen, expectedStackGen in
 			return false, err
 		}
 
+
 		if b.Status.ObservedGeneration < builderGeneration ||
-			b.Status.ObservedStoreGeneration < expectedStoreGen ||
-			b.Status.ObservedStackGeneration < expectedStackGen {
+			(b.Status.ObservedStoreGeneration != 0 && b.Status.ObservedStoreGeneration < expectedStoreGen) || // ObservedStoreGeneration is 0 when kpack does not support it
+			(b.Status.ObservedStackGeneration != 0 && b.Status.ObservedStackGeneration < expectedStackGen) {  // ObservedStackGeneration is 0 when kpack does not support it
 			return false, nil // still waiting on update
 		}
 
