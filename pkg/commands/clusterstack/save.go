@@ -31,8 +31,8 @@ Additionally, your cluster must have read access to the registry.
 
 The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
-		Example: `kp clusterstack create my-stack --build-image my-registry.com/build --run-image my-registry.com/run
-kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
+		Example: `kp clusterstack save my-stack --build-image my-registry.com/build --run-image my-registry.com/run
+kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
