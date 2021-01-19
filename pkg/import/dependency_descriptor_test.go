@@ -106,11 +106,27 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
-		when("the default cb does not exist", func() {
-			desc.DefaultClusterStack = "does-not-exist"
+		when("there is no default clusterstack", func() {
+			desc.DefaultClusterStack = ""
+
+			it("validates successfully", func() {
+				require.NoError(t, desc.Validate())
+			})
+		})
+
+		when("the default clusterbuilder does not exist", func() {
+			desc.DefaultClusterBuilder = "does-not-exist"
 
 			it("fails validation", func() {
 				require.Error(t, desc.Validate())
+			})
+		})
+
+		when("there is no default clusterbuilder", func() {
+			desc.DefaultClusterBuilder = ""
+
+			it("validates successfully", func() {
+				require.NoError(t, desc.Validate())
 			})
 		})
 

@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const CurrentAPIVersion = "kp.kpack.io/v1alpha2"
+const CurrentAPIVersion = "kp.kpack.io/v1alpha3"
 
 type API struct {
 	Version string `yaml:"apiVersion" json:"apiVersion"`
@@ -81,7 +81,7 @@ func (d DependencyDescriptor) Validate() error {
 		}
 	}
 
-	if _, ok := stackSet[d.DefaultClusterStack]; !ok {
+	if _, ok := stackSet[d.DefaultClusterStack]; !ok && d.DefaultClusterStack != "" {
 		return errors.Errorf("default cluster stack '%s' not found", d.DefaultClusterStack)
 	}
 
@@ -101,7 +101,7 @@ func (d DependencyDescriptor) Validate() error {
 		}
 	}
 
-	if _, ok := ccbSet[d.DefaultClusterBuilder]; !ok {
+	if _, ok := ccbSet[d.DefaultClusterBuilder]; !ok && d.DefaultClusterBuilder != "" {
 		return errors.Errorf("default cluster builder '%s' not found", d.DefaultClusterBuilder)
 	}
 
