@@ -611,7 +611,7 @@ Imported resources
 			Args: []string{
 				"-f", "./testdata/invalid-deps.yaml",
 			},
-			ExpectedOutput: "Error: did not find expected apiVersion, must be one of: [kp.kpack.io/v1alpha1 kp.kpack.io/v1alpha2]\n",
+			ExpectedOutput: "Error: did not find expected apiVersion, must be one of: [kp.kpack.io/v1alpha1 kp.kpack.io/v1alpha3]\n",
 			ExpectErr:      true,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})

@@ -1,4 +1,4 @@
-apiVersion: kp.kpack.io/v1alpha2
+apiVersion: kp.kpack.io/v1alpha3
 kind: DependencyDescriptor
 defaultClusterBuilder: clusterbuilder-name
 defaultClusterStack: stack-name
