@@ -106,7 +106,6 @@ func testBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 		}.TestKpack(t, cmdFunc)
 		require.Len(t, fakeWaiter.WaitCalls, 1)
-		require.Equal(t, fakeWaiter.WaitCalls[0], expectedBuilder)
 	})
 
 	it("creates a Builder with the default namespace, store, and stack", func() {

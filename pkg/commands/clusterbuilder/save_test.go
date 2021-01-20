@@ -121,7 +121,6 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
 			require.Len(t, fakeCBWaiter.WaitCalls, 1)
-			require.Equal(t, fakeCBWaiter.WaitCalls[0], builder)
 		})
 
 		it("creates a ClusterBuilder with the default stack", func() {

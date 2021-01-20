@@ -241,21 +241,9 @@ Imported resources
 					defaultBuilder,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
-			require.Len(t, fakeWaiter.WaitCalls, 3)
-			require.Equal(t, fakeWaiter.WaitCalls[0], store)
-			require.Equal(t, fakeWaiter.WaitCalls[1], stack)
-			require.Equal(t, fakeWaiter.WaitCalls[2], defaultStack)
-			require.Len(t, fakeWaiter.BuilderWaitCalls, 2)
-			require.Equal(t, fakeWaiter.BuilderWaitCalls[0], commandsfakes.BuilderWaitCall{
-				Object:    builder,
-				CStoreGen: 0,
-				CStackGen: 0,
-			})
-			require.Equal(t, fakeWaiter.BuilderWaitCalls[1], commandsfakes.BuilderWaitCall{
-				Object:    defaultBuilder,
-				CStoreGen: 0,
-				CStackGen: 0,
-			})
+			require.Len(t, fakeWaiter.WaitCalls, 5)
+			require.Len(t, fakeWaiter.WaitCalls[3].ExtraChecks, 1) // ClusterBuilder has extra check
+			require.Len(t, fakeWaiter.WaitCalls[4].ExtraChecks, 1) // ClusterBuilder has extra check
 		})
 
 		it("creates stores, stacks, and cbs defined in the dependency descriptor for version 1", func() {
@@ -481,18 +469,9 @@ Imported resources
 						{Object: expectedDefaultBuilder},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
-				require.Len(t, fakeWaiter.WaitCalls, 3)
-				require.Len(t, fakeWaiter.BuilderWaitCalls, 2)
-				require.Equal(t, fakeWaiter.BuilderWaitCalls[0], commandsfakes.BuilderWaitCall{
-					Object:    expectedBuilder,
-					CStoreGen: 12,
-					CStackGen: 13,
-				})
-				require.Equal(t, fakeWaiter.BuilderWaitCalls[1], commandsfakes.BuilderWaitCall{
-					Object:    expectedDefaultBuilder,
-					CStoreGen: 12,
-					CStackGen: 13,
-				})
+				require.Len(t, fakeWaiter.WaitCalls, 5)
+				require.Len(t, fakeWaiter.WaitCalls[3].ExtraChecks, 1) // ClusterBuilder has extra check
+				require.Len(t, fakeWaiter.WaitCalls[4].ExtraChecks, 1) // ClusterBuilder has extra check
 			})
 
 			it("does not error when original resource annotation is nil", func() {
@@ -992,7 +971,6 @@ Imported resources (dry run)
 				ExpectedOutput: expectedOutput,
 			}.TestK8sAndKpack(t, cmdFunc)
 			require.Len(t, fakeWaiter.WaitCalls, 0)
-			require.Len(t, fakeWaiter.BuilderWaitCalls, 0)
 		})
 
 		when("output flag is used", func() {

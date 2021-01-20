@@ -169,12 +169,13 @@ func (i *importer) importClusterBuilders(clusterBuilders []importpkg.ClusterBuil
 			return err
 		}
 
+		waitCondition := builderHasResolved(storeToGen[newCB.Spec.Store.Name], stackToGen[newCB.Spec.Stack.Name])
 		if k8serrors.IsNotFound(err) {
 			if !i.commandHelper.IsDryRun() {
 				if newCB, err = i.client.KpackV1alpha1().ClusterBuilders().Create(newCB); err != nil {
 					return err
 				}
-				if err := i.waiter.BuilderWait(newCB, storeToGen[newCB.Spec.Store.Name], stackToGen[newCB.Spec.Stack.Name]); err != nil {
+				if err := i.waiter.Wait(newCB, waitCondition); err != nil {
 					return err
 				}
 			}
@@ -188,7 +189,7 @@ func (i *importer) importClusterBuilders(clusterBuilders []importpkg.ClusterBuil
 				if updateCB, err = i.client.KpackV1alpha1().ClusterBuilders().Update(updateCB); err != nil {
 					return err
 				}
-				if err := i.waiter.BuilderWait(updateCB, storeToGen[newCB.Spec.Store.Name], stackToGen[newCB.Spec.Stack.Name]); err != nil {
+				if err := i.waiter.Wait(updateCB, waitCondition); err != nil {
 					return err
 				}
 			}

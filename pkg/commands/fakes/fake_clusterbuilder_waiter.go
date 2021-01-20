@@ -5,28 +5,22 @@ package fakes
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"
+	watchTools "k8s.io/client-go/tools/watch"
 )
 
-type BuilderWaitCall struct {
-	Object               runtime.Object
-	CStoreGen, CStackGen int64
+type WaitCall struct {
+	Object      runtime.Object
+	ExtraChecks []watchTools.ConditionFunc
 }
 
 type FakeWaiter struct {
-	WaitCalls        []runtime.Object
-	BuilderWaitCalls []BuilderWaitCall
+	WaitCalls []WaitCall
 }
 
-func (f *FakeWaiter) Wait(ob runtime.Object) error {
-	f.WaitCalls = append(f.WaitCalls, ob)
-	return nil
-}
-
-func (f *FakeWaiter) BuilderWait(ob runtime.Object, cStoreGen, cStackgen int64) error {
-	f.BuilderWaitCalls = append(f.BuilderWaitCalls, BuilderWaitCall{
-		Object:    ob,
-		CStoreGen: cStoreGen,
-		CStackGen: cStackgen,
+func (f *FakeWaiter) Wait(ob runtime.Object, checks ...watchTools.ConditionFunc) error {
+	f.WaitCalls = append(f.WaitCalls, WaitCall{
+		Object:      ob,
+		ExtraChecks: checks,
 	})
 	return nil
 }

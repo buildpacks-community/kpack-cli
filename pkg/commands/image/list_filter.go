@@ -2,12 +2,12 @@ package image
 
 import (
 	"fmt"
-	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	"regexp"
 	"strings"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type filter struct {

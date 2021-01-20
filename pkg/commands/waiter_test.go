@@ -4,19 +4,17 @@ import (
 	"errors"
 	"testing"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
-	"knative.dev/pkg/kmeta"
-
-	"github.com/sclevine/spec"
-	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/watch"
-	dynamicfake "k8s.io/client-go/dynamic/fake"
-	clientgotesting "k8s.io/client-go/testing"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	"github.com/sclevine/spec"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
+	dynamicfake "k8s.io/client-go/dynamic/fake"
+	"k8s.io/client-go/kubernetes/scheme"
+	clientgotesting "k8s.io/client-go/testing"
+	"knative.dev/pkg/kmeta"
 )
 
 func TestWaiter(t *testing.T) {
@@ -62,7 +60,7 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				Status: conditionReady(corev1.ConditionTrue, generation),
 			}
 
-			assert.NoError(t, waiter.Wait(resourceToWatch))
+			require.NoError(t, waiter.Wait(resourceToWatch))
 		})
 
 		it("returns an error when resource is already failed", func() {
@@ -70,7 +68,7 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				Status: conditionReady(corev1.ConditionFalse, generation),
 			}
 
-			assert.EqualError(t, waiter.Wait(resourceToWatch), "Builder \"some-name\" not ready: some-message")
+			require.EqualError(t, waiter.Wait(resourceToWatch), "Builder \"some-name\" not ready: some-message")
 		})
 
 		it("waits for the correct generation", func() {
@@ -87,87 +85,38 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				},
 			})
 
-			assert.NoError(t, waiter.Wait(resourceToWatch))
-		})
-	})
-
-	when("BuilderWait", func() {
-		var (
-			cbToWatch       *v1alpha1.ClusterBuilder
-			storeGeneration int64 = 2
-			stackGeneration int64 = 2
-		)
-
-		it.Before(func() {
-			cbToWatch = &v1alpha1.ClusterBuilder{
-				TypeMeta: v1.TypeMeta{
-					Kind: "ClusterBuilder",
-				},
-				ObjectMeta: v1.ObjectMeta{
-					Name:            "some-name",
-					ResourceVersion: "1",
-				},
-			}
-			watcher = &TestWatcher{
-				events:           make(chan watch.Event, 100),
-				expectedResource: cbToWatch,
-			}
-			dynamicClient.PrependWatchReactor("clusterbuilders", watcher.watchReactor)
+			require.NoError(t, waiter.Wait(resourceToWatch))
 		})
 
-		it("returns no error when resource is ready", func() {
-			cbToWatch.Status = v1alpha1.BuilderStatus{
-				ObservedStoreGeneration: storeGeneration,
-				ObservedStackGeneration: stackGeneration,
-				Status:                  conditionReady(corev1.ConditionTrue, generation),
-			}
-
-			assert.NoError(t, waiter.BuilderWait(cbToWatch, storeGeneration, stackGeneration))
-		})
-
-		it("returns an error when resource has failed", func() {
-			cbToWatch.Status = v1alpha1.BuilderStatus{
-				ObservedStoreGeneration: storeGeneration,
-				ObservedStackGeneration: stackGeneration,
-				Status:                  conditionReady(corev1.ConditionFalse, generation),
-			}
-
-			assert.EqualError(t, waiter.BuilderWait(cbToWatch, storeGeneration, stackGeneration), "ClusterBuilder \"some-name\" not ready: some-message")
-		})
-
-		it("waits for the correct generations", func() {
-			cbToWatch.Status = v1alpha1.BuilderStatus{
-				ObservedStoreGeneration: storeGeneration - 1,
-				ObservedStackGeneration: stackGeneration - 1,
-				Status:                  conditionReady(corev1.ConditionFalse, generation-1),
+		it("runs extra condition checks", func() {
+			fakeConditionChecker := fakeConditionChecker{}
+			resourceToWatch.Status = v1alpha1.BuilderStatus{
+				Status: conditionReady(corev1.ConditionFalse, generation-1),
 			}
 
 			watcher.addEvent(watch.Event{
 				Type: watch.Modified,
 				Object: &v1alpha1.Builder{
-					TypeMeta:   cbToWatch.TypeMeta,
-					ObjectMeta: cbToWatch.ObjectMeta,
-					Status: v1alpha1.BuilderStatus{
-						ObservedStoreGeneration: storeGeneration,
-						ObservedStackGeneration: stackGeneration,
-						Status:                  conditionReady(corev1.ConditionTrue, generation),
-					},
+					TypeMeta:   resourceToWatch.TypeMeta,
+					ObjectMeta: resourceToWatch.ObjectMeta,
+					Status:     v1alpha1.BuilderStatus{Status: conditionReady(corev1.ConditionTrue, generation)},
 				},
 			})
 
-			assert.NoError(t, waiter.BuilderWait(cbToWatch, storeGeneration, stackGeneration))
-		})
-
-		it("returns no error when observedStack/Store generation is 0 (is not supported)", func() {
-			cbToWatch.Status = v1alpha1.BuilderStatus{
-				ObservedStoreGeneration: 0,
-				ObservedStackGeneration: 0,
-				Status:                  conditionReady(corev1.ConditionTrue, generation),
-			}
-
-			assert.NoError(t, waiter.BuilderWait(cbToWatch, storeGeneration, stackGeneration))
+			require.NoError(t, waiter.Wait(resourceToWatch, fakeConditionChecker.conditionCheck))
+			require.True(t, fakeConditionChecker.called)
 		})
 	})
+}
+
+type fakeConditionChecker struct {
+	called bool
+}
+
+func (cc *fakeConditionChecker) conditionCheck(_ watch.Event) (bool, error) {
+	cc.called = true
+	return true, nil
+
 }
 
 func conditionReady(status corev1.ConditionStatus, generation int64) corev1alpha1.Status {
