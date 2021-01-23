@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	stackLabel    = "io.buildpacks.stack.id"
-	metadataLabel = "io.buildpacks.buildpackage.metadata"
+	stackLabel                = "io.buildpacks.stack.id"
+	buildpackageMetadataLabel = "io.buildpacks.buildpackage.metadata"
+	lifecycleMetadataLabel    = "io.buildpacks.lifecycle.metadata"
 )
 
 type Fetcher struct {
@@ -38,6 +39,11 @@ type BuildpackImgInfo struct {
 	ImageInfo
 }
 
+type LifecycleInfo struct {
+	Metadata string
+	ImageInfo
+}
+
 func NewStackImagesFetcher(i ...StackInfo) *Fetcher {
 	fetcher := Fetcher{}
 	fetcher.AddStackImages(i...)
@@ -47,6 +53,12 @@ func NewStackImagesFetcher(i ...StackInfo) *Fetcher {
 func NewBuildpackImagesFetcher(i ...BuildpackImgInfo) *Fetcher {
 	fetcher := Fetcher{}
 	fetcher.AddBuildpackImages(i...)
+	return &fetcher
+}
+
+func NewLifecycleImageFetcher(i ...LifecycleInfo) *Fetcher {
+	fetcher := Fetcher{}
+	fetcher.AddLifecycleImages(i...)
 	return &fetcher
 }
 
@@ -71,7 +83,7 @@ func (f *Fetcher) AddBuildpackImages(infos ...BuildpackImgInfo) {
 	images := f.getImages()
 	for _, i := range infos {
 		metadata := fmt.Sprintf("{\"id\":%q}", i.Id)
-		images[i.Ref] = NewFakeLabeledImage(metadataLabel, metadata, i.Digest)
+		images[i.Ref] = NewFakeLabeledImage(buildpackageMetadataLabel, metadata, i.Digest)
 	}
 }
 
@@ -80,6 +92,13 @@ func (f *Fetcher) AddStackImages(infos ...StackInfo) {
 	for _, i := range infos {
 		images[i.BuildImg.Ref] = NewFakeLabeledImage(stackLabel, i.StackID, i.BuildImg.Digest)
 		images[i.RunImg.Ref] = NewFakeLabeledImage(stackLabel, i.StackID, i.RunImg.Digest)
+	}
+}
+
+func (f *Fetcher) AddLifecycleImages(infos ...LifecycleInfo) {
+	images := f.getImages()
+	for _, i := range infos {
+		images[i.Ref] = NewFakeLabeledImage(lifecycleMetadataLabel, i.Metadata, i.Digest)
 	}
 }
 

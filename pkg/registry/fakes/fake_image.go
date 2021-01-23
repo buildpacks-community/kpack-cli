@@ -10,6 +10,15 @@ type FakeImage struct {
 	digest v1.Hash
 }
 
+func NewFakeImage(digest string) FakeImage {
+	return FakeImage{
+		digest: v1.Hash{
+			Algorithm: "sha256",
+			Hex:       digest,
+		},
+	}
+}
+
 func NewFakeLabeledImage(label, labelValue, digest string) FakeImage {
 	return FakeImage{
 		labels: map[string]string{
