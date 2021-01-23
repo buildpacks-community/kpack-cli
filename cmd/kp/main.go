@@ -20,6 +20,7 @@ import (
 	clusterstorecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
 	importcmds "github.com/pivotal/build-service-cli/pkg/commands/import"
+	"github.com/pivotal/build-service-cli/pkg/commands/lifecycle"
 	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
@@ -54,6 +55,7 @@ Learn more about kpack @ https://github.com/pivotal/kpack`,
 		getBuilderCommand(clientSetProvider),
 		getStackCommand(clientSetProvider),
 		getStoreCommand(clientSetProvider),
+		getLifecycleCommand(clientSetProvider),
 		getImportCommand(clientSetProvider),
 		getCompletionCommand(),
 	)
@@ -205,6 +207,17 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	return storeRootCommand
+}
+
+func getLifecycleCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	lifecycleRootCommand := &cobra.Command{
+		Use:     "lifecycle",
+		Short:   "Lifecycle Commands",
+	}
+	lifecycleRootCommand.AddCommand(
+		lifecycle.NewUpdateCommand(clientSetProvider, registry.DefaultUtilProvider{}),
+	)
+	return lifecycleRootCommand
 }
 
 func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
