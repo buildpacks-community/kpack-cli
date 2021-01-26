@@ -36,16 +36,18 @@ type importer struct {
 	timestampProvider TimestampProvider
 	commandHelper     *commands.CommandHelper
 	objs              []runtime.Object
+	waiter            commands.ResourceWaiter
 }
 
 func (i *importer) objects() []runtime.Object {
 	return i.objs
 }
 
-func (i *importer) importClusterStores(clusterStores []importpkg.ClusterStore, factory *clusterstore.Factory) error {
+func (i *importer) importClusterStores(clusterStores []importpkg.ClusterStore, factory *clusterstore.Factory) (map[string]int64, error) {
+	storeToGen := map[string]int64{}
 	for _, store := range clusterStores {
 		if err := i.commandHelper.PrintStatus("Importing ClusterStore '%s'...", store.Name); err != nil {
-			return err
+			return nil, err
 		}
 
 		var buildpackages []string
@@ -55,65 +57,78 @@ func (i *importer) importClusterStores(clusterStores []importpkg.ClusterStore, f
 
 		curStore, err := i.client.KpackV1alpha1().ClusterStores().Get(store.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
+			return nil, err
 		}
 
 		if k8serrors.IsNotFound(err) {
 			newStore, err := factory.MakeStore(store.Name, buildpackages...)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			newStore.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
 			if !i.commandHelper.IsDryRun() {
 				if newStore, err = i.client.KpackV1alpha1().ClusterStores().Create(newStore); err != nil {
-					return err
+					return nil, err
 				}
+				if err := i.waiter.Wait(newStore); err != nil {
+					return nil, err
+				}
+				storeToGen[newStore.Name] = newStore.Generation
 			}
 			i.trackObj(newStore)
 		} else {
 			updatedStore, _, err := factory.AddToStore(curStore, buildpackages...)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
-			curStore.Annotations = k8s.MergeAnnotations(curStore.Annotations, map[string]string{importTimestampKey: i.timestampProvider.GetTimestamp()})
+			updatedStore.Annotations = k8s.MergeAnnotations(updatedStore.Annotations, map[string]string{importTimestampKey: i.timestampProvider.GetTimestamp()})
 
 			if !i.commandHelper.IsDryRun() {
 				if updatedStore, err = i.client.KpackV1alpha1().ClusterStores().Update(updatedStore); err != nil {
-					return err
+					return nil, err
 				}
+				if err := i.waiter.Wait(updatedStore); err != nil {
+					return nil, err
+				}
+				storeToGen[updatedStore.Name] = updatedStore.Generation
 			}
 			i.trackObj(updatedStore)
 		}
 	}
-	return nil
+	return storeToGen, nil
 }
 
-func (i *importer) importClusterStacks(clusterStacks []importpkg.ClusterStack, factory *clusterstack.Factory) error {
+func (i *importer) importClusterStacks(clusterStacks []importpkg.ClusterStack, factory *clusterstack.Factory) (map[string]int64, error) {
+	stackToGen := map[string]int64{}
 	for _, stack := range clusterStacks {
 		if err := i.commandHelper.PrintStatus("Importing ClusterStack '%s'...", stack.Name); err != nil {
-			return err
+			return nil, err
 		}
 
 		newStack, err := factory.MakeStack(stack.Name, stack.BuildImage.Image, stack.RunImage.Image)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		newStack.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
 		curStack, err := i.client.KpackV1alpha1().ClusterStacks().Get(stack.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
+			return nil, err
 		}
 
 		if k8serrors.IsNotFound(err) {
 			if !i.commandHelper.IsDryRun() {
 				if newStack, err = i.client.KpackV1alpha1().ClusterStacks().Create(newStack); err != nil {
-					return err
+					return nil, err
 				}
+				if err := i.waiter.Wait(newStack); err != nil {
+					return nil, err
+				}
+				stackToGen[newStack.Name] = newStack.Generation
 			}
 			i.trackObj(newStack)
 		} else {
@@ -123,47 +138,58 @@ func (i *importer) importClusterStacks(clusterStacks []importpkg.ClusterStack, f
 
 			if !i.commandHelper.IsDryRun() {
 				if updateStack, err = i.client.KpackV1alpha1().ClusterStacks().Update(updateStack); err != nil {
-					return err
+					return nil, err
 				}
+				if err := i.waiter.Wait(updateStack); err != nil {
+					return nil, err
+				}
+				stackToGen[updateStack.Name] = updateStack.Generation
 			}
 			i.trackObj(updateStack)
 		}
 	}
-	return nil
+	return stackToGen, nil
 }
 
-func (i *importer) importClusterBuilders(clusterBuilders []importpkg.ClusterBuilder, repository string, sa string) error {
-	for _, ccb := range clusterBuilders {
-		if err := i.commandHelper.PrintStatus("Importing ClusterBuilder '%s'...", ccb.Name); err != nil {
+func (i *importer) importClusterBuilders(clusterBuilders []importpkg.ClusterBuilder, repository, sa string, storeToGen, stackToGen map[string]int64) error {
+	for _, cb := range clusterBuilders {
+		if err := i.commandHelper.PrintStatus("Importing ClusterBuilder '%s'...", cb.Name); err != nil {
 			return err
 		}
 
-		newCB, err := i.makeClusterBuilder(ccb, repository, sa)
+		newCB, err := makeClusterBuilder(cb, repository, sa)
 		if err != nil {
 			return err
 		}
 
 		newCB.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
-		curCCB, err := i.client.KpackV1alpha1().ClusterBuilders().Get(ccb.Name, metav1.GetOptions{})
+		curCB, err := i.client.KpackV1alpha1().ClusterBuilders().Get(cb.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
 
+		waitCondition := builderHasResolved(storeToGen[newCB.Spec.Store.Name], stackToGen[newCB.Spec.Stack.Name])
 		if k8serrors.IsNotFound(err) {
 			if !i.commandHelper.IsDryRun() {
 				if newCB, err = i.client.KpackV1alpha1().ClusterBuilders().Create(newCB); err != nil {
 					return err
 				}
+				if err := i.waiter.Wait(newCB, waitCondition); err != nil {
+					return err
+				}
 			}
 			i.trackObj(newCB)
 		} else {
-			updateCB := curCCB.DeepCopy()
+			updateCB := curCB.DeepCopy()
 			updateCB.Spec = newCB.Spec
 			updateCB.Annotations = k8s.MergeAnnotations(updateCB.Annotations, newCB.Annotations)
 
 			if !i.commandHelper.IsDryRun() {
 				if updateCB, err = i.client.KpackV1alpha1().ClusterBuilders().Update(updateCB); err != nil {
+					return err
+				}
+				if err := i.waiter.Wait(updateCB, waitCondition); err != nil {
 					return err
 				}
 			}
@@ -177,8 +203,8 @@ func (i *importer) trackObj(obj runtime.Object) {
 	i.objs = append(i.objs, obj)
 }
 
-func (i importer) makeClusterBuilder(ccb importpkg.ClusterBuilder, repository string, sa string) (*v1alpha1.ClusterBuilder, error) {
-	newCCB := &v1alpha1.ClusterBuilder{
+func makeClusterBuilder(ccb importpkg.ClusterBuilder, repository string, sa string) (*v1alpha1.ClusterBuilder, error) {
+	newCB := &v1alpha1.ClusterBuilder{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       v1alpha1.ClusterBuilderKind,
 			APIVersion: "kpack.io/v1alpha1",
@@ -204,17 +230,17 @@ func (i importer) makeClusterBuilder(ccb importpkg.ClusterBuilder, repository st
 	}
 
 	if sa != "" {
-		newCCB.Spec.ServiceAccountRef = corev1.ObjectReference{
+		newCB.Spec.ServiceAccountRef = corev1.ObjectReference{
 			Namespace: importNamespace,
 			Name:      sa,
 		}
 	}
 
-	marshal, err := json.Marshal(newCCB)
+	marshal, err := json.Marshal(newCB)
 	if err != nil {
 		return nil, err
 	}
-	newCCB.Annotations[kubectlLastAppliedConfig] = string(marshal)
+	newCB.Annotations[kubectlLastAppliedConfig] = string(marshal)
 
-	return newCCB, nil
+	return newCB, nil
 }

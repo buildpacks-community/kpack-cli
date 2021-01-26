@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
@@ -16,7 +17,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewAddCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
+func NewAddCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		buildpackages []string
 		tlsCfg        registry.TLSConfig
@@ -57,12 +58,12 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			factory, err := newClusterStoreFactory(cs, ch, rup, tlsCfg)
+			factory, err := clusterstore.NewFactory(cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
-			return update(store, buildpackages, factory, ch, cs)
+			return update(store, buildpackages, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -72,7 +73,7 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 	return cmd
 }
 
-func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) error {
+func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
 	if err := ch.PrintStatus("Adding to ClusterStore..."); err != nil {
 		return err
 	}
@@ -85,6 +86,9 @@ func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clust
 	if storeUpdated && !ch.IsDryRun() {
 		updatedStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(updatedStore)
 		if err != nil {
+			return err
+		}
+		if err := w.Wait(updatedStore); err != nil {
 			return err
 		}
 	}

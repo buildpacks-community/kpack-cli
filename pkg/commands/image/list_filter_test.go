@@ -4,14 +4,14 @@
 package image
 
 import (
+	"testing"
+
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
-
-	"github.com/sclevine/spec"
 )
 
 func TestFilter(t *testing.T) {
@@ -28,8 +28,8 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 				},
 				Spec: v1alpha1.ImageSpec{
 					Builder: corev1.ObjectReference{
-						Kind:            v1alpha1.BuilderKind,
-						Name:            "some-builder",
+						Kind: v1alpha1.BuilderKind,
+						Name: "some-builder",
 					},
 				},
 			},
@@ -40,8 +40,8 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 				},
 				Spec: v1alpha1.ImageSpec{
 					Builder: corev1.ObjectReference{
-						Kind:            v1alpha1.ClusterBuilderKind,
-						Name:            "some-cluster-builder",
+						Kind: v1alpha1.ClusterBuilderKind,
+						Name: "some-cluster-builder",
 					},
 				},
 			},
@@ -122,8 +122,8 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 				},
 				Spec: v1alpha1.ImageSpec{
 					Builder: corev1.ObjectReference{
-						Kind:            v1alpha1.BuilderKind,
-						Name:            "some-builder",
+						Kind: v1alpha1.BuilderKind,
+						Name: "some-builder",
 					},
 				},
 				Status: v1alpha1.ImageStatus{
@@ -137,8 +137,8 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 				},
 				Spec: v1alpha1.ImageSpec{
 					Builder: corev1.ObjectReference{
-						Kind:            v1alpha1.BuilderKind,
-						Name:            "some-builder",
+						Kind: v1alpha1.BuilderKind,
+						Name: "some-builder",
 					},
 				},
 				Status: v1alpha1.ImageStatus{

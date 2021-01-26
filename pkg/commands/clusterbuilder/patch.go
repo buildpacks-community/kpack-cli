@@ -9,14 +9,16 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
+
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 
 	"github.com/pivotal/build-service-cli/pkg/builder"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 )
 
-func NewPatchCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		flags CommandFlags
 	)
@@ -51,7 +53,7 @@ kp cb patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpac
 				return err
 			}
 
-			return patch(cb, flags, ch, cs)
+			return patch(cb, flags, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -64,7 +66,7 @@ kp cb patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpac
 	return cmd
 }
 
-func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet) error {
+func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, waiter commands.ResourceWaiter) error {
 	patchedCb := cb.DeepCopy()
 
 	if flags.tag != "" {
@@ -105,6 +107,9 @@ func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.Command
 	if hasPatch && !ch.IsDryRun() {
 		patchedCb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Patch(patchedCb.Name, types.MergePatchType, patch)
 		if err != nil {
+			return err
+		}
+		if err := waiter.Wait(patchedCb); err != nil {
 			return err
 		}
 	}

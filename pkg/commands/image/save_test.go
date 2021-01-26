@@ -16,8 +16,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	cmdFakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
-	"github.com/pivotal/build-service-cli/pkg/image/fakes"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
@@ -35,7 +35,7 @@ func testImageSaveCommand(t *testing.T, when spec.G, it spec.S) {
 
 	const defaultNamespace = "some-default-namespace"
 
-	fakeImageWaiter := &fakes.FakeImageWaiter{}
+	fakeImageWaiter := &cmdFakes.FakeImageWaiter{}
 
 	when("creating", func() {
 		cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {

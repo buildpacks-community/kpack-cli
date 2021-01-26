@@ -146,9 +146,9 @@ func getClusterBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Co
 		Aliases: []string{"clusterbuilders", "clstrbldrs", "clstrbldr", "cbldrs", "cbldr", "cbs", "cb"},
 	}
 	clusterBuilderRootCmd.AddCommand(
-		clusterbuildercmds.NewCreateCommand(clientSetProvider),
-		clusterbuildercmds.NewPatchCommand(clientSetProvider),
-		clusterbuildercmds.NewSaveCommand(clientSetProvider),
+		clusterbuildercmds.NewCreateCommand(clientSetProvider, commands.NewResourceWaiter),
+		clusterbuildercmds.NewPatchCommand(clientSetProvider, commands.NewResourceWaiter),
+		clusterbuildercmds.NewSaveCommand(clientSetProvider, commands.NewResourceWaiter),
 		clusterbuildercmds.NewListCommand(clientSetProvider),
 		clusterbuildercmds.NewStatusCommand(clientSetProvider),
 		clusterbuildercmds.NewDeleteCommand(clientSetProvider),
@@ -163,9 +163,9 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Aliases: []string{"builders", "bldrs", "bldr"},
 	}
 	builderRootCmd.AddCommand(
-		buildercmds.NewCreateCommand(clientSetProvider),
-		buildercmds.NewPatchCommand(clientSetProvider),
-		buildercmds.NewSaveCommand(clientSetProvider),
+		buildercmds.NewCreateCommand(clientSetProvider, commands.NewResourceWaiter),
+		buildercmds.NewPatchCommand(clientSetProvider, commands.NewResourceWaiter),
+		buildercmds.NewSaveCommand(clientSetProvider, commands.NewResourceWaiter),
 		buildercmds.NewListCommand(clientSetProvider),
 		buildercmds.NewDeleteCommand(clientSetProvider),
 		buildercmds.NewStatusCommand(clientSetProvider),
@@ -180,9 +180,9 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short:   "ClusterStack Commands",
 	}
 	stackRootCmd.AddCommand(
-		clusterstackcmds.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}),
-		clusterstackcmds.NewUpdateCommand(clientSetProvider, registry.DefaultUtilProvider{}),
-		clusterstackcmds.NewSaveCommand(clientSetProvider, registry.DefaultUtilProvider{}),
+		clusterstackcmds.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterstackcmds.NewUpdateCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterstackcmds.NewSaveCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
 		clusterstackcmds.NewListCommand(clientSetProvider),
 		clusterstackcmds.NewStatusCommand(clientSetProvider),
 		clusterstackcmds.NewDeleteCommand(clientSetProvider),
@@ -197,12 +197,12 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short:   "ClusterStore Commands",
 	}
 	storeRootCommand.AddCommand(
-		clusterstorecmds.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}),
-		clusterstorecmds.NewAddCommand(clientSetProvider, registry.DefaultUtilProvider{}),
-		clusterstorecmds.NewSaveCommand(clientSetProvider, registry.DefaultUtilProvider{}),
+		clusterstorecmds.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterstorecmds.NewAddCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterstorecmds.NewSaveCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
 		clusterstorecmds.NewDeleteCommand(clientSetProvider, commands.NewConfirmationProvider()),
 		clusterstorecmds.NewStatusCommand(clientSetProvider),
-		clusterstorecmds.NewRemoveCommand(clientSetProvider),
+		clusterstorecmds.NewRemoveCommand(clientSetProvider, commands.NewResourceWaiter),
 		clusterstorecmds.NewListCommand(clientSetProvider),
 	)
 
@@ -221,13 +221,13 @@ func getLifecycleCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command
 }
 
 func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
-
 	return importcmds.NewImportCommand(
 		commands.Differ{},
 		clientSetProvider,
 		registry.DefaultUtilProvider{},
 		importpkg.DefaultTimestampProvider(),
 		commands.NewConfirmationProvider(),
+		commands.NewResourceWaiter,
 	)
 }
 

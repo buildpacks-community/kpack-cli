@@ -10,6 +10,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"github.com/pkg/errors"
+	"k8s.io/client-go/dynamic"
 	k8s "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -18,9 +19,10 @@ import (
 )
 
 type ClientSet struct {
-	KpackClient kpack.Interface
-	K8sClient   k8s.Interface
-	Namespace   string
+	KpackClient   kpack.Interface
+	K8sClient     k8s.Interface
+	DynamicClient dynamic.Interface
+	Namespace     string
 }
 
 type ClientSetProvider interface {
@@ -46,6 +48,10 @@ func (d DefaultClientSetProvider) GetClientSet(namespace string) (ClientSet, err
 		return d.clientSet, err
 	}
 
+	if d.clientSet.DynamicClient, err = d.getDynamicClient(); err != nil {
+		return d.clientSet, err
+	}
+
 	d.clientSet.K8sClient, err = d.getK8sClient()
 	return d.clientSet, err
 }
@@ -66,6 +72,15 @@ func (d DefaultClientSetProvider) getK8sClient() (*k8s.Clientset, error) {
 	}
 
 	return k8s.NewForConfig(restConfig)
+}
+
+func (d DefaultClientSetProvider) getDynamicClient() (dynamic.Interface, error) {
+	restConfig, err := d.restConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return dynamic.NewForConfig(restConfig)
 }
 
 func (d DefaultClientSetProvider) restConfig() (*rest.Config, error) {

@@ -7,13 +7,15 @@ import (
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 
+	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
-func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
+func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		buildpackages []string
 		tlsCfg        registry.TLSConfig
@@ -41,6 +43,8 @@ kp clusterstore save my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
+			w := newWaiter(cs.DynamicClient)
+
 			ch, err := commands.NewCommandHelper(cmd)
 			if err != nil {
 				return err
@@ -48,19 +52,19 @@ kp clusterstore save my-store -b ../path/to/my-local-buildpackage.cnb`,
 
 			name := args[0]
 
-			factory, err := newClusterStoreFactory(cs, ch, rup, tlsCfg)
+			factory, err := clusterstore.NewFactory(cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
 			clusterStore, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(name, v1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return create(name, buildpackages, factory, ch, cs)
+				return create(name, buildpackages, factory, ch, cs, w)
 			} else if err != nil {
 				return err
 			}
 
-			return update(clusterStore, buildpackages, factory, ch, cs)
+			return update(clusterStore, buildpackages, factory, ch, cs, w)
 		},
 	}
 

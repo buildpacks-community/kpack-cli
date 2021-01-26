@@ -5,15 +5,15 @@ package clusterstack
 
 import (
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
-	"github.com/pivotal/build-service-cli/pkg/stackimage"
 )
 
-func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
+func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -46,13 +46,13 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			factory, err := newClusterStackFactory(cs, ch, rup, tlsCfg)
+			factory, err := clusterstack.NewFactory(cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
-			return create(name, buildImageRef, runImageRef, factory, ch, cs)
+			return create(name, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
@@ -64,24 +64,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func newClusterStackFactory(cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*clusterstack.Factory, error) {
-	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
-	if err != nil {
-		return nil, err
-	}
-
-	return &clusterstack.Factory{
-		Uploader: &stackimage.Uploader{
-			Fetcher:   rup.Fetcher(),
-			Relocator: rup.Relocator(ch.CanChangeState()),
-		},
-		Printer:    ch,
-		TLSConfig:  tlsCfg,
-		Repository: repo,
-	}, nil
-}
-
-func create(name, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (err error) {
+func create(name, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
 	if err = ch.PrintStatus("Creating ClusterStack..."); err != nil {
 		return err
 	}
@@ -94,6 +77,9 @@ func create(name, buildImageRef, runImageRef string, factory *clusterstack.Facto
 	if !ch.IsDryRun() {
 		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Create(stack)
 		if err != nil {
+			return err
+		}
+		if err := w.Wait(stack); err != nil {
 			return err
 		}
 	}

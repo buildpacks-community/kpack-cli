@@ -6,18 +6,21 @@ package clusterstack_test
 import (
 	"testing"
 
-	clientgotesting "k8s.io/client-go/testing"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
+	clientgotesting "k8s.io/client-go/testing"
 
-	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
+	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
+	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
@@ -45,9 +48,13 @@ func testSaveCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
+	fakeWaiter := &commandsfakes.FakeWaiter{}
+
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-		return clusterstackcmds.NewSaveCommand(clientSetProvider, fakeRegistryUtilProvider)
+		return clusterstack.NewSaveCommand(clientSetProvider, fakeRegistryUtilProvider, func(dynamic.Interface) commands.ResourceWaiter {
+			return fakeWaiter
+		})
 	}
 
 	when("creating", func() {
@@ -104,6 +111,7 @@ ClusterStack "stack-name" created
 					expectedStack,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 1)
 		})
 
 		it("fails when kp-config configmap is not found", func() {
@@ -251,6 +259,7 @@ Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
 ClusterStack "stack-name" created (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
+				require.Len(t, fakeWaiter.WaitCalls, 0)
 			})
 
 			when("output flag is used", func() {
@@ -410,10 +419,25 @@ Uploading to 'canonical-registry.io/canonical-repo'... (dry run with image uploa
 
 		cmdFunc := func(k8sClientSet *k8sfakes.Clientset, kpackClientSet *kpackfakes.Clientset) *cobra.Command {
 			clientSetProvider := testhelpers.GetFakeClusterProvider(k8sClientSet, kpackClientSet)
-			return clusterstackcmds.NewUpdateCommand(clientSetProvider, fakeRegistryUtilProvider)
+			return clusterstack.NewUpdateCommand(clientSetProvider, fakeRegistryUtilProvider, func(dynamic.Interface) commands.ResourceWaiter {
+				return fakeWaiter
+			})
 		}
 
 		it("updates the stack id, run image, and build image", func() {
+			expectedStack := &v1alpha1.ClusterStack{
+				ObjectMeta: stack.ObjectMeta,
+				Spec: v1alpha1.ClusterStackSpec{
+					Id: "stack-id",
+					BuildImage: v1alpha1.ClusterStackSpecImage{
+						Image: "canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest",
+					},
+					RunImage: v1alpha1.ClusterStackSpecImage{
+						Image: "canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest",
+					},
+				},
+				Status: stack.Status,
+			}
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
 					config,
@@ -431,19 +455,7 @@ Uploading to 'canonical-registry.io/canonical-repo'... (dry run with image uploa
 				ExpectErr: false,
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
-						Object: &v1alpha1.ClusterStack{
-							ObjectMeta: stack.ObjectMeta,
-							Spec: v1alpha1.ClusterStackSpec{
-								Id: "stack-id",
-								BuildImage: v1alpha1.ClusterStackSpecImage{
-									Image: "canonical-registry.io/canonical-repo/build@sha256:new-build-image-digest",
-								},
-								RunImage: v1alpha1.ClusterStackSpecImage{
-									Image: "canonical-registry.io/canonical-repo/run@sha256:new-run-image-digest",
-								},
-							},
-							Status: stack.Status,
-						},
+						Object: expectedStack,
 					},
 				},
 				ExpectedOutput: `Updating ClusterStack...
@@ -453,6 +465,7 @@ Uploading to 'canonical-registry.io/canonical-repo'...
 ClusterStack "stack-name" updated
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 1)
 		})
 
 		it("does not add stack images with the same digest", func() {
@@ -750,6 +763,7 @@ Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
 ClusterStack "stack-name" updated (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
+				require.Len(t, fakeWaiter.WaitCalls, 0)
 			})
 
 			when("output flag is used", func() {

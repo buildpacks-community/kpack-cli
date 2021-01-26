@@ -10,11 +10,15 @@ import (
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	clientgotesting "k8s.io/client-go/testing"
 
+	"github.com/pivotal/build-service-cli/pkg/commands"
 	"github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
+	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
 	"github.com/pivotal/build-service-cli/pkg/testhelpers"
 )
 
@@ -29,9 +33,13 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 		image2InStore = "some/imageinStore2@sha256:1232alreadyInStore"
 	)
 
+	fakeWaiter := &commandsfakes.FakeWaiter{}
+
 	cmdFunc := func(clientSet *kpackfakes.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
-		return clusterstore.NewRemoveCommand(clientSetProvider)
+		return clusterstore.NewRemoveCommand(clientSetProvider, func(dynamic.Interface) commands.ResourceWaiter {
+			return fakeWaiter
+		})
 	}
 
 	store := &v1alpha1.ClusterStore{
@@ -102,6 +110,7 @@ Removing buildpackage some-buildpackage@1.2.3
 ClusterStore "some-store" updated
 `,
 		}.TestKpack(t, cmdFunc)
+		require.Len(t, fakeWaiter.WaitCalls, 1)
 	})
 
 	it("removes multiple buildpackages from the store", func() {
@@ -300,6 +309,7 @@ Removing buildpackage some-buildpackage@1.2.3
 ClusterStore "some-store" updated (dry run)
 `,
 			}.TestKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 0)
 		})
 
 		it("errors when the provided store does not exist", func() {

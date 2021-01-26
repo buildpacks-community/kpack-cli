@@ -10,6 +10,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/commands"
@@ -25,7 +26,7 @@ type ImageRelocator interface {
 	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
 }
 
-func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
+func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -59,12 +60,12 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			factory, err := newClusterStackFactory(cs, ch, rup, tlsCfg)
+			factory, err := clusterstack.NewFactory(cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
-			return update(stack, buildImageRef, runImageRef, factory, ch, cs)
+			return update(stack, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -77,7 +78,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func update(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) error {
+func update(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
 	if err := ch.PrintStatus("Updating ClusterStack..."); err != nil {
 		return err
 	}
@@ -90,6 +91,9 @@ func update(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string, fac
 	if hasUpdates && !ch.IsDryRun() {
 		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(stack)
 		if err != nil {
+			return err
+		}
+		if err := w.Wait(stack); err != nil {
 			return err
 		}
 	}
