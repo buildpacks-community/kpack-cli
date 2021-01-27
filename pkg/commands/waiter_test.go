@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
@@ -30,7 +31,7 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 		watcher       *TestWatcher
 		generation    int64 = 2
 		dynamicClient       = dynamicfake.NewSimpleDynamicClient(scheme.Scheme)
-		waiter              = NewWaiter(dynamicClient)
+		waiter              = NewWaiter(dynamicClient, 2*time.Second)
 	)
 
 	when("Wait", func() {
@@ -150,20 +151,24 @@ func (t *TestWatcher) ResultChan() <-chan watch.Event {
 
 func (t *TestWatcher) watchReactor(action clientgotesting.Action) (handled bool, ret watch.Interface, err error) {
 	if t.expectedResource == nil {
-		return false, nil, errors.New("test watcher must be configured with an expected resource to be used")
+		return true, nil, errors.New("test watcher must be configured with an expected resource to be used")
 	}
 
 	watchAction := action.(clientgotesting.WatchAction)
 	if watchAction.GetWatchRestrictions().ResourceVersion != t.expectedResource.GetObjectMeta().GetResourceVersion() {
-		return false, nil, errors.New("expected watch on resource version")
+		return true, nil, errors.New("expected watch on resource version")
+	}
+
+	if watchAction.GetNamespace() != t.expectedResource.GetObjectMeta().GetNamespace() {
+		return true, nil, errors.New("expected watch on namespace")
 	}
 
 	match, found := watchAction.GetWatchRestrictions().Fields.RequiresExactMatch("metadata.name")
 	if !found {
-		return false, nil, errors.New("expected watch on name")
+		return true, nil, errors.New("expected watch on name")
 	}
 	if match != t.expectedResource.GetObjectMeta().GetName() {
-		return false, nil, errors.New("expected watch on name")
+		return true, nil, errors.New("expected watch on name")
 	}
 
 	return true, t, nil
