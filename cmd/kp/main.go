@@ -211,8 +211,8 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 func getLifecycleCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	lifecycleRootCommand := &cobra.Command{
-		Use:     "lifecycle",
-		Short:   "Lifecycle Commands",
+		Use:   "lifecycle",
+		Short: "Lifecycle Commands",
 	}
 	lifecycleRootCommand.AddCommand(
 		lifecycle.NewUpdateCommand(clientSetProvider, registry.DefaultUtilProvider{}),

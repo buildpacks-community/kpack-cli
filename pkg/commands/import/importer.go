@@ -19,6 +19,8 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/lifecycle"
+	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 const (
@@ -41,6 +43,26 @@ type importer struct {
 
 func (i *importer) objects() []runtime.Object {
 	return i.objs
+}
+
+type ImageUpdater interface {
+	UpdateImage(srcImgStr string, tlsCfg registry.TLSConfig, hooks ...lifecycle.PreUpdateHook) (*corev1.ConfigMap, error)
+}
+
+func (i *importer) importLifecycle(srcImageTag string, cfg lifecycle.ImageUpdaterConfig) error {
+	if err := i.commandHelper.PrintStatus("Importing Lifecycle..."); err != nil {
+		return err
+	}
+
+	configMap, err := lifecycle.UpdateImage(srcImageTag, cfg, func(configMap *corev1.ConfigMap) {
+		configMap.Annotations = k8s.MergeAnnotations(configMap.Annotations, map[string]string{importTimestampKey: i.timestampProvider.GetTimestamp()})
+	})
+	if err != nil {
+		return err
+	}
+
+	i.trackObj(configMap)
+	return nil
 }
 
 func (i *importer) importClusterStores(clusterStores []importpkg.ClusterStore, factory *clusterstore.Factory) (map[string]int64, error) {

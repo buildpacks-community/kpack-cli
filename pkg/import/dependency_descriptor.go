@@ -20,18 +20,21 @@ type DependencyDescriptor struct {
 	Kind                  string           `yaml:"kind"`
 	DefaultClusterStack   string           `yaml:"defaultClusterStack"`
 	DefaultClusterBuilder string           `yaml:"defaultClusterBuilder"`
+	Lifecycle             Lifecycle        `yaml:"lifecycle"`
 	ClusterStores         []ClusterStore   `yaml:"clusterStores"`
 	ClusterStacks         []ClusterStack   `yaml:"clusterStacks"`
 	ClusterBuilders       []ClusterBuilder `yaml:"clusterBuilders"`
 }
 
+type Source struct {
+	Image string `yaml:"image"`
+}
+
+type Lifecycle Source
+
 type ClusterStore struct {
 	Name    string   `yaml:"name"`
 	Sources []Source `yaml:"sources"`
-}
-
-type Source struct {
-	Image string `yaml:"image"`
 }
 
 type ClusterStack struct {
@@ -106,6 +109,14 @@ func (d DependencyDescriptor) Validate() error {
 	}
 
 	return nil
+}
+
+func (d DependencyDescriptor) GetLifecycleImage() string {
+	return d.Lifecycle.Image
+}
+
+func (d DependencyDescriptor) HasLifecycleImage() bool {
+	return d.Lifecycle.Image != ""
 }
 
 func (d DependencyDescriptor) GetClusterStacks() []ClusterStack {
