@@ -27,26 +27,27 @@ type ResourceWaiter interface {
 }
 
 func NewResourceWaiter(dc dynamic.Interface) ResourceWaiter {
-	return NewWaiter(dc)
+	return NewWaiter(dc, defaultWaitTimeout)
 }
 
 type Waiter struct {
 	dynamicClient dynamic.Interface
+	timeout       time.Duration
 }
 
-func NewWaiter(dc dynamic.Interface) *Waiter {
-	return &Waiter{dynamicClient: dc}
+func NewWaiter(dc dynamic.Interface, timeout time.Duration) *Waiter {
+	return &Waiter{dynamicClient: dc, timeout: timeout}
 }
 
-func (i *Waiter) Wait(ob runtime.Object, extraConditions ...watchTools.ConditionFunc) error {
+func (w *Waiter) Wait(ob runtime.Object, extraConditions ...watchTools.ConditionFunc) error {
 	m, ok := ob.(kmeta.OwnerRefable)
 	if !ok {
 		return errors.New("unexpected type")
 	}
-	return i.wait(ob, hasResolved(m.GetObjectMeta().GetGeneration()), extraConditions...)
+	return w.wait(ob, hasResolved(m.GetObjectMeta().GetGeneration()), extraConditions...)
 }
 
-func (i *Waiter) wait(ob runtime.Object, condition watchTools.ConditionFunc, extraConditions ...watchTools.ConditionFunc) error {
+func (w *Waiter) wait(ob runtime.Object, condition watchTools.ConditionFunc, extraConditions ...watchTools.ConditionFunc) error {
 	e := &watch.Event{Object: ob}
 	cfs := append([]watchTools.ConditionFunc{condition}, extraConditions...)
 	done, err := runChecks(*e, cfs)
@@ -61,11 +62,11 @@ func (i *Waiter) wait(ob runtime.Object, condition watchTools.ConditionFunc, ext
 		}
 
 		rv := refable.GetObjectMeta().GetResourceVersion()
-		w := newWatchOneWatcher(refable, i.dynamicClient)
+		watchOne := newWatchOneWatcher(refable, w.dynamicClient)
 
-		ctx, cancel := context.WithTimeout(context.Background(), defaultWaitTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), w.timeout)
 		defer cancel()
-		e, err = watchTools.Until(ctx, rv, w, filterErrors(cfs)...)
+		e, err = watchTools.Until(ctx, rv, watchOne, filterErrors(cfs)...)
 		if err != nil {
 			return err
 		}
@@ -142,8 +143,9 @@ type watchOneWatcher struct {
 
 func newWatchOneWatcher(object kmeta.OwnerRefable, client dynamic.Interface) watchOneWatcher {
 	name := object.GetObjectMeta().GetName()
+	namespace := object.GetObjectMeta().GetNamespace()
 	gvr, _ := meta.UnsafeGuessKindToResource(object.GetGroupVersionKind())
-	return watchOneWatcher{name: name, gvr: gvr, dynamicClient: client}
+	return watchOneWatcher{name: name, namespace: namespace, gvr: gvr, dynamicClient: client}
 }
 
 func (w watchOneWatcher) Watch(options metav1.ListOptions) (watch.Interface, error) {
