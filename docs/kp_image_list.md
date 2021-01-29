@@ -16,14 +16,24 @@ kp image list [flags]
 
 ```
 kp image list
+kp image list -A
 kp image list -n my-namespace
+kp image list --filter ready=true --filter latest-reason=commit,trigger
 ```
 
 ### Options
 
 ```
-  -h, --help               help for list
-  -n, --namespace string   kubernetes namespace
+  -A, --all-namespaces       Return objects found in all namespaces
+      --filter stringArray   Each new filter argument requires an additional filter flag.
+                             Multiple values can be provided using comma separation.
+                             Supported filters and values:
+                               builder=string
+                               clusterbuilder=string
+                               latest-reason=commit, trigger, config, stack, buildpack
+                               ready=true, false, unknown
+  -h, --help                 help for list
+  -n, --namespace string     kubernetes namespace
 ```
 
 ### SEE ALSO

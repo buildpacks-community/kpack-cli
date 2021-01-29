@@ -20,8 +20,8 @@ kp clusterstack save <name> [flags]
 ### Examples
 
 ```
-kp clusterstack create my-stack --build-image my-registry.com/build --run-image my-registry.com/run
-kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar
+kp clusterstack save my-stack --build-image my-registry.com/build --run-image my-registry.com/run
+kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar
 ```
 
 ### Options

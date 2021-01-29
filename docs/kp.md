@@ -26,6 +26,7 @@ Learn more about kpack @ https://github.com/pivotal/kpack
 * [kp completion](kp_completion.md)	 - Generate completion script
 * [kp image](kp_image.md)	 - Image commands
 * [kp import](kp_import.md)	 - Import dependencies for stores, stacks, and cluster builders
+* [kp lifecycle](kp_lifecycle.md)	 - Lifecycle Commands
 * [kp secret](kp_secret.md)	 - Secret Commands
 * [kp version](kp_version.md)	 - Display kp version
 
