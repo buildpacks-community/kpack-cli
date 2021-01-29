@@ -35,7 +35,13 @@ func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 	cmd := &cobra.Command{
 		Use:     "update --image <image-tag>",
 		Short:   "Update lifecycle image used by kpack",
-		Long:    "Update lifecycle image used by kpack",
+		Long:    `Update lifecycle image used by kpack
+
+The Lifecycle image will be uploaded to the canonical repository.
+Therefore, you must have credentials to access the registry on your machine.
+
+The canonical repository is read from the "canonical.repository" key of the "kp-config" ConfigMap within "kpack" namespace.
+`,
 		Example: "kp lifecycle update --image my-registry.com/lifecycle",
 		Args: commands.ExactArgsWithUsage(0),
 		SilenceUsage: true,
@@ -59,7 +65,7 @@ func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&image, "image", "i", "", "lifecycle image")
+	cmd.Flags().StringVarP(&image, "image", "i", "", "location of the image")
 	commands.SetTLSFlags(cmd, &tlsCfg)
 	return cmd
 }
