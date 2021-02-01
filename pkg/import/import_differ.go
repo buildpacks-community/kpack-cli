@@ -27,6 +27,10 @@ type ImportDiffer struct {
 	StackRefGetter StackRefGetter
 }
 
+func (id *ImportDiffer) DiffLifecycle(oldImg string, newImg string) (string, error) {
+	return id.Differ.Diff(oldImg, newImg)
+}
+
 func (id *ImportDiffer) DiffClusterStore(oldCS *v1alpha1.ClusterStore, newCS ClusterStore) (string, error) {
 	type void struct{}
 	newBPs := map[string]void{}

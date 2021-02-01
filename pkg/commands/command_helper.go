@@ -224,6 +224,7 @@ func getTypeToGVKLookup() map[reflect.Type]schema.GroupVersionKind {
 	return map[reflect.Type]schema.GroupVersionKind{
 		reflect.TypeOf(&v1.Secret{}):               v1GV.WithKind("Secret"),
 		reflect.TypeOf(&v1.ServiceAccount{}):       v1GV.WithKind("ServiceAccount"),
+		reflect.TypeOf(&v1.ConfigMap{}):            v1GV.WithKind("ConfigMap"),
 		reflect.TypeOf(&v1alpha1.Image{}):          buildGV.WithKind("Image"),
 		reflect.TypeOf(&v1alpha1.Builder{}):        buildGV.WithKind(v1alpha1.BuilderKind),
 		reflect.TypeOf(&v1alpha1.ClusterStack{}):   buildGV.WithKind(v1alpha1.ClusterStackKind),

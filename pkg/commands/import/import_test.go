@@ -28,6 +28,7 @@ func TestImportCommand(t *testing.T) {
 
 func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
+		lifecycleImageKey  = "image"
 		importTimestampKey = "kpack.io/import-timestamp"
 	)
 
@@ -37,6 +38,23 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		FakeFetcher:   fakeFetcher,
 		FakeRelocator: fakeRelocator,
 	}
+
+	fakeFetcher.AddLifecycleImages(
+		registryfakes.LifecycleInfo{
+			Metadata: "value-not-validated-by-cli",
+			ImageInfo: registryfakes.ImageInfo{
+				Ref:    "some-registry.io/repo/lifecycle-image",
+				Digest: "lifecycle-image-digest",
+			},
+		},
+		registryfakes.LifecycleInfo{
+			Metadata: "value-not-validated-by-cli",
+			ImageInfo: registryfakes.ImageInfo{
+				Ref:    "some-registry.io/repo/another-lifecycle-image",
+				Digest: "another-lifecycle-image-digest",
+			},
+		},
+	)
 
 	fakeFetcher.AddStackImages(
 		registryfakes.StackInfo{
@@ -80,7 +98,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	)
 
-	config := &corev1.ConfigMap{
+	kpConfig := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kp-config",
 			Namespace: "kpack",
@@ -91,7 +109,20 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
+	lifecycleImageConfig := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "lifecycle-image",
+			Namespace:   "kpack",
+			Annotations: map[string]string{},
+		},
+		Data: map[string]string{},
+	}
+
 	timestampProvider := FakeTimestampProvider{timestamp: "2006-01-02T15:04:05Z"}
+
+	expectedLifecycleImageConfig := lifecycleImageConfig.DeepCopy()
+	expectedLifecycleImageConfig.Annotations[importTimestampKey] = timestampProvider.timestamp
+	expectedLifecycleImageConfig.Data["image"] = "canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest"
 
 	store := &v1alpha1.ClusterStore{
 		TypeMeta: metav1.TypeMeta{
@@ -212,14 +243,17 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
-					config,
+					kpConfig,
+					lifecycleImageConfig,
 				},
 				Args: []string{
 					"-f", "./testdata/deps.yaml",
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectedOutput: `Importing ClusterStore 'store-name'...
+				ExpectedOutput: `Importing Lifecycle...
+	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+Importing ClusterStore 'store-name'...
 	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
 Importing ClusterStack 'stack-name'...
 Uploading to 'canonical-registry.io/canonical-repo'...
@@ -240,6 +274,11 @@ Imported resources
 					builder,
 					defaultBuilder,
 				},
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedLifecycleImageConfig,
+					},
+				},
 			}.TestK8sAndKpack(t, cmdFunc)
 			require.Len(t, fakeWaiter.WaitCalls, 5)
 			require.Len(t, fakeWaiter.WaitCalls[3].ExtraChecks, 1) // ClusterBuilder has extra check
@@ -252,7 +291,8 @@ Imported resources
 
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
-					config,
+					kpConfig,
+					lifecycleImageConfig,
 				},
 				Args: []string{
 					"-f", "./testdata/v1-deps.yaml",
@@ -290,13 +330,18 @@ Imported resources
 
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
-						config,
+						kpConfig,
+						lifecycleImageConfig,
 					},
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 						"--show-changes",
 					},
 					ExpectedOutput: `Changes
+
+Lifecycle
+
+some-diff
 
 ClusterStores
 
@@ -315,6 +360,8 @@ some-diff
 some-diff
 
 
+Importing Lifecycle...
+	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
 Importing ClusterStore 'store-name'...
 	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
 Importing ClusterStack 'stack-name'...
@@ -335,6 +382,11 @@ Imported resources
 						defaultStack,
 						builder,
 						defaultBuilder,
+					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedLifecycleImageConfig,
+						},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 				require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("Confirm with y:"))
@@ -346,7 +398,8 @@ Imported resources
 
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
-						config,
+						kpConfig,
+						lifecycleImageConfig,
 					},
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
@@ -354,6 +407,10 @@ Imported resources
 						"--force",
 					},
 					ExpectedOutput: `Changes
+
+Lifecycle
+
+some-diff
 
 ClusterStores
 
@@ -372,6 +429,8 @@ some-diff
 some-diff
 
 
+Importing Lifecycle...
+	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
 Importing ClusterStore 'store-name'...
 	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
 Importing ClusterStack 'stack-name'...
@@ -393,6 +452,11 @@ Imported resources
 						builder,
 						defaultBuilder,
 					},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedLifecycleImageConfig,
+						},
+					},
 				}.TestK8sAndKpack(t, cmdFunc)
 				require.Equal(t, false, fakeConfirmationProvider.WasRequested())
 			})
@@ -403,6 +467,9 @@ Imported resources
 		when("the dependency descriptor and the cluster have the exact same objs", func() {
 			const newTimestamp = "new-timestamp"
 			timestampProvider.timestamp = newTimestamp
+
+			expectedLifecycleImageConfig.Annotations[importTimestampKey] = newTimestamp
+
 			store.Generation = 12
 			expectedStore := store.DeepCopy()
 			expectedStore.Annotations[importTimestampKey] = newTimestamp
@@ -434,7 +501,8 @@ Imported resources
 
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
-						config,
+						kpConfig,
+						lifecycleImageConfig,
 					},
 					KpackObjects: []runtime.Object{
 						store,
@@ -446,7 +514,9 @@ Imported resources
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: `Importing ClusterStore 'store-name'...
+					ExpectedOutput: `Importing Lifecycle...
+	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+Importing ClusterStore 'store-name'...
 	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
 	Buildpackage already exists in the store
 Importing ClusterStack 'stack-name'...
@@ -462,6 +532,7 @@ Importing ClusterBuilder 'default'...
 Imported resources
 `,
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{Object: expectedLifecycleImageConfig},
 						{Object: expectedStore},
 						{Object: expectedStack},
 						{Object: expectedDefaultStack},
@@ -475,19 +546,22 @@ Imported resources
 			})
 
 			it("does not error when original resource annotation is nil", func() {
+				lifecycleImageConfig.Annotations = nil
 				store.Annotations = nil
 				stack.Annotations = nil
 				defaultStack.Annotations = nil
 				builder.Annotations = nil
 				defaultBuilder.Annotations = nil
 
+				expectedLifecycleImageConfig.Annotations = map[string]string{importTimestampKey: newTimestamp}
 				expectedStore.Annotations = map[string]string{importTimestampKey: newTimestamp}
 				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
-						config,
+						kpConfig,
+						lifecycleImageConfig,
 					},
 					KpackObjects: []runtime.Object{
 						store,
@@ -499,7 +573,9 @@ Imported resources
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
 					},
-					ExpectedOutput: `Importing ClusterStore 'store-name'...
+					ExpectedOutput: `Importing Lifecycle...
+	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+Importing ClusterStore 'store-name'...
 	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
 	Buildpackage already exists in the store
 Importing ClusterStack 'stack-name'...
@@ -515,6 +591,7 @@ Importing ClusterBuilder 'default'...
 Imported resources
 `,
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{Object: expectedLifecycleImageConfig},
 						{Object: expectedStore},
 						{Object: expectedStack},
 						{Object: expectedDefaultStack},
@@ -528,6 +605,9 @@ Imported resources
 		when("the dependency descriptor has different resources", func() {
 			const newTimestamp = "new-timestamp"
 			timestampProvider.timestamp = newTimestamp
+
+			expectedLifecycleImageConfig.Annotations[importTimestampKey] = newTimestamp
+			expectedLifecycleImageConfig.Data[lifecycleImageKey] = "canonical-registry.io/canonical-repo/lifecycle@sha256:another-lifecycle-image-digest"
 
 			expectedStore := store.DeepCopy()
 			expectedStore.Annotations[importTimestampKey] = newTimestamp
@@ -581,7 +661,8 @@ Imported resources
 			it("creates stores, stacks, and cbs defined in the dependency descriptor and updates the timestamp", func() {
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
-						config,
+						kpConfig,
+						lifecycleImageConfig,
 					},
 					KpackObjects: []runtime.Object{
 						store,
@@ -593,7 +674,9 @@ Imported resources
 					Args: []string{
 						"-f", "./testdata/updated-deps.yaml",
 					},
-					ExpectedOutput: `Importing ClusterStore 'store-name'...
+					ExpectedOutput: `Importing Lifecycle...
+	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:another-lifecycle-image-digest'
+Importing ClusterStore 'store-name'...
 	Uploading 'canonical-registry.io/canonical-repo/another-buildpack-id@sha256:another-buildpack-image-digest'
 	Added Buildpackage
 Importing ClusterStack 'stack-name'...
@@ -609,6 +692,7 @@ Importing ClusterBuilder 'default'...
 Imported resources
 `,
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{Object: expectedLifecycleImageConfig},
 						{Object: expectedStore},
 						{Object: expectedStack},
 						{Object: expectedDefaultStack},
@@ -632,7 +716,9 @@ Imported resources
 	})
 
 	when("output flag is used", func() {
-		const expectedOutput = `Importing ClusterStore 'store-name'...
+		const expectedOutput = `Importing Lifecycle...
+	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+Importing ClusterStore 'store-name'...
 	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
 Importing ClusterStack 'stack-name'...
 Uploading to 'canonical-registry.io/canonical-repo'...
@@ -650,7 +736,18 @@ Importing ClusterBuilder 'default'...
 		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		it("can output in yaml format", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+			const resourceYAML = `apiVersion: v1
+data:
+  image: canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest
+kind: ConfigMap
+metadata:
+  annotations:
+    kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
+  creationTimestamp: null
+  name: lifecycle-image
+  namespace: kpack
+---
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   annotations:
@@ -750,7 +847,8 @@ status:
 
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
-					config,
+					kpConfig,
+					lifecycleImageConfig,
 				},
 				Args: []string{
 					"-f", "./testdata/deps.yaml",
@@ -765,11 +863,31 @@ status:
 					builder,
 					defaultBuilder,
 				},
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedLifecycleImageConfig,
+					},
+				},
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
 		it("can output in json format", func() {
 			const resourceJSON = `{
+    "kind": "ConfigMap",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "lifecycle-image",
+        "namespace": "kpack",
+        "creationTimestamp": null,
+        "annotations": {
+            "kpack.io/import-timestamp": "2006-01-02T15:04:05Z"
+        }
+    },
+    "data": {
+        "image": "canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest"
+    }
+}
+{
     "kind": "ClusterStore",
     "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
@@ -919,7 +1037,8 @@ status:
 
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
-					config,
+					kpConfig,
+					lifecycleImageConfig,
 				},
 				Args: []string{
 					"-f", "./testdata/deps.yaml",
@@ -934,6 +1053,11 @@ status:
 					builder,
 					defaultBuilder,
 				},
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedLifecycleImageConfig,
+					},
+				},
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 	})
@@ -945,7 +1069,9 @@ status:
 		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		it("does not create any resources and prints result with dry run indicated", func() {
-			const expectedOutput = `Importing ClusterStore 'store-name'... (dry run)
+			const expectedOutput = `Importing Lifecycle... (dry run)
+	Skipping 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+Importing ClusterStore 'store-name'... (dry run)
 	Skipping 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
 Importing ClusterStack 'stack-name'... (dry run)
 Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
@@ -962,7 +1088,8 @@ Imported resources (dry run)
 
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
-					config,
+					kpConfig,
+					lifecycleImageConfig,
 				},
 				Args: []string{
 					"-f", "./testdata/deps.yaml",
@@ -974,7 +1101,18 @@ Imported resources (dry run)
 		})
 
 		when("output flag is used", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+			const resourceYAML = `apiVersion: v1
+data:
+  image: canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest
+kind: ConfigMap
+metadata:
+  annotations:
+    kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
+  creationTimestamp: null
+  name: lifecycle-image
+  namespace: kpack
+---
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   annotations:
@@ -1072,7 +1210,9 @@ status:
   stack: {}
 `
 
-			const expectedOutput = `Importing ClusterStore 'store-name'... (dry run)
+			const expectedOutput = `Importing Lifecycle... (dry run)
+	Skipping 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+Importing ClusterStore 'store-name'... (dry run)
 	Skipping 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
 Importing ClusterStack 'stack-name'... (dry run)
 Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
@@ -1089,7 +1229,8 @@ Importing ClusterBuilder 'default'... (dry run)
 			it("does not create a Builder and prints the resource output", func() {
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
-						config,
+						kpConfig,
+						lifecycleImageConfig,
 					},
 					Args: []string{
 						"-f", "./testdata/deps.yaml",
@@ -1108,7 +1249,9 @@ Importing ClusterBuilder 'default'... (dry run)
 		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		it("does not create any resources and prints result with dry run indicated", func() {
-			const expectedOutput = `Importing ClusterStore 'store-name'... (dry run with image upload)
+			const expectedOutput = `Importing Lifecycle... (dry run with image upload)
+	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+Importing ClusterStore 'store-name'... (dry run with image upload)
 	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
 Importing ClusterStack 'stack-name'... (dry run with image upload)
 Uploading to 'canonical-registry.io/canonical-repo'... (dry run with image upload)
@@ -1125,7 +1268,8 @@ Imported resources (dry run with image upload)
 
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
-					config,
+					kpConfig,
+					lifecycleImageConfig,
 				},
 				Args: []string{
 					"-f", "./testdata/deps.yaml",
@@ -1136,7 +1280,18 @@ Imported resources (dry run with image upload)
 		})
 
 		when("output flag is used", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+			const resourceYAML = `apiVersion: v1
+data:
+  image: canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest
+kind: ConfigMap
+metadata:
+  annotations:
+    kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
+  creationTimestamp: null
+  name: lifecycle-image
+  namespace: kpack
+---
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   annotations:
@@ -1234,7 +1389,9 @@ status:
   stack: {}
 `
 
-			const expectedOutput = `Importing ClusterStore 'store-name'... (dry run with image upload)
+			const expectedOutput = `Importing Lifecycle... (dry run with image upload)
+	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+Importing ClusterStore 'store-name'... (dry run with image upload)
 	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
 Importing ClusterStack 'stack-name'... (dry run with image upload)
 Uploading to 'canonical-registry.io/canonical-repo'... (dry run with image upload)
@@ -1251,7 +1408,8 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
 			it("does not create a Builder and prints the resource output", func() {
 				testhelpers.CommandTest{
 					K8sObjects: []runtime.Object{
-						config,
+						kpConfig,
+						lifecycleImageConfig,
 					},
 					Args: []string{
 						"-f", "./testdata/deps.yaml",

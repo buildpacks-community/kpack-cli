@@ -2,6 +2,8 @@ apiVersion: kp.kpack.io/v1alpha3
 kind: DependencyDescriptor
 defaultClusterBuilder: clusterbuilder-name
 defaultClusterStack: stack-name
+lifecycle:
+  image: some-registry.io/repo/another-lifecycle-image
 clusterStores:
 - name: store-name
   sources:

@@ -7,14 +7,10 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/ghodss/yaml"
-	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/buildpackage"
@@ -23,6 +19,7 @@ import (
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/lifecycle"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 	"github.com/pivotal/build-service-cli/pkg/stackimage"
 )
@@ -94,10 +91,13 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
+			imgFetcher := rup.Fetcher()
+			imgRelocator := rup.Relocator(ch.CanChangeState())
+
 			storeFactory := &clusterstore.Factory{
 				Uploader: &buildpackage.Uploader{
-					Fetcher:   rup.Fetcher(),
-					Relocator: rup.Relocator(ch.CanChangeState()),
+					Fetcher:   imgFetcher,
+					Relocator: imgRelocator,
 				},
 				TLSConfig:  tlsConfig,
 				Repository: repository,
@@ -106,18 +106,12 @@ cat dependencies.yaml | kp import -f -`,
 
 			stackFactory := &clusterstack.Factory{
 				Uploader: &stackimage.Uploader{
-					Fetcher:   rup.Fetcher(),
-					Relocator: rup.Relocator(ch.CanChangeState()),
+					Fetcher:   imgFetcher,
+					Relocator: imgRelocator,
 				},
 				TLSConfig:  tlsConfig,
 				Repository: repository,
 				Printer:    ch,
-			}
-
-			importDiffer := &importpkg.ImportDiffer{
-				Differ:         differ,
-				StoreRefGetter: storeFactory,
-				StackRefGetter: stackFactory,
 			}
 
 			importer := importer{
@@ -128,10 +122,11 @@ cat dependencies.yaml | kp import -f -`,
 			}
 
 			if showChanges {
-				hasChanges, err := showSummary(descriptor, importDiffer, cs.KpackClient, ch)
+				hasChanges, summary, err := importpkg.SummarizeChange(descriptor, storeFactory, stackFactory, differ, cs)
 				if err != nil {
 					return err
 				}
+				ch.Printlnf(summary)
 
 				if !force {
 					confirmed, err := confirmationProvider.Confirm(confirmMsgMap[hasChanges])
@@ -142,6 +137,22 @@ cat dependencies.yaml | kp import -f -`,
 					if !confirmed {
 						return ch.Printlnf("Skipping import")
 					}
+				}
+			}
+
+			if descriptor.HasLifecycleImage() {
+				cfg := lifecycle.ImageUpdaterConfig{
+					DryRun:       ch.IsDryRun(),
+					IOWriter:     ch.Writer(),
+					ImgFetcher:   imgFetcher,
+					ImgRelocator: imgRelocator,
+					ClientSet:    cs,
+					TLSConfig:    tlsConfig,
+				}
+
+				err = importer.importLifecycle(descriptor.GetLifecycleImage(), cfg)
+				if err != nil {
+					return err
 				}
 			}
 
@@ -180,6 +191,7 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 		reader io.ReadCloser
 		err    error
 	)
+
 	if filename == "-" {
 		reader = ioutil.NopCloser(cmd.InOrStdin())
 	} else {
@@ -221,87 +233,4 @@ func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.Dep
 	}
 
 	return deps, nil
-}
-
-func showSummary(descriptor importpkg.DependencyDescriptor, importDiffer *importpkg.ImportDiffer, kClient kpack.Interface, ch *commands.CommandHelper) (hasChanges bool, err error) {
-	hasChanges = false
-	var changes strings.Builder
-	changes.WriteString("Changes\n\n")
-	changes.WriteString("ClusterStores\n\n")
-
-	var curDiff strings.Builder
-	for _, cs := range descriptor.ClusterStores {
-		curStore, err := kClient.KpackV1alpha1().ClusterStores().Get(cs.Name, metav1.GetOptions{})
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return false, err
-		}
-		if k8serrors.IsNotFound(err) {
-			curStore = nil
-		}
-
-		cStoreDiff, err := importDiffer.DiffClusterStore(curStore, cs)
-		if err != nil {
-			return false, err
-		}
-		if cStoreDiff != "" {
-			hasChanges = true
-			curDiff.WriteString(cStoreDiff + "\n\n")
-		}
-	}
-	if curDiff.String() == "" {
-		curDiff.WriteString("No Changes\n\n")
-	}
-	changes.WriteString(curDiff.String())
-
-	changes.WriteString("ClusterStacks\n\n")
-	curDiff.Reset()
-	for _, cs := range descriptor.GetClusterStacks() {
-		curStack, err := kClient.KpackV1alpha1().ClusterStacks().Get(cs.Name, metav1.GetOptions{})
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return false, err
-		}
-		if k8serrors.IsNotFound(err) {
-			curStack = nil
-		}
-
-		cStackDiff, err := importDiffer.DiffClusterStack(curStack, cs)
-		if err != nil {
-			return false, err
-		}
-		if cStackDiff != "" {
-			hasChanges = true
-			curDiff.WriteString(cStackDiff + "\n\n")
-		}
-	}
-	if curDiff.String() == "" {
-		curDiff.WriteString("No Changes\n\n")
-	}
-	changes.WriteString(curDiff.String())
-
-	changes.WriteString("ClusterBuilders\n\n")
-	curDiff.Reset()
-	for _, cb := range descriptor.GetClusterBuilders() {
-		curBuilder, err := kClient.KpackV1alpha1().ClusterBuilders().Get(cb.Name, metav1.GetOptions{})
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return false, err
-		}
-		if k8serrors.IsNotFound(err) {
-			curBuilder = nil
-		}
-
-		cBuilderDiff, err := importDiffer.DiffClusterBuilder(curBuilder, cb)
-		if err != nil {
-			return false, err
-		}
-		if cBuilderDiff != "" {
-			hasChanges = true
-			curDiff.WriteString(cBuilderDiff + "\n\n")
-		}
-	}
-	if curDiff.String() == "" {
-		curDiff.WriteString("No Changes\n\n")
-	}
-	changes.WriteString(curDiff.String())
-
-	return hasChanges, ch.Printlnf(changes.String())
 }
