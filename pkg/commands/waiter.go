@@ -23,7 +23,7 @@ import (
 	"knative.dev/pkg/kmeta"
 )
 
-const defaultWaitTimeout = 5 * time.Minute
+const defaultWaitTimeout = 10 * time.Minute
 
 type ResourceWaiter interface {
 	Wait(object runtime.Object, extraChecks ...watchTools.ConditionFunc) error
