@@ -71,8 +71,8 @@ Multiple values can be provided using comma separation.
 Supported filters and values:
   builder=string
   clusterbuilder=string
-  latest-reason=commit, trigger, config, stack, buildpack
-  ready=true, false, unknown`)
+  latest-reason=commit,trigger,config,stack,buildpack
+  ready=true,false,unknown`)
 
 	return cmd
 }

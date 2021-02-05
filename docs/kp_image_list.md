@@ -30,8 +30,8 @@ kp image list --filter ready=true --filter latest-reason=commit,trigger
                              Supported filters and values:
                                builder=string
                                clusterbuilder=string
-                               latest-reason=commit, trigger, config, stack, buildpack
-                               ready=true, false, unknown
+                               latest-reason=commit,trigger,config,stack,buildpack
+                               ready=true,false,unknown
   -h, --help                 help for list
   -n, --namespace string     kubernetes namespace
 ```
