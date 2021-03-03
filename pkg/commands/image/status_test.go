@@ -46,6 +46,12 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 						Name:      imageName,
 						Namespace: namespace,
 					},
+					Spec: v1alpha1.ImageSpec{
+						Builder: corev1.ObjectReference{
+							Kind: "ClusterBuilder",
+							Name: "some-cluster-builder",
+						},
+					},
 					Status: v1alpha1.ImageStatus{
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -62,6 +68,8 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 				const expectedOutput = `Status:         Not Ready
 Message:        --
 LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
+BuilderKind:    ClusterBuilder
+BuilderName:    some-cluster-builder
 
 Last Successful Build
 Id:              1
@@ -101,6 +109,12 @@ Build Reason:    COMMIT,BUILDPACK
 						Name:      imageName,
 						Namespace: defaultNamespace,
 					},
+					Spec: v1alpha1.ImageSpec{
+						Builder: corev1.ObjectReference{
+							Kind: "ClusterBuilder",
+							Name: "some-cluster-builder",
+						},
+					},
 					Status: v1alpha1.ImageStatus{
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -117,6 +131,8 @@ Build Reason:    COMMIT,BUILDPACK
 				const expectedOutput = `Status:         Not Ready
 Message:        --
 LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
+BuilderKind:    ClusterBuilder
+BuilderName:    some-cluster-builder
 
 Last Successful Build
 Id:              1
