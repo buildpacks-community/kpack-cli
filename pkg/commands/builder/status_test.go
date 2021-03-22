@@ -28,8 +28,11 @@ func testClusterBuilderStatusCommand(t *testing.T, when spec.G, it spec.S) {
 		defaultNamespace                  = "some-default-namespace"
 		expectedReadyOutputUsingSpecOrder = `Status:       Ready
 Image:        some-registry.com/test-builder-1:tag
-Stack:        io.buildpacks.stacks.centos
+Stack ID:     io.buildpacks.stacks.centos
 Run Image:    gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234
+
+Stack:    ClusterStack/test-stack
+Store:    ClusterStore/test-store
 
 BUILDPACK ID               VERSION    HOMEPAGE
 org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
@@ -45,8 +48,11 @@ Group #2
 `
 		expectedReadyOutputUsingStatusOrder = `Status:       Ready
 Image:        some-registry.com/test-builder-1:tag
-Stack:        io.buildpacks.stacks.centos
+Stack ID:     io.buildpacks.stacks.centos
 Run Image:    gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234
+
+Stack:    ClusterStack/test-stack
+Store:    ClusterStore/test-store
 
 BUILDPACK ID               VERSION    HOMEPAGE
 org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs

@@ -71,8 +71,7 @@ func displayImageStatus(cmd *cobra.Command, image *v1alpha1.Image, builds []v1al
 		"Status", imgDetails.status,
 		"Message", imgDetails.message,
 		"LatestImage", imgDetails.latestImage,
-		"BuilderKind", image.Spec.Builder.Kind,
-		"BuilderName", image.Spec.Builder.Name,
+		"Builder", image.Spec.Builder.Kind+"/"+image.Spec.Builder.Name,
 	)
 	if err != nil {
 		return err

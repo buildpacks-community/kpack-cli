@@ -92,10 +92,18 @@ func printBuilderReadyStatus(bldr *v1alpha1.Builder, writer io.Writer) error {
 		"",
 		"Status", "Ready",
 		"Image", bldr.Status.LatestImage,
-		"Stack", bldr.Status.Stack.ID,
+		"Stack ID", bldr.Status.Stack.ID,
 		"Run Image", bldr.Status.Stack.RunImage,
 	)
+	if err != nil {
+		return err
+	}
 
+	err = statusWriter.AddBlock(
+		"",
+		"Stack", bldr.Spec.Stack.Kind+"/"+bldr.Spec.Stack.Name,
+		"Store", bldr.Spec.Store.Kind+"/"+bldr.Spec.Store.Name,
+	)
 	if err != nil {
 		return err
 	}
