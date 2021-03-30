@@ -45,12 +45,14 @@ func MakeTestBuilds(image string, namespace string) []runtime.Object {
 			},
 			BuildMetadata: v1alpha1.BuildpackMetadataList{
 				{
-					Id:      "bp-id-1",
-					Version: "bp-version-1",
+					Id:       "bp-id-1",
+					Version:  "bp-version-1",
+					Homepage: "mysupercoolsite.com",
 				},
 				{
-					Id:      "bp-id-2",
-					Version: "bp-version-2",
+					Id:       "bp-id-2",
+					Version:  "bp-version-2",
+					Homepage: "mysupercoolsite2.com",
 				},
 			},
 			Stack: v1alpha1.BuildStack{
@@ -118,12 +120,14 @@ func MakeTestBuilds(image string, namespace string) []runtime.Object {
 			},
 			BuildMetadata: v1alpha1.BuildpackMetadataList{
 				{
-					Id:      "bp-id-1",
-					Version: "bp-version-1",
+					Id:       "bp-id-1",
+					Version:  "bp-version-1",
+					Homepage: "mysupercoolsite.com",
 				},
 				{
-					Id:      "bp-id-2",
-					Version: "bp-version-2",
+					Id:       "bp-id-2",
+					Version:  "bp-version-2",
+					Homepage: "mysupercoolsite2.com",
 				},
 			},
 			Stack: v1alpha1.BuildStack{

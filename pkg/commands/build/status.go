@@ -196,13 +196,13 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 		return err
 	}
 
-	tableWriter, err := commands.NewTableWriter(cmd.OutOrStdout(), "Buildpack Id", "Buildpack Version")
+	tableWriter, err := commands.NewTableWriter(cmd.OutOrStdout(), "Buildpack Id", "Buildpack Version", "Homepage")
 	if err != nil {
 		return err
 	}
 
 	for _, buildpack := range bld.Status.BuildMetadata {
-		err := tableWriter.AddRow(buildpack.Id, buildpack.Version)
+		err := tableWriter.AddRow(buildpack.Id, buildpack.Version, buildpack.Homepage)
 		if err != nil {
 			return err
 		}

@@ -47,9 +47,9 @@ Run Image:    some-repo.com/run-image
 
 Source:    Local Source
 
-BUILDPACK ID    BUILDPACK VERSION
-bp-id-1         bp-version-1
-bp-id-2         bp-version-2
+BUILDPACK ID    BUILDPACK VERSION    HOMEPAGE
+bp-id-1         bp-version-1         mysupercoolsite.com
+bp-id-2         bp-version-2         mysupercoolsite2.com
 
 `
 		expectedOutputForBuildNumber = `Image:     repo.com/image-1:tag
@@ -66,9 +66,9 @@ Run Image:    some-repo.com/run-image
 
 Source:    Local Source
 
-BUILDPACK ID    BUILDPACK VERSION
-bp-id-1         bp-version-1
-bp-id-2         bp-version-2
+BUILDPACK ID    BUILDPACK VERSION    HOMEPAGE
+bp-id-1         bp-version-1         mysupercoolsite.com
+bp-id-2         bp-version-2         mysupercoolsite2.com
 
 `
 	)
@@ -200,9 +200,9 @@ Run Image:    some-repo.com/run-image
 
 Source:    Local Source
 
-BUILDPACK ID    BUILDPACK VERSION
-bp-id-1         bp-version-1
-bp-id-2         bp-version-2
+BUILDPACK ID    BUILDPACK VERSION    HOMEPAGE
+bp-id-1         bp-version-1         mysupercoolsite.com
+bp-id-2         bp-version-2         mysupercoolsite2.com
 
 `
 				bld := &v1alpha1.Build{
@@ -236,12 +236,14 @@ bp-id-2         bp-version-2
 						},
 						BuildMetadata: v1alpha1.BuildpackMetadataList{
 							{
-								Id:      "bp-id-1",
-								Version: "bp-version-1",
+								Id:       "bp-id-1",
+								Version:  "bp-version-1",
+								Homepage: "mysupercoolsite.com",
 							},
 							{
-								Id:      "bp-id-2",
-								Version: "bp-version-2",
+								Id:       "bp-id-2",
+								Version:  "bp-version-2",
+								Homepage: "mysupercoolsite2.com",
 							},
 						},
 						Stack: v1alpha1.BuildStack{
@@ -283,12 +285,14 @@ bp-id-2         bp-version-2
 						},
 						BuildMetadata: v1alpha1.BuildpackMetadataList{
 							{
-								Id:      "bp-id-1",
-								Version: "bp-version-1",
+								Id:       "bp-id-1",
+								Version:  "bp-version-1",
+								Homepage: "mysupercoolsite.com",
 							},
 							{
-								Id:      "bp-id-2",
-								Version: "bp-version-2",
+								Id:       "bp-id-2",
+								Version:  "bp-version-2",
+								Homepage: "mysupercoolsite2.com",
 							},
 						},
 						Stack: v1alpha1.BuildStack{
@@ -321,9 +325,9 @@ Run Image:    some-repo.com/run-image
 
 Source:    Local Source
 
-BUILDPACK ID    BUILDPACK VERSION
-bp-id-1         bp-version-1
-bp-id-2         bp-version-2
+BUILDPACK ID    BUILDPACK VERSION    HOMEPAGE
+bp-id-1         bp-version-1         mysupercoolsite.com
+bp-id-2         bp-version-2         mysupercoolsite2.com
 
 `
 
@@ -355,12 +359,14 @@ bp-id-2         bp-version-2
 						},
 						BuildMetadata: v1alpha1.BuildpackMetadataList{
 							{
-								Id:      "bp-id-1",
-								Version: "bp-version-1",
+								Id:       "bp-id-1",
+								Version:  "bp-version-1",
+								Homepage: "mysupercoolsite.com",
 							},
 							{
-								Id:      "bp-id-2",
-								Version: "bp-version-2",
+								Id:       "bp-id-2",
+								Version:  "bp-version-2",
+								Homepage: "mysupercoolsite2.com",
 							},
 						},
 						Stack: v1alpha1.BuildStack{
