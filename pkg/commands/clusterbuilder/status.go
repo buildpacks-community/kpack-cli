@@ -94,8 +94,12 @@ func printBuilderReadyStatus(bldr *v1alpha1.ClusterBuilder, writer io.Writer) er
 
 	err = statusWriter.AddBlock(
 		"",
-		"Stack", bldr.Spec.Stack.Kind+"/"+bldr.Spec.Stack.Name,
-		"Store", bldr.Spec.Store.Kind+"/"+bldr.Spec.Store.Name,
+		"Stack Ref", " ",
+		"  Name", bldr.Spec.Stack.Name,
+		"  Kind", bldr.Spec.Stack.Kind,
+		"Store Ref", " ",
+		"  Name", bldr.Spec.Store.Name,
+		"  Kind", bldr.Spec.Store.Kind,
 	)
 	if err != nil {
 		return err

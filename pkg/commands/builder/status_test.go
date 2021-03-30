@@ -31,8 +31,12 @@ Image:        some-registry.com/test-builder-1:tag
 Stack ID:     io.buildpacks.stacks.centos
 Run Image:    gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234
 
-Stack:    ClusterStack/test-stack
-Store:    ClusterStore/test-store
+Stack Ref:     
+  Name:       test-stack
+  Kind:       ClusterStack
+Store Ref:     
+  Name:       test-store
+  Kind:       ClusterStore
 
 BUILDPACK ID               VERSION    HOMEPAGE
 org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
@@ -51,8 +55,12 @@ Image:        some-registry.com/test-builder-1:tag
 Stack ID:     io.buildpacks.stacks.centos
 Run Image:    gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234
 
-Stack:    ClusterStack/test-stack
-Store:    ClusterStore/test-store
+Stack Ref:     
+  Name:       test-stack
+  Kind:       ClusterStack
+Store Ref:     
+  Name:       test-store
+  Kind:       ClusterStore
 
 BUILDPACK ID               VERSION    HOMEPAGE
 org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
