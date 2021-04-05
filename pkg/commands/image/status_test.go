@@ -68,7 +68,10 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 				const expectedOutput = `Status:         Not Ready
 Message:        --
 LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
-Builder:        ClusterBuilder/some-cluster-builder
+
+Builder Ref:     
+  Name:         some-cluster-builder
+  Kind:         ClusterBuilder
 
 Last Successful Build
 Id:              1
@@ -130,7 +133,10 @@ Build Reason:    COMMIT,BUILDPACK
 				const expectedOutput = `Status:         Not Ready
 Message:        --
 LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
-Builder:        ClusterBuilder/some-cluster-builder
+
+Builder Ref:     
+  Name:         some-cluster-builder
+  Kind:         ClusterBuilder
 
 Last Successful Build
 Id:              1
