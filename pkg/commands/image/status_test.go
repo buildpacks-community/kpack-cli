@@ -77,6 +77,10 @@ Last Successful Build
 Id:              1
 Build Reason:    CONFIG
 
+BUILDPACK ID    BUILDPACK VERSION    HOMEPAGE
+bp-id-1         bp-version-1         mysupercoolsite.com
+bp-id-2         bp-version-2         mysupercoolsite2.com
+
 Last Failed Build
 Id:              2
 Build Reason:    COMMIT,BUILDPACK
@@ -141,6 +145,10 @@ Builder Ref:
 Last Successful Build
 Id:              1
 Build Reason:    CONFIG
+
+BUILDPACK ID    BUILDPACK VERSION    HOMEPAGE
+bp-id-1         bp-version-1         mysupercoolsite.com
+bp-id-2         bp-version-2         mysupercoolsite2.com
 
 Last Failed Build
 Id:              2
