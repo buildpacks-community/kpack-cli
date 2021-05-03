@@ -4,6 +4,7 @@
 package clusterstore
 
 import (
+	"context"
 	"io"
 	"strings"
 
@@ -35,8 +36,8 @@ type Factory struct {
 	Printer    Printer
 }
 
-func NewFactory(cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*Factory, error) {
-	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+func NewFactory(ctx context.Context, cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*Factory, error) {
+	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository(ctx)
 	if err != nil {
 		return nil, err
 	}

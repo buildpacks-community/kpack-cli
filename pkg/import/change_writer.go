@@ -4,6 +4,8 @@
 package _import
 
 import (
+	"context"
+
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -16,9 +18,9 @@ type changeWriter interface {
 	writeChange(header string)
 }
 
-func writeLifecycleChange(newLifecycle Lifecycle, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
+func writeLifecycleChange(ctx context.Context, newLifecycle Lifecycle, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	if newLifecycle.Image != "" {
-		oldImg, err := lifecycle.GetImage(cs.K8sClient)
+		oldImg, err := lifecycle.GetImage(ctx, cs.K8sClient)
 		if err != nil {
 			return err
 		}
@@ -37,9 +39,9 @@ func writeLifecycleChange(newLifecycle Lifecycle, differ *ImportDiffer, cs build
 	return nil
 }
 
-func writeClusterStoresChange(stores []ClusterStore, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
+func writeClusterStoresChange(ctx context.Context, stores []ClusterStore, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	for _, store := range stores {
-		oldStore, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(store.Name, metav1.GetOptions{})
+		oldStore, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(ctx, store.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
@@ -60,9 +62,9 @@ func writeClusterStoresChange(stores []ClusterStore, differ *ImportDiffer, cs bu
 	return nil
 }
 
-func writeClusterStacksChange(stacks []ClusterStack, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
+func writeClusterStacksChange(ctx context.Context, stacks []ClusterStack, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	for _, stack := range stacks {
-		oldStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(stack.Name, metav1.GetOptions{})
+		oldStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(ctx, stack.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
@@ -83,9 +85,9 @@ func writeClusterStacksChange(stacks []ClusterStack, differ *ImportDiffer, cs bu
 	return nil
 }
 
-func writeClusterBuildersChange(builders []ClusterBuilder, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
+func writeClusterBuildersChange(ctx context.Context, builders []ClusterBuilder, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	for _, builder := range builders {
-		oldBuilder, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(builder.Name, metav1.GetOptions{})
+		oldBuilder, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(ctx, builder.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}

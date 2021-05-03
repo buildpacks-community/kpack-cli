@@ -4,7 +4,10 @@
 package clusterstore
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
@@ -46,13 +49,15 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			factory, err := clusterstore.NewFactory(cs, ch, rup, tlsCfg)
+			ctx := cmd.Context()
+
+			factory, err := clusterstore.NewFactory(ctx, cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
-			return create(name, buildpackages, factory, ch, cs, newWaiter(cs.DynamicClient))
+			return create(ctx, name, buildpackages, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -62,7 +67,7 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 	return cmd
 }
 
-func create(name string, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
+func create(ctx context.Context, name string, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
 	if err = ch.PrintStatus("Creating ClusterStore..."); err != nil {
 		return err
 	}
@@ -73,11 +78,11 @@ func create(name string, buildpackages []string, factory *clusterstore.Factory, 
 	}
 
 	if !ch.IsDryRun() {
-		newStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Create(newStore)
+		newStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Create(ctx, newStore, metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
-		if err := w.Wait(newStore); err != nil {
+		if err := w.Wait(ctx, newStore); err != nil {
 			return err
 		}
 	}

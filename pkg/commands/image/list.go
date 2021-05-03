@@ -4,13 +4,16 @@
 package image
 
 import (
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"sort"
+
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
 func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
@@ -44,7 +47,7 @@ kp image list --filter ready=true --filter latest-reason=commit,trigger`,
 				imagesNamespace = cs.Namespace
 			}
 
-			imageList, err := cs.KpackClient.KpackV1alpha1().Images(imagesNamespace).List(metav1.ListOptions{})
+			imageList, err := cs.KpackClient.KpackV1alpha1().Images(imagesNamespace).List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -53,6 +56,10 @@ kp image list --filter ready=true --filter latest-reason=commit,trigger`,
 			if err != nil {
 				return err
 			}
+
+			sort.SliceStable(imageList.Items, func(i, j int) bool {
+				return imageList.Items[i].Name < imageList.Items[j].Name
+			})
 
 			if len(imageList.Items) == 0 {
 				return errors.New("no images found")

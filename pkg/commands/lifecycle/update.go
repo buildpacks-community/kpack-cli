@@ -63,7 +63,7 @@ The canonical repository is read from the "canonical.repository" key of the "kp-
 				TLSConfig:    tlsCfg,
 			}
 
-			configMap, err := lifecycle.UpdateImage(image, cfg)
+			configMap, err := lifecycle.UpdateImage(cmd.Context(), image, cfg)
 			if err != nil {
 				return err
 			}

@@ -74,6 +74,8 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
+			ctx := cmd.Context()
+
 			configHelper := k8s.DefaultConfigHelper(cs)
 
 			descriptor, err := getDependencyDescriptor(cmd, filename)
@@ -81,12 +83,12 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			repository, err := configHelper.GetCanonicalRepository()
+			repository, err := configHelper.GetCanonicalRepository(ctx)
 			if err != nil {
 				return err
 			}
 
-			serviceAccount, err := configHelper.GetCanonicalServiceAccount()
+			serviceAccount, err := configHelper.GetCanonicalServiceAccount(ctx)
 			if err != nil {
 				return err
 			}
@@ -122,7 +124,7 @@ cat dependencies.yaml | kp import -f -`,
 			}
 
 			if showChanges {
-				hasChanges, summary, err := importpkg.SummarizeChange(descriptor, storeFactory, stackFactory, differ, cs)
+				hasChanges, summary, err := importpkg.SummarizeChange(ctx, descriptor, storeFactory, stackFactory, differ, cs)
 				if err != nil {
 					return err
 				}
@@ -150,23 +152,23 @@ cat dependencies.yaml | kp import -f -`,
 					TLSConfig:    tlsConfig,
 				}
 
-				err = importer.importLifecycle(descriptor.GetLifecycleImage(), cfg)
+				err = importer.importLifecycle(ctx, descriptor.GetLifecycleImage(), cfg)
 				if err != nil {
 					return err
 				}
 			}
 
-			storeToGen, err := importer.importClusterStores(descriptor.ClusterStores, storeFactory)
+			storeToGen, err := importer.importClusterStores(ctx, descriptor.ClusterStores, storeFactory)
 			if err != nil {
 				return err
 			}
 
-			stackToGen, err := importer.importClusterStacks(descriptor.GetClusterStacks(), stackFactory)
+			stackToGen, err := importer.importClusterStacks(ctx, descriptor.GetClusterStacks(), stackFactory)
 			if err != nil {
 				return err
 			}
 
-			if err := importer.importClusterBuilders(descriptor.GetClusterBuilders(), repository, serviceAccount, storeToGen, stackToGen); err != nil {
+			if err := importer.importClusterBuilders(ctx, descriptor.GetClusterBuilders(), repository, serviceAccount, storeToGen, stackToGen); err != nil {
 				return err
 			}
 

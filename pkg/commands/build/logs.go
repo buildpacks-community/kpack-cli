@@ -40,7 +40,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(metav1.ListOptions{
+			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(cmd.Context(), metav1.ListOptions{
 				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {

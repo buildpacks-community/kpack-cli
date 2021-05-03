@@ -4,6 +4,7 @@
 package image
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -69,7 +70,9 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
-			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(args[0], metav1.GetOptions{})
+			ctx := cmd.Context()
+
+			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(ctx, args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -81,7 +84,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				factory.SubPath = &subPath
 			}
 
-			patched, img, err := patch(img, &factory, ch, cs)
+			patched, img, err := patch(ctx, img, &factory, ch, cs)
 			if err != nil {
 				return err
 			}
@@ -113,7 +116,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	return cmd
 }
 
-func patch(img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (bool, *v1alpha1.Image, error) {
+func patch(ctx context.Context, img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (bool, *v1alpha1.Image, error) {
 	if err := ch.PrintStatus("Patching Image..."); err != nil {
 		return false, nil, err
 	}
@@ -125,7 +128,7 @@ func patch(img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelp
 
 	hasPatch := len(patch) > 0
 	if hasPatch && !ch.IsDryRun() {
-		patchedImage, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(img.Name, types.MergePatchType, patch)
+		patchedImage, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(ctx, img.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return hasPatch, nil, err
 		}

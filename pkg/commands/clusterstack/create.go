@@ -4,7 +4,10 @@
 package clusterstack
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
@@ -46,13 +49,15 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			factory, err := clusterstack.NewFactory(cs, ch, rup, tlsCfg)
+			ctx := cmd.Context()
+
+			factory, err := clusterstack.NewFactory(ctx, cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
-			return create(name, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
+			return create(ctx, name, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")
@@ -64,7 +69,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func create(name, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
+func create(ctx context.Context, name, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
 	if err = ch.PrintStatus("Creating ClusterStack..."); err != nil {
 		return err
 	}
@@ -75,11 +80,11 @@ func create(name, buildImageRef, runImageRef string, factory *clusterstack.Facto
 	}
 
 	if !ch.IsDryRun() {
-		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Create(stack)
+		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Create(ctx, stack, metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
-		if err := w.Wait(stack); err != nil {
+		if err := w.Wait(ctx, stack); err != nil {
 			return err
 		}
 	}

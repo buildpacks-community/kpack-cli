@@ -4,6 +4,7 @@
 package clusterstack
 
 import (
+	"context"
 	"io"
 	"strings"
 
@@ -38,8 +39,8 @@ type Factory struct {
 	Repository string
 }
 
-func NewFactory(cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*Factory, error) {
-	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository()
+func NewFactory(ctx context.Context, cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*Factory, error) {
+	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository(ctx)
 	if err != nil {
 		return nil, err
 	}

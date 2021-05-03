@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
@@ -36,6 +36,7 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 				return err
 			}
 
+			ctx := cmd.Context()
 			w := newWaiter(cs.DynamicClient)
 
 			ch, err := commands.NewCommandHelper(cmd)
@@ -45,7 +46,7 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 
 			storeName := args[0]
 
-			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(storeName, v1.GetOptions{})
+			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(ctx, storeName, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				return errors.Errorf("ClusterStore '%s' does not exist", storeName)
 			} else if err != nil {
@@ -68,11 +69,11 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 			removeBuildpackages(ch, store, buildpackages, bpToStoreImage)
 
 			if !ch.IsDryRun() {
-				store, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(store)
+				store, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(ctx, store, metav1.UpdateOptions{})
 				if err != nil {
 					return err
 				}
-				if err := w.Wait(store); err != nil {
+				if err := w.Wait(ctx, store); err != nil {
 					return err
 				}
 			}

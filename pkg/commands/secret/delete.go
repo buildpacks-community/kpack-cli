@@ -34,7 +34,9 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get("default", metav1.GetOptions{})
+			ctx := cmd.Context()
+
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(ctx, "default", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -43,13 +45,13 @@ The namespace defaults to the kubernetes current-context namespace.`,
 			if err != nil {
 				return err
 			} else if wasModified {
-				_, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(serviceAccount)
+				_, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(ctx, serviceAccount, metav1.UpdateOptions{})
 				if err != nil {
 					return err
 				}
 			}
 
-			err = cs.K8sClient.CoreV1().Secrets(cs.Namespace).Delete(args[0], &metav1.DeleteOptions{})
+			err = cs.K8sClient.CoreV1().Secrets(cs.Namespace).Delete(ctx, args[0], metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

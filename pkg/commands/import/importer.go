@@ -4,6 +4,7 @@
 package _import
 
 import (
+	"context"
 	"encoding/json"
 	"path"
 
@@ -49,12 +50,12 @@ type ImageUpdater interface {
 	UpdateImage(srcImgStr string, tlsCfg registry.TLSConfig, hooks ...lifecycle.PreUpdateHook) (*corev1.ConfigMap, error)
 }
 
-func (i *importer) importLifecycle(srcImageTag string, cfg lifecycle.ImageUpdaterConfig) error {
+func (i *importer) importLifecycle(ctx context.Context, srcImageTag string, cfg lifecycle.ImageUpdaterConfig) error {
 	if err := i.commandHelper.PrintStatus("Importing Lifecycle..."); err != nil {
 		return err
 	}
 
-	configMap, err := lifecycle.UpdateImage(srcImageTag, cfg, func(configMap *corev1.ConfigMap) {
+	configMap, err := lifecycle.UpdateImage(ctx, srcImageTag, cfg, func(configMap *corev1.ConfigMap) {
 		configMap.Annotations = k8s.MergeAnnotations(configMap.Annotations, map[string]string{importTimestampKey: i.timestampProvider.GetTimestamp()})
 	})
 	if err != nil {
@@ -65,7 +66,7 @@ func (i *importer) importLifecycle(srcImageTag string, cfg lifecycle.ImageUpdate
 	return nil
 }
 
-func (i *importer) importClusterStores(clusterStores []importpkg.ClusterStore, factory *clusterstore.Factory) (map[string]int64, error) {
+func (i *importer) importClusterStores(ctx context.Context, clusterStores []importpkg.ClusterStore, factory *clusterstore.Factory) (map[string]int64, error) {
 	storeToGen := map[string]int64{}
 	for _, store := range clusterStores {
 		if err := i.commandHelper.PrintStatus("Importing ClusterStore '%s'...", store.Name); err != nil {
@@ -77,7 +78,7 @@ func (i *importer) importClusterStores(clusterStores []importpkg.ClusterStore, f
 			buildpackages = append(buildpackages, s.Image)
 		}
 
-		curStore, err := i.client.KpackV1alpha1().ClusterStores().Get(store.Name, metav1.GetOptions{})
+		curStore, err := i.client.KpackV1alpha1().ClusterStores().Get(ctx, store.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return nil, err
 		}
@@ -91,10 +92,10 @@ func (i *importer) importClusterStores(clusterStores []importpkg.ClusterStore, f
 			newStore.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
 			if !i.commandHelper.IsDryRun() {
-				if newStore, err = i.client.KpackV1alpha1().ClusterStores().Create(newStore); err != nil {
+				if newStore, err = i.client.KpackV1alpha1().ClusterStores().Create(ctx, newStore, metav1.CreateOptions{}); err != nil {
 					return nil, err
 				}
-				if err := i.waiter.Wait(newStore); err != nil {
+				if err := i.waiter.Wait(ctx, newStore); err != nil {
 					return nil, err
 				}
 				storeToGen[newStore.Name] = newStore.Generation
@@ -109,10 +110,10 @@ func (i *importer) importClusterStores(clusterStores []importpkg.ClusterStore, f
 			updatedStore.Annotations = k8s.MergeAnnotations(updatedStore.Annotations, map[string]string{importTimestampKey: i.timestampProvider.GetTimestamp()})
 
 			if !i.commandHelper.IsDryRun() {
-				if updatedStore, err = i.client.KpackV1alpha1().ClusterStores().Update(updatedStore); err != nil {
+				if updatedStore, err = i.client.KpackV1alpha1().ClusterStores().Update(ctx, updatedStore, metav1.UpdateOptions{}); err != nil {
 					return nil, err
 				}
-				if err := i.waiter.Wait(updatedStore); err != nil {
+				if err := i.waiter.Wait(ctx, updatedStore); err != nil {
 					return nil, err
 				}
 				storeToGen[updatedStore.Name] = updatedStore.Generation
@@ -123,7 +124,7 @@ func (i *importer) importClusterStores(clusterStores []importpkg.ClusterStore, f
 	return storeToGen, nil
 }
 
-func (i *importer) importClusterStacks(clusterStacks []importpkg.ClusterStack, factory *clusterstack.Factory) (map[string]int64, error) {
+func (i *importer) importClusterStacks(ctx context.Context, clusterStacks []importpkg.ClusterStack, factory *clusterstack.Factory) (map[string]int64, error) {
 	stackToGen := map[string]int64{}
 	for _, stack := range clusterStacks {
 		if err := i.commandHelper.PrintStatus("Importing ClusterStack '%s'...", stack.Name); err != nil {
@@ -137,17 +138,17 @@ func (i *importer) importClusterStacks(clusterStacks []importpkg.ClusterStack, f
 
 		newStack.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
-		curStack, err := i.client.KpackV1alpha1().ClusterStacks().Get(stack.Name, metav1.GetOptions{})
+		curStack, err := i.client.KpackV1alpha1().ClusterStacks().Get(ctx, stack.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return nil, err
 		}
 
 		if k8serrors.IsNotFound(err) {
 			if !i.commandHelper.IsDryRun() {
-				if newStack, err = i.client.KpackV1alpha1().ClusterStacks().Create(newStack); err != nil {
+				if newStack, err = i.client.KpackV1alpha1().ClusterStacks().Create(ctx, newStack, metav1.CreateOptions{}); err != nil {
 					return nil, err
 				}
-				if err := i.waiter.Wait(newStack); err != nil {
+				if err := i.waiter.Wait(ctx, newStack); err != nil {
 					return nil, err
 				}
 				stackToGen[newStack.Name] = newStack.Generation
@@ -159,10 +160,10 @@ func (i *importer) importClusterStacks(clusterStacks []importpkg.ClusterStack, f
 			updateStack.Annotations = k8s.MergeAnnotations(updateStack.Annotations, newStack.Annotations)
 
 			if !i.commandHelper.IsDryRun() {
-				if updateStack, err = i.client.KpackV1alpha1().ClusterStacks().Update(updateStack); err != nil {
+				if updateStack, err = i.client.KpackV1alpha1().ClusterStacks().Update(ctx, updateStack, metav1.UpdateOptions{}); err != nil {
 					return nil, err
 				}
-				if err := i.waiter.Wait(updateStack); err != nil {
+				if err := i.waiter.Wait(ctx, updateStack); err != nil {
 					return nil, err
 				}
 				stackToGen[updateStack.Name] = updateStack.Generation
@@ -173,7 +174,7 @@ func (i *importer) importClusterStacks(clusterStacks []importpkg.ClusterStack, f
 	return stackToGen, nil
 }
 
-func (i *importer) importClusterBuilders(clusterBuilders []importpkg.ClusterBuilder, repository, sa string, storeToGen, stackToGen map[string]int64) error {
+func (i *importer) importClusterBuilders(ctx context.Context, clusterBuilders []importpkg.ClusterBuilder, repository, sa string, storeToGen, stackToGen map[string]int64) error {
 	for _, cb := range clusterBuilders {
 		if err := i.commandHelper.PrintStatus("Importing ClusterBuilder '%s'...", cb.Name); err != nil {
 			return err
@@ -186,7 +187,7 @@ func (i *importer) importClusterBuilders(clusterBuilders []importpkg.ClusterBuil
 
 		newCB.Annotations[importTimestampKey] = i.timestampProvider.GetTimestamp()
 
-		curCB, err := i.client.KpackV1alpha1().ClusterBuilders().Get(cb.Name, metav1.GetOptions{})
+		curCB, err := i.client.KpackV1alpha1().ClusterBuilders().Get(ctx, cb.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
@@ -194,10 +195,10 @@ func (i *importer) importClusterBuilders(clusterBuilders []importpkg.ClusterBuil
 		waitCondition := builderHasResolved(storeToGen[newCB.Spec.Store.Name], stackToGen[newCB.Spec.Stack.Name])
 		if k8serrors.IsNotFound(err) {
 			if !i.commandHelper.IsDryRun() {
-				if newCB, err = i.client.KpackV1alpha1().ClusterBuilders().Create(newCB); err != nil {
+				if newCB, err = i.client.KpackV1alpha1().ClusterBuilders().Create(ctx, newCB, metav1.CreateOptions{}); err != nil {
 					return err
 				}
-				if err := i.waiter.Wait(newCB, waitCondition); err != nil {
+				if err := i.waiter.Wait(ctx, newCB, waitCondition); err != nil {
 					return err
 				}
 			}
@@ -208,10 +209,10 @@ func (i *importer) importClusterBuilders(clusterBuilders []importpkg.ClusterBuil
 			updateCB.Annotations = k8s.MergeAnnotations(updateCB.Annotations, newCB.Annotations)
 
 			if !i.commandHelper.IsDryRun() {
-				if updateCB, err = i.client.KpackV1alpha1().ClusterBuilders().Update(updateCB); err != nil {
+				if updateCB, err = i.client.KpackV1alpha1().ClusterBuilders().Update(ctx, updateCB, metav1.UpdateOptions{}); err != nil {
 					return err
 				}
-				if err := i.waiter.Wait(updateCB, waitCondition); err != nil {
+				if err := i.waiter.Wait(ctx, updateCB, waitCondition); err != nil {
 					return err
 				}
 			}

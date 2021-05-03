@@ -4,6 +4,7 @@
 package clusterbuilder
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -48,12 +49,13 @@ kp cb patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpac
 
 			name := args[0]
 
-			cb, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(name, metav1.GetOptions{})
+			ctx := cmd.Context()
+			cb, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(ctx, name, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			return patch(cb, flags, ch, cs, newWaiter(cs.DynamicClient))
+			return patch(ctx, cb, flags, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -66,7 +68,7 @@ kp cb patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpac
 	return cmd
 }
 
-func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, waiter commands.ResourceWaiter) error {
+func patch(ctx context.Context, cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, waiter commands.ResourceWaiter) error {
 	patchedCb := cb.DeepCopy()
 
 	if flags.tag != "" {
@@ -105,11 +107,11 @@ func patch(cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.Command
 
 	hasPatch := len(patch) > 0
 	if hasPatch && !ch.IsDryRun() {
-		patchedCb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Patch(patchedCb.Name, types.MergePatchType, patch)
+		patchedCb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Patch(ctx, patchedCb.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}
-		if err := waiter.Wait(patchedCb); err != nil {
+		if err := waiter.Wait(ctx, patchedCb); err != nil {
 			return err
 		}
 	}

@@ -34,7 +34,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get("default", metav1.GetOptions{})
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(cmd.Context(), "default", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}

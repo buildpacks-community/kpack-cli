@@ -4,6 +4,7 @@
 package _import
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 )
 
 func SummarizeChange(
+	ctx context.Context,
 	desc DependencyDescriptor,
 	storeFactory *clusterstore.Factory, stackFactory *clusterstack.Factory,
 	differ Differ, cs buildk8s.ClientSet) (hasChanges bool, changes string, err error) {
@@ -24,22 +26,22 @@ func SummarizeChange(
 		StackRefGetter: stackFactory,
 	}
 
-	err = writeLifecycleChange(desc.Lifecycle, iDiffer, cs, &summarizer)
+	err = writeLifecycleChange(ctx, desc.Lifecycle, iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}
 
-	err = writeClusterStoresChange(desc.ClusterStores, iDiffer, cs, &summarizer)
+	err = writeClusterStoresChange(ctx, desc.ClusterStores, iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}
 
-	err = writeClusterStacksChange(desc.GetClusterStacks(), iDiffer, cs, &summarizer)
+	err = writeClusterStacksChange(ctx, desc.GetClusterStacks(), iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}
 
-	err = writeClusterBuildersChange(desc.GetClusterBuilders(), iDiffer, cs, &summarizer)
+	err = writeClusterBuildersChange(ctx, desc.GetClusterBuilders(), iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}

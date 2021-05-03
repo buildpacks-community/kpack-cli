@@ -4,13 +4,14 @@
 package builder
 
 import (
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
+
+	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
 func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
@@ -43,6 +44,7 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --buildpack my-b
 				return err
 			}
 
+			ctx := cmd.Context()
 			w := newWaiter(cs.DynamicClient)
 
 			ch, err := commands.NewCommandHelper(cmd)
@@ -53,7 +55,7 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --buildpack my-b
 			name := args[0]
 			flags.namespace = cs.Namespace
 
-			bldr, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Get(name, metav1.GetOptions{})
+			bldr, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				if flags.tag == "" {
 					return errors.New("--tag is required to create the resource")
@@ -67,12 +69,12 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --buildpack my-b
 					flags.store = defaultStore
 				}
 
-				return create(name, flags, ch, cs, w)
+				return create(ctx, name, flags, ch, cs, w)
 			} else if err != nil {
 				return err
 			}
 
-			return patch(bldr, flags, ch, cs, w)
+			return patch(ctx, bldr, flags, ch, cs, w)
 		},
 	}
 

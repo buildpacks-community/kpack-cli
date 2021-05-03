@@ -35,7 +35,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			builderList, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).List(metav1.ListOptions{})
+			builderList, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

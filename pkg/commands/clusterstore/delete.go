@@ -4,12 +4,13 @@
 package clusterstore
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 )
@@ -40,9 +41,11 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvi
 				return err
 			}
 
+			ctx := cmd.Context()
+
 			storeName := args[0]
 			if forceDelete {
-				return deleteStore(cmd, cs, storeName)
+				return deleteStore(ctx, cmd, cs, storeName)
 			}
 
 			message := fmt.Sprintf("%s\nPlease confirm store deletion by typing 'y': ", warningMessage)
@@ -56,7 +59,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvi
 				return err
 			}
 
-			return deleteStore(cmd, cs, storeName)
+			return deleteStore(ctx, cmd, cs, storeName)
 		},
 	}
 	cmd.Flags().BoolVarP(&forceDelete, "force", "f", false, "force deletion without confirmation")
@@ -64,8 +67,8 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvi
 	return cmd
 }
 
-func deleteStore(cmd *cobra.Command, cs k8s.ClientSet, storeName string) error {
-	err := cs.KpackClient.KpackV1alpha1().ClusterStores().Delete(storeName, &v1.DeleteOptions{})
+func deleteStore(ctx context.Context, cmd *cobra.Command, cs k8s.ClientSet, storeName string) error {
+	err := cs.KpackClient.KpackV1alpha1().ClusterStores().Delete(ctx, storeName, metav1.DeleteOptions{})
 	if k8serrors.IsNotFound(err) {
 		return errors.Errorf("Store %q does not exist", storeName)
 	} else if err != nil {
