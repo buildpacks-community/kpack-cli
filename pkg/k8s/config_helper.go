@@ -4,13 +4,15 @@
 package k8s
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ConfigHelper interface {
-	GetCanonicalRepository() (string, error)
-	GetCanonicalServiceAccount() (string, error)
+	GetCanonicalRepository(ctx context.Context) (string, error)
+	GetCanonicalServiceAccount(ctx context.Context) (string, error)
 }
 
 const (
@@ -28,8 +30,8 @@ func DefaultConfigHelper(cs ClientSet) ConfigHelper {
 	return defaultConfigHelper{cs: cs}
 }
 
-func (d defaultConfigHelper) GetCanonicalRepository() (string, error) {
-	val, err := d.getValue(canonicalRepositoryKey)
+func (d defaultConfigHelper) GetCanonicalRepository(ctx context.Context) (string, error) {
+	val, err := d.getValue(ctx, canonicalRepositoryKey)
 	if err != nil {
 		return val, errors.Wrapf(err, "failed to get canonical repository")
 	}
@@ -40,8 +42,8 @@ func (d defaultConfigHelper) GetCanonicalRepository() (string, error) {
 	return val, err
 }
 
-func (d defaultConfigHelper) GetCanonicalServiceAccount() (string, error) {
-	val, err := d.getValue(canonicalServiceAccountKey)
+func (d defaultConfigHelper) GetCanonicalServiceAccount(ctx context.Context) (string, error) {
+	val, err := d.getValue(ctx, canonicalServiceAccountKey)
 	if err != nil {
 		return val, errors.Wrapf(err, "failed to get canonical service account")
 	}
@@ -52,10 +54,10 @@ func (d defaultConfigHelper) GetCanonicalServiceAccount() (string, error) {
 	return val, err
 }
 
-func (d defaultConfigHelper) getValue(key string) (string, error) {
+func (d defaultConfigHelper) getValue(ctx context.Context, key string) (string, error) {
 	var value string
 
-	kpConfig, err := d.cs.K8sClient.CoreV1().ConfigMaps(kpNamespace).Get(kpConfigMapName, metav1.GetOptions{})
+	kpConfig, err := d.cs.K8sClient.CoreV1().ConfigMaps(kpNamespace).Get(ctx, kpConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return value, err
 	}

@@ -71,14 +71,16 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 			factory.SourceUploader = rup.SourceUploader(ch.CanChangeState())
 			factory.Printer = ch
 
-			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(name, metav1.GetOptions{})
+			ctx := cmd.Context()
+
+			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				if tag == "" {
 					return errors.New("--tag is required to create the resource")
 				}
 
 				factory.SubPath = &subPath
-				img, err = create(name, tag, &factory, ch, cs)
+				img, err = create(ctx, name, tag, &factory, ch, cs)
 			} else if err != nil {
 				return err
 			} else {
@@ -87,7 +89,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 				}
 
 				var patched bool
-				patched, img, err = patch(img, &factory, ch, cs)
+				patched, img, err = patch(ctx, img, &factory, ch, cs)
 				if !patched {
 					shouldWait = false
 				}
@@ -98,7 +100,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 			}
 
 			if shouldWait {
-				if _, err := newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img); err != nil {
+				if _, err := newImageWaiter(cs).Wait(ctx, cmd.OutOrStdout(), img); err != nil {
 					return err
 				}
 			}

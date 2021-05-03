@@ -44,6 +44,7 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildp
 				return err
 			}
 
+			ctx := cmd.Context()
 			w := newWaiter(cs.DynamicClient)
 
 			ch, err := commands.NewCommandHelper(cmd)
@@ -52,8 +53,7 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildp
 			}
 
 			name := args[0]
-
-			cb, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(name, metav1.GetOptions{})
+			cb, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				if flags.stack == "" {
 					flags.stack = defaultStack
@@ -62,12 +62,12 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildp
 				if flags.store == "" {
 					flags.store = defaultStore
 				}
-				return create(name, flags, ch, cs, w)
+				return create(ctx, name, flags, ch, cs, w)
 			} else if err != nil {
 				return err
 			}
 
-			return patch(cb, flags, ch, cs, w)
+			return patch(ctx, cb, flags, ch, cs, w)
 		},
 	}
 

@@ -33,7 +33,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			bldr, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(args[0], metav1.GetOptions{})
+			bldr, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(cmd.Context(), args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}

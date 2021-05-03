@@ -30,7 +30,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			clusterBuilderList, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().List(metav1.ListOptions{})
+			clusterBuilderList, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

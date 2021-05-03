@@ -43,6 +43,7 @@ kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../
 				return err
 			}
 
+			ctx := cmd.Context()
 			w := newWaiter(cs.DynamicClient)
 
 			ch, err := commands.NewCommandHelper(cmd)
@@ -50,21 +51,21 @@ kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../
 				return err
 			}
 
-			factory, err := clusterstack.NewFactory(cs, ch, rup, tlsCfg)
+			factory, err := clusterstack.NewFactory(ctx, cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
 			name := args[0]
 
-			cStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(name, metav1.GetOptions{})
+			cStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return create(name, buildImageRef, runImageRef, factory, ch, cs, w)
+				return create(ctx, name, buildImageRef, runImageRef, factory, ch, cs, w)
 			} else if err != nil {
 				return err
 			}
 
-			return update(cStack, buildImageRef, runImageRef, factory, ch, cs, w)
+			return update(ctx, cStack, buildImageRef, runImageRef, factory, ch, cs, w)
 		},
 	}
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")

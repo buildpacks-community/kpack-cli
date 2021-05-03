@@ -4,6 +4,7 @@
 package builder
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -56,7 +57,8 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --buildpack my
 			name := args[0]
 			flags.namespace = cs.Namespace
 
-			return create(name, flags, ch, cs, newWaiter(cs.DynamicClient))
+			ctx := cmd.Context()
+			return create(ctx, name, flags, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -80,7 +82,7 @@ type CommandFlags struct {
 	buildpacks []string
 }
 
-func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
+func create(ctx context.Context, name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
 	bldr := &v1alpha1.Builder{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       v1alpha1.BuilderKind,
@@ -128,11 +130,11 @@ func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.
 	}
 
 	if !ch.IsDryRun() {
-		bldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(bldr)
+		bldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Create(ctx, bldr, metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
-		if err := w.Wait(bldr); err != nil {
+		if err := w.Wait(ctx, bldr); err != nil {
 			return err
 		}
 	}

@@ -4,6 +4,7 @@
 package lifecycle
 
 import (
+	"context"
 	"io"
 	"path"
 
@@ -32,8 +33,8 @@ type ImageUpdaterConfig struct {
 	TLSConfig    registry.TLSConfig
 }
 
-func UpdateImage(srcImgLocation string, cfg ImageUpdaterConfig, hooks ...PreUpdateHook) (*corev1.ConfigMap, error) {
-	cm, err := getConfigMap(cfg.ClientSet.K8sClient)
+func UpdateImage(ctx context.Context, srcImgLocation string, cfg ImageUpdaterConfig, hooks ...PreUpdateHook) (*corev1.ConfigMap, error) {
+	cm, err := getConfigMap(ctx, cfg.ClientSet.K8sClient)
 	if err != nil {
 		return cm, err
 	}
@@ -47,7 +48,7 @@ func UpdateImage(srcImgLocation string, cfg ImageUpdaterConfig, hooks ...PreUpda
 		return cm, err
 	}
 
-	relocatedImgTag, err := relocateImageToCanonicalRepo(img, cfg)
+	relocatedImgTag, err := relocateImageToCanonicalRepo(ctx, img, cfg)
 	if err != nil {
 		return cm, err
 	}
@@ -59,7 +60,7 @@ func UpdateImage(srcImgLocation string, cfg ImageUpdaterConfig, hooks ...PreUpda
 	}
 
 	if !cfg.DryRun {
-		cm, err = updateConfigMap(cm, cfg.ClientSet.K8sClient)
+		cm, err = updateConfigMap(ctx, cm, cfg.ClientSet.K8sClient)
 	}
 	return cm, err
 }
@@ -76,8 +77,8 @@ func validateImage(img ggcrv1.Image) error {
 	return nil
 }
 
-func relocateImageToCanonicalRepo(img ggcrv1.Image, cfg ImageUpdaterConfig) (string, error) {
-	canonicalRepo, err := buildk8s.DefaultConfigHelper(cfg.ClientSet).GetCanonicalRepository()
+func relocateImageToCanonicalRepo(ctx context.Context, img ggcrv1.Image, cfg ImageUpdaterConfig) (string, error) {
+	canonicalRepo, err := buildk8s.DefaultConfigHelper(cfg.ClientSet).GetCanonicalRepository(ctx)
 	if err != nil {
 		return "", err
 	}

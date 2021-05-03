@@ -4,6 +4,8 @@
 package fakes
 
 import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	watchTools "k8s.io/client-go/tools/watch"
 )
@@ -17,7 +19,7 @@ type FakeWaiter struct {
 	WaitCalls []WaitCall
 }
 
-func (f *FakeWaiter) Wait(ob runtime.Object, checks ...watchTools.ConditionFunc) error {
+func (f *FakeWaiter) Wait(ctx context.Context, ob runtime.Object, checks ...watchTools.ConditionFunc) error {
 	f.WaitCalls = append(f.WaitCalls, WaitCall{
 		Object:      ob,
 		ExtraChecks: checks,

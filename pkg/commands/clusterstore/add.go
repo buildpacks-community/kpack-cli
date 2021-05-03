@@ -4,11 +4,13 @@
 package clusterstore
 
 import (
+	"context"
+
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
@@ -49,21 +51,22 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			name := args[0]
+			ctx := cmd.Context()
 
-			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(name, v1.GetOptions{})
+			name := args[0]
+			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				return errors.Errorf("ClusterStore '%s' does not exist", name)
 			} else if err != nil {
 				return err
 			}
 
-			factory, err := clusterstore.NewFactory(cs, ch, rup, tlsCfg)
+			factory, err := clusterstore.NewFactory(ctx, cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
-			return update(store, buildpackages, factory, ch, cs, newWaiter(cs.DynamicClient))
+			return update(ctx, store, buildpackages, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -73,7 +76,7 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 	return cmd
 }
 
-func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
+func update(ctx context.Context, store *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
 	if err := ch.PrintStatus("Adding to ClusterStore..."); err != nil {
 		return err
 	}
@@ -84,11 +87,11 @@ func update(store *v1alpha1.ClusterStore, buildpackages []string, factory *clust
 	}
 
 	if storeUpdated && !ch.IsDryRun() {
-		updatedStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(updatedStore)
+		updatedStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(ctx, updatedStore, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
-		if err := w.Wait(updatedStore); err != nil {
+		if err := w.Wait(ctx, updatedStore); err != nil {
 			return err
 		}
 	}

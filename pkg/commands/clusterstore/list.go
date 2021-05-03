@@ -27,7 +27,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			storeList, err := cs.KpackClient.KpackV1alpha1().ClusterStores().List(metav1.ListOptions{})
+			storeList, err := cs.KpackClient.KpackV1alpha1().ClusterStores().List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}

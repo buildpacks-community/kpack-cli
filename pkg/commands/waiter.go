@@ -26,7 +26,7 @@ import (
 const defaultWaitTimeout = 10 * time.Minute
 
 type ResourceWaiter interface {
-	Wait(object runtime.Object, extraChecks ...watchTools.ConditionFunc) error
+	Wait(ctx context.Context, object runtime.Object, extraChecks ...watchTools.ConditionFunc) error
 }
 
 func NewResourceWaiter(dc dynamic.Interface) ResourceWaiter {
@@ -36,21 +36,22 @@ func NewResourceWaiter(dc dynamic.Interface) ResourceWaiter {
 type Waiter struct {
 	dynamicClient dynamic.Interface
 	timeout       time.Duration
+	ctx           context.Context
 }
 
 func NewWaiter(dc dynamic.Interface, timeout time.Duration) *Waiter {
 	return &Waiter{dynamicClient: dc, timeout: timeout}
 }
 
-func (w *Waiter) Wait(ob runtime.Object, extraConditions ...watchTools.ConditionFunc) error {
+func (w *Waiter) Wait(ctx context.Context, ob runtime.Object, extraConditions ...watchTools.ConditionFunc) error {
 	m, ok := ob.(kmeta.OwnerRefable)
 	if !ok {
 		return errors.New("unexpected type")
 	}
-	return w.wait(ob, hasResolved(m.GetObjectMeta().GetGeneration()), extraConditions...)
+	return w.wait(ctx, ob, hasResolved(m.GetObjectMeta().GetGeneration()), extraConditions...)
 }
 
-func (w *Waiter) wait(ob runtime.Object, condition watchTools.ConditionFunc, extraConditions ...watchTools.ConditionFunc) error {
+func (w *Waiter) wait(ctx context.Context, ob runtime.Object, condition watchTools.ConditionFunc, extraConditions ...watchTools.ConditionFunc) error {
 	e := &watch.Event{Object: ob}
 	cfs := append([]watchTools.ConditionFunc{condition}, extraConditions...)
 	done, err := runChecks(*e, cfs)
@@ -65,7 +66,7 @@ func (w *Waiter) wait(ob runtime.Object, condition watchTools.ConditionFunc, ext
 		}
 
 		rv := refable.GetObjectMeta().GetResourceVersion()
-		watchOne := newWatchOneWatcher(refable, w.dynamicClient)
+		watchOne := newWatchOneWatcher(ctx, refable, w.dynamicClient)
 
 		ctx, cancel := context.WithTimeout(context.Background(), w.timeout)
 		defer cancel()
@@ -142,18 +143,19 @@ type watchOneWatcher struct {
 	namespace     string
 	gvr           schema.GroupVersionResource
 	dynamicClient dynamic.Interface
+	ctx           context.Context
 }
 
-func newWatchOneWatcher(object kmeta.OwnerRefable, client dynamic.Interface) watchOneWatcher {
+func newWatchOneWatcher(ctx context.Context, object kmeta.OwnerRefable, client dynamic.Interface) watchOneWatcher {
 	name := object.GetObjectMeta().GetName()
 	namespace := object.GetObjectMeta().GetNamespace()
 	gvr, _ := meta.UnsafeGuessKindToResource(object.GetGroupVersionKind())
-	return watchOneWatcher{name: name, namespace: namespace, gvr: gvr, dynamicClient: client}
+	return watchOneWatcher{ctx: ctx, name: name, namespace: namespace, gvr: gvr, dynamicClient: client}
 }
 
 func (w watchOneWatcher) Watch(options metav1.ListOptions) (watch.Interface, error) {
 	options.FieldSelector = fmt.Sprintf("metadata.name=%s", w.name)
-	return w.dynamicClient.Resource(w.gvr).Namespace(w.namespace).Watch(options)
+	return w.dynamicClient.Resource(w.gvr).Namespace(w.namespace).Watch(w.ctx, options)
 }
 
 func filterErrors(conditions []watchTools.ConditionFunc) []watchTools.ConditionFunc {

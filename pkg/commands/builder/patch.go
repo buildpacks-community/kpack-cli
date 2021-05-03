@@ -4,6 +4,7 @@
 package builder
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -51,12 +52,14 @@ kp builder patch my-builder --buildpack my-buildpack-id --buildpack my-other-bui
 			name := args[0]
 			flags.namespace = cs.Namespace
 
-			cb, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Get(name, metav1.GetOptions{})
+			ctx := cmd.Context()
+
+			cb, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Get(ctx, name, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			return patch(cb, flags, ch, cs, newWaiter(cs.DynamicClient))
+			return patch(ctx, cb, flags, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -70,7 +73,7 @@ kp builder patch my-builder --buildpack my-buildpack-id --buildpack my-other-bui
 	return cmd
 }
 
-func patch(bldr *v1alpha1.Builder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
+func patch(ctx context.Context, bldr *v1alpha1.Builder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
 	patchedBldr := bldr.DeepCopy()
 
 	if flags.tag != "" {
@@ -109,11 +112,11 @@ func patch(bldr *v1alpha1.Builder, flags CommandFlags, ch *commands.CommandHelpe
 
 	hasPatch := len(patch) > 0
 	if hasPatch && !ch.IsDryRun() {
-		patchedBldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Patch(patchedBldr.Name, types.MergePatchType, patch)
+		patchedBldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Patch(ctx, patchedBldr.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}
-		if err := w.Wait(patchedBldr); err != nil {
+		if err := w.Wait(ctx, patchedBldr); err != nil {
 			return err
 		}
 	}

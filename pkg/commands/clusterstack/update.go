@@ -4,6 +4,7 @@
 package clusterstack
 
 import (
+	"context"
 	"io"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -55,17 +56,19 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			stack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(args[0], metav1.GetOptions{})
+			ctx := cmd.Context()
+
+			stack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(ctx, args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			factory, err := clusterstack.NewFactory(cs, ch, rup, tlsCfg)
+			factory, err := clusterstack.NewFactory(ctx, cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
-			return update(stack, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
+			return update(ctx, stack, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -78,7 +81,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func update(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
+func update(ctx context.Context, stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
 	if err := ch.PrintStatus("Updating ClusterStack..."); err != nil {
 		return err
 	}
@@ -89,11 +92,11 @@ func update(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string, fac
 	}
 
 	if hasUpdates && !ch.IsDryRun() {
-		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(stack)
+		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Update(ctx, stack, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
-		if err := w.Wait(stack); err != nil {
+		if err := w.Wait(ctx, stack); err != nil {
 			return err
 		}
 	}

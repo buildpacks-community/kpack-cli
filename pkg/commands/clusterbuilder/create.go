@@ -4,6 +4,7 @@
 package clusterbuilder
 
 import (
+	"context"
 	"fmt"
 	"path"
 
@@ -60,8 +61,9 @@ kp cb create my-builder --tag my-registry.com/my-builder-tag --buildpack my-buil
 			}
 
 			name := args[0]
+			ctx := cmd.Context()
 
-			return create(name, flags, ch, cs, newWaiter(cs.DynamicClient))
+			return create(ctx, name, flags, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -82,11 +84,11 @@ type CommandFlags struct {
 	buildpacks []string
 }
 
-func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, waiter commands.ResourceWaiter) error {
+func create(ctx context.Context, name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, waiter commands.ResourceWaiter) error {
 	configHelper := k8s.DefaultConfigHelper(cs)
 
 	if flags.tag == "" {
-		repository, err := configHelper.GetCanonicalRepository()
+		repository, err := configHelper.GetCanonicalRepository(ctx)
 		if err != nil {
 			return err
 		}
@@ -94,7 +96,7 @@ func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.
 		flags.tag = path.Join(repository, name)
 	}
 
-	serviceAccount, err := configHelper.GetCanonicalServiceAccount()
+	serviceAccount, err := configHelper.GetCanonicalServiceAccount(ctx)
 	if err != nil {
 		return err
 	}
@@ -148,11 +150,11 @@ func create(name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.
 	}
 
 	if !ch.IsDryRun() {
-		cb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(cb)
+		cb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(ctx, cb, metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
-		if err := waiter.Wait(cb); err != nil {
+		if err := waiter.Wait(ctx, cb); err != nil {
 			return err
 		}
 	}

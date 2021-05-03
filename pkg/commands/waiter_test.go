@@ -4,6 +4,7 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -64,7 +65,7 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				Status: conditionReady(corev1.ConditionTrue, generation),
 			}
 
-			require.NoError(t, waiter.Wait(resourceToWatch))
+			require.NoError(t, waiter.Wait(context.Background(), resourceToWatch))
 		})
 
 		it("returns an error when resource is already failed", func() {
@@ -72,7 +73,7 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				Status: conditionReady(corev1.ConditionFalse, generation),
 			}
 
-			require.EqualError(t, waiter.Wait(resourceToWatch), "Builder \"some-name\" not ready: some-message")
+			require.EqualError(t, waiter.Wait(context.Background(), resourceToWatch), "Builder \"some-name\" not ready: some-message")
 		})
 
 		it("waits for the correct generation", func() {
@@ -89,7 +90,7 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				},
 			})
 
-			require.NoError(t, waiter.Wait(resourceToWatch))
+			require.NoError(t, waiter.Wait(context.Background(), resourceToWatch))
 		})
 
 		it("runs extra condition checks", func() {
@@ -107,7 +108,7 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				},
 			})
 
-			require.NoError(t, waiter.Wait(resourceToWatch, fakeConditionChecker.conditionCheck))
+			require.NoError(t, waiter.Wait(context.Background(), resourceToWatch, fakeConditionChecker.conditionCheck))
 			require.True(t, fakeConditionChecker.called)
 		})
 	})

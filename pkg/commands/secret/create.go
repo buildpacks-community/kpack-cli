@@ -76,8 +76,10 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				return err
 			}
 
+			ctx := cmd.Context()
+
 			if !ch.IsDryRun() {
-				secret, err = cs.K8sClient.CoreV1().Secrets(cs.Namespace).Create(secret)
+				secret, err = cs.K8sClient.CoreV1().Secrets(cs.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 				if err != nil {
 					return err
 				}
@@ -87,7 +89,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				return err
 			}
 
-			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get("default", metav1.GetOptions{})
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(ctx, "default", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -103,7 +105,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 			}
 
 			if !ch.IsDryRun() {
-				serviceAccount, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(serviceAccount)
+				serviceAccount, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(ctx, serviceAccount, metav1.UpdateOptions{})
 				if err != nil {
 					return err
 				}

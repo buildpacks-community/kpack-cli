@@ -6,7 +6,7 @@ package clusterstore
 import (
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
@@ -43,6 +43,7 @@ kp clusterstore save my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
+			ctx := cmd.Context()
 			w := newWaiter(cs.DynamicClient)
 
 			ch, err := commands.NewCommandHelper(cmd)
@@ -51,20 +52,19 @@ kp clusterstore save my-store -b ../path/to/my-local-buildpackage.cnb`,
 			}
 
 			name := args[0]
-
-			factory, err := clusterstore.NewFactory(cs, ch, rup, tlsCfg)
+			factory, err := clusterstore.NewFactory(ctx, cs, ch, rup, tlsCfg)
 			if err != nil {
 				return err
 			}
 
-			clusterStore, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(name, v1.GetOptions{})
+			clusterStore, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
-				return create(name, buildpackages, factory, ch, cs, w)
+				return create(ctx, name, buildpackages, factory, ch, cs, w)
 			} else if err != nil {
 				return err
 			}
 
-			return update(clusterStore, buildpackages, factory, ch, cs, w)
+			return update(ctx, clusterStore, buildpackages, factory, ch, cs, w)
 		},
 	}
 
