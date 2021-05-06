@@ -55,11 +55,11 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
-	it("defaults the git revision to master", func() {
+	it("defaults the git revision to main", func() {
 		factory.GitRepo = "some-repo"
 		_, patch, err := factory.MakePatch(img)
 		require.NoError(t, err)
-		require.Equal(t, `{"spec":{"source":{"blob":null,"git":{"revision":"master","url":"some-repo"}}}}`, string(patch))
+		require.Equal(t, `{"spec":{"source":{"blob":null,"git":{"revision":"main","url":"some-repo"}}}}`, string(patch))
 	})
 
 	when("too many source types are provided", func() {

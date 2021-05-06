@@ -114,9 +114,9 @@ Image "some-image" created
 				assert.Equal(t, fakeImageWaiter.Calls[0], expectedImage)
 			})
 
-			it("defaults the git revision to master", func() {
-				expectedImage.Spec.Source.Git.Revision = "master"
-				expectedImage.ObjectMeta.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"master"},"subPath":"some-sub-path"},"cacheSize":"2G","build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`
+			it("defaults the git revision to main", func() {
+				expectedImage.Spec.Source.Git.Revision = "main"
+				expectedImage.ObjectMeta.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"main"},"subPath":"some-sub-path"},"cacheSize":"2G","build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`
 
 				testhelpers.CommandTest{
 					Args: []string{

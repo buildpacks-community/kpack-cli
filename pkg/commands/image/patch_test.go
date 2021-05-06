@@ -172,7 +172,7 @@ Image "some-image" patched
 			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 
-		it("git revision defaults to master if not provided with git", func() {
+		it("git revision defaults to main if not provided with git", func() {
 			existingImage.Spec.Source = v1alpha1.SourceConfig{
 				Blob: &v1alpha1.Blob{
 					URL: "some-blob",
@@ -191,7 +191,7 @@ Image "some-image" patched
 Image "some-image" patched
 `,
 				ExpectPatches: []string{
-					`{"spec":{"source":{"blob":null,"git":{"revision":"master","url":"some-new-git-url"}}}}`,
+					`{"spec":{"source":{"blob":null,"git":{"revision":"main","url":"some-new-git-url"}}}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 			assert.Len(t, fakeImageWaiter.Calls, 0)

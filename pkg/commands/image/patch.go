@@ -101,7 +101,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVar(&factory.GitRepo, "git", "", "git repository url")
-	cmd.Flags().StringVar(&factory.GitRevision, "git-revision", "", "git revision (default \"master\")")
+	cmd.Flags().StringVar(&factory.GitRevision, "git-revision", "", "git revision such as commit, tag, or branch (default \"main\")")
 	cmd.Flags().StringVar(&factory.Blob, "blob", "", "source code blob url")
 	cmd.Flags().StringVar(&factory.LocalPath, "local-path", "", "path to local source code")
 	cmd.Flags().StringVar(&subPath, "sub-path", "", "build code at the sub path located within the source code directory")
