@@ -60,7 +60,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
                                          resource from --output without image uploads will result in a reconcile failure.
   -e, --env stringArray                build time environment variables to add/replace
       --git string                     git repository url
-      --git-revision string            git revision (default "master")
+      --git-revision string            git revision (default "main")
   -h, --help                           help for patch
       --local-path string              path to local source code
   -n, --namespace string               kubernetes namespace

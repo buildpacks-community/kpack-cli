@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultRevision = "master"
+	defaultRevision = "main"
 )
 
 type SourceUploader interface {
