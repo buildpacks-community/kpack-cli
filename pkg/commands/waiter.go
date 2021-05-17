@@ -171,3 +171,15 @@ func filterErrors(conditions []watchTools.ConditionFunc) []watchTools.ConditionF
 	}
 	return cfs
 }
+
+type noopWaiter struct {}
+
+func NewNoopWaiter() ResourceWaiter {
+	return &noopWaiter{}
+}
+
+func (n noopWaiter) Wait(ctx context.Context, object runtime.Object, extraChecks ...watchTools.ConditionFunc) error {
+	return nil
+}
+
+

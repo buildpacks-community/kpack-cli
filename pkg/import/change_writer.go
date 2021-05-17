@@ -6,9 +6,11 @@ package _import
 import (
 	"context"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/pivotal/build-service-cli/pkg/config"
 	buildk8s "github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/lifecycle"
 )
@@ -39,7 +41,7 @@ func writeLifecycleChange(ctx context.Context, newLifecycle Lifecycle, differ *I
 	return nil
 }
 
-func writeClusterStoresChange(ctx context.Context, stores []ClusterStore, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
+func writeClusterStoresChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, stores []ClusterStore, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	for _, store := range stores {
 		oldStore, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(ctx, store.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
@@ -49,7 +51,7 @@ func writeClusterStoresChange(ctx context.Context, stores []ClusterStore, differ
 			oldStore = nil
 		}
 
-		diff, err := differ.DiffClusterStore(oldStore, store)
+		diff, err := differ.DiffClusterStore(keychain, kpConfig, oldStore, store)
 		if err != nil {
 			return err
 		}
@@ -62,7 +64,7 @@ func writeClusterStoresChange(ctx context.Context, stores []ClusterStore, differ
 	return nil
 }
 
-func writeClusterStacksChange(ctx context.Context, stacks []ClusterStack, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
+func writeClusterStacksChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, stacks []ClusterStack, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	for _, stack := range stacks {
 		oldStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(ctx, stack.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
@@ -72,7 +74,7 @@ func writeClusterStacksChange(ctx context.Context, stacks []ClusterStack, differ
 			oldStack = nil
 		}
 
-		diff, err := differ.DiffClusterStack(oldStack, stack)
+		diff, err := differ.DiffClusterStack(keychain, kpConfig, oldStack, stack)
 		if err != nil {
 			return err
 		}

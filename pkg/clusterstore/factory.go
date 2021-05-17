@@ -4,56 +4,44 @@
 package clusterstore
 
 import (
-	"context"
-	"io"
 	"strings"
 
-	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/pivotal/build-service-cli/pkg/buildpackage"
-	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/config"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type BuildpackageUploader interface {
-	UploadBuildpackage(buildPackage, repository string, tlsCfg registry.TLSConfig, writer io.Writer) (string, error)
-	UploadedBuildpackageRef(buildPackage, repository string, tlsCfg registry.TLSConfig) (string, error)
+	UploadBuildpackage(keychain authn.Keychain, buildPackage, repository string) (string, error)
+	UploadedBuildpackageRef(keychain authn.Keychain, buildPackage, repository string) (string, error)
 }
 
 type Printer interface {
 	Printlnf(format string, args ...interface{}) error
-	Writer() io.Writer
 }
 
 type Factory struct {
-	Uploader   BuildpackageUploader
-	TLSConfig  registry.TLSConfig
-	Repository string
-	Printer    Printer
+	Uploader BuildpackageUploader
+	Printer  Printer
 }
 
-func NewFactory(ctx context.Context, cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*Factory, error) {
-	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func NewFactory(printer Printer, relocator registry.Relocator, fetcher registry.Fetcher) *Factory {
 	return &Factory{
 		Uploader: &buildpackage.Uploader{
-			Fetcher:   rup.Fetcher(),
-			Relocator: rup.Relocator(ch.CanChangeState()),
+			Fetcher:   fetcher,
+			Relocator: relocator,
 		},
-		TLSConfig:  tlsCfg,
-		Repository: repo,
-		Printer:    ch,
-	}, nil
+		Printer: printer,
+	}
 }
 
-func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.ClusterStore, error) {
+func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha1.ClusterStore, error) {
 	if err := f.validate(buildpackages); err != nil {
 		return nil, err
 	}
@@ -71,7 +59,7 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 	}
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(buildpackage, f.Repository, f.TLSConfig, f.Printer.Writer())
+		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, kpConfig.CanonicalRepository)
 		if err != nil {
 			return nil, err
 		}
@@ -84,10 +72,10 @@ func (f *Factory) MakeStore(name string, buildpackages ...string) (*v1alpha1.Clu
 	return newStore, k8s.SetLastAppliedCfg(newStore)
 }
 
-func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
+func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha1.ClusterStore, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
 	storeUpdated := false
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(buildpackage, f.Repository, f.TLSConfig, f.Printer.Writer())
+		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, kpConfig.CanonicalRepository)
 		if err != nil {
 			return nil, false, err
 		}
@@ -113,8 +101,8 @@ func (f *Factory) AddToStore(store *v1alpha1.ClusterStore, buildpackages ...stri
 	return store, storeUpdated, nil
 }
 
-func (f *Factory) RelocatedBuildpackage(buildPackage string) (string, error) {
-	return f.Uploader.UploadedBuildpackageRef(buildPackage, f.Repository, f.TLSConfig)
+func (f *Factory) RelocatedBuildpackage(keychain authn.Keychain, kpConfig config.KpConfig, buildPackage string) (string, error) {
+	return f.Uploader.UploadedBuildpackageRef(keychain, buildPackage, kpConfig.CanonicalRepository)
 }
 
 func (f *Factory) validate(buildpackages []string) error {
@@ -122,8 +110,7 @@ func (f *Factory) validate(buildpackages []string) error {
 		return errors.New("At least one buildpackage must be provided")
 	}
 
-	_, err := name.ParseReference(f.Repository, name.WeakValidation)
-	return err
+	return nil
 }
 
 func storeContains(store *v1alpha1.ClusterStore, buildpackage string) bool {

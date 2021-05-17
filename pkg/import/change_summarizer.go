@@ -8,20 +8,25 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/authn"
+
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
+	"github.com/pivotal/build-service-cli/pkg/config"
 	buildk8s "github.com/pivotal/build-service-cli/pkg/k8s"
 )
 
 func SummarizeChange(
 	ctx context.Context,
+	keychain authn.Keychain,
 	desc DependencyDescriptor,
+	kpConfig config.KpConfig,
 	storeFactory *clusterstore.Factory, stackFactory *clusterstack.Factory,
 	differ Differ, cs buildk8s.ClientSet) (hasChanges bool, changes string, err error) {
 
 	var summarizer changeSummarizer
 	iDiffer := &ImportDiffer{
-		Differ:         differ,
+		Differ: differ,
 		StoreRefGetter: storeFactory,
 		StackRefGetter: stackFactory,
 	}
@@ -31,12 +36,12 @@ func SummarizeChange(
 		return
 	}
 
-	err = writeClusterStoresChange(ctx, desc.ClusterStores, iDiffer, cs, &summarizer)
+	err = writeClusterStoresChange(ctx, keychain, kpConfig, desc.ClusterStores, iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}
 
-	err = writeClusterStacksChange(ctx, desc.GetClusterStacks(), iDiffer, cs, &summarizer)
+	err = writeClusterStacksChange(ctx, keychain, kpConfig, desc.GetClusterStacks(), iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}

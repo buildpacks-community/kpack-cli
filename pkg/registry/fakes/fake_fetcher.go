@@ -6,10 +6,9 @@ package fakes
 import (
 	"fmt"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
-
-	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 const (
@@ -62,7 +61,7 @@ func NewLifecycleImageFetcher(i ...LifecycleInfo) *Fetcher {
 	return &fetcher
 }
 
-func (f *Fetcher) Fetch(src string, _ registry.TLSConfig) (v1.Image, error) {
+func (f *Fetcher) Fetch(_ authn.Keychain, src string) (v1.Image, error) {
 	f.callCount++
 	image, ok := f.images[src]
 	if !ok {

@@ -5,15 +5,14 @@ package stackimage
 
 import (
 	"fmt"
-	"io/ioutil"
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
+	kpackregistryfakes "github.com/pivotal/kpack/pkg/registry/registryfakes"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/registry"
 	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
 )
 
@@ -28,6 +27,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 		Fetcher:   fetcher,
 		Relocator: relocator,
 	}
+	fakeKeychain := &kpackregistryfakes.FakeKeychain{}
 
 	when("UploadStackImages", func() {
 		it("it uploads to registry", func() {
@@ -44,7 +44,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 			runDigest, err := testRunImage.Digest()
 			require.NoError(t, err)
 
-			bldImage, runImage, err := uploader.UploadStackImages("some/remote-build", "some/remote-run", "kpackcr.org/somepath", registry.TLSConfig{}, ioutil.Discard)
+			bldImage, runImage, err := uploader.UploadStackImages(fakeKeychain, "some/remote-build", "some/remote-run", "kpackcr.org/somepath")
 			require.NoError(t, err)
 
 			expectedBldImage := fmt.Sprintf("kpackcr.org/somepath/build@%s", bldDigest)
@@ -70,7 +70,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 			fetcher.AddImage("some/remote-build", testBuildImage)
 			fetcher.AddImage("some/remote-run", testRunImage)
 
-			stackID, err := uploader.ValidateStackIDs("some/remote-build", "some/remote-run", registry.TLSConfig{})
+			stackID, err := uploader.ValidateStackIDs(fakeKeychain, "some/remote-build", "some/remote-run")
 			require.NoError(t, err)
 
 			require.Equal(t, "some-id", stackID)
@@ -90,7 +90,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 			fetcher.AddImage("some/remote-build", testBuildImage)
 			fetcher.AddImage("some/remote-run", testRunImage)
 
-			_, err = uploader.ValidateStackIDs("some/remote-build", "some/remote-run", registry.TLSConfig{})
+			_, err = uploader.ValidateStackIDs(fakeKeychain, "some/remote-build", "some/remote-run")
 			require.EqualError(t, err, "build stack 'some-id' does not match run stack 'some-other-id'")
 		})
 	})
@@ -102,7 +102,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.AddImage("some/remote", testImage)
 
-			ref, err := uploader.UploadedBuildImageRef("some/remote", "kpackcr.org/somepath", registry.TLSConfig{})
+			ref, err := uploader.UploadedBuildImageRef(fakeKeychain,"some/remote", "kpackcr.org/somepath")
 			require.NoError(t, err)
 
 			digest, err := testImage.Digest()
@@ -120,7 +120,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.AddImage("some/remote", testImage)
 
-			ref, err := uploader.UploadedRunImageRef("some/remote", "kpackcr.org/somepath", registry.TLSConfig{})
+			ref, err := uploader.UploadedRunImageRef(fakeKeychain, "some/remote", "kpackcr.org/somepath")
 			require.NoError(t, err)
 
 			digest, err := testImage.Digest()

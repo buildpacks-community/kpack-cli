@@ -15,49 +15,65 @@ import (
 )
 
 type Relocator interface {
-	Relocate(srcImage v1.Image, dstRepoStr string, writer io.Writer, tlsCfg TLSConfig) (string, error)
+	Relocate(keychain authn.Keychain, src v1.Image, destination string) (string, error)
 }
 
-type DiscardRelocator struct{}
+type DiscardRelocator struct{
+	writer io.Writer
+}
 
-func (d DiscardRelocator) Relocate(srcImage v1.Image, dstRepoStr string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
-	cfg, err := getRelocateCfg(srcImage, dstRepoStr, tlsCfg)
+func NewDiscardRelocator(writer io.Writer) DiscardRelocator {
+	return DiscardRelocator{writer: writer}
+}
+
+func (d DiscardRelocator) Relocate(keychain authn.Keychain, src v1.Image, destination string) (string, error) {
+	cfg, err := getDstImageInfo(src, destination)
 	if err != nil {
 		return "", err
 	}
 
-	_, err = writer.Write([]byte(fmt.Sprintf("\tSkipping '%s'\n", cfg.imgInfo.refDigestStr)))
-	return cfg.imgInfo.refDigestStr, err
+	_, err = d.writer.Write([]byte(fmt.Sprintf("\tSkipping '%s'\n", cfg.refDigestStr)))
+	return cfg.refDigestStr, err
 }
 
-type DefaultRelocator struct{}
+type DefaultRelocator struct{
+	tlsCfg TLSConfig
+	writer io.Writer
+}
 
-func (d DefaultRelocator) Relocate(srcImage v1.Image, dstRepoStr string, writer io.Writer, tlsCfg TLSConfig) (string, error) {
-	cfg, err := getRelocateCfg(srcImage, dstRepoStr, tlsCfg)
+func NewDefaultRelocator(writer io.Writer, tlsCfg TLSConfig) DefaultRelocator {
+	return DefaultRelocator{writer: writer, tlsCfg: tlsCfg}
+}
+
+func (d DefaultRelocator) Relocate(keychain authn.Keychain, src v1.Image, destination string) (string, error) {
+	cfg, err := getDstImageInfo(src, destination)
 	if err != nil {
 		return "", err
 	}
 
-	i := cfg.imgInfo
-	if _, err := writer.Write([]byte(fmt.Sprintf("\tUploading '%s'", i.refDigestStr))); err != nil {
-		return i.refDigestStr, err
+	if _, err := d.writer.Write([]byte(fmt.Sprintf("\tUploading '%s'", cfg.refDigestStr))); err != nil {
+		return cfg.refDigestStr, err
 	}
 
-	spinner := newUploadSpinner(writer, i.size)
+	spinner := newUploadSpinner(d.writer, cfg.size)
 	defer spinner.Stop()
 	go spinner.Write()
 
-	err = remote.Write(i.refRepo, srcImage, cfg.imgWriteOptions...)
+	transport, err := d.tlsCfg.Transport()
 	if err != nil {
-		return i.refDigestStr, newImageAccessError(i.refRepo.Context().RegistryStr(), err)
+		return cfg.refDigestStr, err
+	}
+	imgWriteOptions := []remote.Option{
+		remote.WithAuthFromKeychain(keychain),
+		remote.WithTransport(transport),
 	}
 
-	return i.refDigestStr, remote.Tag(i.tag, srcImage, cfg.imgWriteOptions...)
-}
+	err = remote.Write(cfg.refRepo, src, imgWriteOptions...)
+	if err != nil {
+		return cfg.refDigestStr, newImageAccessError(cfg.refRepo.Context().RegistryStr(), err)
+	}
 
-type relocateCfg struct {
-	imgInfo         relocateImageInfo
-	imgWriteOptions []remote.Option
+	return cfg.refDigestStr, remote.Tag(cfg.tag, src, imgWriteOptions...)
 }
 
 type relocateImageInfo struct {
@@ -65,29 +81,6 @@ type relocateImageInfo struct {
 	refDigestStr string
 	tag          name.Tag
 	size         int64
-}
-
-func getRelocateCfg(srcImage v1.Image, dstRepoStr string, tlsCfg TLSConfig) (relocateCfg, error) {
-	var cfg relocateCfg
-
-	imgInfo, err := getDstImageInfo(srcImage, dstRepoStr)
-	if err != nil {
-		return cfg, err
-	}
-
-	transport, err := tlsCfg.Transport()
-	if err != nil {
-		return cfg, err
-	}
-
-	cfg = relocateCfg{
-		imgInfo: imgInfo,
-		imgWriteOptions: []remote.Option{
-			remote.WithAuthFromKeychain(authn.DefaultKeychain),
-			remote.WithTransport(transport),
-		},
-	}
-	return cfg, err
 }
 
 func getDstImageInfo(srcImage v1.Image, dstRepoStr string) (relocateImageInfo, error) {

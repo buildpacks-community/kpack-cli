@@ -8,6 +8,7 @@ import (
 	"io"
 	"path"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/pkg/errors"
@@ -33,13 +34,13 @@ type ImageUpdaterConfig struct {
 	TLSConfig    registry.TLSConfig
 }
 
-func UpdateImage(ctx context.Context, srcImgLocation string, cfg ImageUpdaterConfig, hooks ...PreUpdateHook) (*corev1.ConfigMap, error) {
+func UpdateImage(ctx context.Context, keychain authn.Keychain, srcImgLocation string, cfg ImageUpdaterConfig, hooks ...PreUpdateHook) (*corev1.ConfigMap, error) {
 	cm, err := getConfigMap(ctx, cfg.ClientSet.K8sClient)
 	if err != nil {
 		return cm, err
 	}
 
-	img, err := cfg.ImgFetcher.Fetch(srcImgLocation, cfg.TLSConfig)
+	img, err := cfg.ImgFetcher.Fetch(keychain, srcImgLocation)
 	if err != nil {
 		return cm, err
 	}
@@ -48,7 +49,7 @@ func UpdateImage(ctx context.Context, srcImgLocation string, cfg ImageUpdaterCon
 		return cm, err
 	}
 
-	relocatedImgTag, err := relocateImageToCanonicalRepo(ctx, img, cfg)
+	relocatedImgTag, err := relocateImageToCanonicalRepo(ctx, keychain, img, cfg)
 	if err != nil {
 		return cm, err
 	}
@@ -77,12 +78,12 @@ func validateImage(img ggcrv1.Image) error {
 	return nil
 }
 
-func relocateImageToCanonicalRepo(ctx context.Context, img ggcrv1.Image, cfg ImageUpdaterConfig) (string, error) {
+func relocateImageToCanonicalRepo(ctx context.Context, keychain authn.Keychain, img ggcrv1.Image, cfg ImageUpdaterConfig) (string, error) {
 	canonicalRepo, err := buildk8s.DefaultConfigHelper(cfg.ClientSet).GetCanonicalRepository(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	dstImgLocation := path.Join(canonicalRepo, lifecycleImageName)
-	return cfg.ImgRelocator.Relocate(img, dstImgLocation, cfg.IOWriter, cfg.TLSConfig)
+	return cfg.ImgRelocator.Relocate(keychain, img, dstImgLocation)
 }

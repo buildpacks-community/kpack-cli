@@ -4,6 +4,7 @@
 package clusterstack
 
 import (
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,13 +52,9 @@ kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../
 				return err
 			}
 
-			factory, err := clusterstack.NewFactory(ctx, cs, ch, rup, tlsCfg)
-			if err != nil {
-				return err
-			}
+			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun()), rup.Fetcher(tlsCfg))
 
 			name := args[0]
-
 			cStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				return create(ctx, name, buildImageRef, runImageRef, factory, ch, cs, w)
@@ -65,7 +62,7 @@ kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../
 				return err
 			}
 
-			return update(ctx, cStack, buildImageRef, runImageRef, factory, ch, cs, w)
+			return update(ctx,authn.DefaultKeychain, cStack, buildImageRef, runImageRef, factory, ch, cs, w)
 		},
 	}
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")

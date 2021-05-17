@@ -8,16 +8,19 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/pivotal/build-service-cli/pkg/config"
 )
 
 type StoreRefGetter interface {
-	RelocatedBuildpackage(string) (string, error)
+	RelocatedBuildpackage(authn.Keychain, config.KpConfig, string) (string, error)
 }
 type StackRefGetter interface {
-	RelocatedBuildImage(string) (string, error)
-	RelocatedRunImage(string) (string, error)
+	RelocatedBuildImage(authn.Keychain, config.KpConfig, string) (string, error)
+	RelocatedRunImage(authn.Keychain, config.KpConfig, string) (string, error)
 }
 
 type Differ interface {
@@ -34,7 +37,7 @@ func (id *ImportDiffer) DiffLifecycle(oldImg string, newImg string) (string, err
 	return id.Differ.Diff(oldImg, newImg)
 }
 
-func (id *ImportDiffer) DiffClusterStore(oldCS *v1alpha1.ClusterStore, newCS ClusterStore) (string, error) {
+func (id *ImportDiffer) DiffClusterStore(keychain authn.Keychain, kpConfig config.KpConfig, oldCS *v1alpha1.ClusterStore, newCS ClusterStore) (string, error) {
 	type void struct{}
 	newBPs := map[string]void{}
 	mux := &sync.Mutex{}
@@ -43,7 +46,7 @@ func (id *ImportDiffer) DiffClusterStore(oldCS *v1alpha1.ClusterStore, newCS Clu
 	for _, bp := range newCS.Sources {
 		image := bp.Image
 		errs.Go(func() error {
-			relocatedBP, err := id.StoreRefGetter.RelocatedBuildpackage(image)
+			relocatedBP, err := id.StoreRefGetter.RelocatedBuildpackage(keychain, kpConfig, image)
 			if err != nil {
 				return err
 			}
@@ -79,12 +82,12 @@ Sources:`, oldCS.Name)
 	return id.Differ.Diff(oldCSStr, newCS)
 }
 
-func (id *ImportDiffer) DiffClusterStack(oldCS *v1alpha1.ClusterStack, newCS ClusterStack) (diff string, err error) {
-	newCS.BuildImage.Image, err = id.StackRefGetter.RelocatedBuildImage(newCS.BuildImage.Image)
+func (id *ImportDiffer) DiffClusterStack(keychain authn.Keychain, kpConfig config.KpConfig, oldCS *v1alpha1.ClusterStack, newCS ClusterStack) (diff string, err error) {
+	newCS.BuildImage.Image, err = id.StackRefGetter.RelocatedBuildImage(keychain, kpConfig, newCS.BuildImage.Image)
 	if err != nil {
 		return "", err
 	}
-	newCS.RunImage.Image, err = id.StackRefGetter.RelocatedRunImage(newCS.RunImage.Image)
+	newCS.RunImage.Image, err = id.StackRefGetter.RelocatedRunImage(keychain, kpConfig, newCS.RunImage.Image)
 	if err != nil {
 		return "", err
 	}

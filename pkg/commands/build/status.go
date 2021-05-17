@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/buildchange"
@@ -75,7 +76,7 @@ Therefore, you must have credentials to access the registry on your machine when
 				}
 
 				if bom {
-					return displayBOM(cmd, bld, rup, tlsConfig)
+					return displayBOM(authn.DefaultKeychain, cmd, bld, rup, tlsConfig)
 				} else {
 					return displayBuildStatus(cmd, bld)
 				}
@@ -262,7 +263,7 @@ func reasonsAndChanges(changesJson string) (string, string, error) {
 	return reasonsStr, changesStr, nil
 }
 
-func displayBOM(cmd *cobra.Command, bld v1alpha1.Build, rup registry.UtilProvider, tlsConfig registry.TLSConfig) error {
+func displayBOM(keychain authn.Keychain, cmd *cobra.Command, bld v1alpha1.Build, rup registry.UtilProvider, tlsConfig registry.TLSConfig) error {
 	cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded)
 	if cond == nil || !cond.IsTrue() {
 		return errors.Errorf("build has failed or has not finished")
@@ -273,9 +274,9 @@ func displayBOM(cmd *cobra.Command, bld v1alpha1.Build, rup registry.UtilProvide
 		return err
 	}
 
-	fetcher := rup.Fetcher()
+	fetcher := rup.Fetcher(tlsConfig)
 
-	image, err := fetcher.Fetch(bld.Status.LatestImage, tlsConfig)
+	image, err := fetcher.Fetch(keychain, bld.Status.LatestImage)
 	if err != nil {
 		return err
 	}

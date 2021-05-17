@@ -709,7 +709,7 @@ Imported resources
 
 	it("errors when the descriptor apiVersion is unexpected", func() {
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{},
+			K8sObjects: []runtime.Object{kpConfig},
 			Args: []string{
 				"-f", "./testdata/invalid-deps.yaml",
 			},

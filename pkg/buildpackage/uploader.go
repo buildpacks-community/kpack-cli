@@ -5,19 +5,18 @@ package buildpackage
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/pkg/errors"
 
 	"github.com/pivotal/build-service-cli/pkg/archive"
-	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 const (
@@ -25,11 +24,11 @@ const (
 )
 
 type Relocator interface {
-	Relocate(image v1.Image, dest string, writer io.Writer, tlsCfg registry.TLSConfig) (string, error)
+	Relocate(keychain authn.Keychain, image v1.Image, dest string) (string, error)
 }
 
 type Fetcher interface {
-	Fetch(src string, tlsCfg registry.TLSConfig) (v1.Image, error)
+	Fetch(keychain authn.Keychain, image string) (v1.Image, error)
 }
 
 type Uploader struct {
@@ -37,29 +36,29 @@ type Uploader struct {
 	Fetcher   Fetcher
 }
 
-func (u *Uploader) UploadBuildpackage(buildPackage, repository string, tlsCfg registry.TLSConfig, writer io.Writer) (string, error) {
+func (u *Uploader) UploadBuildpackage(keychain authn.Keychain, buildPackage, repository string) (string, error) {
 	tempDir, err := ioutil.TempDir("", "cnb-upload")
 	if err != nil {
 		return "", err
 	}
 	defer os.RemoveAll(tempDir)
 
-	image, tag, err := u.destinationTag(buildPackage, repository, tempDir, tlsCfg)
+	image, tag, err := u.destinationTag(keychain, buildPackage, repository, tempDir)
 	if err != nil {
 		return "", err
 	}
 
-	return u.Relocator.Relocate(image, tag, writer, tlsCfg)
+	return u.Relocator.Relocate(keychain, image, tag)
 }
 
-func (u *Uploader) UploadedBuildpackageRef(buildPackage, repository string, tlsCfg registry.TLSConfig) (string, error) {
+func (u *Uploader) UploadedBuildpackageRef(keychain authn.Keychain, buildPackage, repository string) (string, error) {
 	tempDir, err := ioutil.TempDir("", "cnb-upload")
 	if err != nil {
 		return "", err
 	}
 	defer os.RemoveAll(tempDir)
 
-	image, tag, err := u.destinationTag(buildPackage, repository, tempDir, tlsCfg)
+	image, tag, err := u.destinationTag(keychain, buildPackage, repository, tempDir)
 	if err != nil {
 		return "", err
 	}
@@ -71,8 +70,8 @@ func (u *Uploader) UploadedBuildpackageRef(buildPackage, repository string, tlsC
 	return fmt.Sprintf("%s@%s", tag, digest.String()), nil
 }
 
-func (u *Uploader) destinationTag(buildPackage, repository, tempDir string, tlsCfg registry.TLSConfig) (v1.Image, string, error) {
-	image, err := u.read(buildPackage, tempDir, tlsCfg)
+func (u *Uploader) destinationTag(keychain authn.Keychain, buildPackage, repository, tempDir string) (v1.Image, string, error) {
+	image, err := u.read(keychain, buildPackage, tempDir)
 	if err != nil {
 		return nil, "", err
 	}
@@ -89,12 +88,12 @@ func (u *Uploader) destinationTag(buildPackage, repository, tempDir string, tlsC
 	return image, path.Join(repository, strings.ReplaceAll(metadata.Id, "/", "_")), nil
 }
 
-func (u *Uploader) read(buildPackage, tempDir string, tlsCfg registry.TLSConfig) (v1.Image, error) {
+func (u *Uploader) read(keychain authn.Keychain, buildPackage, tempDir string) (v1.Image, error) {
 	if isLocalCnb(buildPackage) {
 		cnb, err := readCNB(buildPackage, tempDir)
 		return cnb, errors.Wrapf(err, "invalid local buildpackage %s", buildPackage)
 	}
-	return u.Fetcher.Fetch(buildPackage, tlsCfg)
+	return u.Fetcher.Fetch(keychain, buildPackage)
 }
 
 func isLocalCnb(buildPackage string) bool {

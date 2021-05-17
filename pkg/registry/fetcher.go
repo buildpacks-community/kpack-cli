@@ -15,12 +15,19 @@ import (
 )
 
 type Fetcher interface {
-	Fetch(src string, tlsCfg TLSConfig) (v1.Image, error)
+	Fetch(keychain authn.Keychain, src string) (v1.Image, error)
 }
 
-type DefaultFetcher struct{}
+type DefaultFetcher struct{
+	tlsCfg TLSConfig
+}
 
-func (d DefaultFetcher) Fetch(src string, tlsCfg TLSConfig) (v1.Image, error) {
+func NewDefaultFetcher(tlsCfg TLSConfig) DefaultFetcher {
+	return DefaultFetcher{tlsCfg: tlsCfg}
+}
+
+
+func (d DefaultFetcher) Fetch(keychain authn.Keychain, src string) (v1.Image, error) {
 	if d.isLocal(src) {
 		return tarball.ImageFromPath(src, nil)
 	} else {
@@ -32,15 +39,15 @@ func (d DefaultFetcher) Fetch(src string, tlsCfg TLSConfig) (v1.Image, error) {
 		// Do not verify with custom CA on windows when reading from registry
 		// https://github.com/golang/go/issues/16736
 		if runtime.GOOS == "windows" {
-			tlsCfg.CaCertPath = ""
+			d.tlsCfg.CaCertPath = ""
 		}
 
-		t, err := tlsCfg.Transport()
+		t, err := d.tlsCfg.Transport()
 		if err != nil {
 			return nil, err
 		}
 
-		img, err := remote.Image(imageRef, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithTransport(t))
+		img, err := remote.Image(imageRef, remote.WithAuthFromKeychain(keychain), remote.WithTransport(t))
 		if err != nil {
 			return nil, newImageAccessError(imageRef.String(), err)
 		}

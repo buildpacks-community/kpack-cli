@@ -171,8 +171,7 @@ ClusterStore "store-name" updated (no change)
 				"-b", "some/someimage",
 			},
 			ExpectErr: true,
-			ExpectedOutput: `Error: failed to get canonical repository: configmaps "kp-config" not found
-`,
+			ExpectedOutput: "Adding to ClusterStore...\nError: configmaps \"kp-config\" not found\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
@@ -197,8 +196,7 @@ ClusterStore "store-name" updated (no change)
 				"-b", "some/someimage",
 			},
 			ExpectErr: true,
-			ExpectedOutput: `Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
-`,
+			ExpectedOutput: "Adding to ClusterStore...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
