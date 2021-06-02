@@ -5,15 +5,14 @@ package buildpackage
 
 import (
 	"fmt"
-	"io/ioutil"
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
+	"github.com/pivotal/kpack/pkg/registry/registryfakes"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/registry"
 	"github.com/pivotal/build-service-cli/pkg/registry/fakes"
 )
 
@@ -28,11 +27,12 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 		Fetcher:   fetcher,
 		Relocator: relocator,
 	}
+	fakeKeychain := &registryfakes.FakeKeychain{}
 
 	when("UploadBuildpackage", func() {
 		when("cnb file is provided", func() {
 			it("it uploads to registry", func() {
-				image, err := uploader.UploadBuildpackage("testdata/sample-bp.cnb", "kpackcr.org/somepath", registry.TLSConfig{}, ioutil.Discard)
+				image, err := uploader.UploadBuildpackage(fakeKeychain,"testdata/sample-bp.cnb", "kpackcr.org/somepath")
 				require.NoError(t, err)
 
 				const expectedFixture = "kpackcr.org/somepath/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
@@ -51,7 +51,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 
 				fetcher.AddImage("some/remote-bp", testImage)
 
-				image, err := uploader.UploadBuildpackage("some/remote-bp", "kpackcr.org/somepath", registry.TLSConfig{}, ioutil.Discard)
+				image, err := uploader.UploadBuildpackage(fakeKeychain, "some/remote-bp", "kpackcr.org/somepath")
 				require.NoError(t, err)
 
 				digest, err := testImage.Digest()
@@ -67,7 +67,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 	when("UploadedBuildpackageRef", func() {
 		when("cnb file is provided", func() {
 			it("it returns the relocated reference without relocating", func() {
-				ref, err := uploader.UploadedBuildpackageRef("testdata/sample-bp.cnb", "kpackcr.org/somepath", registry.TLSConfig{})
+				ref, err := uploader.UploadedBuildpackageRef(fakeKeychain,"testdata/sample-bp.cnb", "kpackcr.org/somepath")
 				require.NoError(t, err)
 
 				const expectedFixture = "kpackcr.org/somepath/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
@@ -86,7 +86,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 
 				fetcher.AddImage("some/remote-bp", testImage)
 
-				ref, err := uploader.UploadedBuildpackageRef("some/remote-bp", "kpackcr.org/somepath", registry.TLSConfig{})
+				ref, err := uploader.UploadedBuildpackageRef(fakeKeychain, "some/remote-bp", "kpackcr.org/somepath")
 				require.NoError(t, err)
 
 				digest, err := testImage.Digest()

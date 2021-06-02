@@ -6,6 +6,7 @@ package clusterstack
 import (
 	"context"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -51,10 +52,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 
 			ctx := cmd.Context()
 
-			factory, err := clusterstack.NewFactory(ctx, cs, ch, rup, tlsCfg)
-			if err != nil {
-				return err
-			}
+			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun()), rup.Fetcher(tlsCfg))
 
 			name := args[0]
 			return create(ctx, name, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
@@ -74,7 +72,13 @@ func create(ctx context.Context, name, buildImageRef, runImageRef string, factor
 		return err
 	}
 
-	stack, err := factory.MakeStack(name, buildImageRef, runImageRef)
+	helper := k8s.DefaultConfigHelper(cs)
+	kpConfig, err := helper.GetKpConfig(ctx)
+	if err != nil {
+		return err
+	}
+
+	stack, err := factory.MakeStack(authn.DefaultKeychain, name, buildImageRef, runImageRef, kpConfig)
 	if err != nil {
 		return err
 	}

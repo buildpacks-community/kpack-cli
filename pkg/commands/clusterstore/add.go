@@ -6,6 +6,7 @@ package clusterstore
 import (
 	"context"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -61,10 +62,9 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			factory, err := clusterstore.NewFactory(ctx, cs, ch, rup, tlsCfg)
-			if err != nil {
-				return err
-			}
+			relocator := rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun())
+			fetcher := rup.Fetcher(tlsCfg)
+			factory := clusterstore.NewFactory(ch, relocator, fetcher)
 
 			return update(ctx, store, buildpackages, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
@@ -81,7 +81,13 @@ func update(ctx context.Context, store *v1alpha1.ClusterStore, buildpackages []s
 		return err
 	}
 
-	updatedStore, storeUpdated, err := factory.AddToStore(store, buildpackages...)
+	helper := k8s.DefaultConfigHelper(cs)
+	kpConfig, err := helper.GetKpConfig(ctx)
+	if err != nil {
+		return err
+	}
+
+	updatedStore, storeUpdated, err := factory.AddToStore(authn.DefaultKeychain, store, kpConfig, buildpackages...)
 	if err != nil {
 		return err
 	}

@@ -4,24 +4,20 @@
 package _import
 
 import (
-	"io"
+	"bytes"
 	"io/ioutil"
-	"os"
 
-	"github.com/ghodss/yaml"
-	"github.com/pkg/errors"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/pivotal/build-service-cli/pkg/buildpackage"
 	"github.com/pivotal/build-service-cli/pkg/clusterstack"
 	"github.com/pivotal/build-service-cli/pkg/clusterstore"
 	"github.com/pivotal/build-service-cli/pkg/commands"
 	importpkg "github.com/pivotal/build-service-cli/pkg/import"
 	"github.com/pivotal/build-service-cli/pkg/k8s"
-	"github.com/pivotal/build-service-cli/pkg/lifecycle"
 	"github.com/pivotal/build-service-cli/pkg/registry"
-	"github.com/pivotal/build-service-cli/pkg/stackimage"
 )
 
 type ConfirmationProvider interface {
@@ -32,7 +28,7 @@ func NewImportCommand(
 	differ importpkg.Differ,
 	clientSetProvider k8s.ClientSetProvider,
 	rup registry.UtilProvider,
-	timestampProvider TimestampProvider,
+	timestampProvider importpkg.TimestampProvider,
 	confirmationProvider ConfirmationProvider,
 	newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 
@@ -78,57 +74,45 @@ cat dependencies.yaml | kp import -f -`,
 
 			configHelper := k8s.DefaultConfigHelper(cs)
 
-			descriptor, err := getDependencyDescriptor(cmd, filename)
+			kpConfig, err := configHelper.GetKpConfig(ctx)
 			if err != nil {
 				return err
 			}
 
-			repository, err := configHelper.GetCanonicalRepository(ctx)
+			imgFetcher := rup.Fetcher(tlsConfig)
+			imgRelocator := rup.Relocator(ch.Writer(), tlsConfig, ch.CanChangeState())
+
+			importer := importpkg.NewImporter(
+				ch,
+				cs.K8sClient,
+				cs.KpackClient,
+				imgFetcher,
+				imgRelocator,
+				newWaiter(cs.DynamicClient),
+				timestampProvider,
+			)
+
+			file, err := ioutil.ReadFile(filename)
 			if err != nil {
 				return err
 			}
 
-			serviceAccount, err := configHelper.GetCanonicalServiceAccount(ctx)
+			descriptor, err := importer.ReadDescriptor(bytes.NewReader(file))
 			if err != nil {
 				return err
 			}
 
-			imgFetcher := rup.Fetcher()
-			imgRelocator := rup.Relocator(ch.CanChangeState())
-
-			storeFactory := &clusterstore.Factory{
-				Uploader: &buildpackage.Uploader{
-					Fetcher:   imgFetcher,
-					Relocator: imgRelocator,
-				},
-				TLSConfig:  tlsConfig,
-				Repository: repository,
-				Printer:    ch,
-			}
-
-			stackFactory := &clusterstack.Factory{
-				Uploader: &stackimage.Uploader{
-					Fetcher:   imgFetcher,
-					Relocator: imgRelocator,
-				},
-				TLSConfig:  tlsConfig,
-				Repository: repository,
-				Printer:    ch,
-			}
-
-			importer := importer{
-				client:            cs.KpackClient,
-				commandHelper:     ch,
-				timestampProvider: timestampProvider,
-				waiter:            newWaiter(cs.DynamicClient),
-			}
-
+			defaultKeychain := authn.DefaultKeychain
 			if showChanges {
-				hasChanges, summary, err := importpkg.SummarizeChange(ctx, descriptor, storeFactory, stackFactory, differ, cs)
+				hasChanges, summary, err := importpkg.SummarizeChange(ctx, defaultKeychain, descriptor, kpConfig, clusterstore.NewFactory(ch, imgRelocator, imgFetcher), clusterstack.NewFactory(ch, imgRelocator, imgFetcher), differ, cs)
 				if err != nil {
 					return err
 				}
-				ch.Printlnf(summary)
+
+				err = ch.Printlnf(summary)
+				if err != nil {
+					return err
+				}
 
 				if !force {
 					confirmed, err := confirmationProvider.Confirm(confirmMsgMap[hasChanges])
@@ -142,37 +126,30 @@ cat dependencies.yaml | kp import -f -`,
 				}
 			}
 
-			if descriptor.HasLifecycleImage() {
-				cfg := lifecycle.ImageUpdaterConfig{
-					DryRun:       ch.IsDryRun(),
-					IOWriter:     ch.Writer(),
-					ImgFetcher:   imgFetcher,
-					ImgRelocator: imgRelocator,
-					ClientSet:    cs,
-					TLSConfig:    tlsConfig,
+			var objs []runtime.Object
+			if ch.IsDryRun() {
+				objs, err = importer.ImportDescriptorDryRun(
+					ctx,
+					authn.DefaultKeychain,
+					kpConfig,
+					bytes.NewReader(file),
+				)
+				if err != nil {
+					return err
 				}
-
-				err = importer.importLifecycle(ctx, descriptor.GetLifecycleImage(), cfg)
+			} else {
+				objs, err = importer.ImportDescriptor(
+					ctx,
+					authn.DefaultKeychain,
+					kpConfig,
+					bytes.NewReader(file),
+				)
 				if err != nil {
 					return err
 				}
 			}
 
-			storeToGen, err := importer.importClusterStores(ctx, descriptor.ClusterStores, storeFactory)
-			if err != nil {
-				return err
-			}
-
-			stackToGen, err := importer.importClusterStacks(ctx, descriptor.GetClusterStacks(), stackFactory)
-			if err != nil {
-				return err
-			}
-
-			if err := importer.importClusterBuilders(ctx, descriptor.GetClusterBuilders(), repository, serviceAccount, storeToGen, stackToGen); err != nil {
-				return err
-			}
-
-			if err := ch.PrintObjs(importer.objects()); err != nil {
+			if err := ch.PrintObjs(objs); err != nil {
 				return err
 			}
 
@@ -186,53 +163,4 @@ cat dependencies.yaml | kp import -f -`,
 	commands.SetTLSFlags(cmd, &tlsConfig)
 	_ = cmd.MarkFlagRequired("filename")
 	return cmd
-}
-
-func getDependencyDescriptor(cmd *cobra.Command, filename string) (importpkg.DependencyDescriptor, error) {
-	var (
-		reader io.ReadCloser
-		err    error
-	)
-
-	if filename == "-" {
-		reader = ioutil.NopCloser(cmd.InOrStdin())
-	} else {
-		reader, err = os.Open(filename)
-		if err != nil {
-			return importpkg.DependencyDescriptor{}, err
-		}
-	}
-	defer reader.Close()
-
-	buf, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return importpkg.DependencyDescriptor{}, err
-	}
-
-	var api importpkg.API
-	if err := yaml.Unmarshal(buf, &api); err != nil {
-		return importpkg.DependencyDescriptor{}, err
-	}
-
-	var deps importpkg.DependencyDescriptor
-	switch api.Version {
-	case importpkg.APIVersionV1:
-		var d1 importpkg.DependencyDescriptorV1
-		if err := yaml.Unmarshal(buf, &d1); err != nil {
-			return importpkg.DependencyDescriptor{}, err
-		}
-		deps = d1.ToNextVersion()
-	case importpkg.CurrentAPIVersion:
-		if err := yaml.Unmarshal(buf, &deps); err != nil {
-			return importpkg.DependencyDescriptor{}, err
-		}
-	default:
-		return importpkg.DependencyDescriptor{}, errors.Errorf("did not find expected apiVersion, must be one of: %s", []string{importpkg.APIVersionV1, importpkg.CurrentAPIVersion})
-	}
-
-	if err := deps.Validate(); err != nil {
-		return importpkg.DependencyDescriptor{}, err
-	}
-
-	return deps, nil
 }

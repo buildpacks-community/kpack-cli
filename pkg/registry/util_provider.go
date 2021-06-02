@@ -3,19 +3,21 @@
 
 package registry
 
+import "io"
+
 type UtilProvider interface {
-	Relocator(changeState bool) Relocator
+	Relocator(writer io.Writer, tlsCfg TLSConfig, changeState bool) Relocator
 	SourceUploader(changeState bool) SourceUploader
-	Fetcher() Fetcher
+	Fetcher(config TLSConfig) Fetcher
 }
 
 type DefaultUtilProvider struct{}
 
-func (d DefaultUtilProvider) Relocator(changeState bool) Relocator {
+func (d DefaultUtilProvider) Relocator(writer io.Writer, tlsCfg TLSConfig, changeState bool) Relocator {
 	if changeState {
-		return DefaultRelocator{}
+		return NewDefaultRelocator(writer, tlsCfg)
 	} else {
-		return DiscardRelocator{}
+		return NewDiscardRelocator(writer)
 	}
 }
 
@@ -27,6 +29,6 @@ func (d DefaultUtilProvider) SourceUploader(changeState bool) SourceUploader {
 	}
 }
 
-func (d DefaultUtilProvider) Fetcher() Fetcher {
-	return DefaultFetcher{}
+func (d DefaultUtilProvider) Fetcher(config TLSConfig) Fetcher {
+	return NewDefaultFetcher(config)
 }

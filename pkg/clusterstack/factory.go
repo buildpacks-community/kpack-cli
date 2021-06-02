@@ -4,69 +4,56 @@
 package clusterstack
 
 import (
-	"context"
-	"io"
 	"strings"
 
-	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/pivotal/build-service-cli/pkg/config"
 	"github.com/pivotal/build-service-cli/pkg/registry"
 	"github.com/pivotal/build-service-cli/pkg/stackimage"
 )
 
 type Uploader interface {
-	ValidateStackIDs(buildImageTag, runImageTag string, tlsCfg registry.TLSConfig) (string, error)
-	UploadStackImages(buildImageTag, runImageTag, dest string, tlsCfg registry.TLSConfig, writer io.Writer) (string, string, error)
-	UploadedBuildImageRef(imageTag, dest string, tlsCfg registry.TLSConfig) (string, error)
-	UploadedRunImageRef(imageTag, dest string, tlsCfg registry.TLSConfig) (string, error)
+	UploadStackImages(keychain authn.Keychain, buildImageTag, runImageTag, dest string) (string, string, error)
+	ValidateStackIDs(keychain authn.Keychain, buildImageTag, runImageTag string) (string, error)
+	UploadedBuildImageRef(keychain authn.Keychain, imageTag, dest string) (string, error)
+	UploadedRunImageRef(keychain authn.Keychain, imageTag, dest string) (string, error)
 }
 
 type Printer interface {
 	Printlnf(format string, args ...interface{}) error
 	PrintStatus(format string, args ...interface{}) error
-	Writer() io.Writer
 }
 
 type Factory struct {
-	Uploader   Uploader
-	Printer    Printer
-	TLSConfig  registry.TLSConfig
-	Repository string
+	Uploader Uploader
+	Printer  Printer
 }
 
-func NewFactory(ctx context.Context, cs k8s.ClientSet, ch *commands.CommandHelper, rup registry.UtilProvider, tlsCfg registry.TLSConfig) (*Factory, error) {
-	repo, err := k8s.DefaultConfigHelper(cs).GetCanonicalRepository(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func NewFactory(printer Printer, relocator registry.Relocator, fetcher registry.Fetcher) *Factory {
 	return &Factory{
 		Uploader: &stackimage.Uploader{
-			Fetcher:   rup.Fetcher(),
-			Relocator: rup.Relocator(ch.CanChangeState()),
+			Fetcher:   fetcher,
+			Relocator: relocator,
 		},
-		Printer:    ch,
-		TLSConfig:  tlsCfg,
-		Repository: repo,
-	}, nil
+		Printer: printer,
+	}
 }
 
-func (f *Factory) MakeStack(name, buildImageTag, runImageTag string) (*v1alpha1.ClusterStack, error) {
-	stackID, err := f.validate(buildImageTag, runImageTag)
+func (f *Factory) MakeStack(keychain authn.Keychain, name, buildImageTag, runImageTag string, kpConfig config.KpConfig) (*v1alpha1.ClusterStack, error) {
+	stackID, err := f.validate(keychain, buildImageTag, runImageTag)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := f.Printer.PrintStatus("Uploading to '%s'...", f.Repository); err != nil {
+	if err := f.Printer.PrintStatus("Uploading to '%s'...", kpConfig.CanonicalRepository); err != nil {
 		return nil, err
 	}
 
-	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(buildImageTag, runImageTag, f.Repository, f.TLSConfig, f.Printer.Writer())
+	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(keychain, buildImageTag, runImageTag, kpConfig.CanonicalRepository)
 	if err != nil {
 		return nil, err
 	}
@@ -92,17 +79,17 @@ func (f *Factory) MakeStack(name, buildImageTag, runImageTag string) (*v1alpha1.
 	}, nil
 }
 
-func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack, buildImageTag, runImageTag string) (bool, error) {
-	stackID, err := f.validate(buildImageTag, runImageTag)
+func (f *Factory) UpdateStack(keychain authn.Keychain, stack *v1alpha1.ClusterStack, buildImageTag, runImageTag string, kpConfig config.KpConfig) (bool, error) {
+	stackID, err := f.validate(keychain, buildImageTag, runImageTag)
 	if err != nil {
 		return false, err
 	}
 
-	if err := f.Printer.PrintStatus("Uploading to '%s'...", f.Repository); err != nil {
+	if err := f.Printer.PrintStatus("Uploading to '%s'...", kpConfig.CanonicalRepository); err != nil {
 		return false, err
 	}
 
-	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(buildImageTag, runImageTag, f.Repository, f.TLSConfig, f.Printer.Writer())
+	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(keychain, buildImageTag, runImageTag, kpConfig.CanonicalRepository)
 	if err != nil {
 		return false, err
 	}
@@ -115,21 +102,16 @@ func (f *Factory) UpdateStack(stack *v1alpha1.ClusterStack, buildImageTag, runIm
 	return true, nil
 }
 
-func (f *Factory) RelocatedBuildImage(tag string) (string, error) {
-	return f.Uploader.UploadedBuildImageRef(tag, f.Repository, f.TLSConfig)
+func (f *Factory) RelocatedBuildImage(keychain authn.Keychain, kpConfig config.KpConfig, tag string) (string, error) {
+	return f.Uploader.UploadedBuildImageRef(keychain, tag, kpConfig.CanonicalRepository)
 }
 
-func (f *Factory) RelocatedRunImage(tag string) (string, error) {
-	return f.Uploader.UploadedRunImageRef(tag, f.Repository, f.TLSConfig)
+func (f *Factory) RelocatedRunImage(keychain authn.Keychain, kpConfig config.KpConfig, tag string) (string, error) {
+	return f.Uploader.UploadedRunImageRef(keychain, tag, kpConfig.CanonicalRepository)
 }
 
-func (f *Factory) validate(buildTag, runTag string) (string, error) {
-	_, err := name.ParseReference(f.Repository, name.WeakValidation)
-	if err != nil {
-		return "", err
-	}
-
-	return f.Uploader.ValidateStackIDs(buildTag, runTag, f.TLSConfig)
+func (f *Factory) validate(keychain authn.Keychain, buildTag, runTag string) (string, error) {
+	return f.Uploader.ValidateStackIDs(keychain, buildTag, runTag)
 }
 
 func wasUpdated(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef, stackId string) (bool, error) {

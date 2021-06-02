@@ -94,14 +94,6 @@ func (d DependencyDescriptor) Validate() error {
 			return errors.Errorf("duplicate cluster builder name '%s'", name)
 		}
 		ccbSet[ccb.Name] = nil
-
-		if _, ok := storeSet[ccb.ClusterStore]; !ok {
-			return errors.Errorf("cluster builder '%s' references unknown cluster store '%s'", ccb.Name, ccb.ClusterStore)
-		}
-
-		if _, ok := stackSet[ccb.ClusterStack]; !ok {
-			return errors.Errorf("cluster builder '%s' references unknown cluster stack '%s'", ccb.Name, ccb.ClusterStack)
-		}
 	}
 
 	if _, ok := ccbSet[d.DefaultClusterBuilder]; !ok && d.DefaultClusterBuilder != "" {

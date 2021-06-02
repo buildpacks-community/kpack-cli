@@ -6,6 +6,7 @@ package lifecycle
 import (
 	"fmt"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 
 	"github.com/pivotal/build-service-cli/pkg/commands"
@@ -57,13 +58,13 @@ The canonical repository is read from the "canonical.repository" key of the "kp-
 			cfg := lifecycle.ImageUpdaterConfig{
 				DryRun:       ch.IsDryRun(),
 				IOWriter:     ch.Writer(),
-				ImgFetcher:   rup.Fetcher(),
-				ImgRelocator: rup.Relocator(ch.CanChangeState()),
+				ImgFetcher:   rup.Fetcher(tlsCfg),
+				ImgRelocator: rup.Relocator(ch.Writer(), tlsCfg, ch.CanChangeState()),
 				ClientSet:    cs,
 				TLSConfig:    tlsCfg,
 			}
 
-			configMap, err := lifecycle.UpdateImage(cmd.Context(), image, cfg)
+			configMap, err := lifecycle.UpdateImage(cmd.Context(), authn.DefaultKeychain, image, cfg)
 			if err != nil {
 				return err
 			}

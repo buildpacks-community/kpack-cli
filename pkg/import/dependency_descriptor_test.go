@@ -132,22 +132,6 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 				require.NoError(t, desc.Validate())
 			})
 		})
-
-		when("the cb uses a stack that does not exist", func() {
-			desc.ClusterBuilders[0].ClusterStack = "does-not-exist"
-
-			it("fails validation", func() {
-				require.Error(t, desc.Validate())
-			})
-		})
-
-		when("the cb uses a store that does not exist", func() {
-			desc.ClusterBuilders[0].ClusterStore = "does-not-exist"
-
-			it("fails validation", func() {
-				require.Error(t, desc.Validate())
-			})
-		})
 	})
 
 	when("#GetClusterStacks", func() {

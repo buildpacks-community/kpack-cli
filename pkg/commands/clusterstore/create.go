@@ -6,6 +6,7 @@ package clusterstore
 import (
 	"context"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -51,10 +52,7 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 
 			ctx := cmd.Context()
 
-			factory, err := clusterstore.NewFactory(ctx, cs, ch, rup, tlsCfg)
-			if err != nil {
-				return err
-			}
+			factory := clusterstore.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun()), rup.Fetcher(tlsCfg))
 
 			name := args[0]
 			return create(ctx, name, buildpackages, factory, ch, cs, newWaiter(cs.DynamicClient))
@@ -72,7 +70,13 @@ func create(ctx context.Context, name string, buildpackages []string, factory *c
 		return err
 	}
 
-	newStore, err := factory.MakeStore(name, buildpackages...)
+	helper := k8s.DefaultConfigHelper(cs)
+	kpConfig, err := helper.GetKpConfig(ctx)
+	if err != nil {
+		return err
+	}
+
+	newStore, err := factory.MakeStore(authn.DefaultKeychain, name, kpConfig, buildpackages...)
 	if err != nil {
 		return err
 	}

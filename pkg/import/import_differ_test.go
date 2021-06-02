@@ -6,15 +6,20 @@ package _import_test
 import (
 	"testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/fakes"
-	importpkg "github.com/pivotal/build-service-cli/pkg/import"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/registry/registryfakes"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/pivotal/build-service-cli/pkg/commands/fakes"
+	"github.com/pivotal/build-service-cli/pkg/config"
+	importpkg "github.com/pivotal/build-service-cli/pkg/import"
+
 	"github.com/sclevine/spec"
+
+	"github.com/pivotal/build-service-cli/pkg/commands"
 )
 
 func TestImportDiffer(t *testing.T) {
@@ -27,26 +32,30 @@ func NewFakeRefGetter() *FakeRefGetter {
 	return &FakeRefGetter{}
 }
 
-func (rg *FakeRefGetter) RelocatedBuildpackage(image string) (string, error) {
+func (rg *FakeRefGetter) RelocatedBuildpackage(keychain authn.Keychain, kpConfig config.KpConfig, image string) (string, error) {
 	return image, nil
 }
 
-func (rg *FakeRefGetter) RelocatedBuildImage(image string) (string, error) {
+func (rg *FakeRefGetter) RelocatedBuildImage(keychain authn.Keychain, kpConfig config.KpConfig, image string) (string, error) {
 	return image, nil
 }
 
-func (rg *FakeRefGetter) RelocatedRunImage(image string) (string, error) {
+func (rg *FakeRefGetter) RelocatedRunImage(keychain authn.Keychain, kpConfig config.KpConfig, image string) (string, error) {
 	return image, nil
 }
 
 func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 	fakeDiffer := &fakes.FakeDiffer{DiffResult: "some-diff"}
 	fakeRefGetter := NewFakeRefGetter()
+	kpConfig := config.KpConfig{
+		CanonicalRepository: "my-cool-repo",
+	}
 	importDiffer := importpkg.ImportDiffer{
 		Differ:         fakeDiffer,
 		StoreRefGetter: fakeRefGetter,
 		StackRefGetter: fakeRefGetter,
 	}
+	fakeKeychain := &registryfakes.FakeKeychain{}
 
 	when("DiffClusterStore", func() {
 		oldStore := &v1alpha1.ClusterStore{
@@ -70,7 +79,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		it("returns a diff of only new store images", func() {
-			diff, err := importDiffer.DiffClusterStore(oldStore, newStore)
+			diff, err := importDiffer.DiffClusterStore(fakeKeychain, kpConfig, oldStore, newStore)
 			require.NoError(t, err)
 			require.Equal(t, "some-diff", diff)
 			diffArg0, diffArg1 := fakeDiffer.Args()
@@ -81,7 +90,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("diffs with empty string when old cluster store does not exist", func() {
-			diff, err := importDiffer.DiffClusterStore(nil, newStore)
+			diff, err := importDiffer.DiffClusterStore(fakeKeychain, kpConfig, nil, newStore)
 			require.NoError(t, err)
 			require.Equal(t, "some-diff", diff)
 			diffArg0, _ := fakeDiffer.Args()
@@ -95,7 +104,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			importDiffer.Differ = commands.Differ{}
-			diff, err := importDiffer.DiffClusterStore(oldStore, newStore)
+			diff, err := importDiffer.DiffClusterStore(fakeKeychain, kpConfig, oldStore, newStore)
 			require.NoError(t, err)
 			require.Equal(t, "", diff)
 		})
@@ -123,7 +132,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 				RunImage:   importpkg.Source{Image: "some-new-run-image"},
 			}
 
-			diff, err := importDiffer.DiffClusterStack(oldStack, newStack)
+			diff, err := importDiffer.DiffClusterStack(fakeKeychain, kpConfig, oldStack, newStack)
 			require.NoError(t, err)
 			require.Equal(t, "some-diff", diff)
 			diffArg0, diffArg1 := fakeDiffer.Args()
@@ -139,7 +148,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 		it("diffs against nil when old cluster stack does not exist", func() {
 			newStack := importpkg.ClusterStack{}
 
-			diff, err := importDiffer.DiffClusterStack(nil, newStack)
+			diff, err := importDiffer.DiffClusterStack(fakeKeychain, kpConfig,nil, newStack)
 			require.NoError(t, err)
 			require.Equal(t, "some-diff", diff)
 			diffArg0, _ := fakeDiffer.Args()

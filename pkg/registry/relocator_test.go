@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/v1/random"
+	"github.com/pivotal/kpack/pkg/registry/registryfakes"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,12 +28,16 @@ func TestRelocateStackImages(t *testing.T) {
 }
 
 func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
+	var (
+		fakeKeychain = &registryfakes.FakeKeychain{}
+	)
+
 	when("#Fetch", func() {
 		when("remote", func() {
 			it("it should fetch the image with the digest", func() {
 				fetcher := registry.DefaultFetcher{}
 
-				image, err := fetcher.Fetch("cloudfoundry/run:tiny-cnb", registry.TLSConfig{})
+				image, err := fetcher.Fetch(fakeKeychain, "cloudfoundry/run:tiny-cnb")
 				require.NoError(t, err)
 				assert.NotNil(t, image)
 			})
@@ -73,9 +78,9 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 			srcImageDigest, err := srcImage.Digest()
 			require.NoError(t, err)
 
-			relocator := registry.DefaultRelocator{}
 			output := &bytes.Buffer{}
-			relocatedRef, err := relocator.Relocate(srcImage, dst, output, registry.TLSConfig{})
+			relocator := registry.NewDefaultRelocator(output, registry.TLSConfig{})
+			relocatedRef, err := relocator.Relocate(fakeKeychain, srcImage, dst)
 			require.NoError(t, err)
 
 			require.Equal(t, 1, strings.Count(relocatedRef, "sha256:"))
@@ -90,8 +95,8 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 			srcImage, err := random.Image(int64(100), int64(5))
 			require.NoError(t, err)
 
-			relocator := registry.DefaultRelocator{}
-			_, err = relocator.Relocate(srcImage, "notuser/notimage:tag", ioutil.Discard, registry.TLSConfig{})
+			relocator := registry.NewDefaultRelocator(ioutil.Discard, registry.TLSConfig{})
+			_, err = relocator.Relocate(fakeKeychain, srcImage, "notuser/notimage:tag")
 			require.Error(t, err)
 		})
 	})

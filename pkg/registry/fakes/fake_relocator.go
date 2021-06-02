@@ -6,19 +6,20 @@ package fakes
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-
-	"github.com/pivotal/build-service-cli/pkg/registry"
 )
 
 type Relocator struct {
 	skip      bool
 	callCount int
+	writer    io.Writer
 }
 
-func (r *Relocator) Relocate(image v1.Image, dest string, writer io.Writer, _ registry.TLSConfig) (string, error) {
+func (r *Relocator) Relocate(_ authn.Keychain, image v1.Image, dest string) (string, error) {
 	r.callCount++
 	digest, err := image.Digest()
 	if err != nil {
@@ -39,7 +40,10 @@ func (r *Relocator) Relocate(image v1.Image, dest string, writer io.Writer, _ re
 		message = fmt.Sprintf("\tUploading '%s'\n", refDigestStr)
 	}
 
-	_, err = writer.Write([]byte(message))
+	if r.writer == nil {
+		r.writer = ioutil.Discard
+	}
+	_, err = r.writer.Write([]byte(message))
 	return refDigestStr, err
 }
 
@@ -49,4 +53,8 @@ func (r *Relocator) CallCount() int {
 
 func (r *Relocator) SetSkip(skip bool) {
 	r.skip = skip
+}
+
+func (r *Relocator) SetWriter(writer io.Writer)  {
+	r.writer = writer
 }

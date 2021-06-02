@@ -120,8 +120,7 @@ ClusterStack "stack-name" created
 				"--run-image", "some-registry.io/repo/some-run-image",
 			},
 			ExpectErr: true,
-			ExpectedOutput: `Error: failed to get canonical repository: configmaps "kp-config" not found
-`,
+			ExpectedOutput: "Creating ClusterStack...\nError: configmaps \"kp-config\" not found\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
@@ -144,8 +143,7 @@ ClusterStack "stack-name" created
 				"--run-image", "some-registry.io/repo/some-run-image",
 			},
 			ExpectErr: true,
-			ExpectedOutput: `Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
-`,
+			ExpectedOutput: "Creating ClusterStack...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 

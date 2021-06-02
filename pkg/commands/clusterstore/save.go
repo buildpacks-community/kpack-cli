@@ -52,10 +52,7 @@ kp clusterstore save my-store -b ../path/to/my-local-buildpackage.cnb`,
 			}
 
 			name := args[0]
-			factory, err := clusterstore.NewFactory(ctx, cs, ch, rup, tlsCfg)
-			if err != nil {
-				return err
-			}
+			factory := clusterstore.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun()), rup.Fetcher(tlsCfg))
 
 			clusterStore, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {

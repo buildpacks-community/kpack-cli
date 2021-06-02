@@ -3,22 +3,27 @@
 
 package fakes
 
-import "github.com/pivotal/build-service-cli/pkg/registry"
+import (
+	"io"
+
+	"github.com/pivotal/build-service-cli/pkg/registry"
+)
 
 type UtilProvider struct {
 	FakeFetcher        registry.Fetcher
-	FakeRelocator      registry.Relocator
+	FakeRelocator      *Relocator
 	FakeSourceUploader registry.SourceUploader
 }
 
-func (u UtilProvider) Fetcher() registry.Fetcher {
-	return u.FakeFetcher
-}
-
-func (u UtilProvider) Relocator(changeState bool) registry.Relocator {
+func (u UtilProvider) Relocator(writer io.Writer, _ registry.TLSConfig, _ bool) registry.Relocator {
+	u.FakeRelocator.SetWriter(writer)
 	return u.FakeRelocator
 }
 
-func (u UtilProvider) SourceUploader(changeState bool) registry.SourceUploader {
+func (u UtilProvider) Fetcher(_ registry.TLSConfig) registry.Fetcher {
+	return u.FakeFetcher
+}
+
+func (u UtilProvider) SourceUploader(_ bool) registry.SourceUploader {
 	return u.FakeSourceUploader
 }

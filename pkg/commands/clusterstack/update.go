@@ -7,6 +7,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
@@ -63,12 +64,9 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			factory, err := clusterstack.NewFactory(ctx, cs, ch, rup, tlsCfg)
-			if err != nil {
-				return err
-			}
+			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun()), rup.Fetcher(tlsCfg))
 
-			return update(ctx, stack, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
+			return update(ctx, authn.DefaultKeychain, stack, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -81,12 +79,18 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func update(ctx context.Context, stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
+func update(ctx context.Context, keychain authn.Keychain, stack *v1alpha1.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
 	if err := ch.PrintStatus("Updating ClusterStack..."); err != nil {
 		return err
 	}
 
-	hasUpdates, err := factory.UpdateStack(stack, buildImageRef, runImageRef)
+	helper := k8s.DefaultConfigHelper(cs)
+	kpConfig, err := helper.GetKpConfig(ctx)
+	if err != nil {
+		return err
+	}
+
+	hasUpdates, err := factory.UpdateStack(keychain, stack, buildImageRef, runImageRef, kpConfig)
 	if err != nil {
 		return err
 	}
