@@ -14,9 +14,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/lifecycle"
-	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/lifecycle"
+	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestUpdateCommand(t *testing.T) {

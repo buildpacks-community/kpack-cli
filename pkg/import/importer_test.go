@@ -26,10 +26,10 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 	watchTools "k8s.io/client-go/tools/watch"
 
-	"github.com/pivotal/build-service-cli/pkg/config"
-	"github.com/pivotal/build-service-cli/pkg/k8s"
-	"github.com/pivotal/build-service-cli/pkg/registry/fakes"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestImporter(t *testing.T) {

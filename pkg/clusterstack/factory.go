@@ -11,9 +11,9 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/config"
-	"github.com/pivotal/build-service-cli/pkg/registry"
-	"github.com/pivotal/build-service-cli/pkg/stackimage"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
+	"github.com/vmware-tanzu/kpack-cli/pkg/stackimage"
 )
 
 type Uploader interface {

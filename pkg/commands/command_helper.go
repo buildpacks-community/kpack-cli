@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 )
 
 type CommandHelper struct {

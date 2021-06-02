@@ -18,11 +18,11 @@ import (
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
-	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
-	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	clusterstackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstack"
+	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
+	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestUpdateCommand(t *testing.T) {

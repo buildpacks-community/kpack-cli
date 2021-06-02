@@ -10,8 +10,8 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/build"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/build"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestBuildListCommand(t *testing.T) {

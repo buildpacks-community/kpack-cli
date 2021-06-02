@@ -12,12 +12,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/pivotal/build-service-cli/pkg/clusterstack"
-	"github.com/pivotal/build-service-cli/pkg/clusterstore"
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	importpkg "github.com/pivotal/build-service-cli/pkg/import"
-	"github.com/pivotal/build-service-cli/pkg/k8s"
-	"github.com/pivotal/build-service-cli/pkg/registry"
+	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
+	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
+	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
 
 type ConfirmationProvider interface {

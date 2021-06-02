@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/pivotal/build-service-cli/pkg/image"
-	"github.com/pivotal/build-service-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/image"
+	"github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
 )
 
 func TestImageFactory(t *testing.T) {

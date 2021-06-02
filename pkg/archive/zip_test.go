@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/archive"
+	"github.com/vmware-tanzu/kpack-cli/pkg/archive"
 )
 
 func TestZip(t *testing.T) {

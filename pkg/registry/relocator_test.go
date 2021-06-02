@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/registry"
+	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
 
 func TestRelocateStackImages(t *testing.T) {

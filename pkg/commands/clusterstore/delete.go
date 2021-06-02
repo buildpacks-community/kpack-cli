@@ -12,7 +12,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 )
 
 type ConfirmationProvider interface {

@@ -15,8 +15,8 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/image"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/image"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestImageStatusCommand(t *testing.T) {

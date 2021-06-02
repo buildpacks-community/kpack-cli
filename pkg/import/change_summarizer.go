@@ -10,10 +10,10 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 
-	"github.com/pivotal/build-service-cli/pkg/clusterstack"
-	"github.com/pivotal/build-service-cli/pkg/clusterstore"
-	"github.com/pivotal/build-service-cli/pkg/config"
-	buildk8s "github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
+	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	buildk8s "github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 )
 
 func SummarizeChange(

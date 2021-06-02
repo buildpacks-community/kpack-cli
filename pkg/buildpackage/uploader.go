@@ -16,7 +16,7 @@ import (
 	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/pkg/errors"
 
-	"github.com/pivotal/build-service-cli/pkg/archive"
+	"github.com/vmware-tanzu/kpack-cli/pkg/archive"
 )
 
 const (

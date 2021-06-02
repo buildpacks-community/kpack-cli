@@ -13,7 +13,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/registry"
+	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
 
 func TestTLSConfig(t *testing.T) {
