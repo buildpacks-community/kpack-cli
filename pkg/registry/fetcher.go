@@ -18,14 +18,13 @@ type Fetcher interface {
 	Fetch(keychain authn.Keychain, src string) (v1.Image, error)
 }
 
-type DefaultFetcher struct{
+type DefaultFetcher struct {
 	tlsCfg TLSConfig
 }
 
 func NewDefaultFetcher(tlsCfg TLSConfig) DefaultFetcher {
 	return DefaultFetcher{tlsCfg: tlsCfg}
 }
-
 
 func (d DefaultFetcher) Fetch(keychain authn.Keychain, src string) (v1.Image, error) {
 	if d.isLocal(src) {

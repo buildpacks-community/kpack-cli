@@ -26,7 +26,7 @@ func SummarizeChange(
 
 	var summarizer changeSummarizer
 	iDiffer := &ImportDiffer{
-		Differ: differ,
+		Differ:         differ,
 		StoreRefGetter: storeFactory,
 		StackRefGetter: stackFactory,
 	}

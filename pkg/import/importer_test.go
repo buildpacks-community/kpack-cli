@@ -1352,7 +1352,7 @@ clusterBuilders:
 
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{},
 				ExpectCreates: []runtime.Object{},
-				DryRun: true,
+				DryRun:        true,
 			}.TestImporter(t)
 		})
 	})

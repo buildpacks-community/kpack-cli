@@ -170,7 +170,7 @@ ClusterStore "store-name" updated (no change)
 				"store-name",
 				"-b", "some/someimage",
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Adding to ClusterStore...\nError: configmaps \"kp-config\" not found\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -195,7 +195,7 @@ ClusterStore "store-name" updated (no change)
 				"store-name",
 				"-b", "some/someimage",
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Adding to ClusterStore...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})

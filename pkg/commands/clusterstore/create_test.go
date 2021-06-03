@@ -117,7 +117,7 @@ ClusterStore "store-name" created
 				"--buildpackage", "some-registry.io/repo/buildpack",
 				"-b", localCNBPath,
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Creating ClusterStore...\nError: configmaps \"kp-config\" not found\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -140,7 +140,7 @@ ClusterStore "store-name" created
 				"--buildpackage", "some-registry.io/repo/buildpack",
 				"-b", localCNBPath,
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Creating ClusterStore...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})

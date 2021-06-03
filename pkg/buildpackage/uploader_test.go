@@ -32,7 +32,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 	when("UploadBuildpackage", func() {
 		when("cnb file is provided", func() {
 			it("it uploads to registry", func() {
-				image, err := uploader.UploadBuildpackage(fakeKeychain,"testdata/sample-bp.cnb", "kpackcr.org/somepath")
+				image, err := uploader.UploadBuildpackage(fakeKeychain, "testdata/sample-bp.cnb", "kpackcr.org/somepath")
 				require.NoError(t, err)
 
 				const expectedFixture = "kpackcr.org/somepath/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
@@ -67,7 +67,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 	when("UploadedBuildpackageRef", func() {
 		when("cnb file is provided", func() {
 			it("it returns the relocated reference without relocating", func() {
-				ref, err := uploader.UploadedBuildpackageRef(fakeKeychain,"testdata/sample-bp.cnb", "kpackcr.org/somepath")
+				ref, err := uploader.UploadedBuildpackageRef(fakeKeychain, "testdata/sample-bp.cnb", "kpackcr.org/somepath")
 				require.NoError(t, err)
 
 				const expectedFixture = "kpackcr.org/somepath/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"

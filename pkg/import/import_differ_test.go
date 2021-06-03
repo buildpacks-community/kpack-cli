@@ -148,7 +148,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 		it("diffs against nil when old cluster stack does not exist", func() {
 			newStack := importpkg.ClusterStack{}
 
-			diff, err := importDiffer.DiffClusterStack(fakeKeychain, kpConfig,nil, newStack)
+			diff, err := importDiffer.DiffClusterStack(fakeKeychain, kpConfig, nil, newStack)
 			require.NoError(t, err)
 			require.Equal(t, "some-diff", diff)
 			diffArg0, _ := fakeDiffer.Args()

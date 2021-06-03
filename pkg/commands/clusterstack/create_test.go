@@ -119,7 +119,7 @@ ClusterStack "stack-name" created
 				"--build-image", "some-registry.io/repo/some-build-image",
 				"--run-image", "some-registry.io/repo/some-run-image",
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Creating ClusterStack...\nError: configmaps \"kp-config\" not found\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -142,7 +142,7 @@ ClusterStack "stack-name" created
 				"--build-image", "some-registry.io/repo/some-build-image",
 				"--run-image", "some-registry.io/repo/some-run-image",
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Creating ClusterStack...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})

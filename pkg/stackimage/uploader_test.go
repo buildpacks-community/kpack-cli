@@ -102,7 +102,7 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.AddImage("some/remote", testImage)
 
-			ref, err := uploader.UploadedBuildImageRef(fakeKeychain,"some/remote", "kpackcr.org/somepath")
+			ref, err := uploader.UploadedBuildImageRef(fakeKeychain, "some/remote", "kpackcr.org/somepath")
 			require.NoError(t, err)
 
 			digest, err := testImage.Digest()

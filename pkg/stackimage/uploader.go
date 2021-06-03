@@ -18,7 +18,6 @@ const (
 	BuildImageName = "build"
 )
 
-
 type Relocator interface {
 	Relocate(keychain authn.Keychain, image v1.Image, dest string) (string, error)
 }
