@@ -55,6 +55,6 @@ func (r *Relocator) SetSkip(skip bool) {
 	r.skip = skip
 }
 
-func (r *Relocator) SetWriter(writer io.Writer)  {
+func (r *Relocator) SetWriter(writer io.Writer) {
 	r.writer = writer
 }

@@ -16,11 +16,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	cmdFakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
-	imgcmds "github.com/pivotal/build-service-cli/pkg/commands/image"
-	"github.com/pivotal/build-service-cli/pkg/k8s"
-	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	cmdFakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
+	imgcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/image"
+	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestImageSaveCommand(t *testing.T) {

@@ -12,7 +12,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/pivotal/build-service-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 )
 
 type StoreRefGetter interface {

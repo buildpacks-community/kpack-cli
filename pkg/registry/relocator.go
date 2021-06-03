@@ -18,7 +18,7 @@ type Relocator interface {
 	Relocate(keychain authn.Keychain, src v1.Image, destination string) (string, error)
 }
 
-type DiscardRelocator struct{
+type DiscardRelocator struct {
 	writer io.Writer
 }
 
@@ -36,7 +36,7 @@ func (d DiscardRelocator) Relocate(keychain authn.Keychain, src v1.Image, destin
 	return cfg.refDigestStr, err
 }
 
-type DefaultRelocator struct{
+type DefaultRelocator struct {
 	tlsCfg TLSConfig
 	writer io.Writer
 }

@@ -10,9 +10,9 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/config"
-	buildk8s "github.com/pivotal/build-service-cli/pkg/k8s"
-	"github.com/pivotal/build-service-cli/pkg/lifecycle"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	buildk8s "github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/lifecycle"
 )
 
 type changeWriter interface {

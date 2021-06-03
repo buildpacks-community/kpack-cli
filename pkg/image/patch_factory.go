@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 )
 
 func (f *Factory) MakePatch(img *v1alpha1.Image) (*v1alpha1.Image, []byte, error) {

@@ -17,11 +17,11 @@ import (
 	"k8s.io/client-go/dynamic"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	clusterstackcmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstack"
-	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
-	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	clusterstackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstack"
+	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
+	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestCreateCommand(t *testing.T) {
@@ -119,7 +119,7 @@ ClusterStack "stack-name" created
 				"--build-image", "some-registry.io/repo/some-build-image",
 				"--run-image", "some-registry.io/repo/some-run-image",
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Creating ClusterStack...\nError: configmaps \"kp-config\" not found\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -142,7 +142,7 @@ ClusterStack "stack-name" created
 				"--build-image", "some-registry.io/repo/some-build-image",
 				"--run-image", "some-registry.io/repo/some-run-image",
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Creating ClusterStack...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})

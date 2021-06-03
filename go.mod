@@ -1,4 +1,4 @@
-module github.com/pivotal/build-service-cli
+module github.com/vmware-tanzu/kpack-cli
 
 go 1.14
 

@@ -18,10 +18,10 @@ import (
 	"k8s.io/client-go/dynamic"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	"github.com/pivotal/build-service-cli/pkg/commands/clusterbuilder"
-	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuilder"
+	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestClusterBuilderSaveCommand(t *testing.T) {

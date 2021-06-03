@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/pivotal/build-service-cli/pkg/registry"
+	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
 
 type SourceUploader struct {

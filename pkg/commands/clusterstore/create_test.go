@@ -17,11 +17,11 @@ import (
 	"k8s.io/client-go/dynamic"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	storecmds "github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
-	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
-	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	storecmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
+	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
+	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestClusterStoreCreateCommand(t *testing.T) {
@@ -117,7 +117,7 @@ ClusterStore "store-name" created
 				"--buildpackage", "some-registry.io/repo/buildpack",
 				"-b", localCNBPath,
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Creating ClusterStore...\nError: configmaps \"kp-config\" not found\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -140,7 +140,7 @@ ClusterStore "store-name" created
 				"--buildpackage", "some-registry.io/repo/buildpack",
 				"-b", localCNBPath,
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Creating ClusterStore...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})

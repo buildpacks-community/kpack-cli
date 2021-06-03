@@ -18,11 +18,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/pivotal/build-service-cli/pkg/clusterstack"
-	"github.com/pivotal/build-service-cli/pkg/clusterstore"
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	"github.com/pivotal/build-service-cli/pkg/config"
-	"github.com/pivotal/build-service-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
+	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 )
 
 type ImageRelocator interface {

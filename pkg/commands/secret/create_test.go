@@ -16,9 +16,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	secretcmds "github.com/pivotal/build-service-cli/pkg/commands/secret"
-	"github.com/pivotal/build-service-cli/pkg/secret"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	secretcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/secret"
+	"github.com/vmware-tanzu/kpack-cli/pkg/secret"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestSecretCreateCommand(t *testing.T) {

@@ -6,7 +6,7 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/pivotal/build-service-cli/pkg/registry"
+	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
 
 func SetTLSFlags(cmd *cobra.Command, cfg *registry.TLSConfig) {

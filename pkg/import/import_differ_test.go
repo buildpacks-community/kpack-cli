@@ -13,13 +13,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/pivotal/build-service-cli/pkg/commands/fakes"
-	"github.com/pivotal/build-service-cli/pkg/config"
-	importpkg "github.com/pivotal/build-service-cli/pkg/import"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 
 	"github.com/sclevine/spec"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 )
 
 func TestImportDiffer(t *testing.T) {
@@ -148,7 +148,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 		it("diffs against nil when old cluster stack does not exist", func() {
 			newStack := importpkg.ClusterStack{}
 
-			diff, err := importDiffer.DiffClusterStack(fakeKeychain, kpConfig,nil, newStack)
+			diff, err := importDiffer.DiffClusterStack(fakeKeychain, kpConfig, nil, newStack)
 			require.NoError(t, err)
 			require.Equal(t, "some-diff", diff)
 			diffArg0, _ := fakeDiffer.Args()

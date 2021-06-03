@@ -18,11 +18,11 @@ import (
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/pivotal/build-service-cli/pkg/commands"
-	"github.com/pivotal/build-service-cli/pkg/commands/clusterstore"
-	commandsfakes "github.com/pivotal/build-service-cli/pkg/commands/fakes"
-	registryfakes "github.com/pivotal/build-service-cli/pkg/registry/fakes"
-	"github.com/pivotal/build-service-cli/pkg/testhelpers"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
+	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
+	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestClusterStoreAddCommand(t *testing.T) {
@@ -170,7 +170,7 @@ ClusterStore "store-name" updated (no change)
 				"store-name",
 				"-b", "some/someimage",
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Adding to ClusterStore...\nError: configmaps \"kp-config\" not found\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -195,7 +195,7 @@ ClusterStore "store-name" updated (no change)
 				"store-name",
 				"-b", "some/someimage",
 			},
-			ExpectErr: true,
+			ExpectErr:      true,
 			ExpectedOutput: "Adding to ClusterStore...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
