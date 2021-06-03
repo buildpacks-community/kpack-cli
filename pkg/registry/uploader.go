@@ -18,7 +18,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/pkg/errors"
 
-	"github.com/pivotal/build-service-cli/pkg/archive"
+	"github.com/vmware-tanzu/kpack-cli/pkg/archive"
 )
 
 type SourceUploader interface {

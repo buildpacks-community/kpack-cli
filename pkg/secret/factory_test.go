@@ -9,7 +9,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pivotal/build-service-cli/pkg/secret"
+	"github.com/vmware-tanzu/kpack-cli/pkg/secret"
 )
 
 func TestSecretFactory(t *testing.T) {
