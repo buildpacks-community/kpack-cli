@@ -175,4 +175,55 @@ Build Reason:    COMMIT,BUILDPACK
 			})
 		})
 	})
+
+	when("an image has no successful builds", func() {
+		it("does not display buildpack metadata heading", func() {
+			image := &v1alpha1.Image{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      imageName,
+					Namespace: defaultNamespace,
+				},
+				Spec: v1alpha1.ImageSpec{
+					Builder: corev1.ObjectReference{
+						Kind: "ClusterBuilder",
+						Name: "some-cluster-builder",
+					},
+				},
+				Status: v1alpha1.ImageStatus{
+					Status: corev1alpha1.Status{
+						Conditions: []corev1alpha1.Condition{
+							{
+								Type:   corev1alpha1.ConditionReady,
+								Status: corev1.ConditionFalse,
+							},
+						},
+					},
+					LatestImage: "test-registry.io/test-image-1@sha256:abcdef123",
+				},
+			}
+
+			const expectedOutput = `Status:         Not Ready
+Message:        --
+LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
+
+Builder Ref:     
+  Name:         some-cluster-builder
+  Kind:         ClusterBuilder
+
+Last Successful Build
+Id:              --
+Build Reason:    --
+
+Last Failed Build
+Id:              --
+Build Reason:    --
+
+`
+			testhelpers.CommandTest{
+				Objects:        append([]runtime.Object{image}),
+				Args:           []string{imageName},
+				ExpectedOutput: expectedOutput,
+			}.TestKpack(t, cmdFunc)
+		})
+	})
 }
