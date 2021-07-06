@@ -7,36 +7,30 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
+	"github.com/google/go-containerregistry/pkg/authn"
 )
 
 type SourceUploader struct {
-	imageRef string
-	skip     bool
+	changeState bool
+	writer      io.Writer
 }
 
-func NewSourceUploader(imageRef string) *SourceUploader {
+func NewFakeSourceUploader(writer io.Writer, changeState bool) *SourceUploader {
 	return &SourceUploader{
-		imageRef: imageRef,
+		writer:      writer,
+		changeState: changeState,
 	}
 }
 
-func (f *SourceUploader) Upload(_, _ string, writer io.Writer, _ registry.TLSConfig) (string, error) {
+func (f *SourceUploader) Upload(keychain authn.Keychain, dstImgRefStr, srcPath string) (string, error) {
+	uploadPath := fmt.Sprintf("%s:source-id", dstImgRefStr)
 	var message string
-	if f.skip {
-		message = fmt.Sprintf("\tSkipping '%s'\n", f.imageRef)
+	if !f.changeState {
+		message = fmt.Sprintf("\tSkipping '%s'\n", uploadPath)
 	} else {
-		message = fmt.Sprintf("\tUploading '%s'\n", f.imageRef)
+		message = fmt.Sprintf("\tUploading '%s'\n", uploadPath)
 	}
 
-	_, err := writer.Write([]byte(message))
-	return f.imageRef, err
-}
-
-func (f *SourceUploader) SetImageRef(ref string) {
-	f.imageRef = ref
-}
-
-func (f *SourceUploader) SetSkipUpload(skip bool) {
-	f.skip = skip
+	_, err := f.writer.Write([]byte(message))
+	return uploadPath, err
 }

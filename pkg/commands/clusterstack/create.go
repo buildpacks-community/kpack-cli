@@ -52,7 +52,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
 
 			ctx := cmd.Context()
 
-			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun()), rup.Fetcher(tlsCfg))
+			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, ch.IsUploading()), rup.Fetcher(tlsCfg))
 
 			name := args[0]
 			return create(ctx, name, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))

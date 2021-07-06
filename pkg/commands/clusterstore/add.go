@@ -62,7 +62,7 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 				return err
 			}
 
-			relocator := rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun())
+			relocator := rup.Relocator(ch.Writer(), tlsCfg, ch.IsUploading())
 			fetcher := rup.Fetcher(tlsCfg)
 			factory := clusterstore.NewFactory(ch, relocator, fetcher)
 

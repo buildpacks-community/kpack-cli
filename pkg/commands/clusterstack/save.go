@@ -52,7 +52,7 @@ kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../
 				return err
 			}
 
-			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun()), rup.Fetcher(tlsCfg))
+			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, ch.IsUploading()), rup.Fetcher(tlsCfg))
 
 			name := args[0]
 			cStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(ctx, name, metav1.GetOptions{})

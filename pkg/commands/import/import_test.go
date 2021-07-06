@@ -36,10 +36,8 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	fakeFetcher := &registryfakes.Fetcher{}
-	fakeRelocator := &registryfakes.Relocator{}
 	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
 		FakeFetcher:   fakeFetcher,
-		FakeRelocator: fakeRelocator,
 	}
 
 	fakeFetcher.AddLifecycleImages(
@@ -1066,8 +1064,6 @@ status:
 	})
 
 	when("dry-run flag is used", func() {
-		fakeRelocator.SetSkip(true)
-
 		builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 

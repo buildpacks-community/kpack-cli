@@ -8,22 +8,25 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
 
 const (
 	defaultRevision = "main"
 )
 
+var (
+	keychain = authn.DefaultKeychain
+)
+
 type SourceUploader interface {
-	Upload(ref, path string, writer io.Writer, tlsCfg registry.TLSConfig) (string, error)
+	Upload(keychain authn.Keychain, ref, path string) (string, error)
 }
 
 type Printer interface {
@@ -44,7 +47,6 @@ type Factory struct {
 	Env            []string
 	CacheSize      string
 	DeleteEnv      []string
-	TLSConfig      registry.TLSConfig
 	Printer        Printer
 }
 
@@ -185,7 +187,7 @@ func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
 			return v1alpha1.SourceConfig{}, err
 		}
 
-		sourceRef, err := f.SourceUploader.Upload(imgRepo, f.LocalPath, f.Printer.Writer(), f.TLSConfig)
+		sourceRef, err := f.SourceUploader.Upload(keychain, imgRepo, f.LocalPath)
 		if err != nil {
 			return v1alpha1.SourceConfig{}, err
 		}

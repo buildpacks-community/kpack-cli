@@ -14,13 +14,22 @@ import (
 )
 
 type Relocator struct {
-	skip      bool
-	callCount int
-	writer    io.Writer
+	skip  bool
+	calls []struct {
+		Keychain authn.Keychain
+		Image    v1.Image
+		Dest     string
+	}
+	writer io.Writer
 }
 
-func (r *Relocator) Relocate(_ authn.Keychain, image v1.Image, dest string) (string, error) {
-	r.callCount++
+func (r *Relocator) Relocate(keychain authn.Keychain, image v1.Image, dest string) (string, error) {
+	r.calls = append(r.calls, struct {
+		Keychain authn.Keychain
+		Image    v1.Image
+		Dest     string
+	}{keychain, image, dest})
+
 	digest, err := image.Digest()
 	if err != nil {
 		return "", err
@@ -48,13 +57,13 @@ func (r *Relocator) Relocate(_ authn.Keychain, image v1.Image, dest string) (str
 }
 
 func (r *Relocator) CallCount() int {
-	return r.callCount
+	return len(r.calls)
 }
 
 func (r *Relocator) SetSkip(skip bool) {
 	r.skip = skip
 }
 
-func (r *Relocator) SetWriter(writer io.Writer) {
-	r.writer = writer
+func (r *Relocator) RelocateCall(i int) (authn.Keychain, v1.Image, string) {
+	return r.calls[i].Keychain, r.calls[i].Image, r.calls[i].Dest
 }

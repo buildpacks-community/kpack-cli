@@ -25,7 +25,6 @@ func TestUpdateCommand(t *testing.T) {
 
 func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 
-	fakeRelocator := &registryfakes.Relocator{}
 	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
 		FakeFetcher: registryfakes.NewLifecycleImageFetcher(
 			registryfakes.LifecycleInfo{
@@ -36,7 +35,6 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			},
 		),
-		FakeRelocator: fakeRelocator,
 	}
 
 	cmdFunc := func(k8sClient *fake.Clientset) *cobra.Command {
@@ -231,8 +229,6 @@ metadata:
 	})
 
 	when("dry-run flag is used", func() {
-		fakeRelocator.SetSkip(true)
-
 		it("does not update lifecycle-image configmap and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{

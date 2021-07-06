@@ -4,6 +4,7 @@
 package image
 
 import (
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	v1alpha12 "github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -136,7 +137,7 @@ func (f *Factory) setSource(image *v1alpha1.Image) error {
 			return err
 		}
 
-		sourceRef, err := f.SourceUploader.Upload(ref.Context().Name()+"-source", f.LocalPath, f.Printer.Writer(), f.TLSConfig)
+		sourceRef, err := f.SourceUploader.Upload(authn.DefaultKeychain, ref.Context().Name()+"-source", f.LocalPath)
 		if err != nil {
 			return err
 		}

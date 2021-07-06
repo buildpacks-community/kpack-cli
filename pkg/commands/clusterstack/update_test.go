@@ -54,10 +54,8 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 		},
 	)
-	fakeRelocator := &registryfakes.Relocator{}
 	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
 		FakeFetcher:   fakeFetcher,
-		FakeRelocator: fakeRelocator,
 	}
 
 	stack := &v1alpha1.ClusterStack{
@@ -422,8 +420,6 @@ Build and Run images already exist in stack
 	})
 
 	when("dry-run flag is used", func() {
-		fakeRelocator.SetSkip(true)
-
 		it("does not update the clusterstack and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{

@@ -29,11 +29,7 @@ func TestImagePatchCommand(t *testing.T) {
 func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 	const defaultNamespace = "some-default-namespace"
 
-	fakeSourceUploader := registryfakes.NewSourceUploader("some-registry.io/some-repo-source:source-id")
-	registryUtilProvider := registryfakes.UtilProvider{
-		FakeSourceUploader: fakeSourceUploader,
-	}
-
+	registryUtilProvider := registryfakes.UtilProvider{}
 	fakeImageWaiter := &cmdFakes.FakeImageWaiter{}
 
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
@@ -478,8 +474,6 @@ status: {}
 	})
 
 	when("dry-run flag is used", func() {
-		fakeSourceUploader.SetSkipUpload(true)
-
 		it("does not patch and prints result message with dry run indicated", func() {
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
@@ -494,7 +488,7 @@ status: {}
 					"--wait",
 				},
 				ExpectedOutput: `Patching Image... (dry run)
-	Skipping 'some-registry.io/some-repo-source:source-id'
+	Skipping 'index.docker.io/library/some-tag-source:source-id'
 Image "some-image" patched (dry run)
 `,
 			}.TestKpack(t, cmdFunc)
@@ -539,7 +533,7 @@ spec:
     name: some-ccb
   source:
     registry:
-      image: some-registry.io/some-repo-source:source-id
+      image: index.docker.io/library/some-tag-source:source-id
     subPath: some-sub-path
   tag: some-tag
 status: {}
@@ -559,7 +553,7 @@ status: {}
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Patching Image... (dry run)
-	Skipping 'some-registry.io/some-repo-source:source-id'
+	Skipping 'index.docker.io/library/some-tag-source:source-id'
 `,
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -581,7 +575,7 @@ status: {}
 					"--wait",
 				},
 				ExpectedOutput: `Patching Image... (dry run with image upload)
-	Uploading 'some-registry.io/some-repo-source:source-id'
+	Uploading 'index.docker.io/library/some-tag-source:source-id'
 Image "some-image" patched (dry run with image upload)
 `,
 			}.TestKpack(t, cmdFunc)
@@ -626,7 +620,7 @@ spec:
     name: some-ccb
   source:
     registry:
-      image: some-registry.io/some-repo-source:source-id
+      image: index.docker.io/library/some-tag-source:source-id
     subPath: some-sub-path
   tag: some-tag
 status: {}
@@ -646,7 +640,7 @@ status: {}
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Patching Image... (dry run with image upload)
-	Uploading 'some-registry.io/some-repo-source:source-id'
+	Uploading 'index.docker.io/library/some-tag-source:source-id'
 `,
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)

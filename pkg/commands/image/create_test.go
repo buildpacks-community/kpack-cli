@@ -30,10 +30,7 @@ func TestImageCreateCommand(t *testing.T) {
 func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 	const defaultNamespace = "some-default-namespace"
 
-	fakeSourceUploader := registryfakes.NewSourceUploader("some-registry.io/some-repo-source:source-id")
-	registryUtilProvider := registryfakes.UtilProvider{
-		FakeSourceUploader: fakeSourceUploader,
-	}
+	registryUtilProvider := registryfakes.UtilProvider{}
 
 	fakeImageWaiter := &cmdFakes.FakeImageWaiter{}
 

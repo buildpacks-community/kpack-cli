@@ -7,7 +7,7 @@ import "io"
 
 type UtilProvider interface {
 	Relocator(writer io.Writer, tlsCfg TLSConfig, changeState bool) Relocator
-	SourceUploader(changeState bool) SourceUploader
+	SourceUploader(writer io.Writer, tlsCfg TLSConfig, changeState bool) SourceUploader
 	Fetcher(config TLSConfig) Fetcher
 }
 
@@ -21,12 +21,8 @@ func (d DefaultUtilProvider) Relocator(writer io.Writer, tlsCfg TLSConfig, chang
 	}
 }
 
-func (d DefaultUtilProvider) SourceUploader(changeState bool) SourceUploader {
-	if changeState {
-		return DefaultSourceUploader{}
-	} else {
-		return DiscardSourceUploader{}
-	}
+func (d DefaultUtilProvider) SourceUploader(writer io.Writer, tlsCfg TLSConfig, changeState bool) SourceUploader {
+	return &DefaultSourceUploader{Relocator: d.Relocator(writer, tlsCfg, changeState)}
 }
 
 func (d DefaultUtilProvider) Fetcher(config TLSConfig) Fetcher {
