@@ -97,21 +97,22 @@ func displayImageStatus(cmd *cobra.Command, image *v1alpha1.Image, builds []v1al
 		return err
 	}
 
-	tableWriter, err := commands.NewTableWriter(cmd.OutOrStdout(), "Buildpack Id", "Buildpack Version", "Homepage")
-	if err != nil {
-		return err
-	}
-
-	for _, metadata := range successfulBuild.Status.BuildMetadata {
-		err := tableWriter.AddRow(metadata.Id, metadata.Version, metadata.Homepage)
+	if successfulBuild != nil {
+		tableWriter, err := commands.NewTableWriter(cmd.OutOrStdout(), "Buildpack Id", "Buildpack Version", "Homepage")
 		if err != nil {
 			return err
 		}
-	}
 
-	err = tableWriter.Write()
-	if err != nil {
-		return err
+		for _, metadata := range successfulBuild.Status.BuildMetadata {
+			err := tableWriter.AddRow(metadata.Id, metadata.Version, metadata.Homepage)
+			if err != nil {
+				return err
+			}
+		}
+		err = tableWriter.Write()
+		if err != nil {
+			return err
+		}
 	}
 
 	err = statusWriter.AddBlock(
