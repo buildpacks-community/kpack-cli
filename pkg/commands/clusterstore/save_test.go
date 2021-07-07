@@ -33,8 +33,7 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 	var (
 		fakeFetcher              = &registryfakes.Fetcher{}
 		fakeRegistryUtilProvider = &registryfakes.UtilProvider{
-			FakeRelocator: &registryfakes.Relocator{},
-			FakeFetcher:   fakeFetcher,
+			FakeFetcher: fakeFetcher,
 		}
 
 		config = &corev1.ConfigMap{
@@ -257,8 +256,8 @@ status: {}
 						"--dry-run",
 					},
 					ExpectedOutput: `Creating ClusterStore... (dry run)
-	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Skipping 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
+	Skipping 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 ClusterStore "store-name" created (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -294,8 +293,8 @@ status: {}
 						},
 						ExpectedOutput: resourceYAML,
 						ExpectedErrorOutput: `Creating ClusterStore... (dry run)
-	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Skipping 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
+	Skipping 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})
@@ -597,9 +596,9 @@ status: {}
 						"--dry-run",
 					},
 					ExpectedOutput: `Adding to ClusterStore... (dry run)
-	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Skipping 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Skipping 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 ClusterStore "store-name" updated (dry run)
 `,
@@ -623,7 +622,7 @@ ClusterStore "store-name" updated (dry run)
 						},
 						ExpectErr: false,
 						ExpectedOutput: `Adding to ClusterStore... (dry run)
-	Uploading 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
+	Skipping 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
 	Buildpackage already exists in the store
 ClusterStore "store-name" updated (dry run)
 `,
@@ -662,9 +661,9 @@ status: {}
 						},
 						ExpectedOutput: resourceYAML,
 						ExpectedErrorOutput: `Adding to ClusterStore... (dry run)
-	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Skipping 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Skipping 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 `,
 					}.TestK8sAndKpack(t, cmdFunc)

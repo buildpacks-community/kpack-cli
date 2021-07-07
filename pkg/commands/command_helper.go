@@ -87,6 +87,10 @@ func (ch CommandHelper) IsDryRun() bool {
 	return ch.dryRun || ch.dryRunImgUpload
 }
 
+func (ch CommandHelper) IsUploading() bool {
+	return !ch.dryRun || ch.dryRunImgUpload
+}
+
 func (ch CommandHelper) ValidateOnly() bool {
 	return ch.dryRun && !ch.output
 }

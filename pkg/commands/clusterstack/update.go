@@ -64,7 +64,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 				return err
 			}
 
-			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun()), rup.Fetcher(tlsCfg))
+			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, ch.IsUploading()), rup.Fetcher(tlsCfg))
 
 			return update(ctx, authn.DefaultKeychain, stack, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},

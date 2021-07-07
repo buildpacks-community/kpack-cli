@@ -52,7 +52,7 @@ kp clusterstore create my-store -b ../path/to/my-local-buildpackage.cnb`,
 
 			ctx := cmd.Context()
 
-			factory := clusterstore.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, !ch.IsDryRun()), rup.Fetcher(tlsCfg))
+			factory := clusterstore.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, ch.IsUploading()), rup.Fetcher(tlsCfg))
 
 			name := args[0]
 			return create(ctx, name, buildpackages, factory, ch, cs, newWaiter(cs.DynamicClient))

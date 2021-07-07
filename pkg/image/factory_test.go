@@ -4,6 +4,7 @@
 package image_test
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/sclevine/spec"
@@ -20,7 +21,7 @@ func TestImageFactory(t *testing.T) {
 
 func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 	factory := &image.Factory{
-		SourceUploader: fakes.NewSourceUploader(""),
+		SourceUploader: fakes.NewFakeSourceUploader(ioutil.Discard, true),
 	}
 
 	it("sets type metadata", func() {

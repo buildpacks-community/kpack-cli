@@ -10,20 +10,20 @@ import (
 )
 
 type UtilProvider struct {
-	FakeFetcher        registry.Fetcher
-	FakeRelocator      *Relocator
-	FakeSourceUploader registry.SourceUploader
+	FakeFetcher registry.Fetcher
 }
 
-func (u UtilProvider) Relocator(writer io.Writer, _ registry.TLSConfig, _ bool) registry.Relocator {
-	u.FakeRelocator.SetWriter(writer)
-	return u.FakeRelocator
+func (u UtilProvider) Relocator(writer io.Writer, _ registry.TLSConfig, changeState bool) registry.Relocator {
+	return &Relocator{
+		skip:   !changeState,
+		writer: writer,
+	}
 }
 
 func (u UtilProvider) Fetcher(_ registry.TLSConfig) registry.Fetcher {
 	return u.FakeFetcher
 }
 
-func (u UtilProvider) SourceUploader(_ bool) registry.SourceUploader {
-	return u.FakeSourceUploader
+func (u UtilProvider) SourceUploader(writer io.Writer, tlsConfig registry.TLSConfig, changeState bool) registry.SourceUploader {
+	return NewFakeSourceUploader(writer, changeState)
 }

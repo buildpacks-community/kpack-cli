@@ -22,6 +22,7 @@ func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilPr
 		namespace string
 		subPath   string
 		factory   image.Factory
+		tlsCfg    registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -68,7 +69,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 			name := args[0]
 			shouldWait := ch.ShouldWait()
 
-			factory.SourceUploader = rup.SourceUploader(ch.CanChangeState())
+			factory.SourceUploader = rup.SourceUploader(ch.Writer(), tlsCfg, ch.CanChangeState())
 			factory.Printer = ch
 
 			ctx := cmd.Context()
@@ -120,6 +121,6 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 	cmd.Flags().StringArrayVar(&factory.Env, "env", []string{}, "build time environment variables")
 	cmd.Flags().BoolP("wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
 	commands.SetImgUploadDryRunOutputFlags(cmd)
-	commands.SetTLSFlags(cmd, &factory.TLSConfig)
+	commands.SetTLSFlags(cmd, &tlsCfg)
 	return cmd
 }

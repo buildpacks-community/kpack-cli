@@ -4,6 +4,7 @@
 package image_test
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -23,7 +24,7 @@ func TestPatchFactory(t *testing.T) {
 
 func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	factory := image.Factory{
-		SourceUploader: fakes.NewSourceUploader(""),
+		SourceUploader: fakes.NewFakeSourceUploader(ioutil.Discard, true),
 	}
 
 	img := &v1alpha1.Image{

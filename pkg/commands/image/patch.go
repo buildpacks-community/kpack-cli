@@ -23,6 +23,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilP
 		namespace string
 		subPath   string
 		factory   image.Factory
+		tlsCfg        registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -77,7 +78,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				return err
 			}
 
-			factory.SourceUploader = rup.SourceUploader(ch.CanChangeState())
+			factory.SourceUploader = rup.SourceUploader(ch.Writer(), tlsCfg, ch.CanChangeState())
 			factory.Printer = ch
 
 			if cmd.Flag("sub-path").Changed {
@@ -112,7 +113,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size as a kubernetes quantity")
 	cmd.Flags().BoolP("wait", "w", false, "wait for image patch to be reconciled and tail resulting build logs")
 	commands.SetImgUploadDryRunOutputFlags(cmd)
-	commands.SetTLSFlags(cmd, &factory.TLSConfig)
+	commands.SetTLSFlags(cmd, &tlsCfg)
 	return cmd
 }
 

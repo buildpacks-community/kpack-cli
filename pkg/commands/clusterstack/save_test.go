@@ -33,8 +33,7 @@ func testSaveCommand(t *testing.T, when spec.G, it spec.S) {
 	fakeFetcher := &registryfakes.Fetcher{}
 	fakeRelocator := &registryfakes.Relocator{}
 	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
-		FakeRelocator: fakeRelocator,
-		FakeFetcher:   fakeFetcher,
+		FakeFetcher: fakeFetcher,
 	}
 
 	config := &corev1.ConfigMap{

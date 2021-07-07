@@ -22,6 +22,7 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 		namespace string
 		subPath   string
 		factory   image.Factory
+		tlsCfg    registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -66,7 +67,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 			name := args[0]
 
 			factory.SubPath = &subPath
-			factory.SourceUploader = rup.SourceUploader(ch.CanChangeState())
+			factory.SourceUploader = rup.SourceUploader(ch.Writer(), tlsCfg, ch.IsUploading())
 			factory.Printer = ch
 
 			ctx := cmd.Context()
@@ -97,7 +98,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size as a kubernetes quantity (default \"2G\")")
 	cmd.Flags().BoolP("wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
 	commands.SetImgUploadDryRunOutputFlags(cmd)
-	commands.SetTLSFlags(cmd, &factory.TLSConfig)
+	commands.SetTLSFlags(cmd, &tlsCfg)
 	_ = cmd.MarkFlagRequired("tag")
 	return cmd
 }

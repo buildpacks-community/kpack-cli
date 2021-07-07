@@ -43,7 +43,6 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	fakeRelocator := &registryfakes.Relocator{}
 	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
-		FakeRelocator: fakeRelocator,
 		FakeFetcher:   registryfakes.NewStackImagesFetcher(stackInfo),
 	}
 

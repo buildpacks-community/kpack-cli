@@ -31,10 +31,8 @@ func TestClusterStoreCreateCommand(t *testing.T) {
 const localCNBPath = "../../buildpackage/testdata/sample-bp.cnb"
 
 func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
-	fakeRelocator := &registryfakes.Relocator{}
 	var (
 		fakeRegistryUtilProvider = &registryfakes.UtilProvider{
-			FakeRelocator: fakeRelocator,
 			FakeFetcher: registryfakes.NewBuildpackImagesFetcher(
 				registryfakes.BuildpackImgInfo{
 					Id: "buildpack-id",
@@ -243,8 +241,6 @@ status: {}
 	})
 
 	when("dry-run flag is used", func() {
-		fakeRelocator.SetSkip(true)
-
 		it("does not create a clusterstore and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
 				K8sObjects: []runtime.Object{
