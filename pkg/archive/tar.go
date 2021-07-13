@@ -10,6 +10,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
+)
+
+var (
+	normalizedTime = time.Date(1980, time.January, 1, 0, 0, 1, 0, time.UTC)
 )
 
 func CreateTar(path string) (string, error) {
@@ -126,4 +131,6 @@ func finalizeHeader(header *tar.Header, uid, gid int, mode int64) {
 	header.Gid = gid
 	header.Uname = ""
 	header.Gname = ""
+
+	header.ModTime = normalizedTime
 }
