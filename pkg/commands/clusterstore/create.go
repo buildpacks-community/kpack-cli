@@ -13,6 +13,7 @@ import (
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -70,11 +71,7 @@ func create(ctx context.Context, name string, buildpackages []string, factory *c
 		return err
 	}
 
-	helper := k8s.DefaultConfigHelper(cs)
-	kpConfig, err := helper.GetKpConfig(ctx)
-	if err != nil {
-		return err
-	}
+	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
 
 	newStore, err := factory.MakeStore(authn.DefaultKeychain, name, kpConfig, buildpackages...)
 	if err != nil {

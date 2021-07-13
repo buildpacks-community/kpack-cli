@@ -13,6 +13,7 @@ import (
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -72,11 +73,7 @@ func create(ctx context.Context, name, buildImageRef, runImageRef string, factor
 		return err
 	}
 
-	helper := k8s.DefaultConfigHelper(cs)
-	kpConfig, err := helper.GetKpConfig(ctx)
-	if err != nil {
-		return err
-	}
+	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
 
 	stack, err := factory.MakeStack(authn.DefaultKeychain, name, buildImageRef, runImageRef, kpConfig)
 	if err != nil {

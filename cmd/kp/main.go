@@ -18,6 +18,7 @@ import (
 	clusterbuildercmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuilder"
 	clusterstackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstack"
 	clusterstorecmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
+	configcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/config"
 	imgcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/image"
 	importcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/import"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands/lifecycle"
@@ -57,6 +58,7 @@ Learn more about kpack @ https://github.com/pivotal/kpack`,
 		getStoreCommand(clientSetProvider),
 		getLifecycleCommand(clientSetProvider),
 		getImportCommand(clientSetProvider),
+		getConfigCommand(clientSetProvider),
 		getCompletionCommand(),
 	)
 
@@ -229,6 +231,20 @@ func getImportCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		commands.NewConfirmationProvider(),
 		commands.NewResourceWaiter,
 	)
+}
+
+func getConfigCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	configRootCmd := &cobra.Command{
+		Use:     "config",
+		Short:   "Config commands",
+		Aliases: []string{"config", "cfg"},
+	}
+	configRootCmd.AddCommand(
+		configcmds.NewCanonicalRepositoryCommand(clientSetProvider),
+		configcmds.NewCanonicalServiceAccountCommand(clientSetProvider),
+	)
+
+	return configRootCmd
 }
 
 func getCompletionCommand() *cobra.Command {

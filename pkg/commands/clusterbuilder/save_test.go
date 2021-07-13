@@ -219,28 +219,63 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("fails when kp-config map is not found", func() {
-			testhelpers.CommandTest{
-				Args: []string{
-					builder.Name,
-					"--tag", builder.Spec.Tag,
-					"--stack", builder.Spec.Stack.Name,
-					"--store", builder.Spec.Store.Name,
-					"--order", "./testdata/order.yaml",
-				},
-				ExpectErr: true,
-				ExpectedOutput: `Error: failed to get canonical service account: configmaps "kp-config" not found
-`,
-			}.TestK8sAndKpack(t, cmdFunc)
-		})
-
-		it("fails when canonical.repository.serviceaccount key is not found in kp-config configmap", func() {
+		it("uses default service account when canonical.repository.serviceaccount key is not found in kp-config configmap", func() {
 			badConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kp-config",
 					Namespace: "kpack",
 				},
 				Data: map[string]string{},
+			}
+
+			builder := &v1alpha1.ClusterBuilder{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       v1alpha1.ClusterBuilderKind,
+					APIVersion: "kpack.io/v1alpha1",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "test-builder",
+					Annotations: map[string]string{
+						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"default"}},"status":{"stack":{}}}`,
+					},
+				},
+				Spec: v1alpha1.ClusterBuilderSpec{
+					BuilderSpec: v1alpha1.BuilderSpec{
+						Tag: "some-registry/some-project/test-builder",
+						Stack: corev1.ObjectReference{
+							Name: "some-stack",
+							Kind: v1alpha1.ClusterStackKind,
+						},
+						Store: corev1.ObjectReference{
+							Name: "some-store",
+							Kind: v1alpha1.ClusterStoreKind,
+						},
+						Order: []v1alpha1.OrderEntry{
+							{
+								Group: []v1alpha1.BuildpackRef{
+									{
+										BuildpackInfo: v1alpha1.BuildpackInfo{
+											Id: "org.cloudfoundry.nodejs",
+										},
+									},
+								},
+							},
+							{
+								Group: []v1alpha1.BuildpackRef{
+									{
+										BuildpackInfo: v1alpha1.BuildpackInfo{
+											Id: "org.cloudfoundry.go",
+										},
+									},
+								},
+							},
+						},
+					},
+					ServiceAccountRef: corev1.ObjectReference{
+						Namespace: "kpack",
+						Name:      "default",
+					},
+				},
 			}
 
 			testhelpers.CommandTest{
@@ -254,8 +289,8 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--store", builder.Spec.Store.Name,
 					"--order", "./testdata/order.yaml",
 				},
-				ExpectErr: true,
-				ExpectedOutput: `Error: failed to get canonical service account: key "canonical.repository.serviceaccount" not found in configmap "kp-config"
+				ExpectCreates: []runtime.Object{builder},
+				ExpectedOutput: `ClusterBuilder "test-builder" created
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -282,8 +317,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--order", "./testdata/order.yaml",
 				},
 				ExpectErr: true,
-				ExpectedOutput: `Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
-`,
+				ExpectedOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 

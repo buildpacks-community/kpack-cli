@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	buildk8s "github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -79,7 +80,9 @@ func validateImage(img ggcrv1.Image) error {
 }
 
 func relocateImageToCanonicalRepo(ctx context.Context, keychain authn.Keychain, img ggcrv1.Image, cfg ImageUpdaterConfig) (string, error) {
-	canonicalRepo, err := buildk8s.DefaultConfigHelper(cfg.ClientSet).GetCanonicalRepository(ctx)
+	kpConfig := config.NewKpConfigProvider(cfg.ClientSet).GetKpConfig(ctx)
+
+	canonicalRepo, err := kpConfig.CanonicalRepository()
 	if err != nil {
 		return "", err
 	}

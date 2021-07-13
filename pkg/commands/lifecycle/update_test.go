@@ -98,21 +98,6 @@ Error: image missing lifecycle metadata
 		}.TestK8s(t, cmdFunc)
 	})
 
-	it("errors when kp-config configmap is not found", func() {
-		testhelpers.CommandTest{
-			Objects: []runtime.Object{
-				lifecycleImageConfig,
-			},
-			Args: []string{
-				"--image", "some-registry.io/repo/lifecycle-image",
-			},
-			ExpectErr: true,
-			ExpectedOutput: `Updating lifecycle image...
-Error: failed to get canonical repository: configmaps "kp-config" not found
-`,
-		}.TestK8s(t, cmdFunc)
-	})
-
 	it("errors when canonical.repository key is not found in kp-config configmap", func() {
 		badKpConfig := &corev1.ConfigMap{
 			ObjectMeta: v1.ObjectMeta{
@@ -132,7 +117,7 @@ Error: failed to get canonical repository: configmaps "kp-config" not found
 			},
 			ExpectErr: true,
 			ExpectedOutput: `Updating lifecycle image...
-Error: failed to get canonical repository: key "canonical.repository" not found in configmap "kp-config"
+Error: failed to get canonical repository: use "kp config canonical-repository" to set
 `,
 		}.TestK8s(t, cmdFunc)
 	})

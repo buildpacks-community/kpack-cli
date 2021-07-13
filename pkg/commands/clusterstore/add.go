@@ -16,6 +16,7 @@ import (
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -81,11 +82,7 @@ func update(ctx context.Context, store *v1alpha1.ClusterStore, buildpackages []s
 		return err
 	}
 
-	helper := k8s.DefaultConfigHelper(cs)
-	kpConfig, err := helper.GetKpConfig(ctx)
-	if err != nil {
-		return err
-	}
+	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
 
 	updatedStore, storeUpdated, err := factory.AddToStore(authn.DefaultKeychain, store, kpConfig, buildpackages...)
 	if err != nil {

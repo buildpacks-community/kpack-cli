@@ -231,7 +231,12 @@ func (i *Importer) relocateLifecycle(ctx context.Context, keychain authn.Keychai
 		return nil, err
 	}
 
-	relocatedLifecycle, err := i.imageRelocator.Relocate(keychain, lifecycleImage, path.Join(kpConfig.CanonicalRepository, "lifecycle"))
+	canonicalRepo, err := kpConfig.CanonicalRepository()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get canonical repository")
+	}
+
+	relocatedLifecycle, err := i.imageRelocator.Relocate(keychain, lifecycleImage, path.Join(canonicalRepo, "lifecycle"))
 	if err != nil {
 		return nil, err
 	}
@@ -296,6 +301,11 @@ func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder Clu
 		return nil, err
 	}
 
+	canonicalRepo, err := kpConfig.CanonicalRepository()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get canonical repository")
+	}
+
 	newCB := &v1alpha1.ClusterBuilder{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       v1alpha1.ClusterBuilderKind,
@@ -307,7 +317,7 @@ func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder Clu
 		},
 		Spec: v1alpha1.ClusterBuilderSpec{
 			BuilderSpec: v1alpha1.BuilderSpec{
-				Tag: path.Join(kpConfig.CanonicalRepository, builder.Name),
+				Tag: path.Join(canonicalRepo, builder.Name),
 				Stack: corev1.ObjectReference{
 					Name: builder.ClusterStack,
 					Kind: v1alpha1.ClusterStackKind,
@@ -318,11 +328,11 @@ func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder Clu
 				},
 				Order: builder.Order,
 			},
-			ServiceAccountRef: kpConfig.ServiceAccount,
+			ServiceAccountRef: kpConfig.ServiceAccount(),
 		},
 	}
 
-	err := k8s.SetLastAppliedCfg(newCB)
+	err = k8s.SetLastAppliedCfg(newCB)
 	if err != nil {
 		return nil, err
 	}

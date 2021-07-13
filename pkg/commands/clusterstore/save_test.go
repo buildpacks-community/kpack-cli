@@ -111,18 +111,6 @@ ClusterStore "store-name" created
 			require.Len(t, fakeWaiter.WaitCalls, 1)
 		})
 
-		it("fails when kp-config configmap is not found", func() {
-			testhelpers.CommandTest{
-				Args: []string{
-					"store-name",
-					"--buildpackage", "some-registry.io/repo/buildpack",
-					"-b", localCNBPath,
-				},
-				ExpectErr:      true,
-				ExpectedOutput: "Creating ClusterStore...\nError: configmaps \"kp-config\" not found\n",
-			}.TestK8sAndKpack(t, cmdFunc)
-		})
-
 		it("fails when canonical.repository key is not found in kp-config configmap", func() {
 			badConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -142,7 +130,7 @@ ClusterStore "store-name" created
 					"-b", localCNBPath,
 				},
 				ExpectErr:      true,
-				ExpectedOutput: "Creating ClusterStore...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
+				ExpectedOutput: "Creating ClusterStore...\nError: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 

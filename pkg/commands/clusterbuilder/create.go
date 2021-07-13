@@ -16,11 +16,11 @@ import (
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/builder"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 )
 
 const (
-	kpNamespace  = "kpack"
 	apiVersion   = "kpack.io/v1alpha1"
 	defaultStack = "default"
 	defaultStore = "default"
@@ -85,20 +85,15 @@ type CommandFlags struct {
 }
 
 func create(ctx context.Context, name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, waiter commands.ResourceWaiter) error {
-	configHelper := k8s.DefaultConfigHelper(cs)
+	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
 
 	if flags.tag == "" {
-		repository, err := configHelper.GetCanonicalRepository(ctx)
+		repo, err := kpConfig.CanonicalRepository()
 		if err != nil {
 			return err
 		}
 
-		flags.tag = path.Join(repository, name)
-	}
-
-	serviceAccount, err := configHelper.GetCanonicalServiceAccount(ctx)
-	if err != nil {
-		return err
+		flags.tag = path.Join(repo, name)
 	}
 
 	cb := &v1alpha1.ClusterBuilder{
@@ -122,10 +117,7 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 					Kind: v1alpha1.ClusterStoreKind,
 				},
 			},
-			ServiceAccountRef: corev1.ObjectReference{
-				Namespace: kpNamespace,
-				Name:      serviceAccount,
-			},
+			ServiceAccountRef: kpConfig.ServiceAccount(),
 		},
 	}
 
@@ -137,6 +129,7 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 		cb.Spec.Order = builder.CreateOrder(flags.buildpacks)
 	}
 
+	var err error
 	if flags.order != "" {
 		cb.Spec.Order, err = builder.ReadOrder(flags.order)
 		if err != nil {
