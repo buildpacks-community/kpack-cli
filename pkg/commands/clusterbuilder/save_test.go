@@ -104,7 +104,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 	when("creating", func() {
 		it("creates a ClusterBuilder when it does not exist", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -129,7 +129,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{"kind":"ClusterStore","name":"default"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -147,7 +147,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 
 		it("creates a ClusterBuilder with the canonical tag when tag is not specified", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -185,7 +185,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -206,7 +206,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 
 		it("returns error when buildpack and order flags are used together", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -244,7 +244,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					badConfig,
 				},
 				Args: []string{
@@ -272,7 +272,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					badConfig,
 				},
 				Args: []string{
@@ -317,7 +317,7 @@ status:
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{
@@ -384,7 +384,7 @@ status:
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{
@@ -406,7 +406,7 @@ status:
 		when("dry-run flag is used", func() {
 			it("does not create a ClusterBuilder and prints result with dry run indicated", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{
@@ -452,7 +452,7 @@ status:
 
 				it("does not create a ClusterBuilder and prints the resource output", func() {
 					testhelpers.CommandTest{
-						K8sObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							config,
 						},
 						Args: []string{
@@ -474,7 +474,7 @@ status:
 	when("patching", func() {
 		it("patches when the ClusterBuilder does exist", func() {
 			testhelpers.CommandTest{
-				KpackObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					builder,
 				},
 				Args: []string{
@@ -495,7 +495,7 @@ status:
 
 		it("does not patch if there are no changes", func() {
 			testhelpers.CommandTest{
-				KpackObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					builder,
 				},
 				Args: []string{
@@ -536,7 +536,7 @@ status:
 `
 
 				testhelpers.CommandTest{
-					KpackObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						builder,
 					},
 					Args: []string{
@@ -603,7 +603,7 @@ status:
 `
 
 				testhelpers.CommandTest{
-					KpackObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						builder,
 					},
 					Args: []string{
@@ -651,7 +651,7 @@ status:
 `
 
 					testhelpers.CommandTest{
-						KpackObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							builder,
 						},
 						Args: []string{
@@ -667,7 +667,7 @@ status:
 		when("dry-run flag is used", func() {
 			it("does not patch a ClusterBuilder and prints result with dry run indicated", func() {
 				testhelpers.CommandTest{
-					KpackObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						builder,
 					},
 					Args: []string{
@@ -686,7 +686,7 @@ status:
 			when("there are no changes in the patch", func() {
 				it("does not patch and informs of no change", func() {
 					testhelpers.CommandTest{
-						KpackObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							builder,
 						},
 						Args: []string{
@@ -729,7 +729,7 @@ status:
 `
 
 					testhelpers.CommandTest{
-						KpackObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							builder,
 						},
 						Args: []string{

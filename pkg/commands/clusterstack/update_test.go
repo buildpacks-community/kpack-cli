@@ -1,5 +1,6 @@
 // Copyright 2020-Present VMware, Inc.
-// SPDX-License-Identifier: Apache-2.0
+//
+//SPDX-License-Identifier: Apache-2.0
 
 package clusterstack_test
 
@@ -121,10 +122,8 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			Status: stack.Status,
 		}
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				config,
-			},
-			KpackObjects: []runtime.Object{
 				stack,
 			},
 			Args: []string{
@@ -164,10 +163,8 @@ ClusterStack "stack-name" updated
 		})
 
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				config,
-			},
-			KpackObjects: []runtime.Object{
 				stack,
 			},
 			Args: []string{
@@ -188,7 +185,7 @@ ClusterStack "stack-name" updated (no change)
 
 	it("returns error when kp-config configmap is not found", func() {
 		testhelpers.CommandTest{
-			KpackObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				stack,
 			},
 			Args: []string{
@@ -211,10 +208,8 @@ ClusterStack "stack-name" updated (no change)
 		}
 
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				badConfig,
-			},
-			KpackObjects: []runtime.Object{
 				stack,
 			},
 			Args: []string{
@@ -251,10 +246,8 @@ status:
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
-				},
-				KpackObjects: []runtime.Object{
 					stack,
 				},
 				Args: []string{
@@ -321,10 +314,8 @@ Uploading to 'canonical-registry.io/canonical-repo'...
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
-				},
-				KpackObjects: []runtime.Object{
 					stack,
 				},
 				Args: []string{
@@ -395,10 +386,8 @@ status:
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						stack,
 					},
 					Args: []string{
@@ -422,10 +411,8 @@ Build and Run images already exist in stack
 	when("dry-run flag is used", func() {
 		it("does not update the clusterstack and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
-				},
-				KpackObjects: []runtime.Object{
 					stack,
 				},
 				Args: []string{
@@ -468,10 +455,8 @@ status:
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						stack,
 					},
 					Args: []string{
@@ -495,10 +480,8 @@ Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
 	when("dry-run--with-image-upload flag is used", func() {
 		it("does not update the clusterstack and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
-				},
-				KpackObjects: []runtime.Object{
 					stack,
 				},
 				Args: []string{
@@ -540,10 +523,8 @@ status:
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						stack,
 					},
 					Args: []string{

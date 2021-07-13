@@ -244,7 +244,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					kpConfig,
 					lifecycleImageConfig,
 				},
@@ -295,7 +295,7 @@ Imported resources
 			require.NoError(t, err)
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					kpConfig,
 					lifecycleImageConfig,
 				},
@@ -344,7 +344,7 @@ Imported resources
 			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					kpConfig,
 					lifecycleImageConfig,
 				},
@@ -383,7 +383,7 @@ Imported resources
 				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						kpConfig,
 						lifecycleImageConfig,
 					},
@@ -451,7 +451,7 @@ Imported resources
 				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						kpConfig,
 						lifecycleImageConfig,
 					},
@@ -554,11 +554,9 @@ Imported resources
 				defaultStack.Spec.RunImage.Image = "some-uploaded-run-image@build-image-digest"
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						kpConfig,
 						lifecycleImageConfig,
-					},
-					KpackObjects: []runtime.Object{
 						store,
 						stack,
 						defaultStack,
@@ -613,11 +611,9 @@ Imported resources
 				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						kpConfig,
 						lifecycleImageConfig,
-					},
-					KpackObjects: []runtime.Object{
 						store,
 						stack,
 						defaultStack,
@@ -714,11 +710,9 @@ Imported resources
 
 			it("creates stores, stacks, and cbs defined in the dependency descriptor and updates the timestamp", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						kpConfig,
 						lifecycleImageConfig,
-					},
-					KpackObjects: []runtime.Object{
 						store,
 						stack,
 						defaultStack,
@@ -760,7 +754,7 @@ Imported resources
 
 	it("errors when the descriptor apiVersion is unexpected", func() {
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{kpConfig},
+			Objects: []runtime.Object{kpConfig},
 			Args: []string{
 				"-f", "./testdata/invalid-deps.yaml",
 			},
@@ -900,7 +894,7 @@ status:
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					kpConfig,
 					lifecycleImageConfig,
 				},
@@ -1090,7 +1084,7 @@ status:
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					kpConfig,
 					lifecycleImageConfig,
 				},
@@ -1139,7 +1133,7 @@ Imported resources (dry run)
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					kpConfig,
 					lifecycleImageConfig,
 				},
@@ -1280,7 +1274,7 @@ Importing ClusterBuilder 'default'... (dry run)
 
 			it("does not create a Builder and prints the resource output", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						kpConfig,
 						lifecycleImageConfig,
 					},
@@ -1319,7 +1313,7 @@ Imported resources (dry run with image upload)
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					kpConfig,
 					lifecycleImageConfig,
 				},
@@ -1459,7 +1453,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
 
 			it("does not create a Builder and prints the resource output", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						kpConfig,
 						lifecycleImageConfig,
 					},

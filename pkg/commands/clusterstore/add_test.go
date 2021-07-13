@@ -82,10 +82,8 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 
 	it("adds a buildpackage to store", func() {
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				config,
-			},
-			KpackObjects: []runtime.Object{
 				existingStore,
 			},
 			Args: []string{
@@ -123,10 +121,8 @@ ClusterStore "store-name" updated
 
 	it("does not add buildpackage with the same digest", func() {
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				config,
-			},
-			KpackObjects: []runtime.Object{
 				existingStore,
 			},
 			Args: []string{
@@ -144,10 +140,8 @@ ClusterStore "store-name" updated (no change)
 
 	it("errors when the provided store does not exist", func() {
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				config,
-			},
-			KpackObjects: []runtime.Object{
 				existingStore,
 			},
 			Args: []string{
@@ -161,7 +155,7 @@ ClusterStore "store-name" updated (no change)
 
 	it("errors when kp-config configmap is not found", func() {
 		testhelpers.CommandTest{
-			KpackObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				existingStore,
 			},
 			Args: []string{
@@ -183,10 +177,8 @@ ClusterStore "store-name" updated (no change)
 		}
 
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				badConfig,
-			},
-			KpackObjects: []runtime.Object{
 				existingStore,
 			},
 			Args: []string{
@@ -214,10 +206,8 @@ status: {}
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
-				},
-				KpackObjects: []runtime.Object{
 					existingStore,
 				},
 				Args: []string{
@@ -277,10 +267,8 @@ status: {}
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
-				},
-				KpackObjects: []runtime.Object{
 					existingStore,
 				},
 				Args: []string{
@@ -327,10 +315,8 @@ status: {}
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						existingStore,
 					},
 					Args: []string{
@@ -352,10 +338,8 @@ status: {}
 	when("dry-run flag is used", func() {
 		it("does not create a clusterstore and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
-				},
-				KpackObjects: []runtime.Object{
 					existingStore,
 				},
 				Args: []string{
@@ -378,10 +362,8 @@ ClusterStore "store-name" updated (dry run)
 		when("there are no changes in the update", func() {
 			it("does not create a clusterstore and informs of no change", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						existingStore,
 					},
 					Args: []string{
@@ -415,10 +397,8 @@ status: {}
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						existingStore,
 					},
 					Args: []string{
@@ -443,10 +423,8 @@ status: {}
 	when("dry-run-with-image-upload flag is used", func() {
 		it("does not create a clusterstore and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
-				},
-				KpackObjects: []runtime.Object{
 					existingStore,
 				},
 				Args: []string{
@@ -468,10 +446,8 @@ ClusterStore "store-name" updated (dry run with image upload)
 		when("there are no changes in the update", func() {
 			it("does not create a clusterstore and informs of no change", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						existingStore,
 					},
 					Args: []string{
@@ -505,10 +481,8 @@ status: {}
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						existingStore,
 					},
 					Args: []string{
