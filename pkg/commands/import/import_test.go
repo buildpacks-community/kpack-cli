@@ -4,6 +4,7 @@
 package _import_test
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
@@ -252,6 +253,58 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
+				ExpectedOutput: `Importing Lifecycle...
+	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+Importing ClusterStore 'store-name'...
+	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest'
+Importing ClusterStack 'stack-name'...
+Uploading to 'canonical-registry.io/canonical-repo'...
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:build-image-digest'
+Importing ClusterStack 'default'...
+Uploading to 'canonical-registry.io/canonical-repo'...
+	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
+	Uploading 'canonical-registry.io/canonical-repo/run@sha256:build-image-digest'
+Importing ClusterBuilder 'clusterbuilder-name'...
+Importing ClusterBuilder 'default'...
+Imported resources
+`,
+				ExpectCreates: []runtime.Object{
+					store,
+					stack,
+					defaultStack,
+					builder,
+					defaultBuilder,
+				},
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedLifecycleImageConfig,
+					},
+				},
+			}.TestK8sAndKpack(t, cmdFunc)
+			require.Len(t, fakeWaiter.WaitCalls, 5)
+			require.Len(t, fakeWaiter.WaitCalls[3].ExtraChecks, 1) // ClusterBuilder has extra check
+			require.Len(t, fakeWaiter.WaitCalls[4].ExtraChecks, 1) // ClusterBuilder has extra check
+		})
+
+		it("creates stores, stacks, and cbs defined in the dependency descriptor provided by stdin", func() {
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"canonical-registry.io/canonical-repo/default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+
+			descriptor, err := ioutil.ReadFile("./testdata/deps.yaml")
+			require.NoError(t, err)
+
+			testhelpers.CommandTest{
+				K8sObjects: []runtime.Object{
+					kpConfig,
+					lifecycleImageConfig,
+				},
+				Args: []string{
+					"-f", "-",
+					"--registry-ca-cert-path", "some-cert-path",
+					"--registry-verify-certs",
+				},
+				StdIn: string(descriptor),
 				ExpectedOutput: `Importing Lifecycle...
 	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
 Importing ClusterStore 'store-name'...

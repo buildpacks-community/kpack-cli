@@ -40,6 +40,9 @@ func (c CommandTest) TestK8sAndKpack(t *testing.T, cmdFactory func(k8sClientSet 
 	cmd := cmdFactory(k8sClient, kpackClient)
 	cmd.SetArgs(c.Args)
 
+	inputBuffer := bytes.NewBufferString(c.StdIn)
+	cmd.SetIn(inputBuffer)
+
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
 

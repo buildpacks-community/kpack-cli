@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"path"
-	"strings"
 	"testing"
 	"time"
 
@@ -1402,9 +1401,9 @@ func (i TestImport) TestImporter(t *testing.T) {
 	var err error
 	importer := NewImporter(testLogger{writer: buffer}, k8sClient, client, &fakeFetcher{Images: i.Images}, &fakeRelocator{}, &fakeWaiter{}, &fakeTimestampProvider{ts: time.Time{}.String()})
 	if i.DryRun {
-		_, err = importer.ImportDescriptorDryRun(context.Background(), authn.NewMultiKeychain(), i.KpConfig, strings.NewReader(i.DependencyDescriptor))
+		_, err = importer.ImportDescriptorDryRun(context.Background(), authn.NewMultiKeychain(), i.KpConfig, i.DependencyDescriptor)
 	} else {
-		_, err = importer.ImportDescriptor(context.Background(), authn.NewMultiKeychain(), i.KpConfig, strings.NewReader(i.DependencyDescriptor))
+		_, err = importer.ImportDescriptor(context.Background(), authn.NewMultiKeychain(), i.KpConfig, i.DependencyDescriptor)
 	}
 
 	if i.ExpectErr != nil {

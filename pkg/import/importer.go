@@ -2,8 +2,6 @@ package _import
 
 import (
 	"context"
-	"io"
-	"io/ioutil"
 	"path"
 
 	"github.com/ghodss/yaml"
@@ -75,14 +73,9 @@ func NewImporter(printer Printer, k8sClient kubernetes.Interface, client version
 	}
 }
 
-func (i *Importer) ReadDescriptor(descriptorReader io.Reader) (DependencyDescriptor, error) {
-	buf, err := ioutil.ReadAll(descriptorReader)
-	if err != nil {
-		return DependencyDescriptor{}, err
-	}
-
+func (i *Importer) ReadDescriptor(rawDescriptor string) (DependencyDescriptor, error) {
 	var api API
-	if err := yaml.Unmarshal(buf, &api); err != nil {
+	if err := yaml.Unmarshal([]byte(rawDescriptor), &api); err != nil {
 		return DependencyDescriptor{}, err
 	}
 
@@ -90,12 +83,12 @@ func (i *Importer) ReadDescriptor(descriptorReader io.Reader) (DependencyDescrip
 	switch api.Version {
 	case APIVersionV1:
 		var d1 DependencyDescriptorV1
-		if err := yaml.Unmarshal(buf, &d1); err != nil {
+		if err := yaml.Unmarshal([]byte(rawDescriptor), &d1); err != nil {
 			return DependencyDescriptor{}, err
 		}
 		descriptor = d1.ToNextVersion()
 	case CurrentAPIVersion:
-		if err := yaml.Unmarshal(buf, &descriptor); err != nil {
+		if err := yaml.Unmarshal([]byte(rawDescriptor), &descriptor); err != nil {
 			return DependencyDescriptor{}, err
 		}
 	default:
@@ -109,8 +102,8 @@ func (i *Importer) ReadDescriptor(descriptorReader io.Reader) (DependencyDescrip
 	return descriptor, nil
 }
 
-func (i *Importer) ImportDescriptor(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, descriptorReader io.Reader) ([]runtime.Object, error) {
-	descriptor, err := i.ReadDescriptor(descriptorReader)
+func (i *Importer) ImportDescriptor(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, rawDescriptor string) ([]runtime.Object, error) {
+	descriptor, err := i.ReadDescriptor(rawDescriptor)
 	if err != nil {
 		return nil, err
 	}
@@ -155,8 +148,8 @@ func (i *Importer) ImportDescriptor(ctx context.Context, keychain authn.Keychain
 	return objects, nil
 }
 
-func (i *Importer) ImportDescriptorDryRun(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, descriptorReader io.Reader) ([]runtime.Object, error) {
-	descriptor, err := i.ReadDescriptor(descriptorReader)
+func (i *Importer) ImportDescriptorDryRun(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, rawDescriptor string) ([]runtime.Object, error) {
+	descriptor, err := i.ReadDescriptor(rawDescriptor)
 	if err != nil {
 		return nil, err
 	}

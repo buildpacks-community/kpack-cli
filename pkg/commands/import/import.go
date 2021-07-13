@@ -4,8 +4,9 @@
 package _import
 
 import (
-	"bytes"
+	"io"
 	"io/ioutil"
+	"os"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
@@ -92,12 +93,12 @@ cat dependencies.yaml | kp import -f -`,
 				timestampProvider,
 			)
 
-			file, err := ioutil.ReadFile(filename)
+			rawDescriptor, err := readDescriptor(cmd, filename)
 			if err != nil {
 				return err
 			}
 
-			descriptor, err := importer.ReadDescriptor(bytes.NewReader(file))
+			descriptor, err := importer.ReadDescriptor(rawDescriptor)
 			if err != nil {
 				return err
 			}
@@ -132,7 +133,7 @@ cat dependencies.yaml | kp import -f -`,
 					ctx,
 					authn.DefaultKeychain,
 					kpConfig,
-					bytes.NewReader(file),
+					rawDescriptor,
 				)
 				if err != nil {
 					return err
@@ -142,7 +143,7 @@ cat dependencies.yaml | kp import -f -`,
 					ctx,
 					authn.DefaultKeychain,
 					kpConfig,
-					bytes.NewReader(file),
+					rawDescriptor,
 				)
 				if err != nil {
 					return err
@@ -163,4 +164,28 @@ cat dependencies.yaml | kp import -f -`,
 	commands.SetTLSFlags(cmd, &tlsConfig)
 	_ = cmd.MarkFlagRequired("filename")
 	return cmd
+}
+
+func readDescriptor(cmd *cobra.Command, filename string) (string, error) {
+	var (
+		reader io.ReadCloser
+		err    error
+	)
+
+	if filename == "-" {
+		reader = ioutil.NopCloser(cmd.InOrStdin())
+	} else {
+		reader, err = os.Open(filename)
+		if err != nil {
+			return "", err
+		}
+	}
+	defer reader.Close()
+
+	buf, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+
+	return string(buf), nil
 }
