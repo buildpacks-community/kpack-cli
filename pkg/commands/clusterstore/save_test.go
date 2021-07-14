@@ -89,7 +89,7 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 
 		it("creates a cluster store", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -133,7 +133,7 @@ ClusterStore "store-name" created
 			}
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					badConfig,
 				},
 				Args: []string{
@@ -148,7 +148,7 @@ ClusterStore "store-name" created
 
 		it("fails when a buildpackage is not provided", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -176,7 +176,7 @@ status: {}
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{
@@ -222,7 +222,7 @@ status: {}
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{
@@ -246,7 +246,7 @@ status: {}
 		when("dry-run flag is used", func() {
 			it("does not create a clusterstore and prints result with dry run indicated", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{
@@ -281,7 +281,7 @@ status: {}
 `
 
 					testhelpers.CommandTest{
-						K8sObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							config,
 						},
 						Args: []string{
@@ -304,7 +304,7 @@ status: {}
 		when("dry-run-with-image-upload flag is used", func() {
 			it("does not create a clusterstore and prints result with dry run indicated", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{
@@ -338,7 +338,7 @@ status: {}
 `
 
 					testhelpers.CommandTest{
-						K8sObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							config,
 						},
 						Args: []string{
@@ -390,10 +390,8 @@ status: {}
 
 		it("adds a buildpackage to a store when it exists", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
-				},
-				KpackObjects: []runtime.Object{
 					existingStore,
 				},
 				Args: []string{
@@ -445,10 +443,8 @@ status: {}
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						existingStore,
 					},
 					Args: []string{
@@ -508,10 +504,8 @@ status: {}
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						existingStore,
 					},
 					Args: []string{
@@ -558,10 +552,8 @@ status: {}
 `
 
 					testhelpers.CommandTest{
-						K8sObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							config,
-						},
-						KpackObjects: []runtime.Object{
 							existingStore,
 						},
 						Args: []string{
@@ -583,10 +575,8 @@ status: {}
 		when("dry-run flag is used", func() {
 			it("does not create a clusterstore and prints result with dry run indicated", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						existingStore,
 					},
 					Args: []string{
@@ -609,10 +599,8 @@ ClusterStore "store-name" updated (dry run)
 			when("there are no changes in the update", func() {
 				it("does not create a clusterstore and informs of no change", func() {
 					testhelpers.CommandTest{
-						K8sObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							config,
-						},
-						KpackObjects: []runtime.Object{
 							existingStore,
 						},
 						Args: []string{
@@ -646,10 +634,8 @@ status: {}
 `
 
 					testhelpers.CommandTest{
-						K8sObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							config,
-						},
-						KpackObjects: []runtime.Object{
 							existingStore,
 						},
 						Args: []string{
@@ -674,10 +660,8 @@ status: {}
 		when("dry-run-with-image-upload flag is used", func() {
 			it("does not create a clusterstore and prints result with dry run indicated", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
-					},
-					KpackObjects: []runtime.Object{
 						existingStore,
 					},
 					Args: []string{
@@ -699,10 +683,8 @@ ClusterStore "store-name" updated (dry run with image upload)
 			when("there are no changes in the update", func() {
 				it("does not create a clusterstore and informs of no change", func() {
 					testhelpers.CommandTest{
-						K8sObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							config,
-						},
-						KpackObjects: []runtime.Object{
 							existingStore,
 						},
 						Args: []string{
@@ -736,10 +718,8 @@ status: {}
 `
 
 					testhelpers.CommandTest{
-						K8sObjects: []runtime.Object{
+						Objects: []runtime.Object{
 							config,
-						},
-						KpackObjects: []runtime.Object{
 							existingStore,
 						},
 						Args: []string{

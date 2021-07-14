@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	kpacktesthelpers "github.com/pivotal/kpack/pkg/reconciler/testhelpers"
 	"io"
 	"path"
 	"testing"
@@ -53,7 +54,7 @@ func testImporter(t *testing.T, when spec.G, it spec.S) {
 					"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, runImageDigest),
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
 				},
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "lifecycle-image",
@@ -254,7 +255,7 @@ clusterBuilders:
 					"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, runImageDigest),
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
 				},
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "lifecycle-image",
@@ -442,7 +443,7 @@ clusterBuilders:
 					"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newRunImageDigest),
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newBuildImageDigest),
 				},
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "lifecycle-image",
@@ -452,8 +453,6 @@ clusterBuilders:
 							"image": "old/image",
 						},
 					},
-				},
-				KpackObjects: []runtime.Object{
 					annotate(t, &v1alpha1.ClusterStore{
 						TypeMeta: metav1.TypeMeta{
 							Kind:       "ClusterStore",
@@ -855,7 +854,7 @@ clusterBuilders:
 					"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newRunImageDigest),
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newBuildImageDigest),
 				},
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "lifecycle-image",
@@ -865,8 +864,6 @@ clusterBuilders:
 							"image": "old/image",
 						},
 					},
-				},
-				KpackObjects: []runtime.Object{
 					annotate(t, &v1alpha1.ClusterStore{
 						TypeMeta: metav1.TypeMeta{
 							Kind:       "ClusterStore",
@@ -1245,7 +1242,7 @@ clusterBuilders:
 					"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), dotnetCoreDigest),
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
 				},
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "lifecycle-image",
@@ -1305,7 +1302,7 @@ clusterBuilders:
 					"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, runImageDigest),
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
 				},
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "lifecycle-image",
@@ -1381,8 +1378,7 @@ func timestampAnnotation(t *testing.T, object k8s.Annotatable) k8s.Annotatable {
 }
 
 type TestImport struct {
-	K8sObjects           []runtime.Object
-	KpackObjects         []runtime.Object
+	Objects         []runtime.Object
 	KpConfig             config.KpConfig
 	DependencyDescriptor string
 	DryRun               bool
@@ -1394,8 +1390,10 @@ type TestImport struct {
 
 func (i TestImport) TestImporter(t *testing.T) {
 	t.Helper()
-	client := kpackfakes.NewSimpleClientset(i.KpackObjects...)
-	k8sClient := k8sfakes.NewSimpleClientset(i.K8sObjects...)
+	listers := kpacktesthelpers.NewListers(i.Objects)
+
+	client := kpackfakes.NewSimpleClientset(listers.BuildServiceObjects()...)
+	k8sClient := k8sfakes.NewSimpleClientset(listers.GetKubeObjects()...)
 
 	buffer := &bytes.Buffer{}
 	var err error

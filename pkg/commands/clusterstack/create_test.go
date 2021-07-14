@@ -88,7 +88,7 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	it("creates a stack", func() {
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				config,
 			},
 			Args: []string{
@@ -133,7 +133,7 @@ ClusterStack "stack-name" created
 		}
 
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				badConfig,
 			},
 			Args: []string{
@@ -165,7 +165,7 @@ status:
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -211,7 +211,7 @@ Uploading to 'canonical-registry.io/canonical-repo'...
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -238,7 +238,7 @@ Uploading to 'canonical-registry.io/canonical-repo'...
 
 		it("does not create a clusterstack and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -276,7 +276,7 @@ status:
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{
@@ -300,7 +300,7 @@ Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
 	when("dry-run-with-image-upload flag is used", func() {
 		it("does not create a clusterstack and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -337,7 +337,7 @@ status:
 `
 
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{

@@ -103,7 +103,7 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	it("creates a ClusterBuilder", func() {
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				config,
 			},
 			Args: []string{
@@ -128,7 +128,7 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{"kind":"ClusterStore","name":"default"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				config,
 			},
 			Args: []string{
@@ -146,7 +146,7 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	it("creates a ClusterBuilder with the canonical tag when tag is not specified", func() {
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				config,
 			},
 			Args: []string{
@@ -188,7 +188,7 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				badConfig,
 			},
 			Args: []string{
@@ -216,7 +216,7 @@ func testClusterBuilderCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		testhelpers.CommandTest{
-			K8sObjects: []runtime.Object{
+			Objects: []runtime.Object{
 				badConfig,
 			},
 			Args: []string{
@@ -261,7 +261,7 @@ status:
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -328,7 +328,7 @@ status:
 `
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -350,7 +350,7 @@ status:
 	when("dry-run flag is used", func() {
 		it("does not create a ClusterBuilder and prints result with dry run indicated", func() {
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -396,7 +396,7 @@ status:
 
 			it("does not create a ClusterBuilder and prints the resource output", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{
@@ -443,7 +443,7 @@ status:
 			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.go"},{"id":"org.cloudfoundry.nodejs","version":"1"},{"id":"org.cloudfoundry.ruby","version":"1.2.3"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
-				K8sObjects: []runtime.Object{
+				Objects: []runtime.Object{
 					config,
 				},
 				Args: []string{
@@ -465,7 +465,7 @@ status:
 		when("buildpack and order flags are used together", func() {
 			it("returns an error", func() {
 				testhelpers.CommandTest{
-					K8sObjects: []runtime.Object{
+					Objects: []runtime.Object{
 						config,
 					},
 					Args: []string{
