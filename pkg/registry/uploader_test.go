@@ -20,8 +20,8 @@ func TestUploader(t *testing.T) {
 
 func testUploader(t *testing.T, when spec.G, it spec.S) {
 	const (
-		testdataDigest = "sha256:22bd7fd05ebd1bca0d8f8f1e97620ed76b7ff31f41d471b71d023259414c0e15"
-		testZipDigest  = "sha256:5fcd0d53ec99c419061fb4b92d160fa5531791e9a8660447c958879b0777b89a"
+		testdataDigest = "sha256:f261a0e333140b47e51e1cf5a045e704a47842d56ee33962770001582ac6656a"
+		testZipDigest  = "sha256:0a35946b7420d1f6bf0d1397c86cef1f00b08a8575d6045f20914a6845c1376c"
 	)
 
 	when("Upload", func() {
