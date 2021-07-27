@@ -113,18 +113,6 @@ ClusterStack "stack-name" created
 			require.Len(t, fakeWaiter.WaitCalls, 1)
 		})
 
-		it("fails when kp-config configmap is not found", func() {
-			testhelpers.CommandTest{
-				Args: []string{
-					"stack-name",
-					"--build-image", "some-registry.io/repo/some-build-image",
-					"--run-image", "some-registry.io/repo/some-run-image",
-				},
-				ExpectErr:      true,
-				ExpectedOutput: "Creating ClusterStack...\nError: configmaps \"kp-config\" not found\n",
-			}.TestK8sAndKpack(t, cmdFunc)
-		})
-
 		it("fails when canonical.repository key is not found in kp-config configmap", func() {
 			badConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -144,7 +132,7 @@ ClusterStack "stack-name" created
 					"--run-image", "some-registry.io/repo/some-run-image",
 				},
 				ExpectErr:      true,
-				ExpectedOutput: "Creating ClusterStack...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
+				ExpectedOutput: "Creating ClusterStack...\nError: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
@@ -497,21 +485,6 @@ ClusterStack "stack-name" updated (no change)
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("returns error when kp-config configmap is not found", func() {
-			testhelpers.CommandTest{
-				Objects: []runtime.Object{
-					stack,
-				},
-				Args: []string{
-					"stack-name",
-					"--build-image", "some-registry.io/repo/new-build",
-					"--run-image", "some-registry.io/repo/new-run",
-				},
-				ExpectErr:      true,
-				ExpectedOutput: "Updating ClusterStack...\nError: configmaps \"kp-config\" not found\n",
-			}.TestK8sAndKpack(t, cmdFunc)
-		})
-
 		it("returns error when canonical.repository key is not found in kp-config configmap", func() {
 			badConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -532,7 +505,7 @@ ClusterStack "stack-name" updated (no change)
 					"--run-image", "some-registry.io/repo/new-run",
 				},
 				ExpectErr:      true,
-				ExpectedOutput: "Updating ClusterStack...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
+				ExpectedOutput: "Updating ClusterStack...\nError: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 

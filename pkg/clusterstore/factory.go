@@ -58,8 +58,13 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 		Spec: v1alpha1.ClusterStoreSpec{},
 	}
 
+	canonicalRepo, err := kpConfig.CanonicalRepository()
+	if err != nil {
+		return nil, err
+	}
+
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, kpConfig.CanonicalRepository)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, canonicalRepo)
 		if err != nil {
 			return nil, err
 		}
@@ -74,8 +79,14 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 
 func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha1.ClusterStore, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
 	storeUpdated := false
+
+	canonicalRepo, err := kpConfig.CanonicalRepository()
+	if err != nil {
+		return nil, false, err
+	}
+
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, kpConfig.CanonicalRepository)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, canonicalRepo)
 		if err != nil {
 			return nil, false, err
 		}
@@ -102,7 +113,12 @@ func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha1.ClusterSto
 }
 
 func (f *Factory) RelocatedBuildpackage(keychain authn.Keychain, kpConfig config.KpConfig, buildPackage string) (string, error) {
-	return f.Uploader.UploadedBuildpackageRef(keychain, buildPackage, kpConfig.CanonicalRepository)
+	canonicalRepo, err := kpConfig.CanonicalRepository()
+	if err != nil {
+		return "", err
+	}
+
+	return f.Uploader.UploadedBuildpackageRef(keychain, buildPackage, canonicalRepo)
 }
 
 func (f *Factory) validate(buildpackages []string) error {

@@ -65,13 +65,13 @@ func testImporter(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				},
-				KpConfig: config.KpConfig{
-					CanonicalRepository: "gcr.io/my-cool-repo",
-					ServiceAccount: corev1.ObjectReference{
+				KpConfig: config.NewKpConfig(
+					"gcr.io/my-cool-repo",
+					corev1.ObjectReference{
 						Namespace: "kpack",
 						Name:      "some-service-account",
 					},
-				},
+				),
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha3
 kind: DependencyDescriptor
@@ -266,13 +266,13 @@ clusterBuilders:
 						},
 					},
 				},
-				KpConfig: config.KpConfig{
-					CanonicalRepository: "gcr.io/my-cool-repo",
-					ServiceAccount: corev1.ObjectReference{
+				KpConfig: config.NewKpConfig(
+					"gcr.io/my-cool-repo",
+					corev1.ObjectReference{
 						Namespace: "kpack",
 						Name:      "some-service-account",
 					},
-				},
+				),
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha1
 kind: DependencyDescriptor
@@ -606,13 +606,13 @@ clusterBuilders:
 						},
 					}, kubectlAnnotation, timestampAnnotation),
 				},
-				KpConfig: config.KpConfig{
-					CanonicalRepository: "gcr.io/my-cool-repo",
-					ServiceAccount: corev1.ObjectReference{
+				KpConfig: config.NewKpConfig(
+					"gcr.io/my-cool-repo",
+					corev1.ObjectReference{
 						Namespace: "kpack",
 						Name:      "some-service-account",
 					},
-				},
+				),
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha3
 kind: DependencyDescriptor
@@ -1017,13 +1017,13 @@ clusterBuilders:
 						},
 					}, kubectlAnnotation, timestampAnnotation),
 				},
-				KpConfig: config.KpConfig{
-					CanonicalRepository: "gcr.io/my-cool-repo",
-					ServiceAccount: corev1.ObjectReference{
+				KpConfig: config.NewKpConfig(
+					"gcr.io/my-cool-repo",
+					corev1.ObjectReference{
 						Namespace: "kpack",
 						Name:      "some-service-account",
 					},
-				},
+				),
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha1
 kind: DependencyDescriptor
@@ -1253,13 +1253,13 @@ clusterBuilders:
 						},
 					},
 				},
-				KpConfig: config.KpConfig{
-					CanonicalRepository: "gcr.io/my-cool-repo",
-					ServiceAccount: corev1.ObjectReference{
+				KpConfig: config.NewKpConfig(
+					"gcr.io/my-cool-repo",
+					corev1.ObjectReference{
 						Namespace: "kpack",
 						Name:      "some-service-account",
 					},
-				},
+				),
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha3
 kind: DependencyDescriptor
@@ -1313,13 +1313,13 @@ clusterBuilders:
 						},
 					},
 				},
-				KpConfig: config.KpConfig{
-					CanonicalRepository: "gcr.io/my-cool-repo",
-					ServiceAccount: corev1.ObjectReference{
+				KpConfig: config.NewKpConfig(
+					"gcr.io/my-cool-repo",
+					corev1.ObjectReference{
 						Namespace: "kpack",
 						Name:      "some-service-account",
 					},
-				},
+				),
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha3
 kind: DependencyDescriptor

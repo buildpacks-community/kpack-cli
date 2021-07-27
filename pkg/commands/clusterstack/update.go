@@ -16,6 +16,7 @@ import (
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -84,11 +85,7 @@ func update(ctx context.Context, keychain authn.Keychain, stack *v1alpha1.Cluste
 		return err
 	}
 
-	helper := k8s.DefaultConfigHelper(cs)
-	kpConfig, err := helper.GetKpConfig(ctx)
-	if err != nil {
-		return err
-	}
+	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
 
 	hasUpdates, err := factory.UpdateStack(keychain, stack, buildImageRef, runImageRef, kpConfig)
 	if err != nil {

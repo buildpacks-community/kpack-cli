@@ -47,9 +47,7 @@ func (rg *FakeRefGetter) RelocatedRunImage(keychain authn.Keychain, kpConfig con
 func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 	fakeDiffer := &fakes.FakeDiffer{DiffResult: "some-diff"}
 	fakeRefGetter := NewFakeRefGetter()
-	kpConfig := config.KpConfig{
-		CanonicalRepository: "my-cool-repo",
-	}
+	kpConfig := config.NewKpConfig("my-cool-repo", corev1.ObjectReference{})
 	importDiffer := importpkg.ImportDiffer{
 		Differ:         fakeDiffer,
 		StoreRefGetter: fakeRefGetter,

@@ -153,7 +153,7 @@ ClusterStore "store-name" updated (no change)
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
-	it("errors when kp-config configmap is not found", func() {
+	it("errors when canonical.repository key is not found", func() {
 		testhelpers.CommandTest{
 			Objects: []runtime.Object{
 				existingStore,
@@ -163,30 +163,7 @@ ClusterStore "store-name" updated (no change)
 				"-b", "some/someimage",
 			},
 			ExpectErr:      true,
-			ExpectedOutput: "Adding to ClusterStore...\nError: configmaps \"kp-config\" not found\n",
-		}.TestK8sAndKpack(t, cmdFunc)
-	})
-
-	it("errors when canonical.repository key is not found in kp-config configmap", func() {
-		badConfig := &corev1.ConfigMap{
-			ObjectMeta: v1.ObjectMeta{
-				Name:      "kp-config",
-				Namespace: "kpack",
-			},
-			Data: map[string]string{},
-		}
-
-		testhelpers.CommandTest{
-			Objects: []runtime.Object{
-				badConfig,
-				existingStore,
-			},
-			Args: []string{
-				"store-name",
-				"-b", "some/someimage",
-			},
-			ExpectErr:      true,
-			ExpectedOutput: "Adding to ClusterStore...\nError: key \"canonical.repository\" not found in configmap \"kp-config\"\n",
+			ExpectedOutput: "Adding to ClusterStore...\nError: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 

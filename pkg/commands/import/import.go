@@ -16,6 +16,7 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
@@ -73,12 +74,7 @@ cat dependencies.yaml | kp import -f -`,
 
 			ctx := cmd.Context()
 
-			configHelper := k8s.DefaultConfigHelper(cs)
-
-			kpConfig, err := configHelper.GetKpConfig(ctx)
-			if err != nil {
-				return err
-			}
+			kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
 
 			imgFetcher := rup.Fetcher(tlsConfig)
 			imgRelocator := rup.Relocator(ch.Writer(), tlsConfig, ch.CanChangeState())
