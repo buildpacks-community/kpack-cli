@@ -17,3 +17,5 @@ kp --help
 ```
 
 ## [Documentation](docs/kp.md)
+
+## [Docker Image](https://hub.docker.com/r/kpack/kp) (kpack/kp)
