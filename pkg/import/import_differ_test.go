@@ -13,11 +13,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/sclevine/spec"
+
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
-
-	"github.com/sclevine/spec"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 )
@@ -44,14 +44,20 @@ func (rg *FakeRefGetter) RelocatedRunImage(keychain authn.Keychain, kpConfig con
 	return image, nil
 }
 
+func (rg *FakeRefGetter) RelocatedLifecycleImage(keychain authn.Keychain, kpConfig config.KpConfig, image string) (string, error) {
+	return image, nil
+}
+
 func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 	fakeDiffer := &fakes.FakeDiffer{DiffResult: "some-diff"}
 	fakeRefGetter := NewFakeRefGetter()
 	kpConfig := config.NewKpConfig("my-cool-repo", corev1.ObjectReference{})
+
 	importDiffer := importpkg.ImportDiffer{
-		Differ:         fakeDiffer,
-		StoreRefGetter: fakeRefGetter,
-		StackRefGetter: fakeRefGetter,
+		Differ:             fakeDiffer,
+		StoreRefGetter:     fakeRefGetter,
+		StackRefGetter:     fakeRefGetter,
+		LifecycleRefGetter: fakeRefGetter,
 	}
 	fakeKeychain := &registryfakes.FakeKeychain{}
 
@@ -201,6 +207,20 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 			require.Equal(t, "some-diff", diff)
 			diffArg0, _ := fakeDiffer.Args()
 			require.Equal(t, nil, diffArg0)
+		})
+	})
+
+	when("DiffLifecycle", func() {
+		it("diffs lifecycle", func() {
+			oldLifecycle := "my-cool-repo/lifecycle@sha256:some-digest"
+			newLifecycle := "someregistry/lifecycle@sha256:some-new-digest"
+			diff, err := importDiffer.DiffLifecycle(fakeKeychain, kpConfig, oldLifecycle, newLifecycle)
+			require.NoError(t, err)
+			require.Equal(t, "some-diff", diff)
+
+			diffArg0, diffArg1 := fakeDiffer.Args()
+			require.Equal(t, oldLifecycle, diffArg0)
+			require.Equal(t, "my-cool-repo/lifecycle@sha256:some-new-digest", diffArg1)
 		})
 	})
 }

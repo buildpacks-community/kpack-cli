@@ -19,6 +19,7 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/lifecycle"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
 
@@ -101,7 +102,17 @@ cat dependencies.yaml | kp import -f -`,
 
 			defaultKeychain := authn.DefaultKeychain
 			if showChanges {
-				hasChanges, summary, err := importpkg.SummarizeChange(ctx, defaultKeychain, descriptor, kpConfig, clusterstore.NewFactory(ch, imgRelocator, imgFetcher), clusterstack.NewFactory(ch, imgRelocator, imgFetcher), differ, cs)
+				hasChanges, summary, err := importpkg.SummarizeChange(
+					ctx,
+					defaultKeychain,
+					descriptor,
+					kpConfig,
+					clusterstore.NewFactory(ch, imgRelocator, imgFetcher),
+					clusterstack.NewFactory(ch, imgRelocator, imgFetcher),
+					lifecycle.NewFactory(imgRelocator, imgFetcher, cs.K8sClient),
+					differ,
+					cs,
+				)
 				if err != nil {
 					return err
 				}

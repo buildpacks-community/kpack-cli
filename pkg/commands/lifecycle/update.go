@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/lifecycle"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
@@ -55,16 +56,13 @@ The canonical repository is read from the "canonical.repository" key of the "kp-
 				return err
 			}
 
-			cfg := lifecycle.ImageUpdaterConfig{
-				DryRun:       ch.IsDryRun(),
-				IOWriter:     ch.Writer(),
-				ImgFetcher:   rup.Fetcher(tlsCfg),
-				ImgRelocator: rup.Relocator(ch.Writer(), tlsCfg, ch.CanChangeState()),
-				ClientSet:    cs,
-				TLSConfig:    tlsCfg,
-			}
+			factory := lifecycle.NewFactory(
+				rup.Relocator(ch.Writer(), tlsCfg, ch.CanChangeState()),
+				rup.Fetcher(tlsCfg),
+				cs.K8sClient)
 
-			configMap, err := lifecycle.UpdateImage(cmd.Context(), authn.DefaultKeychain, image, cfg)
+			ctx := cmd.Context()
+			configMap, err := factory.UpdateLifecycle(ctx, authn.DefaultKeychain, config.NewKpConfigProvider(cs).GetKpConfig(ctx), ch.IsDryRun(), image)
 			if err != nil {
 				return err
 			}

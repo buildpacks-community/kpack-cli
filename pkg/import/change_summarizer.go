@@ -21,7 +21,7 @@ func SummarizeChange(
 	keychain authn.Keychain,
 	desc DependencyDescriptor,
 	kpConfig config.KpConfig,
-	storeFactory *clusterstore.Factory, stackFactory *clusterstack.Factory,
+	storeFactory *clusterstore.Factory, stackFactory *clusterstack.Factory, lifecycleRefGetter LifecycleRefGetter,
 	differ Differ, cs buildk8s.ClientSet) (hasChanges bool, changes string, err error) {
 
 	var summarizer changeSummarizer
@@ -29,9 +29,10 @@ func SummarizeChange(
 		Differ:         differ,
 		StoreRefGetter: storeFactory,
 		StackRefGetter: stackFactory,
+		LifecycleRefGetter: lifecycleRefGetter,
 	}
 
-	err = writeLifecycleChange(ctx, desc.Lifecycle, iDiffer, cs, &summarizer)
+	err = writeLifecycleChange(ctx, keychain, kpConfig, desc.Lifecycle, iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}

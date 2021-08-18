@@ -23,18 +23,28 @@ type StackRefGetter interface {
 	RelocatedRunImage(authn.Keychain, config.KpConfig, string) (string, error)
 }
 
+type LifecycleRefGetter interface {
+	RelocatedLifecycleImage(authn.Keychain, config.KpConfig, string) (string, error)
+}
+
 type Differ interface {
 	Diff(dOld, dNew interface{}) (string, error)
 }
 
 type ImportDiffer struct {
-	Differ         Differ
-	StoreRefGetter StoreRefGetter
-	StackRefGetter StackRefGetter
+	Differ             Differ
+	StoreRefGetter     StoreRefGetter
+	StackRefGetter     StackRefGetter
+	LifecycleRefGetter LifecycleRefGetter
 }
 
-func (id *ImportDiffer) DiffLifecycle(oldImg string, newImg string) (string, error) {
-	return id.Differ.Diff(oldImg, newImg)
+func (id *ImportDiffer) DiffLifecycle(keychain authn.Keychain, kpConfig config.KpConfig, oldImg string, newImg string) (string, error) {
+	relocatedLifecycle, err := id.LifecycleRefGetter.RelocatedLifecycleImage(keychain, kpConfig, newImg)
+	if err != nil {
+		return "", err
+	}
+
+	return id.Differ.Diff(oldImg, relocatedLifecycle)
 }
 
 func (id *ImportDiffer) DiffClusterStore(keychain authn.Keychain, kpConfig config.KpConfig, oldCS *v1alpha1.ClusterStore, newCS ClusterStore) (string, error) {
