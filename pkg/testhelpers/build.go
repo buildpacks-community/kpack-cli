@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func MakeTestBuilds(image string, namespace string) []runtime.Object {
+func MakeTestBuilds(image string, namespace string) []*v1alpha1.Build {
 	buildOne := &v1alpha1.Build{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "build-one",
@@ -150,5 +150,13 @@ func MakeTestBuilds(image string, namespace string) []runtime.Object {
 			LatestImage: "repo.com/other-image-1:tag",
 		},
 	}
-	return []runtime.Object{buildOne, buildThree, buildTwo, otherBuild}
+	return []*v1alpha1.Build{buildOne, buildThree, buildTwo, otherBuild}
+}
+
+func BuildsToRuntimeObjs(builds []*v1alpha1.Build) []runtime.Object {
+	var final []runtime.Object
+	for _, t := range builds {
+		final = append(final, t)
+	}
+	return final
 }

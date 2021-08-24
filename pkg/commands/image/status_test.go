@@ -40,7 +40,7 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("a namespace is provided", func() {
 		when("the namespaces has images", func() {
-			it("returns a table of image details", func() {
+			it("returns a table of image details for git source", func() {
 				image := &v1alpha1.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      imageName,
@@ -50,6 +50,88 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 						Builder: corev1.ObjectReference{
 							Kind: "ClusterBuilder",
 							Name: "some-cluster-builder",
+						},
+						Source: v1alpha1.SourceConfig{
+							Git: &v1alpha1.Git{
+								URL:      "some-git-url",
+								Revision: "some-git-revision",
+							},
+						},
+					},
+					Status: v1alpha1.ImageStatus{
+						Status: corev1alpha1.Status{
+							Conditions: []corev1alpha1.Condition{
+								{
+									Type:   corev1alpha1.ConditionReady,
+									Status: corev1.ConditionFalse,
+								},
+							},
+						},
+						LatestImage: "test-registry.io/test-image-1@sha256:abcdef123",
+					},
+				}
+				testNamespacedBuilds[0].Spec.Source = v1alpha1.SourceConfig{
+					Git: &v1alpha1.Git{
+						Revision: "successful-build-git-revision",
+					},
+				}
+				testNamespacedBuilds[2].Spec.Source = v1alpha1.SourceConfig{
+					Git: &v1alpha1.Git{
+						Revision: "failed-build-git-revision",
+					},
+				}
+
+				const expectedOutput = `Status:         Not Ready
+Message:        --
+LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
+
+Source
+Type:        GitUrl
+Url:         some-git-url
+Revision:    some-git-revision
+
+Builder Ref
+Name:    some-cluster-builder
+Kind:    ClusterBuilder
+
+Last Successful Build
+Id:              1
+Build Reason:    CONFIG
+Git Revision:    successful-build-git-revision
+
+BUILDPACK ID    BUILDPACK VERSION    HOMEPAGE
+bp-id-1         bp-version-1         mysupercoolsite.com
+bp-id-2         bp-version-2         mysupercoolsite2.com
+
+Last Failed Build
+Id:              2
+Build Reason:    COMMIT,BUILDPACK
+Git Revision:    failed-build-git-revision
+
+`
+
+				testhelpers.CommandTest{
+					Objects:        append([]runtime.Object{image}, testhelpers.BuildsToRuntimeObjs(testNamespacedBuilds)...),
+					Args:           []string{imageName, "-n", namespace},
+					ExpectedOutput: expectedOutput,
+				}.TestKpack(t, cmdFunc)
+			})
+
+			it("returns a table of image details for blob source", func() {
+				image := &v1alpha1.Image{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      imageName,
+						Namespace: namespace,
+					},
+					Spec: v1alpha1.ImageSpec{
+						Builder: corev1.ObjectReference{
+							Kind: "ClusterBuilder",
+							Name: "some-cluster-builder",
+						},
+						Source: v1alpha1.SourceConfig{
+							Blob: &v1alpha1.Blob{
+								URL: "some-blob-url",
+							},
 						},
 					},
 					Status: v1alpha1.ImageStatus{
@@ -69,9 +151,13 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 Message:        --
 LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
 
-Builder Ref:     
-  Name:         some-cluster-builder
-  Kind:         ClusterBuilder
+Source
+Type:    Blob
+Url:     some-blob-url
+
+Builder Ref
+Name:    some-cluster-builder
+Kind:    ClusterBuilder
 
 Last Successful Build
 Id:              1
@@ -88,7 +174,67 @@ Build Reason:    COMMIT,BUILDPACK
 `
 
 				testhelpers.CommandTest{
-					Objects:        append([]runtime.Object{image}, testNamespacedBuilds...),
+					Objects:        append([]runtime.Object{image}, testhelpers.BuildsToRuntimeObjs(testNamespacedBuilds)...),
+					Args:           []string{imageName, "-n", namespace},
+					ExpectedOutput: expectedOutput,
+				}.TestKpack(t, cmdFunc)
+			})
+
+			it("returns a table of image details for local source", func() {
+				image := &v1alpha1.Image{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      imageName,
+						Namespace: namespace,
+					},
+					Spec: v1alpha1.ImageSpec{
+						Builder: corev1.ObjectReference{
+							Kind: "ClusterBuilder",
+							Name: "some-cluster-builder",
+						},
+						Source: v1alpha1.SourceConfig{
+							Registry: &v1alpha1.Registry{},
+						},
+					},
+					Status: v1alpha1.ImageStatus{
+						Status: corev1alpha1.Status{
+							Conditions: []corev1alpha1.Condition{
+								{
+									Type:   corev1alpha1.ConditionReady,
+									Status: corev1.ConditionFalse,
+								},
+							},
+						},
+						LatestImage: "test-registry.io/test-image-1@sha256:abcdef123",
+					},
+				}
+
+				const expectedOutput = `Status:         Not Ready
+Message:        --
+LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
+
+Source
+Type:    Local Source
+
+Builder Ref
+Name:    some-cluster-builder
+Kind:    ClusterBuilder
+
+Last Successful Build
+Id:              1
+Build Reason:    CONFIG
+
+BUILDPACK ID    BUILDPACK VERSION    HOMEPAGE
+bp-id-1         bp-version-1         mysupercoolsite.com
+bp-id-2         bp-version-2         mysupercoolsite2.com
+
+Last Failed Build
+Id:              2
+Build Reason:    COMMIT,BUILDPACK
+
+`
+
+				testhelpers.CommandTest{
+					Objects:        append([]runtime.Object{image}, testhelpers.BuildsToRuntimeObjs(testNamespacedBuilds)...),
 					Args:           []string{imageName, "-n", namespace},
 					ExpectedOutput: expectedOutput,
 				}.TestKpack(t, cmdFunc)
@@ -138,9 +284,12 @@ Build Reason:    COMMIT,BUILDPACK
 Message:        --
 LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
 
-Builder Ref:     
-  Name:         some-cluster-builder
-  Kind:         ClusterBuilder
+Source
+Type:    Local Source
+
+Builder Ref
+Name:    some-cluster-builder
+Kind:    ClusterBuilder
 
 Last Successful Build
 Id:              1
@@ -157,7 +306,7 @@ Build Reason:    COMMIT,BUILDPACK
 `
 
 				testhelpers.CommandTest{
-					Objects:        append([]runtime.Object{image}, testBuilds...),
+					Objects:        append([]runtime.Object{image}, testhelpers.BuildsToRuntimeObjs(testBuilds)...),
 					Args:           []string{imageName},
 					ExpectedOutput: expectedOutput,
 				}.TestKpack(t, cmdFunc)
@@ -206,9 +355,12 @@ Build Reason:    COMMIT,BUILDPACK
 Message:        --
 LatestImage:    test-registry.io/test-image-1@sha256:abcdef123
 
-Builder Ref:     
-  Name:         some-cluster-builder
-  Kind:         ClusterBuilder
+Source
+Type:    Local Source
+
+Builder Ref
+Name:    some-cluster-builder
+Kind:    ClusterBuilder
 
 Last Successful Build
 Id:              --

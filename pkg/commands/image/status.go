@@ -79,10 +79,17 @@ func displayImageStatus(cmd *cobra.Command, image *v1alpha1.Image, builds []v1al
 	}
 
 	err = statusWriter.AddBlock(
-		"",
-		"Builder Ref", " ",
-		"  Name", image.Spec.Builder.Name,
-		"  Kind", image.Spec.Builder.Kind,
+		"Source",
+		getConfigSource(image)...,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = statusWriter.AddBlock(
+		"Builder Ref",
+		"Name", image.Spec.Builder.Name,
+		"Kind", image.Spec.Builder.Kind,
 	)
 	if err != nil {
 		return err
@@ -90,8 +97,7 @@ func displayImageStatus(cmd *cobra.Command, image *v1alpha1.Image, builds []v1al
 
 	err = statusWriter.AddBlock(
 		"Last Successful Build",
-		"Id", getId(successfulBuild),
-		"Build Reason", getReason(successfulBuild),
+		buildStatus(successfulBuild)...,
 	)
 	if err != nil {
 		return err
@@ -117,14 +123,42 @@ func displayImageStatus(cmd *cobra.Command, image *v1alpha1.Image, builds []v1al
 
 	err = statusWriter.AddBlock(
 		"Last Failed Build",
-		"Id", getId(failedBuild),
-		"Build Reason", getReason(failedBuild),
+		buildStatus(failedBuild)...,
 	)
 	if err != nil {
 		return err
 	}
 
 	return statusWriter.Write()
+}
+
+func buildStatus(build *v1alpha1.Build) []string {
+	items := []string{
+		"Id", getId(build),
+		"Build Reason", getReason(build),
+	}
+	if build != nil && build.Spec.Source.Git != nil {
+		items = append(items, "Git Revision", build.Spec.Source.Git.Revision)
+	}
+	return items
+}
+
+func getConfigSource(image *v1alpha1.Image) []string {
+	if image.Spec.Source.Git != nil {
+		return []string{
+			"Type", "GitUrl",
+			"Url", image.Spec.Source.Git.URL,
+			"Revision", image.Spec.Source.Git.Revision,
+		}
+	} else if image.Spec.Source.Blob != nil {
+		return []string{
+			"Type", "Blob",
+			"Url", image.Spec.Source.Blob.URL,
+		}
+	} else {
+		return []string{
+			"Type", "Local Source"}
+	}
 }
 
 func getLastSuccessfulBuild(builds []v1alpha1.Build) *v1alpha1.Build {

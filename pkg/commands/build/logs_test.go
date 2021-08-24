@@ -35,7 +35,7 @@ func testBuildLogsCommand(t *testing.T, when spec.G, it spec.S) {
 				when("the build flag is provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+							Objects:        testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, defaultNamespace)),
 							Args:           []string{image, "-b", "123"},
 							ExpectErr:      true,
 							ExpectedOutput: "Error: build \"123\" not found\n",
@@ -61,7 +61,7 @@ func testBuildLogsCommand(t *testing.T, when spec.G, it spec.S) {
 				when("the build flag is provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, namespace),
+							Objects:        testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, namespace)),
 							Args:           []string{image, "-b", "123", "-n", namespace},
 							ExpectErr:      true,
 							ExpectedOutput: "Error: build \"123\" not found\n",

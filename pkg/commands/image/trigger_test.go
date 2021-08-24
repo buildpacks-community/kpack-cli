@@ -32,7 +32,7 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace is provided", func() {
 		when("an image build is available", func() {
 			it("triggers the latest build", func() {
-				clientSet := fake.NewSimpleClientset(testNamespacedBuilds...)
+				clientSet := fake.NewSimpleClientset(testhelpers.BuildsToRuntimeObjs(testNamespacedBuilds)...)
 				clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
 				cmd := image.NewTriggerCommand(clientSetProvider)
 
@@ -73,7 +73,7 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace is not provided", func() {
 		when("an image build is available", func() {
 			it("triggers the latest build", func() {
-				clientSet := fake.NewSimpleClientset(testBuilds...)
+				clientSet := fake.NewSimpleClientset(testhelpers.BuildsToRuntimeObjs(testBuilds)...)
 				clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
 				cmd := image.NewTriggerCommand(clientSetProvider)
 

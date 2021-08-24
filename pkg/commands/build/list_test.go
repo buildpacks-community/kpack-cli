@@ -41,8 +41,8 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are builds", func() {
 				it("lists the builds", func() {
 					testhelpers.CommandTest{
-						Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
-						Args:           nil,
+						Objects:        testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, defaultNamespace)),
+						Args:           []string{},
 						ExpectedOutput: expectedOutput,
 					}.TestKpack(t, cmdFunc)
 				})
@@ -51,7 +51,7 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are no builds", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						Args:           nil,
+						Args:           []string{},
 						ExpectErr:      true,
 						ExpectedOutput: "Error: no builds found\n",
 					}.TestKpack(t, cmdFunc)
@@ -66,7 +66,7 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are builds", func() {
 				it("lists the builds", func() {
 					testhelpers.CommandTest{
-						Objects:        testhelpers.MakeTestBuilds(image, namespace),
+						Objects:        testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, namespace)),
 						Args:           []string{"-n", namespace},
 						ExpectedOutput: expectedOutput,
 					}.TestKpack(t, cmdFunc)
@@ -94,7 +94,7 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are builds", func() {
 				it("lists the builds of the image", func() {
 					testhelpers.CommandTest{
-						Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+						Objects:        testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, defaultNamespace)),
 						Args:           []string{image},
 						ExpectedOutput: expectedOutput,
 					}.TestKpack(t, cmdFunc)

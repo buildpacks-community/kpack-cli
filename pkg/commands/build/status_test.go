@@ -87,11 +87,13 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 	when("getting build status", func() {
 		when("in the default namespace", func() {
+			builds := testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, defaultNamespace))
+
 			when("the build exists", func() {
 				when("the build flag is provided", func() {
 					it("shows the build status", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+							Objects:        builds,
 							Args:           []string{image, "-b", "1"},
 							ExpectedOutput: expectedOutputForBuildNumber,
 						}.TestKpack(t, cmdFunc)
@@ -101,7 +103,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("the build flag is not provided", func() {
 					it("shows the build status of the most recent build", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+							Objects:        builds,
 							Args:           []string{image},
 							ExpectedOutput: expectedOutputForMostRecent,
 						}.TestKpack(t, cmdFunc)
@@ -113,7 +115,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("the build flag is provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+							Objects:        builds,
 							Args:           []string{image, "-b", "123"},
 							ExpectErr:      true,
 							ExpectedOutput: "Error: build \"123\" not found\n",
@@ -135,12 +137,13 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 		when("in a given namespace", func() {
 			const namespace = "some-namespace"
+			builds := testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, namespace))
 
 			when("the build exists", func() {
 				when("the build flag is provided", func() {
 					it("gets the build status", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, namespace),
+							Objects:        builds,
 							Args:           []string{image, "-b", "1", "-n", namespace},
 							ExpectedOutput: expectedOutputForBuildNumber,
 						}.TestKpack(t, cmdFunc)
@@ -150,7 +153,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("the build flag is not provided", func() {
 					it("shows the build status of the most recent build", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, namespace),
+							Objects:        builds,
 							Args:           []string{image, "-n", namespace},
 							ExpectedOutput: expectedOutputForMostRecent,
 						}.TestKpack(t, cmdFunc)
@@ -162,7 +165,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("the build flag is provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, namespace),
+							Objects:        builds,
 							Args:           []string{image, "-b", "123", "-n", namespace},
 							ExpectErr:      true,
 							ExpectedOutput: "Error: build \"123\" not found\n",
@@ -802,9 +805,11 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 		})
 
 		when("using the --bom flag", func() {
+			builds := testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, defaultNamespace))
+
 			it("prints the registry image bom only", func() {
 				testhelpers.CommandTest{
-					Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+					Objects:        builds,
 					Args:           []string{image, "-b", "1", "--bom"},
 					ExpectedOutput: "{\"some\":\"metadata\"}\n",
 				}.TestKpack(t, cmdFunc)
@@ -812,7 +817,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 			it("returns error when build is not successful", func() {
 				testhelpers.CommandTest{
-					Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+					Objects:        builds,
 					Args:           []string{image, "--bom"},
 					ExpectErr:      true,
 					ExpectedOutput: "Error: build has failed or has not finished\n",
