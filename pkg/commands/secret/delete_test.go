@@ -120,8 +120,8 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 								Name: secretName,
 							},
 						},
-						ExpectedOutput: "Error: secrets \"some-secret\" not found\n",
-						ExpectErr:      true,
+						ExpectedErrorOutput: "Error: secrets \"some-secret\" not found\n",
+						ExpectErr:           true,
 					}.TestK8s(t, cmdFunc)
 				})
 			})
@@ -215,8 +215,8 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 								Name: secretName,
 							},
 						},
-						ExpectedOutput: "Error: secrets \"some-secret\" not found\n",
-						ExpectErr:      true,
+						ExpectedErrorOutput: "Error: secrets \"some-secret\" not found\n",
+						ExpectErr:           true,
 					}.TestK8s(t, cmdFunc)
 				})
 			})

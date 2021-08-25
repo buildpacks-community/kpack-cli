@@ -4,13 +4,13 @@
 package build
 
 import (
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 )
 
-func Sort(builds []v1alpha1.Build) func(i int, j int) bool {
+func Sort(builds []v1alpha2.Build) func(i int, j int) bool {
 	return func(i, j int) bool {
-		l1, _ := builds[i].ObjectMeta.Labels[v1alpha1.ImageLabel]
-		l2, _ := builds[j].ObjectMeta.Labels[v1alpha1.ImageLabel]
+		l1, _ := builds[i].ObjectMeta.Labels[v1alpha2.ImageLabel]
+		l2, _ := builds[j].ObjectMeta.Labels[v1alpha2.ImageLabel]
 		if l1 != l2 {
 			return l1 > l2
 		}

@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
@@ -37,7 +37,7 @@ func (id *ImportDiffer) DiffLifecycle(oldImg string, newImg string) (string, err
 	return id.Differ.Diff(oldImg, newImg)
 }
 
-func (id *ImportDiffer) DiffClusterStore(keychain authn.Keychain, kpConfig config.KpConfig, oldCS *v1alpha1.ClusterStore, newCS ClusterStore) (string, error) {
+func (id *ImportDiffer) DiffClusterStore(keychain authn.Keychain, kpConfig config.KpConfig, oldCS *v1alpha2.ClusterStore, newCS ClusterStore) (string, error) {
 	type void struct{}
 	newBPs := map[string]void{}
 	mux := &sync.Mutex{}
@@ -82,7 +82,7 @@ Sources:`, oldCS.Name)
 	return id.Differ.Diff(oldCSStr, newCS)
 }
 
-func (id *ImportDiffer) DiffClusterStack(keychain authn.Keychain, kpConfig config.KpConfig, oldCS *v1alpha1.ClusterStack, newCS ClusterStack) (diff string, err error) {
+func (id *ImportDiffer) DiffClusterStack(keychain authn.Keychain, kpConfig config.KpConfig, oldCS *v1alpha2.ClusterStack, newCS ClusterStack) (diff string, err error) {
 	newCS.BuildImage.Image, err = id.StackRefGetter.RelocatedBuildImage(keychain, kpConfig, newCS.BuildImage.Image)
 	if err != nil {
 		return "", err
@@ -104,7 +104,7 @@ func (id *ImportDiffer) DiffClusterStack(keychain authn.Keychain, kpConfig confi
 	return id.Differ.Diff(oldDiffableStack, newCS)
 }
 
-func (id *ImportDiffer) DiffClusterBuilder(oldCB *v1alpha1.ClusterBuilder, newCB ClusterBuilder) (string, error) {
+func (id *ImportDiffer) DiffClusterBuilder(oldCB *v1alpha2.ClusterBuilder, newCB ClusterBuilder) (string, error) {
 	var oldDiffableCB interface{}
 	if oldCB != nil {
 		oldDiffableCB = ClusterBuilder{

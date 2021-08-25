@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
@@ -48,7 +48,7 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 				require.NoError(t, err)
 
 				require.Len(t, actions.Updates, 1)
-				build := actions.Updates[0].GetObject().(*v1alpha1.Build)
+				build := actions.Updates[0].GetObject().(*v1alpha2.Build)
 				require.Equal(t, build.Name, "build-three")
 				require.NotEmpty(t, build.Annotations[image.BuildNeededAnnotation])
 			})
@@ -89,7 +89,7 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 				require.NoError(t, err)
 
 				require.Len(t, actions.Updates, 1)
-				build := actions.Updates[0].GetObject().(*v1alpha1.Build)
+				build := actions.Updates[0].GetObject().(*v1alpha2.Build)
 				require.Equal(t, build.Name, "build-three")
 				require.NotEmpty(t, build.Annotations[image.BuildNeededAnnotation])
 			})

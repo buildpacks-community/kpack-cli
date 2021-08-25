@@ -74,7 +74,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 
 			ctx := cmd.Context()
 
-			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(ctx, name, metav1.GetOptions{})
+			img, err := cs.KpackClient.KpackV1alpha2().Images(cs.Namespace).Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				if tag == "" {
 					return errors.New("--tag is required to create the resource")

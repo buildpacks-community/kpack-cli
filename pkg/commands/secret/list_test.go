@@ -90,8 +90,8 @@ secret-two      some-git-url
 						Objects: []runtime.Object{
 							serviceAccount,
 						},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: no secrets found in \"some-default-namespace\" namespace\n",
+						ExpectErr:           true,
+						ExpectedErrorOutput: "Error: no secrets found in \"some-default-namespace\" namespace\n",
 					}.TestK8s(t, cmdFunc)
 				})
 			})
@@ -158,9 +158,9 @@ secret-two      some-git-url
 						Objects: []runtime.Object{
 							serviceAccount,
 						},
-						Args:           []string{"-n", namespace},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: no secrets found in \"some-namespace\" namespace\n",
+						Args:                []string{"-n", namespace},
+						ExpectErr:           true,
+						ExpectedErrorOutput: "Error: no secrets found in \"some-namespace\" namespace\n",
 					}.TestK8s(t, cmdFunc)
 				})
 			})

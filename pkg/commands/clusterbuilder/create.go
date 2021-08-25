@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	apiVersion   = "kpack.io/v1alpha1"
+	apiVersion   = "kpack.io/v1alpha2"
 	defaultStack = "default"
 	defaultStore = "default"
 )
@@ -96,25 +96,25 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 		flags.tag = path.Join(repo, name)
 	}
 
-	cb := &v1alpha1.ClusterBuilder{
+	cb := &v1alpha2.ClusterBuilder{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha1.ClusterBuilderKind,
+			Kind:       v1alpha2.ClusterBuilderKind,
 			APIVersion: apiVersion,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Annotations: map[string]string{},
 		},
-		Spec: v1alpha1.ClusterBuilderSpec{
-			BuilderSpec: v1alpha1.BuilderSpec{
+		Spec: v1alpha2.ClusterBuilderSpec{
+			BuilderSpec: v1alpha2.BuilderSpec{
 				Tag: flags.tag,
 				Stack: corev1.ObjectReference{
 					Name: flags.stack,
-					Kind: v1alpha1.ClusterStackKind,
+					Kind: v1alpha2.ClusterStackKind,
 				},
 				Store: corev1.ObjectReference{
 					Name: flags.store,
-					Kind: v1alpha1.ClusterStoreKind,
+					Kind: v1alpha2.ClusterStoreKind,
 				},
 			},
 			ServiceAccountRef: kpConfig.ServiceAccount(),
@@ -143,7 +143,7 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 	}
 
 	if !ch.IsDryRun() {
-		cb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Create(ctx, cb, metav1.CreateOptions{})
+		cb, err = cs.KpackClient.KpackV1alpha2().ClusterBuilders().Create(ctx, cb, metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}

@@ -6,7 +6,7 @@ package clusterstack_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -30,17 +30,17 @@ func testClusterStackStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	when("the stack exists", func() {
-		stck := &v1alpha1.ClusterStack{
+		stck := &v1alpha2.ClusterStack{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "some-stack",
 			},
-			Status: v1alpha1.ClusterStackStatus{
-				ResolvedClusterStack: v1alpha1.ResolvedClusterStack{
+			Status: v1alpha2.ClusterStackStatus{
+				ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
 					Id: "some-stack-id",
-					BuildImage: v1alpha1.ClusterStackStatusImage{
+					BuildImage: v1alpha2.ClusterStackStatusImage{
 						LatestImage: "some-run-image",
 					},
-					RunImage: v1alpha1.ClusterStackStatusImage{
+					RunImage: v1alpha2.ClusterStackStatusImage{
 						LatestImage: "some-build-image",
 					},
 					Mixins: []string{"mixin1", "mixin2"},
@@ -106,9 +106,9 @@ Build Image:    some-run-image
 	when("the stack does not exist", func() {
 		it("returns a message that there is no stack", func() {
 			testhelpers.CommandTest{
-				Args:           []string{"stack-does-not-exist"},
-				ExpectErr:      true,
-				ExpectedOutput: "Error: clusterstacks.kpack.io \"stack-does-not-exist\" not found\n",
+				Args:                []string{"stack-does-not-exist"},
+				ExpectErr:           true,
+				ExpectedErrorOutput: "Error: clusterstacks.kpack.io \"stack-does-not-exist\" not found\n",
 			}.TestKpack(t, cmdFunc)
 
 		})

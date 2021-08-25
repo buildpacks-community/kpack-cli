@@ -41,7 +41,6 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Objects:             []runtime.Object{kpConfig},
 				Args:                []string{},
-				ExpectErr:           false,
 				ExpectedOutput:      "Name: default\nNamespace: default\n",
 				ExpectedErrorOutput: "",
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -62,7 +61,6 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Objects:             []runtime.Object{kpConfig},
 				Args:                []string{},
-				ExpectErr:           false,
 				ExpectedOutput:      "Name: default\nNamespace: kpack\n",
 				ExpectedErrorOutput: "",
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -108,7 +106,6 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Objects:             []runtime.Object{kpConfig},
 				Args:                []string{"some-service-account"},
-				ExpectErr:           false,
 				ExpectedOutput:      "kp-config set\n",
 				ExpectedErrorOutput: "",
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
@@ -148,7 +145,6 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 					"--service-account-namespace",
 					"default",
 				},
-				ExpectErr:           false,
 				ExpectedOutput:      "kp-config set\n",
 				ExpectedErrorOutput: "",
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
@@ -173,7 +169,6 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Objects:             []runtime.Object{},
 				Args:                []string{"some-account"},
-				ExpectErr:           false,
 				ExpectedOutput:      "kp-config set\n",
 				ExpectedErrorOutput: "",
 				ExpectCreates: []runtime.Object{

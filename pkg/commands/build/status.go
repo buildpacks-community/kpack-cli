@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/buildchange"
 	"github.com/pivotal/kpack/pkg/differ"
@@ -59,8 +59,8 @@ Therefore, you must have credentials to access the registry on your machine when
 				return err
 			}
 
-			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(cmd.Context(), metav1.ListOptions{
-				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
+			buildList, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).List(cmd.Context(), metav1.ListOptions{
+				LabelSelector: v1alpha2.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
 				return err
@@ -91,7 +91,7 @@ Therefore, you must have credentials to access the registry on your machine when
 	return cmd
 }
 
-func findBuild(buildList *v1alpha1.BuildList, buildNumberString string) (v1alpha1.Build, error) {
+func findBuild(buildList *v1alpha2.BuildList, buildNumberString string) (v1alpha2.Build, error) {
 
 	if buildNumberString == "" {
 		return buildList.Items[len(buildList.Items)-1], nil
@@ -99,13 +99,13 @@ func findBuild(buildList *v1alpha1.BuildList, buildNumberString string) (v1alpha
 
 	buildNumber, err := strconv.Atoi(buildNumberString)
 	if err != nil {
-		return v1alpha1.Build{}, errors.Errorf("build number should be an integer: %v", buildNumberString)
+		return v1alpha2.Build{}, errors.Errorf("build number should be an integer: %v", buildNumberString)
 	}
 
 	for _, b := range buildList.Items {
-		val, err := strconv.Atoi(b.Labels[v1alpha1.BuildNumberLabel])
+		val, err := strconv.Atoi(b.Labels[v1alpha2.BuildNumberLabel])
 		if err != nil {
-			return v1alpha1.Build{}, err
+			return v1alpha2.Build{}, err
 		}
 
 		if val == buildNumber {
@@ -113,10 +113,10 @@ func findBuild(buildList *v1alpha1.BuildList, buildNumberString string) (v1alpha
 		}
 	}
 
-	return v1alpha1.Build{}, errors.Errorf("build \"%d\" not found", buildNumber)
+	return v1alpha2.Build{}, errors.Errorf("build \"%d\" not found", buildNumber)
 }
 
-func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
+func displayBuildStatus(cmd *cobra.Command, bld v1alpha2.Build) error {
 	statusWriter := commands.NewStatusWriter(cmd.OutOrStdout())
 
 	reason, err := buildReason(bld)
@@ -212,18 +212,18 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha1.Build) error {
 	return tableWriter.Write()
 }
 
-func buildReason(bld v1alpha1.Build) (string, error) {
+func buildReason(bld v1alpha2.Build) (string, error) {
 	var err error
 	var reasonsStr, changesStr string
 
-	changes, ok := bld.Annotations[v1alpha1.BuildChangesAnnotation]
+	changes, ok := bld.Annotations[v1alpha2.BuildChangesAnnotation]
 	if ok {
 		reasonsStr, changesStr, err = reasonsAndChanges(changes)
 		if err != nil {
 			return "", errors.Wrapf(err, "error generating build reason from string '%s'", changes)
 		}
 	} else {
-		reasonsStr = bld.Annotations[v1alpha1.BuildReasonAnnotation]
+		reasonsStr = bld.Annotations[v1alpha2.BuildReasonAnnotation]
 	}
 
 	var buildReasonStr string
@@ -263,7 +263,7 @@ func reasonsAndChanges(changesJson string) (string, string, error) {
 	return reasonsStr, changesStr, nil
 }
 
-func displayBOM(keychain authn.Keychain, cmd *cobra.Command, bld v1alpha1.Build, rup registry.UtilProvider, tlsConfig registry.TLSConfig) error {
+func displayBOM(keychain authn.Keychain, cmd *cobra.Command, bld v1alpha2.Build, rup registry.UtilProvider, tlsConfig registry.TLSConfig) error {
 	cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded)
 	if cond == nil || !cond.IsTrue() {
 		return errors.Errorf("build has failed or has not finished")

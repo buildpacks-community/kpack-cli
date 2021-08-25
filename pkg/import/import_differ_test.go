@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pivotal/kpack/pkg/registry/registryfakes"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -56,12 +56,12 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 	fakeKeychain := &registryfakes.FakeKeychain{}
 
 	when("DiffClusterStore", func() {
-		oldStore := &v1alpha1.ClusterStore{
+		oldStore := &v1alpha2.ClusterStore{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "some-store",
 			},
-			Spec: v1alpha1.ClusterStoreSpec{
-				Sources: []v1alpha1.StoreImage{
+			Spec: v1alpha2.ClusterStoreSpec{
+				Sources: []v1alpha2.StoreImage{
 					{Image: "some-old-buildpackage"},
 					{Image: "some-same-buildpackage"},
 					{Image: "some-extra-buildpackage"},
@@ -96,7 +96,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("returns no diff with no new buildpackages", func() {
-			oldStore.Spec.Sources = []v1alpha1.StoreImage{
+			oldStore.Spec.Sources = []v1alpha2.StoreImage{
 				{Image: "some-new-buildpackage"},
 				{Image: "some-extra-buildpackage"},
 			}
@@ -110,16 +110,16 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 
 	when("DiffClusterStack", func() {
 		it("returns a diff of old and new cluster stack", func() {
-			oldStack := &v1alpha1.ClusterStack{
+			oldStack := &v1alpha2.ClusterStack{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "some-stack",
 				},
-				Spec: v1alpha1.ClusterStackSpec{
+				Spec: v1alpha2.ClusterStackSpec{
 					Id: "some-id",
-					BuildImage: v1alpha1.ClusterStackSpecImage{
+					BuildImage: v1alpha2.ClusterStackSpecImage{
 						Image: "some-build-image",
 					},
-					RunImage: v1alpha1.ClusterStackSpecImage{
+					RunImage: v1alpha2.ClusterStackSpecImage{
 						Image: "some-run-image",
 					},
 				},
@@ -156,19 +156,19 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 
 	when("DiffClusterBuilder", func() {
 		it("returns a diff of old and new cluster builder", func() {
-			oldBuilder := &v1alpha1.ClusterBuilder{
+			oldBuilder := &v1alpha2.ClusterBuilder{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "some-builder",
 				},
-				Spec: v1alpha1.ClusterBuilderSpec{
-					BuilderSpec: v1alpha1.BuilderSpec{
+				Spec: v1alpha2.ClusterBuilderSpec{
+					BuilderSpec: v1alpha2.BuilderSpec{
 						Store: corev1.ObjectReference{
 							Name: "some-store",
 						},
 						Stack: corev1.ObjectReference{
 							Name: "some-stack",
 						},
-						Order: []v1alpha1.OrderEntry{{Group: []v1alpha1.BuildpackRef{{BuildpackInfo: v1alpha1.BuildpackInfo{Id: "some-buildpack"}}}}},
+						Order: []v1alpha2.OrderEntry{{Group: []v1alpha2.BuildpackRef{{BuildpackInfo: v1alpha2.BuildpackInfo{Id: "some-buildpack"}}}}},
 					},
 				},
 			}
@@ -176,7 +176,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 				Name:         "some-builder",
 				ClusterStore: "some-new-store",
 				ClusterStack: "some-new-stack",
-				Order:        []v1alpha1.OrderEntry{{Group: []v1alpha1.BuildpackRef{{BuildpackInfo: v1alpha1.BuildpackInfo{Id: "some-new-buildpack"}}}}},
+				Order:        []v1alpha2.OrderEntry{{Group: []v1alpha2.BuildpackRef{{BuildpackInfo: v1alpha2.BuildpackInfo{Id: "some-new-buildpack"}}}}},
 			}
 
 			diff, err := importDiffer.DiffClusterBuilder(oldBuilder, newBuilder)
@@ -187,7 +187,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 				Name:         "some-builder",
 				ClusterStore: "some-store",
 				ClusterStack: "some-stack",
-				Order:        []v1alpha1.OrderEntry{{Group: []v1alpha1.BuildpackRef{{BuildpackInfo: v1alpha1.BuildpackInfo{Id: "some-buildpack"}}}}},
+				Order:        []v1alpha2.OrderEntry{{Group: []v1alpha2.BuildpackRef{{BuildpackInfo: v1alpha2.BuildpackInfo{Id: "some-buildpack"}}}}},
 			}
 			require.Equal(t, expectedArg0, diffArg0)
 			require.Equal(t, newBuilder, diffArg1)

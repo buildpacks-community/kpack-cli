@@ -6,7 +6,7 @@ package clusterbuilder_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -28,39 +28,39 @@ func TestClusterBuilderPatchCommand(t *testing.T) {
 
 func testClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 	var (
-		builder = &v1alpha1.ClusterBuilder{
+		builder = &v1alpha2.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.BuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-builder",
 			},
-			Spec: v1alpha1.ClusterBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.ClusterBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder",
 					Stack: corev1.ObjectReference{
 						Name: "some-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "some-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -152,14 +152,14 @@ func testClusterBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 				"--order", "./testdata/patched-order.yaml",
 				"--buildpack", "org.cloudfoundry.test-bp",
 			},
-			ExpectErr:      true,
-			ExpectedOutput: "Error: cannot use --order and --buildpack together\n",
+			ExpectErr:           true,
+			ExpectedErrorOutput: "Error: cannot use --order and --buildpack together\n",
 		}.TestKpack(t, cmdFunc)
 	})
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+			const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Builder
 metadata:
   creationTimestamp: null
@@ -206,7 +206,7 @@ status:
 		it("can output in json format", func() {
 			const resourceJSON = `{
     "kind": "Builder",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "test-builder",
         "creationTimestamp": null
@@ -269,7 +269,7 @@ status:
 
 		when("there are no changes in the patch", func() {
 			it("can output unpatched resource in requested format", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Builder
 metadata:
   creationTimestamp: null
@@ -345,7 +345,7 @@ status:
 
 		when("output flag is used", func() {
 			it("does not patch a ClusterBuilder and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Builder
 metadata:
   creationTimestamp: null

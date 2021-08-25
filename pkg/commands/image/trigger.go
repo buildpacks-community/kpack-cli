@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,8 +41,8 @@ The namespace defaults to the kubernetes current-context namespace.`,
 
 			ctx := cmd.Context()
 
-			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(ctx, metav1.ListOptions{
-				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
+			buildList, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).List(ctx, metav1.ListOptions{
+				LabelSelector: v1alpha2.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
 				return err
@@ -55,7 +55,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 
 				build := buildList.Items[len(buildList.Items)-1].DeepCopy()
 				build.Annotations[BuildNeededAnnotation] = time.Now().String()
-				_, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).Update(ctx, build, metav1.UpdateOptions{})
+				_, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).Update(ctx, build, metav1.UpdateOptions{})
 				if err != nil {
 					return err
 				}

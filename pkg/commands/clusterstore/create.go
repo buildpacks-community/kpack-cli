@@ -79,7 +79,7 @@ func create(ctx context.Context, name string, buildpackages []string, factory *c
 	}
 
 	if !ch.IsDryRun() {
-		newStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Create(ctx, newStore, metav1.CreateOptions{})
+		newStore, err = cs.KpackClient.KpackV1alpha2().ClusterStores().Create(ctx, newStore, metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}

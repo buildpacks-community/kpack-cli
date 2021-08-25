@@ -13,7 +13,7 @@ func NewCanonicalServiceAccountCommand(clientSetProvider k8s.ClientSetProvider) 
 	var namespace string
 
 	cmd := &cobra.Command{
-		Use:          "canonical-service-account [name]",
+		Use:   "canonical-service-account [name]",
 		Short: "Set or Get the canonical service account",
 		Long: `Set or Get the canonical service account 
 
@@ -46,7 +46,7 @@ kp config canonical-service-account my-service-account --service-account-namespa
 			configHelper := config.NewKpConfigProvider(cs)
 
 			if len(args) == 0 {
-				kpConfig  := configHelper.GetKpConfig(ctx)
+				kpConfig := configHelper.GetKpConfig(ctx)
 
 				serviceAccount := kpConfig.ServiceAccount()
 

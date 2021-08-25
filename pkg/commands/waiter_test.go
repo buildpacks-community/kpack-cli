@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
@@ -27,7 +27,7 @@ func TestWaiter(t *testing.T) {
 }
 
 func init() {
-	v1alpha1.AddToScheme(scheme.Scheme)
+	v1alpha2.AddToScheme(scheme.Scheme)
 }
 
 func testWaiter(t *testing.T, when spec.G, it spec.S) {
@@ -39,10 +39,10 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	when("Wait", func() {
-		var resourceToWatch *v1alpha1.Builder
+		var resourceToWatch *v1alpha2.Builder
 
 		it.Before(func() {
-			resourceToWatch = &v1alpha1.Builder{
+			resourceToWatch = &v1alpha2.Builder{
 				TypeMeta: v1.TypeMeta{
 					Kind: "Builder",
 				},
@@ -61,7 +61,7 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("returns no error when resource is already ready", func() {
-			resourceToWatch.Status = v1alpha1.BuilderStatus{
+			resourceToWatch.Status = v1alpha2.BuilderStatus{
 				Status: conditionReady(corev1.ConditionTrue, generation),
 			}
 
@@ -69,7 +69,7 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("returns an error when resource is already failed", func() {
-			resourceToWatch.Status = v1alpha1.BuilderStatus{
+			resourceToWatch.Status = v1alpha2.BuilderStatus{
 				Status: conditionReady(corev1.ConditionFalse, generation),
 			}
 
@@ -77,16 +77,16 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("waits for the correct generation", func() {
-			resourceToWatch.Status = v1alpha1.BuilderStatus{
+			resourceToWatch.Status = v1alpha2.BuilderStatus{
 				Status: conditionReady(corev1.ConditionFalse, generation-1),
 			}
 
 			watcher.addEvent(watch.Event{
 				Type: watch.Modified,
-				Object: &v1alpha1.Builder{
+				Object: &v1alpha2.Builder{
 					TypeMeta:   resourceToWatch.TypeMeta,
 					ObjectMeta: resourceToWatch.ObjectMeta,
-					Status:     v1alpha1.BuilderStatus{Status: conditionReady(corev1.ConditionTrue, generation)},
+					Status:     v1alpha2.BuilderStatus{Status: conditionReady(corev1.ConditionTrue, generation)},
 				},
 			})
 
@@ -95,16 +95,16 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 
 		it("runs extra condition checks", func() {
 			fakeConditionChecker := fakeConditionChecker{}
-			resourceToWatch.Status = v1alpha1.BuilderStatus{
+			resourceToWatch.Status = v1alpha2.BuilderStatus{
 				Status: conditionReady(corev1.ConditionFalse, generation-1),
 			}
 
 			watcher.addEvent(watch.Event{
 				Type: watch.Modified,
-				Object: &v1alpha1.Builder{
+				Object: &v1alpha2.Builder{
 					TypeMeta:   resourceToWatch.TypeMeta,
 					ObjectMeta: resourceToWatch.ObjectMeta,
-					Status:     v1alpha1.BuilderStatus{Status: conditionReady(corev1.ConditionTrue, generation)},
+					Status:     v1alpha2.BuilderStatus{Status: conditionReady(corev1.ConditionTrue, generation)},
 				},
 			})
 

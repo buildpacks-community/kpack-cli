@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/pkg/errors"
 	"github.com/sclevine/spec"
@@ -45,12 +45,12 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("confirmation is given by user", func() {
 		when("store exists", func() {
-			store := &v1alpha1.ClusterStore{
+			store := &v1alpha2.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: storeName,
 				},
-				Spec: v1alpha1.ClusterStoreSpec{
-					Sources: []v1alpha1.StoreImage{
+				Spec: v1alpha2.ClusterStoreSpec{
+					Sources: []v1alpha2.StoreImage{
 						{
 							Image: "some/imageInStore",
 						},
@@ -63,8 +63,7 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						store,
 					},
-					Args:      []string{storeName},
-					ExpectErr: false,
+					Args: []string{storeName},
 					ExpectedOutput: `ClusterStore "some-store-name" store deleted
 `,
 					ExpectDeletes: []clientgotesting.DeleteActionImpl{
@@ -80,10 +79,10 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 		when("store does not exist", func() {
 			it("confirms and errors with store not found", func() {
 				testhelpers.CommandTest{
-					Objects:        nil,
-					Args:           []string{storeName},
-					ExpectErr:      true,
-					ExpectedOutput: fmt.Sprintf("Error: Store %q does not exist\n", storeName),
+					Objects:             nil,
+					Args:                []string{storeName},
+					ExpectErr:           true,
+					ExpectedErrorOutput: fmt.Sprintf("Error: Store %q does not exist\n", storeName),
 					ExpectDeletes: []clientgotesting.DeleteActionImpl{
 						{
 							Name: storeName,
@@ -104,7 +103,6 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Objects:        nil,
 				Args:           []string{storeName},
-				ExpectErr:      false,
 				ExpectedOutput: "Skipping ClusterStore deletion\n",
 			}.TestKpack(t, cmdFunc)
 			require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("WARNING: Builders referring to buildpacks from this store will no longer schedule rebuilds for buildpack updates.\nPlease confirm store deletion by typing 'y': "))
@@ -119,10 +117,10 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 		it("confirms and bubbles up the error", func() {
 			testhelpers.CommandTest{
-				Objects:        nil,
-				Args:           []string{storeName},
-				ExpectErr:      true,
-				ExpectedOutput: fmt.Sprintf("Error: %s\n", confirmationError),
+				Objects:             nil,
+				Args:                []string{storeName},
+				ExpectErr:           true,
+				ExpectedErrorOutput: fmt.Sprintf("Error: %s\n", confirmationError),
 			}.TestKpack(t, cmdFunc)
 			require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("WARNING: Builders referring to buildpacks from this store will no longer schedule rebuilds for buildpack updates.\nPlease confirm store deletion by typing 'y': "))
 		})
@@ -130,12 +128,12 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("force deletion flag is used", func() {
 		when("store exists", func() {
-			store := &v1alpha1.ClusterStore{
+			store := &v1alpha2.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: storeName,
 				},
-				Spec: v1alpha1.ClusterStoreSpec{
-					Sources: []v1alpha1.StoreImage{
+				Spec: v1alpha2.ClusterStoreSpec{
+					Sources: []v1alpha2.StoreImage{
 						{
 							Image: "some/imageInStore",
 						},
@@ -148,8 +146,7 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Objects: []runtime.Object{
 						store,
 					},
-					Args:      []string{storeName, "-f"},
-					ExpectErr: false,
+					Args: []string{storeName, "-f"},
 					ExpectedOutput: `ClusterStore "some-store-name" store deleted
 `,
 					ExpectDeletes: []clientgotesting.DeleteActionImpl{
@@ -165,10 +162,10 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 		when("store does not exist", func() {
 			it("does not confirm and errors with store not found", func() {
 				testhelpers.CommandTest{
-					Objects:        nil,
-					Args:           []string{storeName, "--force"},
-					ExpectErr:      true,
-					ExpectedOutput: fmt.Sprintf("Error: Store %q does not exist\n", storeName),
+					Objects:             nil,
+					Args:                []string{storeName, "--force"},
+					ExpectErr:           true,
+					ExpectedErrorOutput: fmt.Sprintf("Error: Store %q does not exist\n", storeName),
 					ExpectDeletes: []clientgotesting.DeleteActionImpl{
 						{
 							Name: storeName,

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -33,7 +33,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			bldr, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(cmd.Context(), args[0], metav1.GetOptions{})
+			bldr, err := cs.KpackClient.KpackV1alpha2().ClusterBuilders().Get(cmd.Context(), args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -45,7 +45,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	return cmd
 }
 
-func displayBuilderStatus(bldr *v1alpha1.ClusterBuilder, writer io.Writer) error {
+func displayBuilderStatus(bldr *v1alpha2.ClusterBuilder, writer io.Writer) error {
 	if cond := bldr.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
 		if cond.Status == corev1.ConditionTrue {
 			return printBuilderReadyStatus(bldr, writer)
@@ -57,7 +57,7 @@ func displayBuilderStatus(bldr *v1alpha1.ClusterBuilder, writer io.Writer) error
 	}
 }
 
-func printBuilderConditionUnknownStatus(_ *v1alpha1.ClusterBuilder, writer io.Writer) error {
+func printBuilderConditionUnknownStatus(_ *v1alpha2.ClusterBuilder, writer io.Writer) error {
 	statusWriter := commands.NewStatusWriter(writer)
 
 	return statusWriter.AddBlock(
@@ -66,7 +66,7 @@ func printBuilderConditionUnknownStatus(_ *v1alpha1.ClusterBuilder, writer io.Wr
 	)
 }
 
-func printBuilderNotReadyStatus(bldr *v1alpha1.ClusterBuilder, writer io.Writer) error {
+func printBuilderNotReadyStatus(bldr *v1alpha2.ClusterBuilder, writer io.Writer) error {
 	statusWriter := commands.NewStatusWriter(writer)
 
 	condReady := bldr.Status.GetCondition(corev1alpha1.ConditionReady)
@@ -78,7 +78,7 @@ func printBuilderNotReadyStatus(bldr *v1alpha1.ClusterBuilder, writer io.Writer)
 	)
 }
 
-func printBuilderReadyStatus(bldr *v1alpha1.ClusterBuilder, writer io.Writer) error {
+func printBuilderReadyStatus(bldr *v1alpha2.ClusterBuilder, writer io.Writer) error {
 	statusWriter := commands.NewStatusWriter(writer)
 
 	err := statusWriter.AddBlock(

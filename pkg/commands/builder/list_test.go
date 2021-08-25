@@ -6,7 +6,7 @@ package builder_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -36,40 +36,40 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 	)
 
 	var (
-		defaultNamespacedBuilder1 = &v1alpha1.Builder{
+		defaultNamespacedBuilder1 = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.BuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-1",
 				Namespace: defaultNamespace,
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-1",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -78,7 +78,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -87,47 +87,47 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						},
 					},
 				},
-				Stack: v1alpha1.BuildStack{
+				Stack: v1alpha2.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 					ID:       "io.buildpacks.stacks.centos",
 				},
 				LatestImage: "some-registry.com/test-builder-1:tag",
 			},
 		}
-		defaultNamespacedBuilder2 = &v1alpha1.Builder{
+		defaultNamespacedBuilder2 = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.BuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-2",
 				Namespace: defaultNamespace,
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-2",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -136,7 +136,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -147,40 +147,40 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 				},
 			},
 		}
-		defaultNamespacedBuilder3 = &v1alpha1.Builder{
+		defaultNamespacedBuilder3 = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.BuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-3",
 				Namespace: defaultNamespace,
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-3",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -189,7 +189,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -198,7 +198,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						},
 					},
 				},
-				Stack: v1alpha1.BuildStack{
+				Stack: v1alpha2.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9fasdfa847098234",
 					ID:       "io.buildpacks.stacks.bionic",
 				},
@@ -206,40 +206,40 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 			},
 		}
 
-		otherNamespacedBuilder1 = &v1alpha1.Builder{
+		otherNamespacedBuilder1 = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.BuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-1",
 				Namespace: "test-namespace",
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-1",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -248,7 +248,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -257,47 +257,47 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						},
 					},
 				},
-				Stack: v1alpha1.BuildStack{
+				Stack: v1alpha2.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 					ID:       "io.buildpacks.stacks.centos",
 				},
 				LatestImage: "some-registry.com/test-builder-1:tag",
 			},
 		}
-		otherNamespacedBuilder2 = &v1alpha1.Builder{
+		otherNamespacedBuilder2 = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.BuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-2",
 				Namespace: "test-namespace",
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-2",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -306,7 +306,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -317,40 +317,40 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 				},
 			},
 		}
-		otherNamespacedBuilder3 = &v1alpha1.Builder{
+		otherNamespacedBuilder3 = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.BuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-3",
 				Namespace: "test-namespace",
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-3",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -359,7 +359,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -368,7 +368,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						},
 					},
 				},
-				Stack: v1alpha1.BuildStack{
+				Stack: v1alpha2.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9fasdfa847098234",
 					ID:       "io.buildpacks.stacks.bionic",
 				},
@@ -401,8 +401,8 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 			when("there are no builders in the namespace", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						ExpectErr:      true,
-						ExpectedOutput: "Error: no builders found\n",
+						ExpectErr:           true,
+						ExpectedErrorOutput: "Error: no builders found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})
@@ -425,8 +425,8 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 			when("there are no builders in the default namespace", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						ExpectErr:      true,
-						ExpectedOutput: "Error: no builders found\n",
+						ExpectErr:           true,
+						ExpectedErrorOutput: "Error: no builders found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})

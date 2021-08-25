@@ -6,7 +6,7 @@ package clusterstack_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -43,7 +43,7 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 	fakeRelocator := &registryfakes.Relocator{}
 	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
-		FakeFetcher:   registryfakes.NewStackImagesFetcher(stackInfo),
+		FakeFetcher: registryfakes.NewStackImagesFetcher(stackInfo),
 	}
 
 	config := &corev1.ConfigMap{
@@ -66,21 +66,21 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 	}
 
-	expectedStack := &v1alpha1.ClusterStack{
+	expectedStack := &v1alpha2.ClusterStack{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha1.ClusterStackKind,
-			APIVersion: "kpack.io/v1alpha1",
+			Kind:       v1alpha2.ClusterStackKind,
+			APIVersion: "kpack.io/v1alpha2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "stack-name",
 			Annotations: nil,
 		},
-		Spec: v1alpha1.ClusterStackSpec{
+		Spec: v1alpha2.ClusterStackSpec{
 			Id: "stack-id",
-			BuildImage: v1alpha1.ClusterStackSpecImage{
+			BuildImage: v1alpha2.ClusterStackSpecImage{
 				Image: "canonical-registry.io/canonical-repo/build@sha256:build-image-digest",
 			},
-			RunImage: v1alpha1.ClusterStackSpecImage{
+			RunImage: v1alpha2.ClusterStackSpecImage{
 				Image: "canonical-registry.io/canonical-repo/run@sha256:run-image-digest",
 			},
 		},
@@ -129,14 +129,15 @@ ClusterStack "stack-name" created
 				"--build-image", "some-registry.io/repo/some-build-image",
 				"--run-image", "some-registry.io/repo/some-run-image",
 			},
-			ExpectErr:      true,
-			ExpectedOutput: "Creating ClusterStack...\nError: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
+			ExpectErr:           true,
+			ExpectedOutput:      "Creating ClusterStack...\n",
+			ExpectedErrorOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+			const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStack
 metadata:
   creationTimestamp: null
@@ -177,7 +178,7 @@ Uploading to 'canonical-registry.io/canonical-repo'...
 		it("can output in json format", func() {
 			const resourceJSON = `{
     "kind": "ClusterStack",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "stack-name",
         "creationTimestamp": null
@@ -247,7 +248,7 @@ ClusterStack "stack-name" created (dry run)
 
 		when("output flag is used", func() {
 			it("does not create a clusterstack and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStack
 metadata:
   creationTimestamp: null
@@ -308,7 +309,7 @@ ClusterStack "stack-name" created (dry run with image upload)
 
 		when("output flag is used", func() {
 			it("does not create a clusterstack and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStack
 metadata:
   creationTimestamp: null

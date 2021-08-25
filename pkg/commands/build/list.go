@@ -6,7 +6,7 @@ package build
 import (
 	"sort"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,10 +40,10 @@ The namespace defaults to the kubernetes current-context namespace.`,
 			opts := metav1.ListOptions{}
 
 			if len(args) > 0 {
-				opts.LabelSelector = v1alpha1.ImageLabel + "=" + args[0]
+				opts.LabelSelector = v1alpha2.ImageLabel + "=" + args[0]
 			}
 
-			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(cmd.Context(), opts)
+			buildList, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).List(cmd.Context(), opts)
 			if err != nil {
 				return err
 			}
@@ -61,7 +61,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 	return cmd
 }
 
-func displayBuildsTable(cmd *cobra.Command, buildList *v1alpha1.BuildList) error {
+func displayBuildsTable(cmd *cobra.Command, buildList *v1alpha2.BuildList) error {
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "Build", "Status", "Image", "Reason")
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func displayBuildsTable(cmd *cobra.Command, buildList *v1alpha1.BuildList) error
 
 	for _, bld := range buildList.Items {
 		err := writer.AddRow(
-			bld.Labels[v1alpha1.BuildNumberLabel],
+			bld.Labels[v1alpha2.BuildNumberLabel],
 			getStatus(bld),
 			bld.Status.LatestImage,
 			getTruncatedReason(bld),

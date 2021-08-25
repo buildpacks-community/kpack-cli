@@ -51,9 +51,9 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are no builds", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						Args:           []string{},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: no builds found\n",
+						Args:                []string{},
+						ExpectErr:           true,
+						ExpectedErrorOutput: "Error: no builds found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})
@@ -76,9 +76,9 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are no builds", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						Args:           []string{"-n", namespace},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: no builds found\n",
+						Args:                []string{"-n", namespace},
+						ExpectErr:           true,
+						ExpectedErrorOutput: "Error: no builds found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})
@@ -104,9 +104,9 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			when("there are no builds", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						Args:           []string{image},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: no builds found\n",
+						Args:                []string{image},
+						ExpectErr:           true,
+						ExpectedErrorOutput: "Error: no builds found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})
