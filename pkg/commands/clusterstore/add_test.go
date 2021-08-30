@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -65,7 +66,7 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			Name: "store-name",
 		},
 		Spec: v1alpha2.ClusterStoreSpec{
-			Sources: []v1alpha2.StoreImage{
+			Sources: []corev1alpha1.StoreImage{
 				{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 			},
 		},
@@ -98,7 +99,7 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 					Object: &v1alpha2.ClusterStore{
 						ObjectMeta: existingStore.ObjectMeta,
 						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []v1alpha2.StoreImage{
+							Sources: []corev1alpha1.StoreImage{
 								{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 								{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
 								{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
@@ -197,7 +198,7 @@ status: {}
 						Object: &v1alpha2.ClusterStore{
 							ObjectMeta: existingStore.ObjectMeta,
 							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []v1alpha2.StoreImage{
+								Sources: []corev1alpha1.StoreImage{
 									{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 									{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
 									{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
@@ -257,7 +258,7 @@ status: {}
 						Object: &v1alpha2.ClusterStore{
 							ObjectMeta: existingStore.ObjectMeta,
 							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []v1alpha2.StoreImage{
+								Sources: []corev1alpha1.StoreImage{
 									{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 									{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
 									{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},

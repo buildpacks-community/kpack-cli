@@ -5,7 +5,7 @@ package _import
 
 import (
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 )
 
@@ -44,10 +44,10 @@ type ClusterStack struct {
 }
 
 type ClusterBuilder struct {
-	Name         string                `yaml:"name"`
-	ClusterStack string                `yaml:"clusterStack"`
-	ClusterStore string                `yaml:"clusterStore"`
-	Order        []v1alpha2.OrderEntry `yaml:"order"`
+	Name         string                    `yaml:"name"`
+	ClusterStack string                    `yaml:"clusterStack"`
+	ClusterStore string                    `yaml:"clusterStore"`
+	Order        []corev1alpha1.OrderEntry `yaml:"order"`
 }
 
 func (d DependencyDescriptor) Validate() error {

@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	v1alpha22 "github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
@@ -16,7 +17,7 @@ import (
 
 func (f *Factory) MakePatch(img *v1alpha2.Image) (*v1alpha2.Image, []byte, error) {
 	if img.Spec.Build == nil {
-		img.Spec.Build = &v1alpha2.ImageBuild{}
+		img.Spec.Build = &corev1alpha1.ImageBuild{}
 	}
 
 	err := f.validatePatch(img)
@@ -118,7 +119,7 @@ func (f *Factory) setSource(image *v1alpha2.Image) error {
 		if f.GitRepo != "" {
 			image.Spec.Source.Blob = nil
 			image.Spec.Source.Registry = nil
-			image.Spec.Source.Git = &v1alpha2.Git{
+			image.Spec.Source.Git = &corev1alpha1.Git{
 				URL:      f.GitRepo,
 				Revision: defaultRevision,
 			}
@@ -130,7 +131,7 @@ func (f *Factory) setSource(image *v1alpha2.Image) error {
 	} else if f.Blob != "" {
 		image.Spec.Source.Git = nil
 		image.Spec.Source.Registry = nil
-		image.Spec.Source.Blob = &v1alpha2.Blob{URL: f.Blob}
+		image.Spec.Source.Blob = &corev1alpha1.Blob{URL: f.Blob}
 	} else if f.LocalPath != "" {
 		ref, err := name.ParseReference(image.Spec.Tag)
 		if err != nil {
@@ -144,7 +145,7 @@ func (f *Factory) setSource(image *v1alpha2.Image) error {
 
 		image.Spec.Source.Git = nil
 		image.Spec.Source.Blob = nil
-		image.Spec.Source.Registry = &v1alpha2.Registry{Image: sourceRef}
+		image.Spec.Source.Registry = &corev1alpha1.Registry{Image: sourceRef}
 	}
 
 	return nil
@@ -160,11 +161,15 @@ func (f *Factory) setCacheSize(image *v1alpha2.Image) error {
 		return err
 	}
 
-	if image.Spec.CacheSize != nil && c.Cmp(*image.Spec.CacheSize) < 0 {
-		return errors.Errorf("cache size cannot be decreased, current: %v, requested: %v", image.Spec.CacheSize, c)
+	if image.Spec.Cache != nil && image.Spec.Cache.Volume != nil && c.Cmp(*image.Spec.Cache.Volume.Size) < 0 {
+		return errors.Errorf("cache size cannot be decreased, current: %v, requested: %v", image.Spec.Cache.Volume.Size, c)
 	}
 
-	image.Spec.CacheSize = c
+	image.Spec.Cache = &v1alpha2.ImageCacheConfig{
+		Volume: &v1alpha2.ImagePersistentVolumeCache{
+			Size: c,
+		},
+	}
 
 	return nil
 }

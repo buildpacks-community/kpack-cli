@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -53,7 +54,7 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 				return err
 			}
 
-			bpToStoreImage := map[string]v1alpha2.StoreImage{}
+			bpToStoreImage := map[string]corev1alpha1.StoreImage{}
 			for _, bp := range buildpackages {
 				if storeImage, ok := getStoreImage(store, bp); !ok {
 					return errors.Errorf("Buildpackage '%s' does not exist in the ClusterStore", bp)
@@ -90,16 +91,16 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 	return cmd
 }
 
-func getStoreImage(store *v1alpha2.ClusterStore, buildpackage string) (v1alpha2.StoreImage, bool) {
+func getStoreImage(store *v1alpha2.ClusterStore, buildpackage string) (corev1alpha1.StoreImage, bool) {
 	for _, bp := range store.Status.Buildpacks {
 		if fmt.Sprintf("%s@%s", bp.Id, bp.Version) == buildpackage {
 			return bp.StoreImage, true
 		}
 	}
-	return v1alpha2.StoreImage{}, false
+	return corev1alpha1.StoreImage{}, false
 }
 
-func removeBuildpackages(ch *commands.CommandHelper, store *v1alpha2.ClusterStore, buildpackages []string, bpToStoreImage map[string]v1alpha2.StoreImage) {
+func removeBuildpackages(ch *commands.CommandHelper, store *v1alpha2.ClusterStore, buildpackages []string, bpToStoreImage map[string]corev1alpha1.StoreImage) {
 	for _, bp := range buildpackages {
 		ch.Printlnf("Removing buildpackage %s", bp)
 

@@ -88,13 +88,13 @@ func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 			expectedCache := resource.MustParse("2G")
 			img, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
 			require.NoError(t, err)
-			require.Equal(t, img.Spec.CacheSize, &expectedCache)
+			require.Equal(t, img.Spec.Cache.Volume.Size, &expectedCache)
 		})
 
 		it("defaults to nil", func() {
 			img, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
 			require.NoError(t, err)
-			require.Nil(t, img.Spec.CacheSize)
+			require.Nil(t, img.Spec.Cache.Volume.Size)
 		})
 
 		it("errors with invalid cache size", func() {

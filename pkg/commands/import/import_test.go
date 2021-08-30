@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -139,7 +140,7 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 		},
 		Spec: v1alpha2.ClusterStoreSpec{
-			Sources: []v1alpha2.StoreImage{
+			Sources: []corev1alpha1.StoreImage{
 				{Image: "canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-image-digest"},
 			},
 		},
@@ -192,11 +193,11 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 					Name: "store-name",
 					Kind: v1alpha2.ClusterStoreKind,
 				},
-				Order: []v1alpha2.OrderEntry{
+				Order: []corev1alpha1.OrderEntry{
 					{
-						Group: []v1alpha2.BuildpackRef{
+						Group: []corev1alpha1.BuildpackRef{
 							{
-								BuildpackInfo: v1alpha2.BuildpackInfo{
+								BuildpackInfo: corev1alpha1.BuildpackInfo{
 									Id: "buildpack-id",
 								},
 							},
@@ -661,7 +662,7 @@ Imported resources
 
 			expectedStore := store.DeepCopy()
 			expectedStore.Annotations[importTimestampKey] = newTimestamp
-			expectedStore.Spec.Sources = append(expectedStore.Spec.Sources, v1alpha2.StoreImage{
+			expectedStore.Spec.Sources = append(expectedStore.Spec.Sources, corev1alpha1.StoreImage{
 				Image: "canonical-registry.io/canonical-repo/another-buildpack-id@sha256:another-buildpack-image-digest",
 			})
 
@@ -679,11 +680,11 @@ Imported resources
 
 			expectedBuilder := builder.DeepCopy()
 			expectedBuilder.Annotations[importTimestampKey] = newTimestamp
-			expectedBuilder.Spec.Order = []v1alpha2.OrderEntry{
+			expectedBuilder.Spec.Order = []corev1alpha1.OrderEntry{
 				{
-					Group: []v1alpha2.BuildpackRef{
+					Group: []corev1alpha1.BuildpackRef{
 						{
-							BuildpackInfo: v1alpha2.BuildpackInfo{
+							BuildpackInfo: corev1alpha1.BuildpackInfo{
 								Id: "another-buildpack-id",
 							},
 						},
@@ -693,11 +694,11 @@ Imported resources
 
 			expectedDefaultBuilder := defaultBuilder.DeepCopy()
 			expectedDefaultBuilder.Annotations[importTimestampKey] = newTimestamp
-			expectedDefaultBuilder.Spec.Order = []v1alpha2.OrderEntry{
+			expectedDefaultBuilder.Spec.Order = []corev1alpha1.OrderEntry{
 				{
-					Group: []v1alpha2.BuildpackRef{
+					Group: []corev1alpha1.BuildpackRef{
 						{
-							BuildpackInfo: v1alpha2.BuildpackInfo{
+							BuildpackInfo: corev1alpha1.BuildpackInfo{
 								Id: "another-buildpack-id",
 							},
 						},

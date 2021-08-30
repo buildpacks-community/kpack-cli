@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -53,20 +54,20 @@ func testBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 						Name: "some-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha2.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -130,16 +131,16 @@ func testBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 
 		it("creates a Builder with buildpack flags", func() {
 			bldr.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"Builder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.com/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"},{"id":"org.cloudfoundry.go","version":"1.0.1"}]}],"serviceAccount":"default"},"status":{"stack":{}}}`
-			bldr.Spec.Order = []v1alpha2.OrderEntry{
+			bldr.Spec.Order = []corev1alpha1.OrderEntry{
 				{
-					Group: []v1alpha2.BuildpackRef{
+					Group: []corev1alpha1.BuildpackRef{
 						{
-							BuildpackInfo: v1alpha2.BuildpackInfo{
+							BuildpackInfo: corev1alpha1.BuildpackInfo{
 								Id: "org.cloudfoundry.nodejs",
 							},
 						},
 						{
-							BuildpackInfo: v1alpha2.BuildpackInfo{
+							BuildpackInfo: corev1alpha1.BuildpackInfo{
 								Id:      "org.cloudfoundry.go",
 								Version: "1.0.1",
 							},

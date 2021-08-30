@@ -37,26 +37,26 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 				Name: storeName,
 			},
 			Status: v1alpha2.ClusterStoreStatus{
-				Buildpacks: []v1alpha2.StoreBuildpack{
+				Buildpacks: []corev1alpha1.StoreBuildpack{
 					{
-						BuildpackInfo: v1alpha2.BuildpackInfo{
+						BuildpackInfo: corev1alpha1.BuildpackInfo{
 							Id:      "meta",
 							Version: "1",
 						},
-						Buildpackage: v1alpha2.BuildpackageInfo{
+						Buildpackage: corev1alpha1.BuildpackageInfo{
 							Id:       "meta",
 							Version:  "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
-						StoreImage: v1alpha2.StoreImage{
+						StoreImage: corev1alpha1.StoreImage{
 							Image: "some-meta-image",
 						},
 						Homepage: "meta-homepage",
-						Order: []v1alpha2.OrderEntry{
+						Order: []corev1alpha1.OrderEntry{
 							{
-								Group: []v1alpha2.BuildpackRef{
+								Group: []corev1alpha1.BuildpackRef{
 									{
-										BuildpackInfo: v1alpha2.BuildpackInfo{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
 											Id:      "nested-buildpack",
 											Version: "2",
 										},
@@ -67,31 +67,31 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 					{
-						BuildpackInfo: v1alpha2.BuildpackInfo{
+						BuildpackInfo: corev1alpha1.BuildpackInfo{
 							Id:      "nested-buildpack",
 							Version: "2",
 						},
-						Buildpackage: v1alpha2.BuildpackageInfo{
+						Buildpackage: corev1alpha1.BuildpackageInfo{
 							Id:       "meta",
 							Version:  "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
-						StoreImage: v1alpha2.StoreImage{
+						StoreImage: corev1alpha1.StoreImage{
 							Image: "some-meta-image",
 						},
 						Homepage: "nested-buildpack-homepage",
 					},
 					{
-						BuildpackInfo: v1alpha2.BuildpackInfo{
+						BuildpackInfo: corev1alpha1.BuildpackInfo{
 							Id:      "simple-buildpack",
 							Version: "3",
 						},
-						Buildpackage: v1alpha2.BuildpackageInfo{
+						Buildpackage: corev1alpha1.BuildpackageInfo{
 							Id:       "simple-buildpack",
 							Version:  "3",
 							Homepage: "simple-3-buildpackage-homepage",
 						},
-						StoreImage: v1alpha2.StoreImage{
+						StoreImage: corev1alpha1.StoreImage{
 							Image: "simple-buildpackage",
 						},
 						Homepage: "simple-buildpack-homepage",

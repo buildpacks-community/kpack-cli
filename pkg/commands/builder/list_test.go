@@ -56,20 +56,20 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha2.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -87,7 +87,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						},
 					},
 				},
-				Stack: v1alpha2.BuildStack{
+				Stack: corev1alpha1.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 					ID:       "io.buildpacks.stacks.centos",
 				},
@@ -114,20 +114,20 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha2.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -167,20 +167,20 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha2.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -198,7 +198,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						},
 					},
 				},
-				Stack: v1alpha2.BuildStack{
+				Stack: corev1alpha1.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9fasdfa847098234",
 					ID:       "io.buildpacks.stacks.bionic",
 				},
@@ -226,20 +226,20 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha2.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -257,7 +257,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						},
 					},
 				},
-				Stack: v1alpha2.BuildStack{
+				Stack: corev1alpha1.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 					ID:       "io.buildpacks.stacks.centos",
 				},
@@ -284,20 +284,20 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha2.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -337,20 +337,20 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha2.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -368,7 +368,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 						},
 					},
 				},
-				Stack: v1alpha2.BuildStack{
+				Stack: corev1alpha1.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9fasdfa847098234",
 					ID:       "io.buildpacks.stacks.bionic",
 				},
