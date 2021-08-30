@@ -30,7 +30,7 @@ func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 		require.NoError(t, err)
 
 		require.Equal(t, "Image", img.Kind)
-		require.Equal(t, "kpack.io/v1alpha1", img.APIVersion)
+		require.Equal(t, "kpack.io/v1alpha2", img.APIVersion)
 	})
 
 	it("defaults the git revision as main", func() {

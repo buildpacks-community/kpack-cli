@@ -6,7 +6,7 @@ package clusterstore_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -58,19 +58,19 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	when("creating", func() {
-		newStore := &v1alpha1.ClusterStore{
+		newStore := &v1alpha2.ClusterStore{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterStoreKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.ClusterStoreKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "store-name",
 				Annotations: map[string]string{
-					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}`,
+					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}`,
 				},
 			},
-			Spec: v1alpha1.ClusterStoreSpec{
-				Sources: []v1alpha1.StoreImage{
+			Spec: v1alpha2.ClusterStoreSpec{
+				Sources: []v1alpha2.StoreImage{
 					{Image: "canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},
 					{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
 				},
@@ -129,8 +129,9 @@ ClusterStore "store-name" created
 					"--buildpackage", "some-registry.io/repo/buildpack",
 					"-b", localCNBPath,
 				},
-				ExpectErr:      true,
-				ExpectedOutput: "Creating ClusterStore...\nError: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
+				ExpectErr:           true,
+				ExpectedOutput:      "Creating ClusterStore...\n",
+				ExpectedErrorOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
@@ -142,18 +143,19 @@ ClusterStore "store-name" created
 				Args: []string{
 					"store-name",
 				},
-				ExpectErr:      true,
-				ExpectedOutput: "Creating ClusterStore...\nError: At least one buildpackage must be provided\n",
+				ExpectErr:           true,
+				ExpectedOutput:      "Creating ClusterStore...\n",
+				ExpectedErrorOutput: "Error: At least one buildpackage must be provided\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
 		when("output flag is used", func() {
 			it("can output in yaml format", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
   creationTimestamp: null
   name: store-name
 spec:
@@ -187,12 +189,12 @@ status: {}
 			it("can output in json format", func() {
 				const resourceJSON = `{
     "kind": "ClusterStore",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "store-name",
         "creationTimestamp": null,
         "annotations": {
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterStore\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"store-name\",\"creationTimestamp\":null},\"spec\":{\"sources\":[{\"image\":\"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest\"},{\"image\":\"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf\"}]},\"status\":{}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterStore\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"store-name\",\"creationTimestamp\":null},\"spec\":{\"sources\":[{\"image\":\"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest\"},{\"image\":\"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf\"}]},\"status\":{}}"
         }
     },
     "spec": {
@@ -254,11 +256,11 @@ ClusterStore "store-name" created (dry run)
 
 			when("output flag is used", func() {
 				it("does not create a clusterstore and prints the resource output", func() {
-					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+					const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
   creationTimestamp: null
   name: store-name
 spec:
@@ -311,11 +313,11 @@ ClusterStore "store-name" created (dry run with image upload)
 
 			when("output flag is used", func() {
 				it("does not create a clusterstore and prints the resource output", func() {
-					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+					const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
   creationTimestamp: null
   name: store-name
 spec:
@@ -348,12 +350,12 @@ status: {}
 	})
 
 	when("updating", func() {
-		existingStore := &v1alpha1.ClusterStore{
+		existingStore := &v1alpha2.ClusterStore{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "store-name",
 			},
-			Spec: v1alpha1.ClusterStoreSpec{
-				Sources: []v1alpha1.StoreImage{
+			Spec: v1alpha2.ClusterStoreSpec{
+				Sources: []v1alpha2.StoreImage{
 					{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 				},
 			},
@@ -389,13 +391,12 @@ status: {}
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectErr: false,
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
-						Object: &v1alpha1.ClusterStore{
+						Object: &v1alpha2.ClusterStore{
 							ObjectMeta: existingStore.ObjectMeta,
-							Spec: v1alpha1.ClusterStoreSpec{
-								Sources: []v1alpha1.StoreImage{
+							Spec: v1alpha2.ClusterStoreSpec{
+								Sources: []v1alpha2.StoreImage{
 									{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 									{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
 									{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
@@ -417,7 +418,7 @@ ClusterStore "store-name" updated
 
 		when("output flag is used", func() {
 			it("can output in yaml format", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   creationTimestamp: null
@@ -441,13 +442,12 @@ status: {}
 						"-b", localCNBPath,
 						"--output", "yaml",
 					},
-					ExpectErr: false,
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{
-							Object: &v1alpha1.ClusterStore{
+							Object: &v1alpha2.ClusterStore{
 								ObjectMeta: existingStore.ObjectMeta,
-								Spec: v1alpha1.ClusterStoreSpec{
-									Sources: []v1alpha1.StoreImage{
+								Spec: v1alpha2.ClusterStoreSpec{
+									Sources: []v1alpha2.StoreImage{
 										{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 										{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
 										{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
@@ -469,7 +469,7 @@ status: {}
 			it("can output in json format", func() {
 				const resourceJSON = `{
     "kind": "ClusterStore",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "store-name",
         "creationTimestamp": null
@@ -504,10 +504,10 @@ status: {}
 					},
 					ExpectUpdates: []clientgotesting.UpdateActionImpl{
 						{
-							Object: &v1alpha1.ClusterStore{
+							Object: &v1alpha2.ClusterStore{
 								ObjectMeta: existingStore.ObjectMeta,
-								Spec: v1alpha1.ClusterStoreSpec{
-									Sources: []v1alpha1.StoreImage{
+								Spec: v1alpha2.ClusterStoreSpec{
+									Sources: []v1alpha2.StoreImage{
 										{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 										{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
 										{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
@@ -528,7 +528,7 @@ status: {}
 
 			when("there are no changes in the update", func() {
 				it("can output original resource in requested format", func() {
-					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+					const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   creationTimestamp: null
@@ -549,7 +549,6 @@ status: {}
 							"-b", "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
 							"--output", "yaml",
 						},
-						ExpectErr: false,
 						ExpectedErrorOutput: `Adding to ClusterStore...
 	Uploading 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
 	Buildpackage already exists in the store
@@ -596,7 +595,6 @@ ClusterStore "store-name" updated (dry run)
 							"-b", "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
 							"--dry-run",
 						},
-						ExpectErr: false,
 						ExpectedOutput: `Adding to ClusterStore... (dry run)
 	Skipping 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
 	Buildpackage already exists in the store
@@ -608,7 +606,7 @@ ClusterStore "store-name" updated (dry run)
 
 			when("output flag is used", func() {
 				it("does not create a clusterstore and prints the resource output", func() {
-					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+					const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   creationTimestamp: null
@@ -680,7 +678,6 @@ ClusterStore "store-name" updated (dry run with image upload)
 							"-b", "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
 							"--dry-run-with-image-upload",
 						},
-						ExpectErr: false,
 						ExpectedOutput: `Adding to ClusterStore... (dry run with image upload)
 	Uploading 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
 	Buildpackage already exists in the store
@@ -692,7 +689,7 @@ ClusterStore "store-name" updated (dry run with image upload)
 
 			when("output flag is used", func() {
 				it("does not create a clusterstore and prints the resource output", func() {
-					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+					const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   creationTimestamp: null

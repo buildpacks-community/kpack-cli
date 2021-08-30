@@ -35,10 +35,10 @@ func testBuildLogsCommand(t *testing.T, when spec.G, it spec.S) {
 				when("the build flag is provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
-							Args:           []string{image, "-b", "123"},
-							ExpectErr:      true,
-							ExpectedOutput: "Error: build \"123\" not found\n",
+							Objects:             testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, defaultNamespace)),
+							Args:                []string{image, "-b", "123"},
+							ExpectErr:           true,
+							ExpectedErrorOutput: "Error: build \"123\" not found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})
@@ -46,9 +46,9 @@ func testBuildLogsCommand(t *testing.T, when spec.G, it spec.S) {
 				when("the build flag was not provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Args:           []string{image},
-							ExpectErr:      true,
-							ExpectedOutput: "Error: no builds found\n",
+							Args:                []string{image},
+							ExpectErr:           true,
+							ExpectedErrorOutput: "Error: no builds found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})
@@ -61,10 +61,10 @@ func testBuildLogsCommand(t *testing.T, when spec.G, it spec.S) {
 				when("the build flag is provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, namespace),
-							Args:           []string{image, "-b", "123", "-n", namespace},
-							ExpectErr:      true,
-							ExpectedOutput: "Error: build \"123\" not found\n",
+							Objects:             testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, namespace)),
+							Args:                []string{image, "-b", "123", "-n", namespace},
+							ExpectErr:           true,
+							ExpectedErrorOutput: "Error: build \"123\" not found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})
@@ -72,9 +72,9 @@ func testBuildLogsCommand(t *testing.T, when spec.G, it spec.S) {
 				when("the build flag was not provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Args:           []string{image, "-n", namespace},
-							ExpectErr:      true,
-							ExpectedOutput: "Error: no builds found\n",
+							Args:                []string{image, "-n", namespace},
+							ExpectErr:           true,
+							ExpectedErrorOutput: "Error: no builds found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})

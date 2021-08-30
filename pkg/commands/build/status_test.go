@@ -9,7 +9,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -87,11 +87,13 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 	when("getting build status", func() {
 		when("in the default namespace", func() {
+			builds := testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, defaultNamespace))
+
 			when("the build exists", func() {
 				when("the build flag is provided", func() {
 					it("shows the build status", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+							Objects:        builds,
 							Args:           []string{image, "-b", "1"},
 							ExpectedOutput: expectedOutputForBuildNumber,
 						}.TestKpack(t, cmdFunc)
@@ -101,7 +103,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("the build flag is not provided", func() {
 					it("shows the build status of the most recent build", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+							Objects:        builds,
 							Args:           []string{image},
 							ExpectedOutput: expectedOutputForMostRecent,
 						}.TestKpack(t, cmdFunc)
@@ -113,10 +115,10 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("the build flag is provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
-							Args:           []string{image, "-b", "123"},
-							ExpectErr:      true,
-							ExpectedOutput: "Error: build \"123\" not found\n",
+							Objects:             builds,
+							Args:                []string{image, "-b", "123"},
+							ExpectErr:           true,
+							ExpectedErrorOutput: "Error: build \"123\" not found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})
@@ -124,9 +126,9 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("the build flag was not provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Args:           []string{image},
-							ExpectErr:      true,
-							ExpectedOutput: "Error: no builds found\n",
+							Args:                []string{image},
+							ExpectErr:           true,
+							ExpectedErrorOutput: "Error: no builds found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})
@@ -135,12 +137,13 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 		when("in a given namespace", func() {
 			const namespace = "some-namespace"
+			builds := testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, namespace))
 
 			when("the build exists", func() {
 				when("the build flag is provided", func() {
 					it("gets the build status", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, namespace),
+							Objects:        builds,
 							Args:           []string{image, "-b", "1", "-n", namespace},
 							ExpectedOutput: expectedOutputForBuildNumber,
 						}.TestKpack(t, cmdFunc)
@@ -150,7 +153,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("the build flag is not provided", func() {
 					it("shows the build status of the most recent build", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, namespace),
+							Objects:        builds,
 							Args:           []string{image, "-n", namespace},
 							ExpectedOutput: expectedOutputForMostRecent,
 						}.TestKpack(t, cmdFunc)
@@ -162,10 +165,10 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("the build flag is provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Objects:        testhelpers.MakeTestBuilds(image, namespace),
-							Args:           []string{image, "-b", "123", "-n", namespace},
-							ExpectErr:      true,
-							ExpectedOutput: "Error: build \"123\" not found\n",
+							Objects:             builds,
+							Args:                []string{image, "-b", "123", "-n", namespace},
+							ExpectErr:           true,
+							ExpectedErrorOutput: "Error: build \"123\" not found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})
@@ -173,9 +176,9 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("the build flag was not provided", func() {
 					it("prints an appropriate message", func() {
 						testhelpers.CommandTest{
-							Args:           []string{image, "-n", namespace},
-							ExpectErr:      true,
-							ExpectedOutput: "Error: no builds found\n",
+							Args:                []string{image, "-n", namespace},
+							ExpectErr:           true,
+							ExpectedErrorOutput: "Error: no builds found\n",
 						}.TestKpack(t, cmdFunc)
 					})
 				})
@@ -205,25 +208,25 @@ bp-id-1         bp-version-1         mysupercoolsite.com
 bp-id-2         bp-version-2         mysupercoolsite2.com
 
 `
-				bld := &v1alpha1.Build{
+				bld := &v1alpha2.Build{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "bld-three",
 						Namespace:         "some-default-namespace",
 						CreationTimestamp: metav1.Time{Time: time.Time{}.Add(5 * time.Hour)},
 						Labels: map[string]string{
-							v1alpha1.ImageLabel:       image,
-							v1alpha1.BuildNumberLabel: "3",
+							v1alpha2.ImageLabel:       image,
+							v1alpha2.BuildNumberLabel: "3",
 						},
 						Annotations: map[string]string{
-							v1alpha1.BuildReasonAnnotation: "TRIGGER",
+							v1alpha2.BuildReasonAnnotation: "TRIGGER",
 						},
 					},
-					Spec: v1alpha1.BuildSpec{
-						Builder: v1alpha1.BuildBuilderSpec{
+					Spec: v1alpha2.BuildSpec{
+						Builder: v1alpha2.BuildBuilderSpec{
 							Image: "some-repo.com/my-builder",
 						},
 					},
-					Status: v1alpha1.BuildStatus{
+					Status: v1alpha2.BuildStatus{
 						Status: corev1alpha1.Status{
 							Conditions: corev1alpha1.Conditions{
 								{
@@ -234,7 +237,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 								},
 							},
 						},
-						BuildMetadata: v1alpha1.BuildpackMetadataList{
+						BuildMetadata: v1alpha2.BuildpackMetadataList{
 							{
 								Id:       "bp-id-1",
 								Version:  "bp-version-1",
@@ -246,7 +249,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 								Homepage: "mysupercoolsite2.com",
 							},
 						},
-						Stack: v1alpha1.BuildStack{
+						Stack: v1alpha2.BuildStack{
 							RunImage: "some-repo.com/run-image",
 						},
 						LatestImage: "repo.com/image-3:tag",
@@ -261,29 +264,29 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 			})
 
 			it("does not display when the condition is empty", func() {
-				bld := &v1alpha1.Build{
+				bld := &v1alpha2.Build{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "bld-three",
 						Namespace:         "some-default-namespace",
 						CreationTimestamp: metav1.Time{Time: time.Time{}.Add(5 * time.Hour)},
 						Labels: map[string]string{
-							v1alpha1.ImageLabel:       image,
-							v1alpha1.BuildNumberLabel: "3",
+							v1alpha2.ImageLabel:       image,
+							v1alpha2.BuildNumberLabel: "3",
 						},
 						Annotations: map[string]string{
-							v1alpha1.BuildReasonAnnotation: "TRIGGER",
+							v1alpha2.BuildReasonAnnotation: "TRIGGER",
 						},
 					},
-					Spec: v1alpha1.BuildSpec{
-						Builder: v1alpha1.BuildBuilderSpec{
+					Spec: v1alpha2.BuildSpec{
+						Builder: v1alpha2.BuildBuilderSpec{
 							Image: "some-repo.com/my-builder",
 						},
 					},
-					Status: v1alpha1.BuildStatus{
+					Status: v1alpha2.BuildStatus{
 						Status: corev1alpha1.Status{
 							Conditions: corev1alpha1.Conditions{},
 						},
-						BuildMetadata: v1alpha1.BuildpackMetadataList{
+						BuildMetadata: v1alpha2.BuildpackMetadataList{
 							{
 								Id:       "bp-id-1",
 								Version:  "bp-version-1",
@@ -295,7 +298,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 								Homepage: "mysupercoolsite2.com",
 							},
 						},
-						Stack: v1alpha1.BuildStack{
+						Stack: v1alpha2.BuildStack{
 							RunImage: "some-repo.com/run-image",
 						},
 						LatestImage: "repo.com/image-3:tag",
@@ -335,29 +338,29 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				diffBuilder := testhelpers.NewDiffBuilder(t)
 				diffPadding := strings.Repeat(" ", len("Reason:")+commands.StatusWriterPadding)
 
-				bld := &v1alpha1.Build{
+				bld := &v1alpha2.Build{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "bld-three",
 						Namespace:         "some-default-namespace",
 						CreationTimestamp: metav1.Time{Time: time.Time{}.Add(5 * time.Hour)},
 						Labels: map[string]string{
-							v1alpha1.ImageLabel:       image,
-							v1alpha1.BuildNumberLabel: "3",
+							v1alpha2.ImageLabel:       image,
+							v1alpha2.BuildNumberLabel: "3",
 						},
 						Annotations: map[string]string{
-							v1alpha1.BuildReasonAnnotation: "TRIGGER",
+							v1alpha2.BuildReasonAnnotation: "TRIGGER",
 						},
 					},
-					Spec: v1alpha1.BuildSpec{
-						Builder: v1alpha1.BuildBuilderSpec{
+					Spec: v1alpha2.BuildSpec{
+						Builder: v1alpha2.BuildBuilderSpec{
 							Image: "some-repo.com/my-builder",
 						},
 					},
-					Status: v1alpha1.BuildStatus{
+					Status: v1alpha2.BuildStatus{
 						Status: corev1alpha1.Status{
 							Conditions: corev1alpha1.Conditions{},
 						},
-						BuildMetadata: v1alpha1.BuildpackMetadataList{
+						BuildMetadata: v1alpha2.BuildpackMetadataList{
 							{
 								Id:       "bp-id-1",
 								Version:  "bp-version-1",
@@ -369,7 +372,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 								Homepage: "mysupercoolsite2.com",
 							},
 						},
-						Stack: v1alpha1.BuildStack{
+						Stack: v1alpha2.BuildStack{
 							RunImage: "some-repo.com/run-image",
 						},
 						LatestImage: "repo.com/image-3:tag",
@@ -378,8 +381,8 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				}
 
 				it("generates reason from the changes string", func() {
-					bld.Annotations[v1alpha1.BuildReasonAnnotation] = "ignored-reason"
-					bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+					bld.Annotations[v1alpha2.BuildReasonAnnotation] = "ignored-reason"
+					bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "expected-reason",
@@ -400,7 +403,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("single change", func() {
 					when("TRIGGER", func() {
 						it.Before(func() {
-							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+							bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "TRIGGER",
@@ -423,7 +426,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 					when("COMMIT", func() {
 						it.Before(func() {
-							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+							bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "COMMIT",
@@ -449,7 +452,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 					when("CONFIG", func() {
 						it.Before(func() {
-							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+							bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "CONFIG",
@@ -568,7 +571,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 					when("BUILDPACK", func() {
 						it.Before(func() {
-							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+							bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "BUILDPACK",
@@ -611,7 +614,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 					when("STACK", func() {
 						it.Before(func() {
-							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+							bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "STACK",
@@ -638,7 +641,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 				when("multiple changes", func() {
 					it.Before(func() {
-						bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+						bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "TRIGGER",
@@ -802,9 +805,11 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 		})
 
 		when("using the --bom flag", func() {
+			builds := testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, defaultNamespace))
+
 			it("prints the registry image bom only", func() {
 				testhelpers.CommandTest{
-					Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
+					Objects:        builds,
 					Args:           []string{image, "-b", "1", "--bom"},
 					ExpectedOutput: "{\"some\":\"metadata\"}\n",
 				}.TestKpack(t, cmdFunc)
@@ -812,10 +817,10 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 			it("returns error when build is not successful", func() {
 				testhelpers.CommandTest{
-					Objects:        testhelpers.MakeTestBuilds(image, defaultNamespace),
-					Args:           []string{image, "--bom"},
-					ExpectErr:      true,
-					ExpectedOutput: "Error: build has failed or has not finished\n",
+					Objects:             builds,
+					Args:                []string{image, "--bom"},
+					ExpectErr:           true,
+					ExpectedErrorOutput: "Error: build has failed or has not finished\n",
 				}.TestKpack(t, cmdFunc)
 			})
 		})

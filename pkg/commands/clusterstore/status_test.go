@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -32,31 +32,31 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("the store exists", func() {
 		const storeName = "some-store-name"
-		store := &v1alpha1.ClusterStore{
+		store := &v1alpha2.ClusterStore{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: storeName,
 			},
-			Status: v1alpha1.ClusterStoreStatus{
-				Buildpacks: []v1alpha1.StoreBuildpack{
+			Status: v1alpha2.ClusterStoreStatus{
+				Buildpacks: []v1alpha2.StoreBuildpack{
 					{
-						BuildpackInfo: v1alpha1.BuildpackInfo{
+						BuildpackInfo: v1alpha2.BuildpackInfo{
 							Id:      "meta",
 							Version: "1",
 						},
-						Buildpackage: v1alpha1.BuildpackageInfo{
+						Buildpackage: v1alpha2.BuildpackageInfo{
 							Id:       "meta",
 							Version:  "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
-						StoreImage: v1alpha1.StoreImage{
+						StoreImage: v1alpha2.StoreImage{
 							Image: "some-meta-image",
 						},
 						Homepage: "meta-homepage",
-						Order: []v1alpha1.OrderEntry{
+						Order: []v1alpha2.OrderEntry{
 							{
-								Group: []v1alpha1.BuildpackRef{
+								Group: []v1alpha2.BuildpackRef{
 									{
-										BuildpackInfo: v1alpha1.BuildpackInfo{
+										BuildpackInfo: v1alpha2.BuildpackInfo{
 											Id:      "nested-buildpack",
 											Version: "2",
 										},
@@ -67,31 +67,31 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 					{
-						BuildpackInfo: v1alpha1.BuildpackInfo{
+						BuildpackInfo: v1alpha2.BuildpackInfo{
 							Id:      "nested-buildpack",
 							Version: "2",
 						},
-						Buildpackage: v1alpha1.BuildpackageInfo{
+						Buildpackage: v1alpha2.BuildpackageInfo{
 							Id:       "meta",
 							Version:  "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
-						StoreImage: v1alpha1.StoreImage{
+						StoreImage: v1alpha2.StoreImage{
 							Image: "some-meta-image",
 						},
 						Homepage: "nested-buildpack-homepage",
 					},
 					{
-						BuildpackInfo: v1alpha1.BuildpackInfo{
+						BuildpackInfo: v1alpha2.BuildpackInfo{
 							Id:      "simple-buildpack",
 							Version: "3",
 						},
-						Buildpackage: v1alpha1.BuildpackageInfo{
+						Buildpackage: v1alpha2.BuildpackageInfo{
 							Id:       "simple-buildpack",
 							Version:  "3",
 							Homepage: "simple-3-buildpackage-homepage",
 						},
-						StoreImage: v1alpha1.StoreImage{
+						StoreImage: v1alpha2.StoreImage{
 							Image: "simple-buildpackage",
 						},
 						Homepage: "simple-buildpack-homepage",
@@ -175,9 +175,9 @@ simple-buildpack    3          simple-3-buildpackage-homepage
 		it("returns a message that there is no store", func() {
 			const storeName = "non-existent-store"
 			testhelpers.CommandTest{
-				Args:           []string{storeName},
-				ExpectErr:      true,
-				ExpectedOutput: fmt.Sprintf("Error: clusterstores.kpack.io %q not found\n", storeName),
+				Args:                []string{storeName},
+				ExpectErr:           true,
+				ExpectedErrorOutput: fmt.Sprintf("Error: clusterstores.kpack.io %q not found\n", storeName),
 			}.TestKpack(t, cmdFunc)
 		})
 	})

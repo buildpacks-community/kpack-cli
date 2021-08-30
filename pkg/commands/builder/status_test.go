@@ -6,7 +6,7 @@ package builder_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -19,11 +19,11 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
-func TestClusterBuilderStatusCommand(t *testing.T) {
-	spec.Run(t, "TestClusterBuilderStatusCommand", testClusterBuilderStatusCommand)
+func TestBuilderStatusCommand(t *testing.T) {
+	spec.Run(t, "TestBuilderStatusCommand", testBuilderStatusCommand)
 }
 
-func testClusterBuilderStatusCommand(t *testing.T, when spec.G, it spec.S) {
+func testBuilderStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		defaultNamespace                  = "some-default-namespace"
 		expectedReadyOutputUsingSpecOrder = `Status:       Ready
@@ -84,40 +84,40 @@ Reason:    this builder is not ready for the purpose of a test
 	)
 
 	var (
-		readyDefaultBuilder = &v1alpha1.Builder{
+		readyDefaultBuilder = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-1",
 				Namespace: defaultNamespace,
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-1",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -126,7 +126,7 @@ Reason:    this builder is not ready for the purpose of a test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -135,7 +135,7 @@ Reason:    this builder is not ready for the purpose of a test
 						},
 					},
 				},
-				BuilderMetadata: v1alpha1.BuildpackMetadataList{
+				BuilderMetadata: v1alpha2.BuildpackMetadataList{
 					{
 						Id:       "org.cloudfoundry.nodejs",
 						Version:  "v0.2.1",
@@ -147,47 +147,47 @@ Reason:    this builder is not ready for the purpose of a test
 						Homepage: "https://github.com/paketo-buildpacks/go",
 					},
 				},
-				Stack: v1alpha1.BuildStack{
+				Stack: v1alpha2.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 					ID:       "io.buildpacks.stacks.centos",
 				},
 				LatestImage: "some-registry.com/test-builder-1:tag",
 			},
 		}
-		notReadyDefaultBuilder = &v1alpha1.Builder{
+		notReadyDefaultBuilder = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-2",
 				Namespace: defaultNamespace,
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-2",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -196,7 +196,7 @@ Reason:    this builder is not ready for the purpose of a test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -208,40 +208,40 @@ Reason:    this builder is not ready for the purpose of a test
 				},
 			},
 		}
-		unknownDefaultBuilder = &v1alpha1.Builder{
+		unknownDefaultBuilder = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-3",
 				Namespace: defaultNamespace,
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-3",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -250,43 +250,43 @@ Reason:    this builder is not ready for the purpose of a test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{},
+			Status: v1alpha2.BuilderStatus{},
 		}
 
-		readyNamespaceBuilder = &v1alpha1.Builder{
+		readyNamespaceBuilder = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-1",
 				Namespace: "test-namespace",
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-1",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -295,7 +295,7 @@ Reason:    this builder is not ready for the purpose of a test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -304,7 +304,7 @@ Reason:    this builder is not ready for the purpose of a test
 						},
 					},
 				},
-				BuilderMetadata: v1alpha1.BuildpackMetadataList{
+				BuilderMetadata: v1alpha2.BuildpackMetadataList{
 					{
 						Id:       "org.cloudfoundry.nodejs",
 						Version:  "v0.2.1",
@@ -316,47 +316,47 @@ Reason:    this builder is not ready for the purpose of a test
 						Homepage: "https://github.com/paketo-buildpacks/go",
 					},
 				},
-				Stack: v1alpha1.BuildStack{
+				Stack: v1alpha2.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 					ID:       "io.buildpacks.stacks.centos",
 				},
 				LatestImage: "some-registry.com/test-builder-1:tag",
 			},
 		}
-		notReadyNamespaceBuilder = &v1alpha1.Builder{
+		notReadyNamespaceBuilder = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-2",
 				Namespace: "test-namespace",
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-2",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -365,7 +365,7 @@ Reason:    this builder is not ready for the purpose of a test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -377,40 +377,40 @@ Reason:    this builder is not ready for the purpose of a test
 				},
 			},
 		}
-		unknownNamespaceBuilder = &v1alpha1.Builder{
+		unknownNamespaceBuilder = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder-3",
 				Namespace: "test-namespace",
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-3",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []v1alpha2.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: v1alpha2.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -419,7 +419,7 @@ Reason:    this builder is not ready for the purpose of a test
 					},
 				},
 			},
-			Status: v1alpha1.BuilderStatus{},
+			Status: v1alpha2.BuilderStatus{},
 		}
 	)
 
@@ -445,11 +445,11 @@ Reason:    this builder is not ready for the purpose of a test
 					})
 					when("the order is in the builder status", func() {
 						it("shows the build status using status.order", func() {
-							readyDefaultBuilder.Status.Order = []v1alpha1.OrderEntry{
+							readyDefaultBuilder.Status.Order = []v1alpha2.OrderEntry{
 								{
-									Group: []v1alpha1.BuildpackRef{
+									Group: []v1alpha2.BuildpackRef{
 										{
-											BuildpackInfo: v1alpha1.BuildpackInfo{
+											BuildpackInfo: v1alpha2.BuildpackInfo{
 												Id:      "org.cloudfoundry.nodejs",
 												Version: "0.2.1",
 											},
@@ -457,9 +457,9 @@ Reason:    this builder is not ready for the purpose of a test
 									},
 								},
 								{
-									Group: []v1alpha1.BuildpackRef{
+									Group: []v1alpha2.BuildpackRef{
 										{
-											BuildpackInfo: v1alpha1.BuildpackInfo{
+											BuildpackInfo: v1alpha2.BuildpackInfo{
 												Id:      "org.cloudfoundry.go",
 												Version: "0.0.3",
 											},
@@ -502,9 +502,9 @@ Reason:    this builder is not ready for the purpose of a test
 			when("the builder does not exist", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						Args:           []string{"non-existant-builder"},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: builders.kpack.io \"non-existant-builder\" not found\n",
+						Args:                []string{"non-existant-builder"},
+						ExpectErr:           true,
+						ExpectedErrorOutput: "Error: builders.kpack.io \"non-existant-builder\" not found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})
@@ -547,9 +547,9 @@ Reason:    this builder is not ready for the purpose of a test
 			when("the builder does not exist", func() {
 				it("prints an appropriate message", func() {
 					testhelpers.CommandTest{
-						Args:           []string{"non-existant-builder", "-n", "test-namespace"},
-						ExpectErr:      true,
-						ExpectedOutput: "Error: builders.kpack.io \"non-existant-builder\" not found\n",
+						Args:                []string{"non-existant-builder", "-n", "test-namespace"},
+						ExpectErr:           true,
+						ExpectedErrorOutput: "Error: builders.kpack.io \"non-existant-builder\" not found\n",
 					}.TestKpack(t, cmdFunc)
 				})
 			})

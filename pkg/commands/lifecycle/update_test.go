@@ -71,10 +71,9 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			Args: []string{
 				"--image", "some-registry.io/repo/lifecycle-image",
 			},
-			ExpectErr: true,
-			ExpectedOutput: `Updating lifecycle image...
-Error: configmap "lifecycle-image" not found in "kpack" namespace
-`,
+			ExpectErr:           true,
+			ExpectedOutput:      "Updating lifecycle image...\n",
+			ExpectedErrorOutput: "Error: configmap \"lifecycle-image\" not found in \"kpack\" namespace\n",
 		}.TestK8s(t, cmdFunc)
 	})
 
@@ -91,10 +90,9 @@ Error: configmap "lifecycle-image" not found in "kpack" namespace
 			Args: []string{
 				"--image", "some-registry.io/repo/image-without-metadata",
 			},
-			ExpectErr: true,
-			ExpectedOutput: `Updating lifecycle image...
-Error: image missing lifecycle metadata
-`,
+			ExpectErr:           true,
+			ExpectedOutput:      "Updating lifecycle image...\n",
+			ExpectedErrorOutput: "Error: image missing lifecycle metadata\n",
 		}.TestK8s(t, cmdFunc)
 	})
 
@@ -115,10 +113,9 @@ Error: image missing lifecycle metadata
 			Args: []string{
 				"--image", "some-registry.io/repo/lifecycle-image",
 			},
-			ExpectErr: true,
-			ExpectedOutput: `Updating lifecycle image...
-Error: failed to get canonical repository: use "kp config canonical-repository" to set
-`,
+			ExpectErr:           true,
+			ExpectedOutput:      "Updating lifecycle image...\n",
+			ExpectedErrorOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
 		}.TestK8s(t, cmdFunc)
 	})
 

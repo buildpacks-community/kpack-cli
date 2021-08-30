@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -27,25 +27,25 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		SourceUploader: fakes.NewFakeSourceUploader(ioutil.Discard, true),
 	}
 
-	img := &v1alpha1.Image{
+	img := &v1alpha2.Image{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "some-image",
 			Namespace: "some-namespace",
 		},
-		Spec: v1alpha1.ImageSpec{
+		Spec: v1alpha2.ImageSpec{
 			Tag: "some-tag",
 			Builder: corev1.ObjectReference{
-				Kind: v1alpha1.ClusterBuilderKind,
+				Kind: v1alpha2.ClusterBuilderKind,
 				Name: "some-ccb",
 			},
 			ServiceAccount: "some-service-account",
-			Source: v1alpha1.SourceConfig{
-				Blob: &v1alpha1.Blob{
+			Source: v1alpha2.SourceConfig{
+				Blob: &v1alpha2.Blob{
 					URL: "some-blob-url",
 				},
 				SubPath: "some-sub-path",
 			},
-			Build: &v1alpha1.ImageBuild{
+			Build: &v1alpha2.ImageBuild{
 				Env: []corev1.EnvVar{
 					{
 						Name:  "foo",

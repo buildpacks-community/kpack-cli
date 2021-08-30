@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -43,7 +43,7 @@ func NewFactory(printer Printer, relocator registry.Relocator, fetcher registry.
 	}
 }
 
-func (f *Factory) MakeStack(keychain authn.Keychain, name, buildImageTag, runImageTag string, kpConfig config.KpConfig) (*v1alpha1.ClusterStack, error) {
+func (f *Factory) MakeStack(keychain authn.Keychain, name, buildImageTag, runImageTag string, kpConfig config.KpConfig) (*v1alpha2.ClusterStack, error) {
 	stackID, err := f.validate(keychain, buildImageTag, runImageTag)
 	if err != nil {
 		return nil, err
@@ -63,28 +63,28 @@ func (f *Factory) MakeStack(keychain authn.Keychain, name, buildImageTag, runIma
 		return nil, err
 	}
 
-	return &v1alpha1.ClusterStack{
+	return &v1alpha2.ClusterStack{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha1.ClusterStackKind,
-			APIVersion: "kpack.io/v1alpha1",
+			Kind:       v1alpha2.ClusterStackKind,
+			APIVersion: "kpack.io/v1alpha2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Annotations: map[string]string{},
 		},
-		Spec: v1alpha1.ClusterStackSpec{
+		Spec: v1alpha2.ClusterStackSpec{
 			Id: stackID,
-			BuildImage: v1alpha1.ClusterStackSpecImage{
+			BuildImage: v1alpha2.ClusterStackSpecImage{
 				Image: relocatedBuildImageRef,
 			},
-			RunImage: v1alpha1.ClusterStackSpecImage{
+			RunImage: v1alpha2.ClusterStackSpecImage{
 				Image: relocatedRunImageRef,
 			},
 		},
 	}, nil
 }
 
-func (f *Factory) UpdateStack(keychain authn.Keychain, stack *v1alpha1.ClusterStack, buildImageTag, runImageTag string, kpConfig config.KpConfig) (bool, error) {
+func (f *Factory) UpdateStack(keychain authn.Keychain, stack *v1alpha2.ClusterStack, buildImageTag, runImageTag string, kpConfig config.KpConfig) (bool, error) {
 	stackID, err := f.validate(keychain, buildImageTag, runImageTag)
 	if err != nil {
 		return false, err
@@ -124,7 +124,7 @@ func (f *Factory) RelocatedBuildImage(keychain authn.Keychain, kpConfig config.K
 func (f *Factory) RelocatedRunImage(keychain authn.Keychain, kpConfig config.KpConfig, tag string) (string, error) {
 	canonicalRepo, err := kpConfig.CanonicalRepository()
 	if err != nil {
-		return "",err
+		return "", err
 	}
 
 	return f.Uploader.UploadedRunImageRef(keychain, tag, canonicalRepo)
@@ -134,7 +134,7 @@ func (f *Factory) validate(keychain authn.Keychain, buildTag, runTag string) (st
 	return f.Uploader.ValidateStackIDs(keychain, buildTag, runTag)
 }
 
-func wasUpdated(stack *v1alpha1.ClusterStack, buildImageRef, runImageRef, stackId string) (bool, error) {
+func wasUpdated(stack *v1alpha2.ClusterStack, buildImageRef, runImageRef, stackId string) (bool, error) {
 	oldBuildDigest, err := getDigest(stack.Status.BuildImage.LatestImage)
 	if err != nil {
 		return false, err

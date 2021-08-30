@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -23,7 +23,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilP
 		namespace string
 		subPath   string
 		factory   image.Factory
-		tlsCfg        registry.TLSConfig
+		tlsCfg    registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -73,7 +73,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 
 			ctx := cmd.Context()
 
-			img, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(ctx, args[0], metav1.GetOptions{})
+			img, err := cs.KpackClient.KpackV1alpha2().Images(cs.Namespace).Get(ctx, args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -117,7 +117,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	return cmd
 }
 
-func patch(ctx context.Context, img *v1alpha1.Image, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (bool, *v1alpha1.Image, error) {
+func patch(ctx context.Context, img *v1alpha2.Image, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (bool, *v1alpha2.Image, error) {
 	if err := ch.PrintStatus("Patching Image..."); err != nil {
 		return false, nil, err
 	}
@@ -129,7 +129,7 @@ func patch(ctx context.Context, img *v1alpha1.Image, factory *image.Factory, ch 
 
 	hasPatch := len(patch) > 0
 	if hasPatch && !ch.IsDryRun() {
-		patchedImage, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Patch(ctx, img.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+		patchedImage, err = cs.KpackClient.KpackV1alpha2().Images(cs.Namespace).Patch(ctx, img.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return hasPatch, nil, err
 		}

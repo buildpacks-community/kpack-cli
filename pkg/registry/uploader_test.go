@@ -56,7 +56,6 @@ func testUploader(t *testing.T, when spec.G, it spec.S) {
 			require.Equal(t, testZipDigest, digest.String())
 		})
 
-
 		it("returns err on path to invalid zip", func() {
 			_, err := uploader.Upload(&registryfakes.FakeKeychain{}, "myregistry.com/blah", "testdata/sample/app")
 			require.EqualError(t, err, "local path must be a directory or zip")

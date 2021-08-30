@@ -7,7 +7,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -54,9 +54,9 @@ type Importer struct {
 
 type relocatedDescriptor struct {
 	lifecycle       *corev1.ConfigMap
-	clusterStores   []*v1alpha1.ClusterStore
-	clusterStacks   []*v1alpha1.ClusterStack
-	clusterBuilders []*v1alpha1.ClusterBuilder
+	clusterStores   []*v1alpha2.ClusterStore
+	clusterStacks   []*v1alpha2.ClusterStack
+	clusterBuilders []*v1alpha2.ClusterBuilder
 }
 
 func NewImporter(printer Printer, k8sClient kubernetes.Interface, client versioned.Interface, fetcher ImageFetcher, relocator ImageRelocator, waiter commands.ResourceWaiter, timestampProvider TimestampProvider) *Importer {
@@ -177,7 +177,7 @@ func (i *Importer) relocateDescriptor(ctx context.Context, keychain authn.Keycha
 		objs = append(objs, updatedLifecycle)
 	}
 
-	clusterstores := make([]*v1alpha1.ClusterStore, 0)
+	clusterstores := make([]*v1alpha2.ClusterStore, 0)
 	for _, clusterStore := range descriptor.ClusterStores {
 		rStore, err := i.constructClusterStore(ctx, keychain, kpConfig, clusterStore)
 		if err != nil {
@@ -189,7 +189,7 @@ func (i *Importer) relocateDescriptor(ctx context.Context, keychain authn.Keycha
 		objs = append(objs, rStore)
 	}
 
-	clusterstacks := make([]*v1alpha1.ClusterStack, 0)
+	clusterstacks := make([]*v1alpha2.ClusterStack, 0)
 	for _, clusterStack := range descriptor.GetClusterStacks() {
 		rStack, err := i.constructClusterStack(keychain, kpConfig, clusterStack)
 		if err != nil {
@@ -201,7 +201,7 @@ func (i *Importer) relocateDescriptor(ctx context.Context, keychain authn.Keycha
 		objs = append(objs, rStack)
 	}
 
-	clusterBuilders := make([]*v1alpha1.ClusterBuilder, 0)
+	clusterBuilders := make([]*v1alpha2.ClusterBuilder, 0)
 	for _, clusterBuilder := range descriptor.GetClusterBuilders() {
 		rBuilder, err := i.constructClusterBuilder(kpConfig, clusterBuilder)
 		if err != nil {
@@ -253,12 +253,12 @@ func (i *Importer) relocateLifecycle(ctx context.Context, keychain authn.Keychai
 	return newConfigMap, nil
 }
 
-func (i *Importer) constructClusterStore(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, store ClusterStore) (*v1alpha1.ClusterStore, error) {
+func (i *Importer) constructClusterStore(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, store ClusterStore) (*v1alpha2.ClusterStore, error) {
 	if err := i.printer.PrintStatus("Importing ClusterStore '%s'...", store.Name); err != nil {
 		return nil, err
 	}
 
-	existingStore, err := i.client.KpackV1alpha1().ClusterStores().Get(ctx, store.Name, metav1.GetOptions{})
+	existingStore, err := i.client.KpackV1alpha2().ClusterStores().Get(ctx, store.Name, metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return nil, err
 	}
@@ -283,7 +283,7 @@ func (i *Importer) constructClusterStore(ctx context.Context, keychain authn.Key
 	return newStore, nil
 }
 
-func (i *Importer) constructClusterStack(keychain authn.Keychain, kpConfig config.KpConfig, stack ClusterStack) (*v1alpha1.ClusterStack, error) {
+func (i *Importer) constructClusterStack(keychain authn.Keychain, kpConfig config.KpConfig, stack ClusterStack) (*v1alpha2.ClusterStack, error) {
 	if err := i.printer.PrintStatus("Importing ClusterStack '%s'...", stack.Name); err != nil {
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func (i *Importer) constructClusterStack(keychain authn.Keychain, kpConfig confi
 	return newStack, nil
 }
 
-func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder ClusterBuilder) (*v1alpha1.ClusterBuilder, error) {
+func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder ClusterBuilder) (*v1alpha2.ClusterBuilder, error) {
 	if err := i.printer.PrintStatus("Importing ClusterBuilder '%s'...", builder.Name); err != nil {
 		return nil, err
 	}
@@ -306,25 +306,25 @@ func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder Clu
 		return nil, errors.Wrap(err, "failed to get canonical repository")
 	}
 
-	newCB := &v1alpha1.ClusterBuilder{
+	newCB := &v1alpha2.ClusterBuilder{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha1.ClusterBuilderKind,
-			APIVersion: "kpack.io/v1alpha1",
+			Kind:       v1alpha2.ClusterBuilderKind,
+			APIVersion: "kpack.io/v1alpha2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        builder.Name,
 			Annotations: map[string]string{},
 		},
-		Spec: v1alpha1.ClusterBuilderSpec{
-			BuilderSpec: v1alpha1.BuilderSpec{
+		Spec: v1alpha2.ClusterBuilderSpec{
+			BuilderSpec: v1alpha2.BuilderSpec{
 				Tag: path.Join(canonicalRepo, builder.Name),
 				Stack: corev1.ObjectReference{
 					Name: builder.ClusterStack,
-					Kind: v1alpha1.ClusterStackKind,
+					Kind: v1alpha2.ClusterStackKind,
 				},
 				Store: corev1.ObjectReference{
 					Name: builder.ClusterStore,
-					Kind: v1alpha1.ClusterStoreKind,
+					Kind: v1alpha2.ClusterStoreKind,
 				},
 				Order: builder.Order,
 			},
@@ -346,15 +346,15 @@ func (i *Importer) updateLifecycleConfigMap(ctx context.Context, updatedLifecycl
 	return err
 }
 
-func (i *Importer) saveClusterStore(ctx context.Context, relocatedStore *v1alpha1.ClusterStore) (int64, error) {
-	existingStore, err := i.client.KpackV1alpha1().ClusterStores().Get(ctx, relocatedStore.Name, metav1.GetOptions{})
+func (i *Importer) saveClusterStore(ctx context.Context, relocatedStore *v1alpha2.ClusterStore) (int64, error) {
+	existingStore, err := i.client.KpackV1alpha2().ClusterStores().Get(ctx, relocatedStore.Name, metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return 0, err
 	}
 
-	var store *v1alpha1.ClusterStore
+	var store *v1alpha2.ClusterStore
 	if k8serrors.IsNotFound(err) {
-		store, err = i.client.KpackV1alpha1().ClusterStores().Create(ctx, relocatedStore, metav1.CreateOptions{})
+		store, err = i.client.KpackV1alpha2().ClusterStores().Create(ctx, relocatedStore, metav1.CreateOptions{})
 		if err != nil {
 			return 0, err
 		}
@@ -362,7 +362,7 @@ func (i *Importer) saveClusterStore(ctx context.Context, relocatedStore *v1alpha
 		updateStore := existingStore.DeepCopy()
 		updateStore.Spec.Sources = createBuildpackageSuperset(updateStore, relocatedStore)
 		updateStore.Annotations = k8s.MergeAnnotations(updateStore.Annotations, relocatedStore.Annotations)
-		store, err = i.client.KpackV1alpha1().ClusterStores().Update(ctx, updateStore, metav1.UpdateOptions{})
+		store, err = i.client.KpackV1alpha2().ClusterStores().Update(ctx, updateStore, metav1.UpdateOptions{})
 		if err != nil {
 			return 0, err
 		}
@@ -375,15 +375,15 @@ func (i *Importer) saveClusterStore(ctx context.Context, relocatedStore *v1alpha
 	return store.Generation, nil
 }
 
-func (i *Importer) saveClusterStack(ctx context.Context, relocatedStack *v1alpha1.ClusterStack) (int64, error) {
-	exstingStack, err := i.client.KpackV1alpha1().ClusterStacks().Get(ctx, relocatedStack.Name, metav1.GetOptions{})
+func (i *Importer) saveClusterStack(ctx context.Context, relocatedStack *v1alpha2.ClusterStack) (int64, error) {
+	exstingStack, err := i.client.KpackV1alpha2().ClusterStacks().Get(ctx, relocatedStack.Name, metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return 0, err
 	}
 
-	var stack *v1alpha1.ClusterStack
+	var stack *v1alpha2.ClusterStack
 	if k8serrors.IsNotFound(err) {
-		stack, err = i.client.KpackV1alpha1().ClusterStacks().Create(ctx, relocatedStack, metav1.CreateOptions{})
+		stack, err = i.client.KpackV1alpha2().ClusterStacks().Create(ctx, relocatedStack, metav1.CreateOptions{})
 		if err != nil {
 			return 0, err
 		}
@@ -391,7 +391,7 @@ func (i *Importer) saveClusterStack(ctx context.Context, relocatedStack *v1alpha
 		updateStack := exstingStack.DeepCopy()
 		updateStack.Spec = relocatedStack.Spec
 		updateStack.Annotations = k8s.MergeAnnotations(updateStack.Annotations, relocatedStack.Annotations)
-		stack, err = i.client.KpackV1alpha1().ClusterStacks().Update(ctx, updateStack, metav1.UpdateOptions{})
+		stack, err = i.client.KpackV1alpha2().ClusterStacks().Update(ctx, updateStack, metav1.UpdateOptions{})
 		if err != nil {
 			return 0, err
 		}
@@ -403,15 +403,15 @@ func (i *Importer) saveClusterStack(ctx context.Context, relocatedStack *v1alpha
 	return stack.Generation, nil
 }
 
-func (i *Importer) saveClusterBuilder(ctx context.Context, storeToGeneration, stackToGeneration map[string]int64, relocatedBuilder *v1alpha1.ClusterBuilder) error {
-	existingBuilder, err := i.client.KpackV1alpha1().ClusterBuilders().Get(ctx, relocatedBuilder.Name, metav1.GetOptions{})
+func (i *Importer) saveClusterBuilder(ctx context.Context, storeToGeneration, stackToGeneration map[string]int64, relocatedBuilder *v1alpha2.ClusterBuilder) error {
+	existingBuilder, err := i.client.KpackV1alpha2().ClusterBuilders().Get(ctx, relocatedBuilder.Name, metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
 
-	var builder *v1alpha1.ClusterBuilder
+	var builder *v1alpha2.ClusterBuilder
 	if k8serrors.IsNotFound(err) {
-		builder, err = i.client.KpackV1alpha1().ClusterBuilders().Create(ctx, relocatedBuilder, metav1.CreateOptions{})
+		builder, err = i.client.KpackV1alpha2().ClusterBuilders().Create(ctx, relocatedBuilder, metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
@@ -419,7 +419,7 @@ func (i *Importer) saveClusterBuilder(ctx context.Context, storeToGeneration, st
 		updateBuilder := existingBuilder.DeepCopy()
 		updateBuilder.Spec = relocatedBuilder.Spec
 		updateBuilder.Annotations = k8s.MergeAnnotations(updateBuilder.Annotations, relocatedBuilder.Annotations)
-		builder, err = i.client.KpackV1alpha1().ClusterBuilders().Update(ctx, updateBuilder, metav1.UpdateOptions{})
+		builder, err = i.client.KpackV1alpha2().ClusterBuilders().Update(ctx, updateBuilder, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
@@ -436,7 +436,7 @@ func buildpackagesForSource(sources []Source) []string {
 	return buildpackages
 }
 
-func createBuildpackageSuperset(firstStore, secondStore *v1alpha1.ClusterStore) []v1alpha1.StoreImage {
+func createBuildpackageSuperset(firstStore, secondStore *v1alpha2.ClusterStore) []v1alpha2.StoreImage {
 	result := firstStore.Spec.Sources
 
 	for _, source := range secondStore.Spec.Sources {
@@ -448,7 +448,7 @@ func createBuildpackageSuperset(firstStore, secondStore *v1alpha1.ClusterStore) 
 	return result
 }
 
-func sourcesContainsSourceImage(sources []v1alpha1.StoreImage, sourceImage v1alpha1.StoreImage) bool {
+func sourcesContainsSourceImage(sources []v1alpha2.StoreImage, sourceImage v1alpha2.StoreImage) bool {
 	for _, source := range sources {
 		if source == sourceImage {
 			return true

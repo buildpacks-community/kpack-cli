@@ -40,7 +40,6 @@ func testCanonicalRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Objects:             []runtime.Object{kpConfig},
 				Args:                []string{},
-				ExpectErr:           false,
 				ExpectedOutput:      "test-repo\n",
 				ExpectedErrorOutput: "",
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -48,10 +47,10 @@ func testCanonicalRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 
 		it("prints an error when canonical-repository field is empty", func() {
 			testhelpers.CommandTest{
-				Objects:        []runtime.Object{},
-				Args:           []string{},
-				ExpectErr:      true,
-				ExpectedOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
+				Objects:             []runtime.Object{},
+				Args:                []string{},
+				ExpectErr:           true,
+				ExpectedErrorOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 	})
@@ -72,7 +71,6 @@ func testCanonicalRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Objects:             []runtime.Object{kpConfig},
 				Args:                []string{"new-repo"},
-				ExpectErr:           false,
 				ExpectedOutput:      "kp-config set\n",
 				ExpectedErrorOutput: "",
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
@@ -96,7 +94,6 @@ func testCanonicalRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 			testhelpers.CommandTest{
 				Objects:             []runtime.Object{},
 				Args:                []string{"new-repo"},
-				ExpectErr:           false,
 				ExpectedOutput:      "kp-config set\n",
 				ExpectedErrorOutput: "",
 				ExpectCreates: []runtime.Object{
