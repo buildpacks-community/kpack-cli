@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -47,7 +48,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			Name: storeName,
 		},
 		Spec: v1alpha2.ClusterStoreSpec{
-			Sources: []v1alpha2.StoreImage{
+			Sources: []corev1alpha1.StoreImage{
 				{
 					Image: image1InStore,
 				},
@@ -57,22 +58,22 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 		},
 		Status: v1alpha2.ClusterStoreStatus{
-			Buildpacks: []v1alpha2.StoreBuildpack{
+			Buildpacks: []corev1alpha1.StoreBuildpack{
 				{
-					BuildpackInfo: v1alpha2.BuildpackInfo{
+					BuildpackInfo: corev1alpha1.BuildpackInfo{
 						Id:      "some-buildpackage",
 						Version: "1.2.3",
 					},
-					StoreImage: v1alpha2.StoreImage{
+					StoreImage: corev1alpha1.StoreImage{
 						Image: image1InStore,
 					},
 				},
 				{
-					BuildpackInfo: v1alpha2.BuildpackInfo{
+					BuildpackInfo: corev1alpha1.BuildpackInfo{
 						Id:      "another-buildpackage",
 						Version: "4.5.6",
 					},
-					StoreImage: v1alpha2.StoreImage{
+					StoreImage: corev1alpha1.StoreImage{
 						Image: image2InStore,
 					},
 				},
@@ -94,7 +95,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 					Object: &v1alpha2.ClusterStore{
 						ObjectMeta: store.ObjectMeta,
 						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []v1alpha2.StoreImage{
+							Sources: []corev1alpha1.StoreImage{
 								{
 									Image: image2InStore,
 								},
@@ -127,7 +128,7 @@ ClusterStore "some-store" updated
 					Object: &v1alpha2.ClusterStore{
 						ObjectMeta: store.ObjectMeta,
 						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []v1alpha2.StoreImage{},
+							Sources: []corev1alpha1.StoreImage{},
 						},
 						Status: store.Status,
 					},
@@ -223,7 +224,7 @@ status:
 						Object: &v1alpha2.ClusterStore{
 							ObjectMeta: store.ObjectMeta,
 							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []v1alpha2.StoreImage{
+								Sources: []corev1alpha1.StoreImage{
 									{
 										Image: image2InStore,
 									},
@@ -257,7 +258,7 @@ Removing buildpackage some-buildpackage@1.2.3
 						Object: &v1alpha2.ClusterStore{
 							ObjectMeta: store.ObjectMeta,
 							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []v1alpha2.StoreImage{
+								Sources: []corev1alpha1.StoreImage{
 									{
 										Image: image2InStore,
 									},

@@ -11,10 +11,10 @@ import (
 	"regexp"
 
 	"github.com/ghodss/yaml"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 )
 
-func ReadOrder(path string) ([]v1alpha2.OrderEntry, error) {
+func ReadOrder(path string) ([]corev1alpha1.OrderEntry, error) {
 	var (
 		file io.ReadCloser
 		err  error
@@ -35,12 +35,12 @@ func ReadOrder(path string) ([]v1alpha2.OrderEntry, error) {
 		return nil, err
 	}
 
-	var order []v1alpha2.OrderEntry
+	var order []corev1alpha1.OrderEntry
 	return order, yaml.Unmarshal(buf, &order)
 }
 
-func CreateOrder(buildpacks []string) []v1alpha2.OrderEntry {
-	group := make([]v1alpha2.BuildpackRef, 0)
+func CreateOrder(buildpacks []string) []corev1alpha1.OrderEntry {
+	group := make([]corev1alpha1.BuildpackRef, 0)
 
 	// this regular expression splits out buildpack id and version
 	var re = regexp.MustCompile(`(?m)^([^@]+)[@]?(.*)`)
@@ -51,18 +51,18 @@ func CreateOrder(buildpacks []string) []v1alpha2.OrderEntry {
 		id := submatch[1]
 		version := submatch[2]
 
-		group = append(group, v1alpha2.BuildpackRef{
-			BuildpackInfo: v1alpha2.BuildpackInfo{
+		group = append(group, corev1alpha1.BuildpackRef{
+			BuildpackInfo: corev1alpha1.BuildpackInfo{
 				Id:      id,
 				Version: version,
 			},
 		})
 	}
 
-	return []v1alpha2.OrderEntry{{Group: group}}
+	return []corev1alpha1.OrderEntry{{Group: group}}
 }
 
-func CreateDetectionOrderRow(ref v1alpha2.BuildpackRef) (string, string) {
+func CreateDetectionOrderRow(ref corev1alpha1.BuildpackRef) (string, string) {
 	data := fmt.Sprintf("  %s", ref.Id)
 	optional := ""
 

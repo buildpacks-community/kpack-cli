@@ -6,7 +6,7 @@ package _import_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
@@ -48,11 +48,11 @@ func testDescriptorV1(t *testing.T, when spec.G, it spec.S) {
 					Name:  "some-ccb",
 					Stack: "some-stack",
 					Store: "some-store",
-					Order: []v1alpha2.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id:      "some-buildpack",
 										Version: "1.2.3",
 									},

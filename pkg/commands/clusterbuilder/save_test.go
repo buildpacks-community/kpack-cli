@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -63,20 +64,20 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 						Name: "some-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []v1alpha2.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha2.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha2.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -166,16 +167,16 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 
 		it("creates a ClusterBuilder with buildpack flags", func() {
 			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project/test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"},{"id":"org.cloudfoundry.go","version":"1.0.1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			builder.Spec.Order = []v1alpha2.OrderEntry{
+			builder.Spec.Order = []corev1alpha1.OrderEntry{
 				{
-					Group: []v1alpha2.BuildpackRef{
+					Group: []corev1alpha1.BuildpackRef{
 						{
-							BuildpackInfo: v1alpha2.BuildpackInfo{
+							BuildpackInfo: corev1alpha1.BuildpackInfo{
 								Id: "org.cloudfoundry.nodejs",
 							},
 						},
 						{
-							BuildpackInfo: v1alpha2.BuildpackInfo{
+							BuildpackInfo: corev1alpha1.BuildpackInfo{
 								Id:      "org.cloudfoundry.go",
 								Version: "1.0.1",
 							},
@@ -250,20 +251,20 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 							Name: "some-store",
 							Kind: v1alpha2.ClusterStoreKind,
 						},
-						Order: []v1alpha2.OrderEntry{
+						Order: []corev1alpha1.OrderEntry{
 							{
-								Group: []v1alpha2.BuildpackRef{
+								Group: []corev1alpha1.BuildpackRef{
 									{
-										BuildpackInfo: v1alpha2.BuildpackInfo{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
 											Id: "org.cloudfoundry.nodejs",
 										},
 									},
 								},
 							},
 							{
-								Group: []v1alpha2.BuildpackRef{
+								Group: []corev1alpha1.BuildpackRef{
 									{
-										BuildpackInfo: v1alpha2.BuildpackInfo{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
 											Id: "org.cloudfoundry.go",
 										},
 									},

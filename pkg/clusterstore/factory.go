@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -69,7 +70,7 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 			return nil, err
 		}
 
-		newStore.Spec.Sources = append(newStore.Spec.Sources, v1alpha2.StoreImage{
+		newStore.Spec.Sources = append(newStore.Spec.Sources, corev1alpha1.StoreImage{
 			Image: uploadedBp,
 		})
 	}
@@ -98,7 +99,7 @@ func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha2.ClusterSto
 			continue
 		}
 
-		store.Spec.Sources = append(store.Spec.Sources, v1alpha2.StoreImage{
+		store.Spec.Sources = append(store.Spec.Sources, corev1alpha1.StoreImage{
 			Image: uploadedBp,
 		})
 

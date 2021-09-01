@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -39,13 +40,13 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 				Name: "some-ccb",
 			},
 			ServiceAccount: "some-service-account",
-			Source: v1alpha2.SourceConfig{
-				Blob: &v1alpha2.Blob{
+			Source: corev1alpha1.SourceConfig{
+				Blob: &corev1alpha1.Blob{
 					URL: "some-blob-url",
 				},
 				SubPath: "some-sub-path",
 			},
-			Build: &v1alpha2.ImageBuild{
+			Build: &corev1alpha1.ImageBuild{
 				Env: []corev1.EnvVar{
 					{
 						Name:  "foo",
@@ -138,12 +139,14 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.CacheSize = "3G"
 			_, patch, err := factory.MakePatch(img)
 			require.NoError(t, err)
-			require.Equal(t, `{"spec":{"cacheSize":"3G"}}`, string(patch))
+			require.Equal(t, `{"spec":{"cache":{"volume":{"size":"3G"}}}}`, string(patch))
 		})
 
 		it("errors if cache size is decreased", func() {
 			cache := resource.MustParse("2G")
-			img.Spec.CacheSize = &cache
+			img.Spec.Cache = &v1alpha2.ImageCacheConfig{
+				Volume: &v1alpha2.ImagePersistentVolumeCache{Size: &cache},
+			}
 			factory.CacheSize = "1G"
 			_, _, err := factory.MakePatch(img)
 			require.EqualError(t, err, "cache size cannot be decreased, current: 2G, requested: 1G")
