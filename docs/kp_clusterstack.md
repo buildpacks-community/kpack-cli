@@ -2,10 +2,6 @@
 
 ClusterStack Commands
 
-### Synopsis
-
-ClusterStack Commands
-
 ### Options
 
 ```

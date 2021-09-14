@@ -3,7 +3,7 @@
 Generate completion script
 
 ### Synopsis
-```
+
 To load completions:
 
 Bash:
@@ -34,7 +34,7 @@ $ kp completion fish | source
 
 # To load completions for each session, execute once:
 $ kp completion fish > ~/.config/fish/completions/kp.fish
-```
+
 
 ```
 kp completion [bash|zsh|fish|powershell]

@@ -2,10 +2,6 @@
 
 Display kp version
 
-### Synopsis
-
-Display kp version
-
 ```
 kp version [flags]
 ```

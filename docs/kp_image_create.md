@@ -51,9 +51,9 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
                                          This flag is provided as a convenience for kp commands that can output Kubernetes
                                          resource with generated container image references. A "kubectl apply -f" of the
                                          resource from --output without image uploads will result in a reconcile failure.
-      --env stringArray                build time environment variables
+  -e, --env stringArray                build time environment variables
       --git string                     git repository url
-      --git-revision string            git revision (default "main")
+      --git-revision string            git revision such as commit, tag, or branch (default "main")
   -h, --help                           help for create
       --local-path string              path to local source code
   -n, --namespace string               kubernetes namespace

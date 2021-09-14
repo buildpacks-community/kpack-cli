@@ -6,10 +6,10 @@ Add buildpackage(s) to cluster store
 
 Upload buildpackage(s) to a specific cluster-scoped buildpack store.
 
-Buildpackages will be uploaded to the canonical repository.
+Buildpackages will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
 
-The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
+The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 
 
 ```

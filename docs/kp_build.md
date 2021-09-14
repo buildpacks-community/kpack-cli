@@ -2,10 +2,6 @@
 
 Build Commands
 
-### Synopsis
-
-Build Commands
-
 ### Options
 
 ```
