@@ -27,8 +27,8 @@ The cluster builder will be created only if it does not exist, otherwise it is p
 A buildpack order must be provided with either the path to an order yaml or via the --buildpack flag.
 Multiple buildpacks provided via the --buildpack flag will be added to the same order group. 
 
-Tag when not specified, defaults to a combination of the canonical repository and specified builder name.
-The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
+Tag when not specified, defaults to a combination of the default repository and specified builder name.
+The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 
 No defaults will be assumed for patches.
 `,

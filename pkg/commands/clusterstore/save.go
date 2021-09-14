@@ -26,11 +26,11 @@ func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilPr
 		Short: "Create or update a cluster store",
 		Long: `Create or update a cluster-scoped buildpack store by providing command line arguments.
 
-Buildpackages will be uploaded to the canonical repository.
+Buildpackages will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
 
 This clusterstore will be created only if it does not exist, otherwise it will be updated.
-The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
+The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
 		Example: `kp clusterstore save my-store -b my-registry.com/my-buildpackage
 kp clusterstore save my-store -b my-registry.com/my-buildpackage -b my-registry.com/my-other-buildpackage

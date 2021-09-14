@@ -49,16 +49,16 @@ func (f *Factory) MakeStack(keychain authn.Keychain, name, buildImageTag, runIma
 		return nil, err
 	}
 
-	canonicalRepo, err := kpConfig.CanonicalRepository()
+	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
 		return nil, err
 	}
 
-	if err := f.Printer.PrintStatus("Uploading to '%s'...", canonicalRepo); err != nil {
+	if err := f.Printer.PrintStatus("Uploading to '%s'...", defaultRepo); err != nil {
 		return nil, err
 	}
 
-	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(keychain, buildImageTag, runImageTag, canonicalRepo)
+	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(keychain, buildImageTag, runImageTag, defaultRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -90,16 +90,16 @@ func (f *Factory) UpdateStack(keychain authn.Keychain, stack *v1alpha2.ClusterSt
 		return false, err
 	}
 
-	canonicalRepo, err := kpConfig.CanonicalRepository()
+	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
 		return false, err
 	}
 
-	if err := f.Printer.PrintStatus("Uploading to '%s'...", canonicalRepo); err != nil {
+	if err := f.Printer.PrintStatus("Uploading to '%s'...", defaultRepo); err != nil {
 		return false, err
 	}
 
-	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(keychain, buildImageTag, runImageTag, canonicalRepo)
+	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(keychain, buildImageTag, runImageTag, defaultRepo)
 	if err != nil {
 		return false, err
 	}
@@ -113,21 +113,21 @@ func (f *Factory) UpdateStack(keychain authn.Keychain, stack *v1alpha2.ClusterSt
 }
 
 func (f *Factory) RelocatedBuildImage(keychain authn.Keychain, kpConfig config.KpConfig, tag string) (string, error) {
-	canonicalRepo, err := kpConfig.CanonicalRepository()
+	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
 		return "", err
 	}
 
-	return f.Uploader.UploadedBuildImageRef(keychain, tag, canonicalRepo)
+	return f.Uploader.UploadedBuildImageRef(keychain, tag, defaultRepo)
 }
 
 func (f *Factory) RelocatedRunImage(keychain authn.Keychain, kpConfig config.KpConfig, tag string) (string, error) {
-	canonicalRepo, err := kpConfig.CanonicalRepository()
+	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
 		return "", err
 	}
 
-	return f.Uploader.UploadedRunImageRef(keychain, tag, canonicalRepo)
+	return f.Uploader.UploadedRunImageRef(keychain, tag, defaultRepo)
 }
 
 func (f *Factory) validate(keychain authn.Keychain, buildTag, runTag string) (string, error) {

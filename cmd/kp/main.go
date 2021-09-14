@@ -240,8 +240,8 @@ func getConfigCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Aliases: []string{"config", "cfg"},
 	}
 	configRootCmd.AddCommand(
-		configcmds.NewCanonicalRepositoryCommand(clientSetProvider),
-		configcmds.NewCanonicalServiceAccountCommand(clientSetProvider),
+		configcmds.NewDefaultRepositoryCommand(clientSetProvider),
+		configcmds.NewDefaultServiceAccountCommand(clientSetProvider),
 	)
 
 	return configRootCmd
