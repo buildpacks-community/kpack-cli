@@ -1,4 +1,4 @@
-package commands
+package rootcommand
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal/kpack/pkg/logs"
 	"github.com/spf13/cobra"
 
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	buildcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/build"
 	buildercmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/builder"
 	clusterbuildercmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuilder"
@@ -23,7 +24,39 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/secret"
 )
 
+var (
+	Version   = "dev"
+	CommitSHA = ""
+)
 
+func GetRootCommand() *cobra.Command {
+	var clientSetProvider k8s.DefaultClientSetProvider
+
+	rootCmd := &cobra.Command{
+		Use: "kp",
+		Long: `kp controls the kpack installation on Kubernetes.
+
+kpack extends Kubernetes and utilizes unprivileged kubernetes primitives to provide 
+builds of OCI images as a platform implementation of Cloud Native Buildpacks (CNB).
+Learn more about kpack @ https://github.com/pivotal/kpack`,
+	}
+	rootCmd.AddCommand(
+		getVersionCommand(),
+		getImageCommand(clientSetProvider),
+		getBuildCommand(clientSetProvider),
+		getSecretCommand(clientSetProvider),
+		getClusterBuilderCommand(clientSetProvider),
+		getBuilderCommand(clientSetProvider),
+		getStackCommand(clientSetProvider),
+		getStoreCommand(clientSetProvider),
+		getLifecycleCommand(clientSetProvider),
+		getImportCommand(clientSetProvider),
+		getConfigCommand(clientSetProvider),
+		getCompletionCommand(),
+	)
+
+	return rootCmd
+}
 
 func getVersionCommand() *cobra.Command {
 	versionCmd := &cobra.Command{
