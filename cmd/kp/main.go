@@ -94,7 +94,7 @@ func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	imageRootCmd := &cobra.Command{
 		Use:     "image",
 		Short:   "Image commands",
-		Aliases: []string{"images", "imgs", "img"},
+		Aliases: []string{"image-resource", "images", "imgs", "img"},
 	}
 	imageRootCmd.AddCommand(
 		imgcmds.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}, newImageWaiter),
