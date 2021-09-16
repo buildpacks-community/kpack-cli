@@ -48,7 +48,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			Namespace: "kpack",
 		},
 		Data: map[string]string{
-			"canonical.repository": "canonical-registry.io/canonical-repo",
+			"default.repository": "default-registry.io/default-repo",
 		},
 	}
 
@@ -61,7 +61,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	updatedLifecycleImageConfig := lifecycleImageConfig.DeepCopy()
-	updatedLifecycleImageConfig.Data["image"] = "canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest"
+	updatedLifecycleImageConfig.Data["image"] = "default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"
 
 	it("errors when lifecycle-image configmap is not found", func() {
 		testhelpers.CommandTest{
@@ -96,7 +96,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 		}.TestK8s(t, cmdFunc)
 	})
 
-	it("errors when canonical.repository key is not found in kp-config configmap", func() {
+	it("errors when default.repository key is not found in kp-config configmap", func() {
 		badKpConfig := &corev1.ConfigMap{
 			ObjectMeta: v1.ObjectMeta{
 				Name:      "kp-config",
@@ -115,7 +115,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			ExpectErr:           true,
 			ExpectedOutput:      "Updating lifecycle image...\n",
-			ExpectedErrorOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
+			ExpectedErrorOutput: "Error: failed to get default repository: use \"kp config default-repository\" to set\n",
 		}.TestK8s(t, cmdFunc)
 	})
 
@@ -134,7 +134,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			},
 			ExpectedOutput: `Updating lifecycle image...
-	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 Updated lifecycle image
 `,
 		}.TestK8s(t, cmdFunc)
@@ -144,7 +144,7 @@ Updated lifecycle image
 		it("can output in yaml format", func() {
 			const resourceYAML = `apiVersion: v1
 data:
-  image: canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest
+  image: default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -168,7 +168,7 @@ metadata:
 				},
 				ExpectedOutput: resourceYAML,
 				ExpectedErrorOutput: `Updating lifecycle image...
-	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
 			}.TestK8s(t, cmdFunc)
 		})
@@ -183,7 +183,7 @@ metadata:
         "creationTimestamp": null
     },
     "data": {
-        "image": "canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest"
+        "image": "default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"
     }
 }
 `
@@ -204,7 +204,7 @@ metadata:
 				},
 				ExpectedOutput: resourceJSON,
 				ExpectedErrorOutput: `Updating lifecycle image...
-	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
 			}.TestK8s(t, cmdFunc)
 		})
@@ -222,7 +222,7 @@ metadata:
 					"--dry-run",
 				},
 				ExpectedOutput: `Updating lifecycle image... (dry run)
-	Skipping 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+	Skipping 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 Updated lifecycle image (dry run)
 `,
 			}.TestK8s(t, cmdFunc)
@@ -232,7 +232,7 @@ Updated lifecycle image (dry run)
 			it("does not update lifecycle-image configmap and prints the resource output", func() {
 				const resourceYAML = `apiVersion: v1
 data:
-  image: canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest
+  image: default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -252,7 +252,7 @@ metadata:
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Updating lifecycle image... (dry run)
-	Skipping 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+	Skipping 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
 				}.TestK8s(t, cmdFunc)
 			})
@@ -271,7 +271,7 @@ metadata:
 					"--dry-run-with-image-upload",
 				},
 				ExpectedOutput: `Updating lifecycle image... (dry run with image upload)
-	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 Updated lifecycle image (dry run with image upload)
 `,
 			}.TestK8s(t, cmdFunc)
@@ -281,7 +281,7 @@ Updated lifecycle image (dry run with image upload)
 			it("does not update lifecycle-image configmap and prints the resource output", func() {
 				const resourceYAML = `apiVersion: v1
 data:
-  image: canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest
+  image: default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -301,7 +301,7 @@ metadata:
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Updating lifecycle image... (dry run with image upload)
-	Uploading 'canonical-registry.io/canonical-repo/lifecycle@sha256:lifecycle-image-digest'
+	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
 				}.TestK8s(t, cmdFunc)
 			})

@@ -232,12 +232,12 @@ func (i *Importer) relocateLifecycle(ctx context.Context, keychain authn.Keychai
 		return nil, err
 	}
 
-	canonicalRepo, err := kpConfig.CanonicalRepository()
+	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get canonical repository")
+		return nil, errors.Wrap(err, "failed to get default repository")
 	}
 
-	relocatedLifecycle, err := i.imageRelocator.Relocate(keychain, lifecycleImage, path.Join(canonicalRepo, "lifecycle"))
+	relocatedLifecycle, err := i.imageRelocator.Relocate(keychain, lifecycleImage, path.Join(defaultRepo, "lifecycle"))
 	if err != nil {
 		return nil, err
 	}
@@ -302,9 +302,9 @@ func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder Clu
 		return nil, err
 	}
 
-	canonicalRepo, err := kpConfig.CanonicalRepository()
+	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get canonical repository")
+		return nil, errors.Wrap(err, "failed to get default repository")
 	}
 
 	newCB := &v1alpha2.ClusterBuilder{
@@ -318,7 +318,7 @@ func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder Clu
 		},
 		Spec: v1alpha2.ClusterBuilderSpec{
 			BuilderSpec: v1alpha2.BuilderSpec{
-				Tag: path.Join(canonicalRepo, builder.Name),
+				Tag: path.Join(defaultRepo, builder.Name),
 				Stack: corev1.ObjectReference{
 					Name: builder.ClusterStack,
 					Kind: v1alpha2.ClusterStackKind,

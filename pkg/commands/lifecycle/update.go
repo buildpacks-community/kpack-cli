@@ -26,10 +26,10 @@ func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 		Short: "Update lifecycle image used by kpack",
 		Long: `Update lifecycle image used by kpack
 
-The Lifecycle image will be uploaded to the canonical repository.
+The Lifecycle image will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
 
-The canonical repository is read from the "canonical.repository" key of the "kp-config" ConfigMap within "kpack" namespace.
+The default repository is read from the "default.repository" key of the "kp-config" ConfigMap within "kpack" namespace.
 `,
 		Example:      "kp lifecycle update --image my-registry.com/lifecycle",
 		Args:         commands.ExactArgsWithUsage(0),

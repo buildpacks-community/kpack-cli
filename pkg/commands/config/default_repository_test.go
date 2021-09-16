@@ -15,25 +15,25 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
-func TestCanonicalRepositoryCommand(t *testing.T) {
-	spec.Run(t, "TestCanonicalRepositoryCommand", testCanonicalRepositoryCommand)
+func TestDefaultRepositoryCommand(t *testing.T) {
+	spec.Run(t, "TestDefaultRepositoryCommand", testDefaultRepositoryCommand)
 }
 
-func testCanonicalRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
+func testDefaultRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, _ *kpackfakes.Clientset) *cobra.Command {
-		return NewCanonicalRepositoryCommand(testhelpers.GetFakeClusterProvider(k8sClientSet, nil))
+		return NewDefaultRepositoryCommand(testhelpers.GetFakeClusterProvider(k8sClientSet, nil))
 	}
 
 	when("running command without any args", func() {
-		it("prints the current canonical repository value when it is not empty", func() {
+		it("prints the current default repository value when it is not empty", func() {
 			kpConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kp-config",
 					Namespace: "kpack",
 				},
 				Data: map[string]string{
-					"canonical.repository":                "test-repo",
-					"canonical.repository.serviceaccount": "default",
+					"default.repository":                "test-repo",
+					"default.repository.serviceaccount": "default",
 				},
 			}
 
@@ -45,17 +45,17 @@ func testCanonicalRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("prints an error when canonical-repository field is empty", func() {
+		it("prints an error when default-repository field is empty", func() {
 			testhelpers.CommandTest{
 				Objects:             []runtime.Object{},
 				Args:                []string{},
 				ExpectErr:           true,
-				ExpectedErrorOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
+				ExpectedErrorOutput: "Error: failed to get default repository: use \"kp config default-repository\" to set\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 	})
 
-	when("setting the canonical repository", func() {
+	when("setting the default repository", func() {
 		it("updates the existing config map if it exists", func() {
 			kpConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -63,8 +63,8 @@ func testCanonicalRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 					Namespace: "kpack",
 				},
 				Data: map[string]string{
-					"canonical.repository":                "test-repo",
-					"canonical.repository.serviceaccount": "default",
+					"default.repository":                "test-repo",
+					"default.repository.serviceaccount": "default",
 				},
 			}
 
@@ -81,8 +81,8 @@ func testCanonicalRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 								Namespace: "kpack",
 							},
 							Data: map[string]string{
-								"canonical.repository":                "new-repo",
-								"canonical.repository.serviceaccount": "default",
+								"default.repository":                "new-repo",
+								"default.repository.serviceaccount": "default",
 							},
 						},
 					},
@@ -103,9 +103,9 @@ func testCanonicalRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 							Namespace: "kpack",
 						},
 						Data: map[string]string{
-							"canonical.repository":                          "new-repo",
-							"canonical.repository.serviceaccount":           "",
-							"canonical.repository.serviceaccount.namespace": "",
+							"default.repository":                          "new-repo",
+							"default.repository.serviceaccount":           "",
+							"default.repository.serviceaccount.namespace": "",
 						},
 					},
 				},

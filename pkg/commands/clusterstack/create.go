@@ -30,11 +30,11 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 		Short: "Create a cluster stack",
 		Long: `Create a cluster-scoped stack by providing command line arguments.
 
-The run and build images will be uploaded to the canonical repository.
+The run and build images will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
 Additionally, your cluster must have read access to the registry.
 
-The canonical repository is read from the "canonical.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
+The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
 		Example: `kp clusterstack create my-stack --build-image my-registry.com/build --run-image my-registry.com/run
 kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,

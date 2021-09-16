@@ -2,10 +2,6 @@
 
 Lifecycle Commands
 
-### Synopsis
-
-Lifecycle Commands
-
 ### Options
 
 ```

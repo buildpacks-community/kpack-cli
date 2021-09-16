@@ -50,7 +50,7 @@ func UpdateImage(ctx context.Context, keychain authn.Keychain, srcImgLocation st
 		return cm, err
 	}
 
-	relocatedImgTag, err := relocateImageToCanonicalRepo(ctx, keychain, img, cfg)
+	relocatedImgTag, err := relocateImageToDefaultRepo(ctx, keychain, img, cfg)
 	if err != nil {
 		return cm, err
 	}
@@ -79,14 +79,14 @@ func validateImage(img ggcrv1.Image) error {
 	return nil
 }
 
-func relocateImageToCanonicalRepo(ctx context.Context, keychain authn.Keychain, img ggcrv1.Image, cfg ImageUpdaterConfig) (string, error) {
+func relocateImageToDefaultRepo(ctx context.Context, keychain authn.Keychain, img ggcrv1.Image, cfg ImageUpdaterConfig) (string, error) {
 	kpConfig := config.NewKpConfigProvider(cfg.ClientSet).GetKpConfig(ctx)
 
-	canonicalRepo, err := kpConfig.CanonicalRepository()
+	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
 		return "", err
 	}
 
-	dstImgLocation := path.Join(canonicalRepo, lifecycleImageName)
+	dstImgLocation := path.Join(defaultRepo, lifecycleImageName)
 	return cfg.ImgRelocator.Relocate(keychain, img, dstImgLocation)
 }

@@ -43,8 +43,8 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 				Namespace: "kpack",
 			},
 			Data: map[string]string{
-				"canonical.repository":                "canonical-registry.io/canonical-repo",
-				"canonical.repository.serviceaccount": "some-serviceaccount",
+				"default.repository":                "default-registry.io/default-repo",
+				"default.repository.serviceaccount": "some-serviceaccount",
 			},
 		}
 	)
@@ -67,13 +67,13 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "store-name",
 				Annotations: map[string]string{
-					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}`,
+					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest"},{"image":"default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}`,
 				},
 			},
 			Spec: v1alpha2.ClusterStoreSpec{
 				Sources: []corev1alpha1.StoreImage{
-					{Image: "canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},
-					{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
+					{Image: "default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest"},
+					{Image: "default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
 				},
 			},
 		}
@@ -101,8 +101,8 @@ func testClusterStoreSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--registry-verify-certs",
 				},
 				ExpectedOutput: `Creating ClusterStore...
-	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Uploading 'default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest'
+	Uploading 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 ClusterStore "store-name" created
 `,
 				ExpectCreates: []runtime.Object{
@@ -112,7 +112,7 @@ ClusterStore "store-name" created
 			require.Len(t, fakeWaiter.WaitCalls, 1)
 		})
 
-		it("fails when canonical.repository key is not found in kp-config configmap", func() {
+		it("fails when default.repository key is not found in kp-config configmap", func() {
 			badConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kp-config",
@@ -132,7 +132,7 @@ ClusterStore "store-name" created
 				},
 				ExpectErr:           true,
 				ExpectedOutput:      "Creating ClusterStore...\n",
-				ExpectedErrorOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
+				ExpectedErrorOutput: "Error: failed to get default repository: use \"kp config default-repository\" to set\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
@@ -156,13 +156,13 @@ ClusterStore "store-name" created
 kind: ClusterStore
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest"},{"image":"default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
   creationTimestamp: null
   name: store-name
 spec:
   sources:
-  - image: canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest
-  - image: canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
+  - image: default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest
+  - image: default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
 status: {}
 `
 
@@ -178,8 +178,8 @@ status: {}
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Creating ClusterStore...
-	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Uploading 'default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest'
+	Uploading 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 `,
 					ExpectCreates: []runtime.Object{
 						newStore,
@@ -195,16 +195,16 @@ status: {}
         "name": "store-name",
         "creationTimestamp": null,
         "annotations": {
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterStore\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"store-name\",\"creationTimestamp\":null},\"spec\":{\"sources\":[{\"image\":\"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest\"},{\"image\":\"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf\"}]},\"status\":{}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterStore\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"store-name\",\"creationTimestamp\":null},\"spec\":{\"sources\":[{\"image\":\"default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest\"},{\"image\":\"default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf\"}]},\"status\":{}}"
         }
     },
     "spec": {
         "sources": [
             {
-                "image": "canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"
+                "image": "default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest"
             },
             {
-                "image": "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
+                "image": "default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
             }
         ]
     },
@@ -224,8 +224,8 @@ status: {}
 					},
 					ExpectedOutput: resourceJSON,
 					ExpectedErrorOutput: `Creating ClusterStore...
-	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Uploading 'default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest'
+	Uploading 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 `,
 					ExpectCreates: []runtime.Object{
 						newStore,
@@ -247,8 +247,8 @@ status: {}
 						"--dry-run",
 					},
 					ExpectedOutput: `Creating ClusterStore... (dry run)
-	Skipping 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
-	Skipping 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Skipping 'default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest'
+	Skipping 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 ClusterStore "store-name" created (dry run)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -261,13 +261,13 @@ ClusterStore "store-name" created (dry run)
 kind: ClusterStore
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest"},{"image":"default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
   creationTimestamp: null
   name: store-name
 spec:
   sources:
-  - image: canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest
-  - image: canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
+  - image: default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest
+  - image: default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
 status: {}
 `
 
@@ -284,8 +284,8 @@ status: {}
 						},
 						ExpectedOutput: resourceYAML,
 						ExpectedErrorOutput: `Creating ClusterStore... (dry run)
-	Skipping 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
-	Skipping 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Skipping 'default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest'
+	Skipping 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})
@@ -305,8 +305,8 @@ status: {}
 						"--dry-run-with-image-upload",
 					},
 					ExpectedOutput: `Creating ClusterStore... (dry run with image upload)
-	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Uploading 'default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest'
+	Uploading 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 ClusterStore "store-name" created (dry run with image upload)
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -318,13 +318,13 @@ ClusterStore "store-name" created (dry run with image upload)
 kind: ClusterStore
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest"},{"image":"canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest"},{"image":"default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]},"status":{}}'
   creationTimestamp: null
   name: store-name
 spec:
   sources:
-  - image: canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest
-  - image: canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
+  - image: default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest
+  - image: default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
 status: {}
 `
 
@@ -341,8 +341,8 @@ status: {}
 						},
 						ExpectedOutput: resourceYAML,
 						ExpectedErrorOutput: `Creating ClusterStore... (dry run with image upload)
-	Uploading 'canonical-registry.io/canonical-repo/buildpack-id@sha256:buildpack-digest'
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Uploading 'default-registry.io/default-repo/buildpack-id@sha256:buildpack-digest'
+	Uploading 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
 				})
@@ -357,7 +357,7 @@ status: {}
 			},
 			Spec: v1alpha2.ClusterStoreSpec{
 				Sources: []corev1alpha1.StoreImage{
-					{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
+					{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 				},
 			},
 		}
@@ -366,7 +366,7 @@ status: {}
 			registryfakes.BuildpackImgInfo{
 				Id: "old-buildpack-id",
 				ImageInfo: registryfakes.ImageInfo{
-					Ref:    "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
+					Ref:    "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest",
 					Digest: "old-buildpack-digest",
 				},
 			},
@@ -398,18 +398,18 @@ status: {}
 							ObjectMeta: existingStore.ObjectMeta,
 							Spec: v1alpha2.ClusterStoreSpec{
 								Sources: []corev1alpha1.StoreImage{
-									{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
-									{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
-									{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
+									{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
+									{Image: "default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest"},
+									{Image: "default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
 								},
 							},
 						},
 					},
 				},
 				ExpectedOutput: `Adding to ClusterStore...
-	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Uploading 'default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Uploading 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 ClusterStore "store-name" updated
 `,
@@ -426,9 +426,9 @@ metadata:
   name: store-name
 spec:
   sources:
-  - image: canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest
-  - image: canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest
-  - image: canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
+  - image: default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest
+  - image: default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest
+  - image: default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
 status: {}
 `
 
@@ -449,9 +449,9 @@ status: {}
 								ObjectMeta: existingStore.ObjectMeta,
 								Spec: v1alpha2.ClusterStoreSpec{
 									Sources: []corev1alpha1.StoreImage{
-										{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
-										{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
-										{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
+										{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
+										{Image: "default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest"},
+										{Image: "default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
 									},
 								},
 							},
@@ -459,9 +459,9 @@ status: {}
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Adding to ClusterStore...
-	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Uploading 'default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Uploading 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -478,13 +478,13 @@ status: {}
     "spec": {
         "sources": [
             {
-                "image": "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"
+                "image": "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"
             },
             {
-                "image": "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"
+                "image": "default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest"
             },
             {
-                "image": "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
+                "image": "default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
             }
         ]
     },
@@ -509,9 +509,9 @@ status: {}
 								ObjectMeta: existingStore.ObjectMeta,
 								Spec: v1alpha2.ClusterStoreSpec{
 									Sources: []corev1alpha1.StoreImage{
-										{Image: "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest"},
-										{Image: "canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest"},
-										{Image: "canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
+										{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
+										{Image: "default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest"},
+										{Image: "default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
 									},
 								},
 							},
@@ -519,9 +519,9 @@ status: {}
 					},
 					ExpectedOutput: resourceJSON,
 					ExpectedErrorOutput: `Adding to ClusterStore...
-	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Uploading 'default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Uploading 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
@@ -536,7 +536,7 @@ metadata:
   name: store-name
 spec:
   sources:
-  - image: canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest
+  - image: default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest
 status: {}
 `
 
@@ -547,11 +547,11 @@ status: {}
 						},
 						Args: []string{
 							"store-name",
-							"-b", "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
+							"-b", "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest",
 							"--output", "yaml",
 						},
 						ExpectedErrorOutput: `Adding to ClusterStore...
-	Uploading 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
+	Uploading 'default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest'
 	Buildpackage already exists in the store
 `,
 						ExpectedOutput: resourceYAML,
@@ -574,9 +574,9 @@ status: {}
 						"--dry-run",
 					},
 					ExpectedOutput: `Adding to ClusterStore... (dry run)
-	Skipping 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Skipping 'default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
-	Skipping 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Skipping 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 ClusterStore "store-name" updated (dry run)
 `,
@@ -593,11 +593,11 @@ ClusterStore "store-name" updated (dry run)
 						},
 						Args: []string{
 							"store-name",
-							"-b", "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
+							"-b", "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest",
 							"--dry-run",
 						},
 						ExpectedOutput: `Adding to ClusterStore... (dry run)
-	Skipping 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
+	Skipping 'default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest'
 	Buildpackage already exists in the store
 ClusterStore "store-name" updated (dry run)
 `,
@@ -614,9 +614,9 @@ metadata:
   name: store-name
 spec:
   sources:
-  - image: canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest
-  - image: canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest
-  - image: canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
+  - image: default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest
+  - image: default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest
+  - image: default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
 status: {}
 `
 
@@ -634,9 +634,9 @@ status: {}
 						},
 						ExpectedOutput: resourceYAML,
 						ExpectedErrorOutput: `Adding to ClusterStore... (dry run)
-	Skipping 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Skipping 'default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
-	Skipping 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Skipping 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 `,
 					}.TestK8sAndKpack(t, cmdFunc)
@@ -658,9 +658,9 @@ status: {}
 						"--dry-run-with-image-upload",
 					},
 					ExpectedOutput: `Adding to ClusterStore... (dry run with image upload)
-	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Uploading 'default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Uploading 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 ClusterStore "store-name" updated (dry run with image upload)
 `,
@@ -676,11 +676,11 @@ ClusterStore "store-name" updated (dry run with image upload)
 						},
 						Args: []string{
 							"store-name",
-							"-b", "canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest",
+							"-b", "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest",
 							"--dry-run-with-image-upload",
 						},
 						ExpectedOutput: `Adding to ClusterStore... (dry run with image upload)
-	Uploading 'canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest'
+	Uploading 'default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest'
 	Buildpackage already exists in the store
 ClusterStore "store-name" updated (dry run with image upload)
 `,
@@ -697,9 +697,9 @@ metadata:
   name: store-name
 spec:
   sources:
-  - image: canonical-registry.io/canonical-repo/old-buildpack-id@sha256:old-buildpack-digest
-  - image: canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest
-  - image: canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
+  - image: default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest
+  - image: default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest
+  - image: default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf
 status: {}
 `
 
@@ -717,9 +717,9 @@ status: {}
 						},
 						ExpectedOutput: resourceYAML,
 						ExpectedErrorOutput: `Adding to ClusterStore... (dry run with image upload)
-	Uploading 'canonical-registry.io/canonical-repo/new-buildpack-id@sha256:new-buildpack-digest'
+	Uploading 'default-registry.io/default-repo/new-buildpack-id@sha256:new-buildpack-digest'
 	Added Buildpackage
-	Uploading 'canonical-registry.io/canonical-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
+	Uploading 'default-registry.io/default-repo/sample_buildpackage@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf'
 	Added Buildpackage
 `,
 					}.TestK8sAndKpack(t, cmdFunc)

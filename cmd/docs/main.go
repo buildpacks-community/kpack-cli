@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/spf13/cobra/doc"
+
 	"github.com/vmware-tanzu/kpack-cli/pkg/rootcommand"
 )
 
@@ -15,7 +17,9 @@ func main() {
 	log.SetOutput(ioutil.Discard)
 
 	cmd := rootcommand.GetRootCommand()
-	err := cmd.Execute()
+
+	cmd.DisableAutoGenTag = true
+	err := doc.GenMarkdownTree(cmd, "./docs")
 	if err != nil {
 		os.Exit(1)
 	}

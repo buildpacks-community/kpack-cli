@@ -37,8 +37,8 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 				Namespace: "kpack",
 			},
 			Data: map[string]string{
-				"canonical.repository":                "some-registry/some-project",
-				"canonical.repository.serviceaccount": "some-serviceaccount",
+				"default.repository":                "some-registry/some-project",
+				"default.repository.serviceaccount": "some-serviceaccount",
 			},
 		}
 
@@ -146,7 +146,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("creates a ClusterBuilder with the canonical tag when tag is not specified", func() {
+		it("creates a ClusterBuilder with the default tag when tag is not specified", func() {
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
 					config,
@@ -220,7 +220,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("uses default service account when canonical.repository.serviceaccount key is not found in kp-config configmap", func() {
+		it("uses default service account when default.repository.serviceaccount key is not found in kp-config configmap", func() {
 			badConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kp-config",
@@ -295,14 +295,14 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("fails when tag is not specified and canonical.repository key is not found in kp-config configmap", func() {
+		it("fails when tag is not specified and default.repository key is not found in kp-config configmap", func() {
 			badConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kp-config",
 					Namespace: "kpack",
 				},
 				Data: map[string]string{
-					"canonical.repository.serviceaccount": "some-serviceaccount",
+					"default.repository.serviceaccount": "some-serviceaccount",
 				},
 			}
 
@@ -317,7 +317,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 					"--order", "./testdata/order.yaml",
 				},
 				ExpectErr:           true,
-				ExpectedErrorOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
+				ExpectedErrorOutput: "Error: failed to get default repository: use \"kp config default-repository\" to set\n",
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 

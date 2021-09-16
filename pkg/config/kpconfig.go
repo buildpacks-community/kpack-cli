@@ -15,29 +15,29 @@ import (
 const (
 	kpNamespace                         = "kpack"
 	kpConfigMapName                     = "kp-config"
-	canonicalRepositoryKey              = "canonical.repository"
-	canonicalServiceAccountNameKey      = "canonical.repository.serviceaccount"
-	canonicalServiceAccountNamespaceKey = "canonical.repository.serviceaccount.namespace"
+	defaultRepositoryKey              = "default.repository"
+	defaultServiceAccountNameKey      = "default.repository.serviceaccount"
+	defaultServiceAccountNamespaceKey = "default.repository.serviceaccount.namespace"
 )
 
 type KpConfig struct {
-	canonicalRepository string
+	defaultRepository string
 	serviceAccount      corev1.ObjectReference
 }
 
-func NewKpConfig(canonicalRepository string, serviceAccount corev1.ObjectReference) KpConfig {
+func NewKpConfig(defaultRepository string, serviceAccount corev1.ObjectReference) KpConfig {
 	return KpConfig{
-		canonicalRepository: canonicalRepository,
+		defaultRepository: defaultRepository,
 		serviceAccount:      serviceAccount,
 	}
 }
 
-func (c KpConfig) CanonicalRepository() (string, error) {
-	if c.canonicalRepository == "" {
-		return "", errors.New("failed to get canonical repository: use \"kp config canonical-repository\" to set")
+func (c KpConfig) DefaultRepository() (string, error) {
+	if c.defaultRepository == "" {
+		return "", errors.New("failed to get default repository: use \"kp config default-repository\" to set")
 	}
 
-	return c.canonicalRepository, nil
+	return c.defaultRepository, nil
 }
 
 func (c KpConfig) ServiceAccount() corev1.ObjectReference {
@@ -62,14 +62,14 @@ func (d KpConfigProvider) GetKpConfig(ctx context.Context) KpConfig {
 		return KpConfig{}
 	}
 
-	serviceAccountName := kpConfig.Data[canonicalServiceAccountNameKey]
-	serviceAccountNamespace, ok := kpConfig.Data[canonicalServiceAccountNamespaceKey]
+	serviceAccountName := kpConfig.Data[defaultServiceAccountNameKey]
+	serviceAccountNamespace, ok := kpConfig.Data[defaultServiceAccountNamespaceKey]
 	if !ok && serviceAccountName != "" {
 		serviceAccountNamespace = kpNamespace
 	}
 
 	return KpConfig{
-		canonicalRepository: kpConfig.Data[canonicalRepositoryKey],
+		defaultRepository: kpConfig.Data[defaultRepositoryKey],
 		serviceAccount: corev1.ObjectReference{
 			Name:      serviceAccountName,
 			Namespace: serviceAccountNamespace,
@@ -77,7 +77,7 @@ func (d KpConfigProvider) GetKpConfig(ctx context.Context) KpConfig {
 	}
 }
 
-func (d KpConfigProvider) SetCanonicalRepository(ctx context.Context, canonicalRepository string) error {
+func (d KpConfigProvider) SetDefaultRepository(ctx context.Context, defaultRepository string) error {
 	existingKpConfig, err := d.getKpConfigMap(ctx)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
@@ -85,14 +85,14 @@ func (d KpConfigProvider) SetCanonicalRepository(ctx context.Context, canonicalR
 
 	if k8serrors.IsNotFound(err) {
 		return createKpConfigMap(ctx, d.cs.K8sClient, KpConfig{
-			canonicalRepository: canonicalRepository,
+			defaultRepository: defaultRepository,
 		})
 	}
 
-	return updateKpConfigMap(ctx, d.cs.K8sClient, existingKpConfig, KpConfig{canonicalRepository: canonicalRepository})
+	return updateKpConfigMap(ctx, d.cs.K8sClient, existingKpConfig, KpConfig{defaultRepository: defaultRepository})
 }
 
-func (d KpConfigProvider) SetCanonicalServiceAccount(ctx context.Context, serviceAccount corev1.ObjectReference) error {
+func (d KpConfigProvider) SetDefaultServiceAccount(ctx context.Context, serviceAccount corev1.ObjectReference) error {
 	existingKpConfig, err := d.getKpConfigMap(ctx)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
@@ -118,9 +118,9 @@ func configMapFromKpConfig(config KpConfig) *corev1.ConfigMap {
 			Namespace: kpNamespace,
 		},
 		Data: map[string]string{
-			canonicalRepositoryKey:              config.canonicalRepository,
-			canonicalServiceAccountNameKey:      config.serviceAccount.Name,
-			canonicalServiceAccountNamespaceKey: config.serviceAccount.Namespace,
+			defaultRepositoryKey:              config.defaultRepository,
+			defaultServiceAccountNameKey:      config.serviceAccount.Name,
+			defaultServiceAccountNamespaceKey: config.serviceAccount.Namespace,
 		},
 	}
 }
@@ -137,16 +137,16 @@ func createKpConfigMap(ctx context.Context, client kubernetes.Interface, config 
 func updateKpConfigMap(ctx context.Context, client kubernetes.Interface, existingConfig *corev1.ConfigMap, newConfig KpConfig) error {
 	updatedConfig := existingConfig.DeepCopy()
 
-	if newConfig.canonicalRepository != "" {
-		updatedConfig.Data[canonicalRepositoryKey] = newConfig.canonicalRepository
+	if newConfig.defaultRepository != "" {
+		updatedConfig.Data[defaultRepositoryKey] = newConfig.defaultRepository
 	}
 
 	if newConfig.serviceAccount.Name != "" {
-		updatedConfig.Data[canonicalServiceAccountNameKey] = newConfig.serviceAccount.Name
+		updatedConfig.Data[defaultServiceAccountNameKey] = newConfig.serviceAccount.Name
 	}
 
 	if newConfig.serviceAccount.Namespace != "" {
-		updatedConfig.Data[canonicalServiceAccountNamespaceKey] = newConfig.serviceAccount.Namespace
+		updatedConfig.Data[defaultServiceAccountNamespaceKey] = newConfig.serviceAccount.Namespace
 	}
 
 	_, err := client.CoreV1().ConfigMaps(kpNamespace).Update(ctx, updatedConfig, metav1.UpdateOptions{})
