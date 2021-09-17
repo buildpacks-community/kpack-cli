@@ -2,7 +2,7 @@ package _import
 
 import (
 	"context"
-	"path"
+	"fmt"
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -237,7 +237,7 @@ func (i *Importer) relocateLifecycle(ctx context.Context, keychain authn.Keychai
 		return nil, errors.Wrap(err, "failed to get default repository")
 	}
 
-	relocatedLifecycle, err := i.imageRelocator.Relocate(keychain, lifecycleImage, path.Join(defaultRepo, "lifecycle"))
+	relocatedLifecycle, err := i.imageRelocator.Relocate(keychain, lifecycleImage, defaultRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +318,7 @@ func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder Clu
 		},
 		Spec: v1alpha2.ClusterBuilderSpec{
 			BuilderSpec: v1alpha2.BuilderSpec{
-				Tag: path.Join(defaultRepo, builder.Name),
+				Tag: fmt.Sprintf("%s:clusterbuilder-%s", defaultRepo, builder.Name),
 				Stack: corev1.ObjectReference{
 					Name: builder.ClusterStack,
 					Kind: v1alpha2.ClusterStackKind,

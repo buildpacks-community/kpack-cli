@@ -19,8 +19,6 @@ import (
 type Uploader interface {
 	UploadStackImages(keychain authn.Keychain, buildImageTag, runImageTag, dest string) (string, string, error)
 	ValidateStackIDs(keychain authn.Keychain, buildImageTag, runImageTag string) (string, error)
-	UploadedBuildImageRef(keychain authn.Keychain, imageTag, dest string) (string, error)
-	UploadedRunImageRef(keychain authn.Keychain, imageTag, dest string) (string, error)
 }
 
 type Printer interface {
@@ -110,24 +108,6 @@ func (f *Factory) UpdateStack(keychain authn.Keychain, stack *v1alpha2.ClusterSt
 		return false, f.Printer.Printlnf("Build and Run images already exist in stack")
 	}
 	return true, nil
-}
-
-func (f *Factory) RelocatedBuildImage(keychain authn.Keychain, kpConfig config.KpConfig, tag string) (string, error) {
-	defaultRepo, err := kpConfig.DefaultRepository()
-	if err != nil {
-		return "", err
-	}
-
-	return f.Uploader.UploadedBuildImageRef(keychain, tag, defaultRepo)
-}
-
-func (f *Factory) RelocatedRunImage(keychain authn.Keychain, kpConfig config.KpConfig, tag string) (string, error) {
-	defaultRepo, err := kpConfig.DefaultRepository()
-	if err != nil {
-		return "", err
-	}
-
-	return f.Uploader.UploadedRunImageRef(keychain, tag, defaultRepo)
 }
 
 func (f *Factory) validate(keychain authn.Keychain, buildTag, runTag string) (string, error) {

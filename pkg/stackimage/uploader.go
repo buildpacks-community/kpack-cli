@@ -4,9 +4,6 @@
 package stackimage
 
 import (
-	"fmt"
-	"path"
-
 	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
@@ -14,8 +11,6 @@ import (
 
 const (
 	IdLabel        = "io.buildpacks.stack.id"
-	RunImageName   = "run"
-	BuildImageName = "build"
 )
 
 type Relocator interface {
@@ -42,12 +37,12 @@ func (u *Uploader) UploadStackImages(keychain authn.Keychain, buildImageTag, run
 		return "", "", err
 	}
 
-	relocatedBuildImageRef, err := u.Relocator.Relocate(keychain, buildImage, path.Join(dest, BuildImageName))
+	relocatedBuildImageRef, err := u.Relocator.Relocate(keychain, buildImage, dest)
 	if err != nil {
 		return "", "", err
 	}
 
-	relocatedRunImageRef, err := u.Relocator.Relocate(keychain, runImage, path.Join(dest, RunImageName))
+	relocatedRunImageRef, err := u.Relocator.Relocate(keychain, runImage, dest)
 	if err != nil {
 		return "", "", err
 	}
@@ -81,32 +76,6 @@ func (u *Uploader) ValidateStackIDs(keychain authn.Keychain, buildImageTag, runI
 	}
 
 	return buildStackId, nil
-}
-
-func (u *Uploader) UploadedBuildImageRef(keychain authn.Keychain, imageTag, dest string) (string, error) {
-	image, err := u.Fetcher.Fetch(keychain, imageTag)
-	if err != nil {
-		return "", err
-	}
-
-	digest, err := image.Digest()
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s@%s", path.Join(dest, BuildImageName), digest.String()), nil
-}
-
-func (u *Uploader) UploadedRunImageRef(keychain authn.Keychain, imageTag, dest string) (string, error) {
-	image, err := u.Fetcher.Fetch(keychain, imageTag)
-	if err != nil {
-		return "", err
-	}
-
-	digest, err := image.Digest()
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s@%s", path.Join(dest, RunImageName), digest.String()), nil
 }
 
 func getStackId(img v1.Image) (string, error) {

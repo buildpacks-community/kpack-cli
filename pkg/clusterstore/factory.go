@@ -20,7 +20,6 @@ import (
 
 type BuildpackageUploader interface {
 	UploadBuildpackage(keychain authn.Keychain, buildPackage, repository string) (string, error)
-	UploadedBuildpackageRef(keychain authn.Keychain, buildPackage, repository string) (string, error)
 }
 
 type Printer interface {
@@ -111,15 +110,6 @@ func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha2.ClusterSto
 	}
 
 	return store, storeUpdated, nil
-}
-
-func (f *Factory) RelocatedBuildpackage(keychain authn.Keychain, kpConfig config.KpConfig, buildPackage string) (string, error) {
-	defaultRepo, err := kpConfig.DefaultRepository()
-	if err != nil {
-		return "", err
-	}
-
-	return f.Uploader.UploadedBuildpackageRef(keychain, buildPackage, defaultRepo)
 }
 
 func (f *Factory) validate(buildpackages []string) error {
