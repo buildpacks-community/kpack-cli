@@ -14,6 +14,7 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/build"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/kpack"
 )
 
 func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
@@ -37,13 +38,17 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			opts := metav1.ListOptions{}
+			kpackClient, err := kpack.NewKpackClient(cs.KpackClient)
+			if err != nil {
+				return err
+			}
 
+			opts := metav1.ListOptions{}
 			if len(args) > 0 {
 				opts.LabelSelector = v1alpha2.ImageLabel + "=" + args[0]
 			}
 
-			buildList, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).List(cmd.Context(), opts)
+			buildList, err := kpackClient.ListBuilds(cmd.Context(), cs.Namespace, opts)
 			if err != nil {
 				return err
 			}

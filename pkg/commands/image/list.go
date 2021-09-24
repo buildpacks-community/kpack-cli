@@ -14,6 +14,7 @@ import (
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/kpack"
 )
 
 func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
@@ -39,15 +40,19 @@ kp image list --filter ready=true --filter latest-reason=commit,trigger`,
 				return err
 			}
 
-			var imagesNamespace string
+			kpackClient, err := kpack.NewKpackClient(cs.KpackClient)
+			if err != nil {
+				return err
+			}
 
+			var imagesNamespace string
 			if allNamespaces {
 				imagesNamespace = ""
 			} else {
 				imagesNamespace = cs.Namespace
 			}
 
-			imageList, err := cs.KpackClient.KpackV1alpha2().Images(imagesNamespace).List(cmd.Context(), metav1.ListOptions{})
+			imageList, err := kpackClient.ListImages(cmd.Context(), imagesNamespace, metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
