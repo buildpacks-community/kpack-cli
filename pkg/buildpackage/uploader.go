@@ -4,23 +4,15 @@
 package buildpackage
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
-	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
-	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/pkg/errors"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/archive"
-)
-
-const (
-	metadataLabel = "io.buildpacks.buildpackage.metadata"
 )
 
 type Relocator interface {
@@ -43,49 +35,12 @@ func (u *Uploader) UploadBuildpackage(keychain authn.Keychain, buildPackage, rep
 	}
 	defer os.RemoveAll(tempDir)
 
-	image, tag, err := u.destinationTag(keychain, buildPackage, repository, tempDir)
-	if err != nil {
-		return "", err
-	}
-
-	return u.Relocator.Relocate(keychain, image, tag)
-}
-
-func (u *Uploader) UploadedBuildpackageRef(keychain authn.Keychain, buildPackage, repository string) (string, error) {
-	tempDir, err := ioutil.TempDir("", "cnb-upload")
-	if err != nil {
-		return "", err
-	}
-	defer os.RemoveAll(tempDir)
-
-	image, tag, err := u.destinationTag(keychain, buildPackage, repository, tempDir)
-	if err != nil {
-		return "", err
-	}
-
-	digest, err := image.Digest()
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s@%s", tag, digest.String()), nil
-}
-
-func (u *Uploader) destinationTag(keychain authn.Keychain, buildPackage, repository, tempDir string) (v1.Image, string, error) {
 	image, err := u.read(keychain, buildPackage, tempDir)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
-	type buildpackageMetadata struct {
-		Id string `json:"id"`
-	}
-
-	metadata := buildpackageMetadata{}
-	err = imagehelpers.GetLabel(image, metadataLabel, &metadata)
-	if err != nil {
-		return nil, "", err
-	}
-	return image, path.Join(repository, strings.ReplaceAll(metadata.Id, "/", "_")), nil
+	return u.Relocator.Relocate(keychain, image, repository)
 }
 
 func (u *Uploader) read(keychain authn.Keychain, buildPackage, tempDir string) (v1.Image, error) {

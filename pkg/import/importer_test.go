@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path"
 	"testing"
 	"time"
 
@@ -107,7 +106,7 @@ clusterBuilders:
 								Namespace: "kpack",
 							},
 							Data: map[string]string{
-								"image": fmt.Sprintf("gcr.io/my-cool-repo/lifecycle@sha256:%s", lifecycleDigest),
+								"image": fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", lifecycleDigest),
 							},
 						}, timestampAnnotation),
 					},
@@ -123,7 +122,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterStoreSpec{
 							Sources: []corev1alpha1.StoreImage{
-								{Image: fmt.Sprintf("gcr.io/my-cool-repo/%s@sha256:%s", "dotnet_core", dotnetCoreDigest)},
+								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 							},
 						},
 					}, kubectlAnnotation, timestampAnnotation),
@@ -138,10 +137,10 @@ clusterBuilders:
 						Spec: v1alpha2.ClusterStackSpec{
 							Id: stackId,
 							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 							},
 							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 							},
 						},
 					}, timestampAnnotation),
@@ -156,10 +155,10 @@ clusterBuilders:
 						Spec: v1alpha2.ClusterStackSpec{
 							Id: stackId,
 							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 							},
 							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 							},
 						},
 					}, timestampAnnotation),
@@ -173,7 +172,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterBuilderSpec{
 							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: path.Join("gcr.io/my-cool-repo", "base"),
+								Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
 								Stack: corev1.ObjectReference{
 									Kind: "ClusterStack",
 									Name: "base",
@@ -211,7 +210,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterBuilderSpec{
 							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: path.Join("gcr.io/my-cool-repo", "default"),
+								Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
 								Stack: corev1.ObjectReference{
 									Kind: "ClusterStack",
 									Name: "base",
@@ -308,7 +307,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterStoreSpec{
 							Sources: []corev1alpha1.StoreImage{
-								{Image: fmt.Sprintf("gcr.io/my-cool-repo/%s@sha256:%s", "dotnet_core", dotnetCoreDigest)},
+								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 							},
 						},
 					}, kubectlAnnotation, timestampAnnotation),
@@ -323,10 +322,10 @@ clusterBuilders:
 						Spec: v1alpha2.ClusterStackSpec{
 							Id: stackId,
 							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 							},
 							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 							},
 						},
 					}, timestampAnnotation),
@@ -341,10 +340,10 @@ clusterBuilders:
 						Spec: v1alpha2.ClusterStackSpec{
 							Id: stackId,
 							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 							},
 							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 							},
 						},
 					}, timestampAnnotation),
@@ -358,7 +357,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterBuilderSpec{
 							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: path.Join("gcr.io/my-cool-repo", "base"),
+								Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
 								Stack: corev1.ObjectReference{
 									Kind: "ClusterStack",
 									Name: "base",
@@ -396,7 +395,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterBuilderSpec{
 							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: path.Join("gcr.io/my-cool-repo", "default"),
+								Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
 								Stack: corev1.ObjectReference{
 									Kind: "ClusterStack",
 									Name: "base",
@@ -464,7 +463,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterStoreSpec{
 							Sources: []corev1alpha1.StoreImage{
-								{Image: fmt.Sprintf("gcr.io/my-cool-repo/%s@sha256:%s", "dotnet_core", dotnetCoreDigest)},
+								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 							},
 						},
 					}, timestampAnnotation),
@@ -479,21 +478,21 @@ clusterBuilders:
 						Spec: v1alpha2.ClusterStackSpec{
 							Id: stackId,
 							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 							},
 							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 							},
 						},
 						Status: v1alpha2.ClusterStackStatus{
 							Status: corev1alpha1.Status{},
 							ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
 								BuildImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 									Image:       "",
 								},
 								RunImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 									Image:       "",
 								},
 							},
@@ -510,21 +509,21 @@ clusterBuilders:
 						Spec: v1alpha2.ClusterStackSpec{
 							Id: stackId,
 							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 							},
 							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 							},
 						},
 						Status: v1alpha2.ClusterStackStatus{
 							Status: corev1alpha1.Status{},
 							ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
 								BuildImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 									Image:       "",
 								},
 								RunImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 									Image:       "",
 								},
 							},
@@ -540,7 +539,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterBuilderSpec{
 							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: path.Join("gcr.io/my-cool-repo", "base"),
+								Tag: "gcr.io/my-cool-repo",
 								Stack: corev1.ObjectReference{
 									Kind: "ClusterStack",
 									Name: "base",
@@ -578,7 +577,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterBuilderSpec{
 							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: path.Join("gcr.io/my-cool-repo", "default"),
+								Tag: "gcr.io/my-cool-repo",
 								Stack: corev1.ObjectReference{
 									Kind: "ClusterStack",
 									Name: "base",
@@ -651,7 +650,7 @@ clusterBuilders:
 								Namespace: "kpack",
 							},
 							Data: map[string]string{
-								"image": fmt.Sprintf("gcr.io/my-cool-repo/lifecycle@sha256:%s", newLifecycleDigest),
+								"image": fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newLifecycleDigest),
 							},
 						}, timestampAnnotation),
 					},
@@ -666,9 +665,9 @@ clusterBuilders:
 							},
 							Spec: v1alpha2.ClusterStoreSpec{
 								Sources: []corev1alpha1.StoreImage{
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo/%s@sha256:%s", "dotnet_core", dotnetCoreDigest)},
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo/%s@sha256:%s", "dotnet_core", newDotnetCoreDigest)},
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo/%s@sha256:%s", "node_js", nodejsDigest)},
+									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
+									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newDotnetCoreDigest)},
+									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", nodejsDigest)},
 								},
 							},
 						}, timestampAnnotation),
@@ -685,20 +684,20 @@ clusterBuilders:
 							Spec: v1alpha2.ClusterStackSpec{
 								Id: stackId,
 								BuildImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", newBuildImageDigest),
+									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
 								},
 								RunImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", newRunImageDigest),
+									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
 								},
 							},
 							Status: v1alpha2.ClusterStackStatus{
 								Status: corev1alpha1.Status{},
 								ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
 									BuildImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 									},
 									RunImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 									},
 								},
 							},
@@ -716,20 +715,20 @@ clusterBuilders:
 							Spec: v1alpha2.ClusterStackSpec{
 								Id: stackId,
 								BuildImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", newBuildImageDigest),
+									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
 								},
 								RunImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", newRunImageDigest),
+									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
 								},
 							},
 							Status: v1alpha2.ClusterStackStatus{
 								Status: corev1alpha1.Status{},
 								ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
 									BuildImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 									},
 									RunImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 									},
 								},
 							},
@@ -746,7 +745,7 @@ clusterBuilders:
 							},
 							Spec: v1alpha2.ClusterBuilderSpec{
 								BuilderSpec: v1alpha2.BuilderSpec{
-									Tag: path.Join("gcr.io/my-cool-repo", "base"),
+									Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
 									Stack: corev1.ObjectReference{
 										Kind: "ClusterStack",
 										Name: "base",
@@ -796,7 +795,7 @@ clusterBuilders:
 							},
 							Spec: v1alpha2.ClusterBuilderSpec{
 								BuilderSpec: v1alpha2.BuilderSpec{
-									Tag: path.Join("gcr.io/my-cool-repo", "default"),
+									Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
 									Stack: corev1.ObjectReference{
 										Kind: "ClusterStack",
 										Name: "base",
@@ -875,7 +874,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterStoreSpec{
 							Sources: []corev1alpha1.StoreImage{
-								{Image: fmt.Sprintf("gcr.io/my-cool-repo/%s@sha256:%s", "dotnet_core", dotnetCoreDigest)},
+								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 							},
 						},
 					}, timestampAnnotation),
@@ -890,21 +889,21 @@ clusterBuilders:
 						Spec: v1alpha2.ClusterStackSpec{
 							Id: stackId,
 							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 							},
 							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 							},
 						},
 						Status: v1alpha2.ClusterStackStatus{
 							Status: corev1alpha1.Status{},
 							ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
 								BuildImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 									Image:       "",
 								},
 								RunImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 									Image:       "",
 								},
 							},
@@ -921,21 +920,21 @@ clusterBuilders:
 						Spec: v1alpha2.ClusterStackSpec{
 							Id: stackId,
 							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 							},
 							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 							},
 						},
 						Status: v1alpha2.ClusterStackStatus{
 							Status: corev1alpha1.Status{},
 							ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
 								BuildImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 									Image:       "",
 								},
 								RunImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 									Image:       "",
 								},
 							},
@@ -951,7 +950,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterBuilderSpec{
 							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: path.Join("gcr.io/my-cool-repo", "base"),
+								Tag: "gcr.io/my-cool-repo",
 								Stack: corev1.ObjectReference{
 									Kind: "ClusterStack",
 									Name: "base",
@@ -989,7 +988,7 @@ clusterBuilders:
 						},
 						Spec: v1alpha2.ClusterBuilderSpec{
 							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: path.Join("gcr.io/my-cool-repo", "default"),
+								Tag: "gcr.io/my-cool-repo",
 								Stack: corev1.ObjectReference{
 									Kind: "ClusterStack",
 									Name: "base",
@@ -1063,9 +1062,9 @@ clusterBuilders:
 							},
 							Spec: v1alpha2.ClusterStoreSpec{
 								Sources: []corev1alpha1.StoreImage{
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo/%s@sha256:%s", "dotnet_core", dotnetCoreDigest)},
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo/%s@sha256:%s", "dotnet_core", newDotnetCoreDigest)},
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo/%s@sha256:%s", "node_js", nodejsDigest)},
+									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
+									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newDotnetCoreDigest)},
+									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", nodejsDigest)},
 								},
 							},
 						}, timestampAnnotation),
@@ -1082,20 +1081,20 @@ clusterBuilders:
 							Spec: v1alpha2.ClusterStackSpec{
 								Id: stackId,
 								BuildImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", newBuildImageDigest),
+									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
 								},
 								RunImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", newRunImageDigest),
+									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
 								},
 							},
 							Status: v1alpha2.ClusterStackStatus{
 								Status: corev1alpha1.Status{},
 								ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
 									BuildImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 									},
 									RunImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 									},
 								},
 							},
@@ -1113,20 +1112,20 @@ clusterBuilders:
 							Spec: v1alpha2.ClusterStackSpec{
 								Id: stackId,
 								BuildImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", newBuildImageDigest),
+									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
 								},
 								RunImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", newRunImageDigest),
+									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
 								},
 							},
 							Status: v1alpha2.ClusterStackStatus{
 								Status: corev1alpha1.Status{},
 								ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
 									BuildImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/build@sha256:%s", buildImageDigest),
+										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 									},
 									RunImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo/run@sha256:%s", runImageDigest),
+										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 									},
 								},
 							},
@@ -1143,7 +1142,7 @@ clusterBuilders:
 							},
 							Spec: v1alpha2.ClusterBuilderSpec{
 								BuilderSpec: v1alpha2.BuilderSpec{
-									Tag: path.Join("gcr.io/my-cool-repo", "base"),
+									Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
 									Stack: corev1.ObjectReference{
 										Kind: "ClusterStack",
 										Name: "base",
@@ -1193,7 +1192,7 @@ clusterBuilders:
 							},
 							Spec: v1alpha2.ClusterBuilderSpec{
 								BuilderSpec: v1alpha2.BuilderSpec{
-									Tag: path.Join("gcr.io/my-cool-repo", "default"),
+									Tag:"gcr.io/my-cool-repo:clusterbuilder-default",
 									Stack: corev1.ObjectReference{
 										Kind: "ClusterStack",
 										Name: "base",

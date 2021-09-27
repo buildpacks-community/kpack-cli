@@ -13,8 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
-	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
@@ -101,7 +99,7 @@ cat dependencies.yaml | kp import -f -`,
 
 			defaultKeychain := authn.DefaultKeychain
 			if showChanges {
-				hasChanges, summary, err := importpkg.SummarizeChange(ctx, defaultKeychain, descriptor, kpConfig, clusterstore.NewFactory(ch, imgRelocator, imgFetcher), clusterstack.NewFactory(ch, imgRelocator, imgFetcher), differ, cs)
+				hasChanges, summary, err := importpkg.SummarizeChange(ctx, defaultKeychain, descriptor, kpConfig, importpkg.NewDefaultRelocatedImageProvider(imgFetcher), differ, cs)
 				if err != nil {
 					return err
 				}
