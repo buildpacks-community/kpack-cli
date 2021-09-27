@@ -15,26 +15,26 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
-func TestCanonicalServiceAccountCommand(t *testing.T) {
-	spec.Run(t, "TestCanonicalServiceAccountCommand", testCanonicalServiceAccountCommand)
+func TestDefaultServiceAccountCommand(t *testing.T) {
+	spec.Run(t, "TestDefaultServiceAccountCommand", testDefaultServiceAccountCommand)
 }
 
-func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
+func testDefaultServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 	cmdFunc := func(k8sClientSet *k8sfakes.Clientset, _ *kpackfakes.Clientset) *cobra.Command {
-		return NewCanonicalServiceAccountCommand(testhelpers.GetFakeClusterProvider(k8sClientSet, nil))
+		return NewDefaultServiceAccountCommand(testhelpers.GetFakeClusterProvider(k8sClientSet, nil))
 	}
 
 	when("running command without any args", func() {
-		it("prints the current canonical service account values when it is not empty", func() {
+		it("prints the current default service account values when it is not empty", func() {
 			kpConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kp-config",
 					Namespace: "kpack",
 				},
 				Data: map[string]string{
-					"canonical.repository":                          "test-repo",
-					"canonical.repository.serviceaccount":           "default",
-					"canonical.repository.serviceaccount.namespace": "default",
+					"default.repository":                          "test-repo",
+					"default.repository.serviceaccount":           "default",
+					"default.repository.serviceaccount.namespace": "default",
 				},
 			}
 
@@ -46,15 +46,15 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("it defaults to kpack namespace when canonical.repository.serviceaccount.namespace is not present", func() {
+		it("it defaults to kpack namespace when default.repository.serviceaccount.namespace is not present", func() {
 			kpConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kp-config",
 					Namespace: "kpack",
 				},
 				Data: map[string]string{
-					"canonical.repository":                "test-repo",
-					"canonical.repository.serviceaccount": "default",
+					"default.repository":                "test-repo",
+					"default.repository.serviceaccount": "default",
 				},
 			}
 
@@ -90,7 +90,7 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	when("setting the canonical service account", func() {
+	when("setting the default service account", func() {
 		it("updates the existing config map if it exists", func() {
 			kpConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -98,8 +98,8 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 					Namespace: "kpack",
 				},
 				Data: map[string]string{
-					"canonical.repository":                "test-repo",
-					"canonical.repository.serviceaccount": "default",
+					"default.repository":                "test-repo",
+					"default.repository.serviceaccount": "default",
 				},
 			}
 
@@ -116,9 +116,9 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 								Namespace: "kpack",
 							},
 							Data: map[string]string{
-								"canonical.repository":                          "test-repo",
-								"canonical.repository.serviceaccount":           "some-service-account",
-								"canonical.repository.serviceaccount.namespace": "kpack",
+								"default.repository":                          "test-repo",
+								"default.repository.serviceaccount":           "some-service-account",
+								"default.repository.serviceaccount.namespace": "kpack",
 							},
 						},
 					},
@@ -126,15 +126,15 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 
-		it("allows you to set the namespace of the canonical service account", func() {
+		it("allows you to set the namespace of the default service account", func() {
 			kpConfig := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kp-config",
 					Namespace: "kpack",
 				},
 				Data: map[string]string{
-					"canonical.repository":                "test-repo",
-					"canonical.repository.serviceaccount": "default",
+					"default.repository":                "test-repo",
+					"default.repository.serviceaccount": "default",
 				},
 			}
 
@@ -155,9 +155,9 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 								Namespace: "kpack",
 							},
 							Data: map[string]string{
-								"canonical.repository":                          "test-repo",
-								"canonical.repository.serviceaccount":           "some-service-account",
-								"canonical.repository.serviceaccount.namespace": "default",
+								"default.repository":                          "test-repo",
+								"default.repository.serviceaccount":           "some-service-account",
+								"default.repository.serviceaccount.namespace": "default",
 							},
 						},
 					},
@@ -178,9 +178,9 @@ func testCanonicalServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 							Namespace: "kpack",
 						},
 						Data: map[string]string{
-							"canonical.repository":                          "",
-							"canonical.repository.serviceaccount":           "some-account",
-							"canonical.repository.serviceaccount.namespace": "kpack",
+							"default.repository":                          "",
+							"default.repository.serviceaccount":           "some-account",
+							"default.repository.serviceaccount.namespace": "kpack",
 						},
 					},
 				},

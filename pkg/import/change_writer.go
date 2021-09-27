@@ -20,14 +20,14 @@ type changeWriter interface {
 	writeChange(header string)
 }
 
-func writeLifecycleChange(ctx context.Context, newLifecycle Lifecycle, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
+func writeLifecycleChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, newLifecycle Lifecycle, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	if newLifecycle.Image != "" {
 		oldImg, err := lifecycle.GetImage(ctx, cs.K8sClient)
 		if err != nil {
 			return err
 		}
 
-		diff, err := differ.DiffLifecycle(oldImg, newLifecycle.Image)
+		diff, err := differ.DiffLifecycle(keychain, kpConfig, oldImg, newLifecycle.Image)
 		if err != nil {
 			return err
 		}

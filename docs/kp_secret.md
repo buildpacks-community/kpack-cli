@@ -2,10 +2,6 @@
 
 Secret Commands
 
-### Synopsis
-
-Secret Commands
-
 ### Options
 
 ```

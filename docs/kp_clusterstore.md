@@ -2,10 +2,6 @@
 
 ClusterStore Commands
 
-### Synopsis
-
-ClusterStore Commands
-
 ### Options
 
 ```

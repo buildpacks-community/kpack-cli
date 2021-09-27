@@ -2,10 +2,6 @@
 
 Builder Commands
 
-### Synopsis
-
-Builder Commands
-
 ### Options
 
 ```

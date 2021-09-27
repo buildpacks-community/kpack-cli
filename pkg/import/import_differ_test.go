@@ -27,32 +27,23 @@ func TestImportDiffer(t *testing.T) {
 	spec.Run(t, "TestImportDiffer", testImportDiffer)
 }
 
-type FakeRefGetter struct{}
+type FakeRelocatedImageProvider struct{}
 
-func NewFakeRefGetter() *FakeRefGetter {
-	return &FakeRefGetter{}
+func NewFakeRelocatedImageProvider() *FakeRelocatedImageProvider {
+	return &FakeRelocatedImageProvider{}
 }
 
-func (rg *FakeRefGetter) RelocatedBuildpackage(keychain authn.Keychain, kpConfig config.KpConfig, image string) (string, error) {
-	return image, nil
-}
-
-func (rg *FakeRefGetter) RelocatedBuildImage(keychain authn.Keychain, kpConfig config.KpConfig, image string) (string, error) {
-	return image, nil
-}
-
-func (rg *FakeRefGetter) RelocatedRunImage(keychain authn.Keychain, kpConfig config.KpConfig, image string) (string, error) {
+func (rg *FakeRelocatedImageProvider) RelocatedImage(keychain authn.Keychain, kpConfig config.KpConfig, image string) (string, error) {
 	return image, nil
 }
 
 func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 	fakeDiffer := &fakes.FakeDiffer{DiffResult: "some-diff"}
-	fakeRefGetter := NewFakeRefGetter()
+	fakeRelocatedImageProvider := NewFakeRelocatedImageProvider()
 	kpConfig := config.NewKpConfig("my-cool-repo", corev1.ObjectReference{})
 	importDiffer := importpkg.ImportDiffer{
 		Differ:         fakeDiffer,
-		StoreRefGetter: fakeRefGetter,
-		StackRefGetter: fakeRefGetter,
+		RelocatedImageProvider: fakeRelocatedImageProvider,
 	}
 	fakeKeychain := &registryfakes.FakeKeychain{}
 

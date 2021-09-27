@@ -47,8 +47,8 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 			bldImage, runImage, err := uploader.UploadStackImages(fakeKeychain, "some/remote-build", "some/remote-run", "kpackcr.org/somepath")
 			require.NoError(t, err)
 
-			expectedBldImage := fmt.Sprintf("kpackcr.org/somepath/build@%s", bldDigest)
-			expectedRunImage := fmt.Sprintf("kpackcr.org/somepath/run@%s", runDigest)
+			expectedBldImage := fmt.Sprintf("kpackcr.org/somepath@%s", bldDigest)
+			expectedRunImage := fmt.Sprintf("kpackcr.org/somepath@%s", runDigest)
 			require.Equal(t, expectedBldImage, bldImage)
 			require.Equal(t, expectedRunImage, runImage)
 			require.Equal(t, 2, relocator.CallCount())
@@ -92,42 +92,6 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 
 			_, err = uploader.ValidateStackIDs(fakeKeychain, "some/remote-build", "some/remote-run")
 			require.EqualError(t, err, "build stack 'some-id' does not match run stack 'some-other-id'")
-		})
-	})
-
-	when("UploadedBuildImageRef", func() {
-		it("it returns the relocated build image reference without relocating", func() {
-			testImage, err := random.Image(10, 10)
-			require.NoError(t, err)
-
-			fetcher.AddImage("some/remote", testImage)
-
-			ref, err := uploader.UploadedBuildImageRef(fakeKeychain, "some/remote", "kpackcr.org/somepath")
-			require.NoError(t, err)
-
-			digest, err := testImage.Digest()
-			require.NoError(t, err)
-
-			expectedImage := fmt.Sprintf("kpackcr.org/somepath/build@%s", digest)
-			require.Equal(t, expectedImage, ref)
-		})
-	})
-
-	when("UploadedRunImageRef", func() {
-		it("it returns the relocated run image reference without relocating", func() {
-			testImage, err := random.Image(10, 10)
-			require.NoError(t, err)
-
-			fetcher.AddImage("some/remote", testImage)
-
-			ref, err := uploader.UploadedRunImageRef(fakeKeychain, "some/remote", "kpackcr.org/somepath")
-			require.NoError(t, err)
-
-			digest, err := testImage.Digest()
-			require.NoError(t, err)
-
-			expectedImage := fmt.Sprintf("kpackcr.org/somepath/run@%s", digest)
-			require.Equal(t, expectedImage, ref)
 		})
 	})
 }

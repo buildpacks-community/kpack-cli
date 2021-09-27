@@ -2,10 +2,6 @@
 
 ClusterBuilder Commands
 
-### Synopsis
-
-ClusterBuilder Commands
-
 ### Options
 
 ```

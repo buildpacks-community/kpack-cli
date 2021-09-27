@@ -20,7 +20,6 @@ import (
 
 type BuildpackageUploader interface {
 	UploadBuildpackage(keychain authn.Keychain, buildPackage, repository string) (string, error)
-	UploadedBuildpackageRef(keychain authn.Keychain, buildPackage, repository string) (string, error)
 }
 
 type Printer interface {
@@ -59,13 +58,13 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 		Spec: v1alpha2.ClusterStoreSpec{},
 	}
 
-	canonicalRepo, err := kpConfig.CanonicalRepository()
+	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
 		return nil, err
 	}
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, canonicalRepo)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, defaultRepo)
 		if err != nil {
 			return nil, err
 		}
@@ -81,13 +80,13 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha2.ClusterStore, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha2.ClusterStore, bool, error) {
 	storeUpdated := false
 
-	canonicalRepo, err := kpConfig.CanonicalRepository()
+	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
 		return nil, false, err
 	}
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, canonicalRepo)
+		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, defaultRepo)
 		if err != nil {
 			return nil, false, err
 		}
@@ -111,15 +110,6 @@ func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha2.ClusterSto
 	}
 
 	return store, storeUpdated, nil
-}
-
-func (f *Factory) RelocatedBuildpackage(keychain authn.Keychain, kpConfig config.KpConfig, buildPackage string) (string, error) {
-	canonicalRepo, err := kpConfig.CanonicalRepository()
-	if err != nil {
-		return "", err
-	}
-
-	return f.Uploader.UploadedBuildpackageRef(keychain, buildPackage, canonicalRepo)
 }
 
 func (f *Factory) validate(buildpackages []string) error {

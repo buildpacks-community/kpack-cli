@@ -52,8 +52,8 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			Namespace: "kpack",
 		},
 		Data: map[string]string{
-			"canonical.repository":                "canonical-registry.io/canonical-repo",
-			"canonical.repository.serviceaccount": "some-serviceaccount",
+			"default.repository":                "default-registry.io/default-repo",
+			"default.repository.serviceaccount": "some-serviceaccount",
 		},
 	}
 
@@ -78,10 +78,10 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		Spec: v1alpha2.ClusterStackSpec{
 			Id: "stack-id",
 			BuildImage: v1alpha2.ClusterStackSpecImage{
-				Image: "canonical-registry.io/canonical-repo/build@sha256:build-image-digest",
+				Image: "default-registry.io/default-repo@sha256:build-image-digest",
 			},
 			RunImage: v1alpha2.ClusterStackSpecImage{
-				Image: "canonical-registry.io/canonical-repo/run@sha256:run-image-digest",
+				Image: "default-registry.io/default-repo@sha256:run-image-digest",
 			},
 		},
 	}
@@ -99,9 +99,9 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--registry-verify-certs",
 			},
 			ExpectedOutput: `Creating ClusterStack...
-Uploading to 'canonical-registry.io/canonical-repo'...
-	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
-	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+Uploading to 'default-registry.io/default-repo'...
+	Uploading 'default-registry.io/default-repo@sha256:build-image-digest'
+	Uploading 'default-registry.io/default-repo@sha256:run-image-digest'
 ClusterStack "stack-name" created
 `,
 			ExpectCreates: []runtime.Object{
@@ -111,7 +111,7 @@ ClusterStack "stack-name" created
 		require.Len(t, fakeWaiter.WaitCalls, 1)
 	})
 
-	it("fails when canonical.repository key is not found in kp-config configmap", func() {
+	it("fails when default.repository key is not found in kp-config configmap", func() {
 		badConfig := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kp-config",
@@ -131,7 +131,7 @@ ClusterStack "stack-name" created
 			},
 			ExpectErr:           true,
 			ExpectedOutput:      "Creating ClusterStack...\n",
-			ExpectedErrorOutput: "Error: failed to get canonical repository: use \"kp config canonical-repository\" to set\n",
+			ExpectedErrorOutput: "Error: failed to get default repository: use \"kp config default-repository\" to set\n",
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
 
@@ -144,10 +144,10 @@ metadata:
   name: stack-name
 spec:
   buildImage:
-    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+    image: default-registry.io/default-repo@sha256:build-image-digest
   id: stack-id
   runImage:
-    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
+    image: default-registry.io/default-repo@sha256:run-image-digest
 status:
   buildImage: {}
   runImage: {}
@@ -165,9 +165,9 @@ status:
 				},
 				ExpectedOutput: resourceYAML,
 				ExpectedErrorOutput: `Creating ClusterStack...
-Uploading to 'canonical-registry.io/canonical-repo'...
-	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
-	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+Uploading to 'default-registry.io/default-repo'...
+	Uploading 'default-registry.io/default-repo@sha256:build-image-digest'
+	Uploading 'default-registry.io/default-repo@sha256:run-image-digest'
 `,
 				ExpectCreates: []runtime.Object{
 					expectedStack,
@@ -186,10 +186,10 @@ Uploading to 'canonical-registry.io/canonical-repo'...
     "spec": {
         "id": "stack-id",
         "buildImage": {
-            "image": "canonical-registry.io/canonical-repo/build@sha256:build-image-digest"
+            "image": "default-registry.io/default-repo@sha256:build-image-digest"
         },
         "runImage": {
-            "image": "canonical-registry.io/canonical-repo/run@sha256:run-image-digest"
+            "image": "default-registry.io/default-repo@sha256:run-image-digest"
         }
     },
     "status": {
@@ -211,9 +211,9 @@ Uploading to 'canonical-registry.io/canonical-repo'...
 				},
 				ExpectedOutput: resourceJSON,
 				ExpectedErrorOutput: `Creating ClusterStack...
-Uploading to 'canonical-registry.io/canonical-repo'...
-	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
-	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+Uploading to 'default-registry.io/default-repo'...
+	Uploading 'default-registry.io/default-repo@sha256:build-image-digest'
+	Uploading 'default-registry.io/default-repo@sha256:run-image-digest'
 `,
 				ExpectCreates: []runtime.Object{
 					expectedStack,
@@ -237,9 +237,9 @@ Uploading to 'canonical-registry.io/canonical-repo'...
 					"--dry-run",
 				},
 				ExpectedOutput: `Creating ClusterStack... (dry run)
-Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
-	Skipping 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
-	Skipping 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+Uploading to 'default-registry.io/default-repo'... (dry run)
+	Skipping 'default-registry.io/default-repo@sha256:build-image-digest'
+	Skipping 'default-registry.io/default-repo@sha256:run-image-digest'
 ClusterStack "stack-name" created (dry run)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -255,10 +255,10 @@ metadata:
   name: stack-name
 spec:
   buildImage:
-    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+    image: default-registry.io/default-repo@sha256:build-image-digest
   id: stack-id
   runImage:
-    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
+    image: default-registry.io/default-repo@sha256:run-image-digest
 status:
   buildImage: {}
   runImage: {}
@@ -277,9 +277,9 @@ status:
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Creating ClusterStack... (dry run)
-Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
-	Skipping 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
-	Skipping 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+Uploading to 'default-registry.io/default-repo'... (dry run)
+	Skipping 'default-registry.io/default-repo@sha256:build-image-digest'
+	Skipping 'default-registry.io/default-repo@sha256:run-image-digest'
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -299,9 +299,9 @@ Uploading to 'canonical-registry.io/canonical-repo'... (dry run)
 					"--dry-run-with-image-upload",
 				},
 				ExpectedOutput: `Creating ClusterStack... (dry run with image upload)
-Uploading to 'canonical-registry.io/canonical-repo'... (dry run with image upload)
-	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
-	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+Uploading to 'default-registry.io/default-repo'... (dry run with image upload)
+	Uploading 'default-registry.io/default-repo@sha256:build-image-digest'
+	Uploading 'default-registry.io/default-repo@sha256:run-image-digest'
 ClusterStack "stack-name" created (dry run with image upload)
 `,
 			}.TestK8sAndKpack(t, cmdFunc)
@@ -316,10 +316,10 @@ metadata:
   name: stack-name
 spec:
   buildImage:
-    image: canonical-registry.io/canonical-repo/build@sha256:build-image-digest
+    image: default-registry.io/default-repo@sha256:build-image-digest
   id: stack-id
   runImage:
-    image: canonical-registry.io/canonical-repo/run@sha256:run-image-digest
+    image: default-registry.io/default-repo@sha256:run-image-digest
 status:
   buildImage: {}
   runImage: {}
@@ -338,9 +338,9 @@ status:
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Creating ClusterStack... (dry run with image upload)
-Uploading to 'canonical-registry.io/canonical-repo'... (dry run with image upload)
-	Uploading 'canonical-registry.io/canonical-repo/build@sha256:build-image-digest'
-	Uploading 'canonical-registry.io/canonical-repo/run@sha256:run-image-digest'
+Uploading to 'default-registry.io/default-repo'... (dry run with image upload)
+	Uploading 'default-registry.io/default-repo@sha256:build-image-digest'
+	Uploading 'default-registry.io/default-repo@sha256:run-image-digest'
 `,
 				}.TestK8sAndKpack(t, cmdFunc)
 			})

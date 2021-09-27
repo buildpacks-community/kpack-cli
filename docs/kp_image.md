@@ -2,10 +2,6 @@
 
 Image commands
 
-### Synopsis
-
-Image commands
-
 ### Options
 
 ```
