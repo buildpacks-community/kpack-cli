@@ -20,10 +20,11 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "delete <name>",
-		Short: "Delete an image",
-		Long: `Delete an image and its associated image builds in the provided namespace.
+		Short: "Delete an image resource",
+		Long: `Delete an image resource and its associated builds in the provided namespace.
 
-namespace defaults to the kubernetes current-context namespace.`,
+namespace defaults to the kubernetes current-context namespace.
+this will not delete your OCI image in the registry`,
 		Example: "kp image delete my-image",
 		Args:    commands.ExactArgsWithUsage(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -37,7 +38,7 @@ namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "Image %q deleted\n", args[0])
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "Image Resource %q deleted\n", args[0])
 			return err
 		},
 		SilenceUsage: true,

@@ -117,8 +117,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						"--registry-verify-certs",
 						"--wait",
 					},
-					ExpectedOutput: `Creating Image...
-Image "some-image" created
+					ExpectedOutput: `Creating Image Resource...
+Image Resource "some-image" created
 `,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
@@ -143,8 +143,8 @@ Image "some-image" created
 						"--cache-size", "2G",
 						"-n", namespace,
 					},
-					ExpectedOutput: `Creating Image...
-Image "some-image" created
+					ExpectedOutput: `Creating Image Resource...
+Image Resource "some-image" created
 `,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
@@ -164,7 +164,7 @@ Image "some-image" created
 						"-n", namespace,
 					},
 					ExpectErr:           true,
-					ExpectedOutput:      "Creating Image...\n",
+					ExpectedOutput:      "Creating Image Resource...\n",
 					ExpectedErrorOutput: "Error: image source must be one of git, blob, or local-path\n",
 				}.TestKpack(t, cmdFunc)
 
@@ -222,8 +222,8 @@ Image "some-image" created
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
 					},
-					ExpectedOutput: `Creating Image...
-Image "some-image" created
+					ExpectedOutput: `Creating Image Resource...
+Image Resource "some-image" created
 `,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
@@ -244,7 +244,7 @@ Image "some-image" created
 						"--git", "some-git-url",
 					},
 					ExpectErr:           true,
-					ExpectedOutput:      "Creating Image...\n",
+					ExpectedOutput:      "Creating Image Resource...\n",
 					ExpectedErrorOutput: "Error: image source must be one of git, blob, or local-path\n",
 				}.TestKpack(t, cmdFunc)
 
@@ -299,10 +299,10 @@ Image "some-image" created
 					"--sub-path", "some-sub-path",
 					"--env", "some-key=some-val",
 				},
-				ExpectedOutput: `Creating Image...
+				ExpectedOutput: `Creating Image Resource...
 Uploading to 'some-registry.io/some-repo-source'...
 	Uploading 'some-registry.io/some-repo-source:source-id'
-Image "some-image" created
+Image Resource "some-image" created
 `,
 				ExpectCreates: []runtime.Object{
 					expectedImage,
@@ -351,8 +351,8 @@ Image "some-image" created
 					"--blob", "some-blob",
 					"--builder", "some-builder",
 				},
-				ExpectedOutput: `Creating Image...
-Image "some-image" created
+				ExpectedOutput: `Creating Image Resource...
+Image Resource "some-image" created
 `,
 				ExpectCreates: []runtime.Object{
 					expectedImage,
@@ -400,8 +400,8 @@ Image "some-image" created
 					"--blob", "some-blob",
 					"--cluster-builder", "some-builder",
 				},
-				ExpectedOutput: `Creating Image...
-Image "some-image" created
+				ExpectedOutput: `Creating Image Resource...
+Image Resource "some-image" created
 `,
 				ExpectCreates: []runtime.Object{
 					expectedImage,
@@ -423,7 +423,7 @@ Image "some-image" created
 						"--git", "some-git-url",
 					},
 					ExpectErr:           true,
-					ExpectedOutput:      "Creating Image...\n",
+					ExpectedOutput:      "Creating Image Resource...\n",
 					ExpectedErrorOutput: "Error: image source must be one of git, blob, or local-path\n",
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -510,7 +510,7 @@ status: {}
 						"--wait",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Creating Image...
+					ExpectedErrorOutput: `Creating Image Resource...
 `,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
@@ -575,7 +575,7 @@ status: {}
 						"--wait",
 					},
 					ExpectedOutput: resourceJSON,
-					ExpectedErrorOutput: `Creating Image...
+					ExpectedErrorOutput: `Creating Image Resource...
 `,
 					ExpectCreates: []runtime.Object{
 						expectedImage,
@@ -597,7 +597,7 @@ status: {}
 						"--git", "some-git-url",
 					},
 					ExpectErr:           true,
-					ExpectedOutput:      "Creating Image...\n",
+					ExpectedOutput:      "Creating Image Resource...\n",
 					ExpectedErrorOutput: "Error: image source must be one of git, blob, or local-path\n",
 				}.TestKpack(t, cmdFunc)
 			})
@@ -616,8 +616,8 @@ status: {}
 						"--dry-run",
 						"--wait",
 					},
-					ExpectedOutput: `Creating Image... (dry run)
-Image "some-image" created (dry run)
+					ExpectedOutput: `Creating Image Resource... (dry run)
+Image Resource "some-image" created (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -667,7 +667,7 @@ status: {}
 							"--wait",
 						},
 						ExpectedOutput: resourceYAML,
-						ExpectedErrorOutput: `Creating Image... (dry run)
+						ExpectedErrorOutput: `Creating Image Resource... (dry run)
 `,
 					}.TestKpack(t, cmdFunc)
 					assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -688,7 +688,7 @@ status: {}
 						"--dry-run-with-image-upload",
 					},
 					ExpectErr:           true,
-					ExpectedOutput:      "Creating Image... (dry run with image upload)\n",
+					ExpectedOutput:      "Creating Image Resource... (dry run with image upload)\n",
 					ExpectedErrorOutput: "Error: image source must be one of git, blob, or local-path\n",
 				}.TestKpack(t, cmdFunc)
 			})
@@ -706,10 +706,10 @@ status: {}
 						"--dry-run-with-image-upload",
 						"--wait",
 					},
-					ExpectedOutput: `Creating Image... (dry run with image upload)
+					ExpectedOutput: `Creating Image Resource... (dry run with image upload)
 Uploading to 'some-registry.io/some-repo-source'... (dry run with image upload)
 	Uploading 'some-registry.io/some-repo-source:source-id'
-Image "some-image" created (dry run with image upload)
+Image Resource "some-image" created (dry run with image upload)
 `,
 				}.TestKpack(t, cmdFunc)
 				assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -759,7 +759,7 @@ status: {}
 							"--wait",
 						},
 						ExpectedOutput: resourceYAML,
-						ExpectedErrorOutput: `Creating Image... (dry run with image upload)
+						ExpectedErrorOutput: `Creating Image Resource... (dry run with image upload)
 `,
 					}.TestKpack(t, cmdFunc)
 					assert.Len(t, fakeImageWaiter.Calls, 0)

@@ -82,8 +82,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				Args: []string{
 					"some-image",
 				},
-				ExpectedOutput: `Patching Image...
-Image "some-image" patched (no change)
+				ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched (no change)
 `,
 			}.TestKpack(t, cmdFunc)
 			assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -101,8 +101,8 @@ Image "some-image" patched (no change)
 						"some-image",
 						"--sub-path", "",
 					},
-					ExpectedOutput: `Patching Image...
-Image "some-image" patched
+					ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"subPath":null}}}`,
@@ -120,8 +120,8 @@ Image "some-image" patched
 						"some-image",
 						"--sub-path", "a-new-path",
 					},
-					ExpectedOutput: `Patching Image...
-Image "some-image" patched
+					ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 					ExpectPatches: []string{
 						`{"spec":{"source":{"subPath":"a-new-path"}}}`,
@@ -140,8 +140,8 @@ Image "some-image" patched
 					"some-image",
 					"--blob", "some-blob",
 				},
-				ExpectedOutput: `Patching Image...
-Image "some-image" patched
+				ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 				ExpectPatches: []string{
 					`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
@@ -159,8 +159,8 @@ Image "some-image" patched
 					"some-image",
 					"--git-revision", "some-new-revision",
 				},
-				ExpectedOutput: `Patching Image...
-Image "some-image" patched
+				ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 				ExpectPatches: []string{
 					`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
@@ -184,8 +184,8 @@ Image "some-image" patched
 					"some-image",
 					"--git", "some-new-git-url",
 				},
-				ExpectedOutput: `Patching Image...
-Image "some-image" patched
+				ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 				ExpectPatches: []string{
 					`{"spec":{"source":{"blob":null,"git":{"revision":"main","url":"some-new-git-url"}}}}`,
@@ -206,8 +206,8 @@ Image "some-image" patched
 					"some-image",
 					"--builder", "some-builder",
 				},
-				ExpectedOutput: `Patching Image...
-Image "some-image" patched
+				ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 				ExpectPatches: []string{
 					`{"spec":{"builder":{"kind":"Builder","name":"some-builder","namespace":"some-default-namespace"}}}`,
@@ -227,8 +227,8 @@ Image "some-image" patched
 					"some-image",
 					"-d", "key2",
 				},
-				ExpectedOutput: `Patching Image...
-Image "some-image" patched
+				ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 				ExpectPatches: []string{
 					`{"spec":{"build":{"env":[{"name":"key1","value":"value1"}]}}}`,
@@ -246,8 +246,8 @@ Image "some-image" patched
 					"some-image",
 					"-e", "key1=some-other-value",
 				},
-				ExpectedOutput: `Patching Image...
-Image "some-image" patched
+				ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 				ExpectPatches: []string{
 					`{"spec":{"build":{"env":[{"name":"key1","value":"some-other-value"},{"name":"key2","value":"value2"}]}}}`,
@@ -265,8 +265,8 @@ Image "some-image" patched
 					"some-image",
 					"-e", "key3=value3",
 				},
-				ExpectedOutput: `Patching Image...
-Image "some-image" patched
+				ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 				ExpectPatches: []string{
 					`{"spec":{"build":{"env":[{"name":"key1","value":"value1"},{"name":"key2","value":"value2"},{"name":"key3","value":"value3"}]}}}`,
@@ -286,8 +286,8 @@ Image "some-image" patched
 				"some-image",
 				"--cache-size", "3G",
 			},
-			ExpectedOutput: `Patching Image...
-Image "some-image" patched
+			ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 			ExpectPatches: []string{
 				`{"spec":{"cache":{"volume":{"size":"3G"}}}}`,
@@ -308,8 +308,8 @@ Image "some-image" patched
 				"--registry-verify-certs",
 				"--wait",
 			},
-			ExpectedOutput: `Patching Image...
-Image "some-image" patched
+			ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
 `,
 			ExpectPatches: []string{
 				`{"spec":{"source":{"git":{"revision":"some-new-revision"}}}}`,
@@ -361,7 +361,7 @@ status: {}
 					"--wait",
 				},
 				ExpectedOutput: resourceYAML,
-				ExpectedErrorOutput: `Patching Image...
+				ExpectedErrorOutput: `Patching Image Resource...
 `,
 				ExpectPatches: []string{
 					`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
@@ -420,7 +420,7 @@ status: {}
 					"--wait",
 				},
 				ExpectedOutput: resourceJSON,
-				ExpectedErrorOutput: `Patching Image...
+				ExpectedErrorOutput: `Patching Image Resource...
 `,
 				ExpectPatches: []string{
 					`{"spec":{"source":{"blob":{"url":"some-blob"},"git":null}}}`,
@@ -465,7 +465,7 @@ status: {}
 						"some-image",
 						"--output", "yaml",
 					},
-					ExpectedErrorOutput: `Patching Image...
+					ExpectedErrorOutput: `Patching Image Resource...
 `,
 					ExpectedOutput: resourceYAML,
 				}.TestKpack(t, cmdFunc)
@@ -488,9 +488,9 @@ status: {}
 					"--dry-run",
 					"--wait",
 				},
-				ExpectedOutput: `Patching Image... (dry run)
+				ExpectedOutput: `Patching Image Resource... (dry run)
 	Skipping 'index.docker.io/library/some-tag-source:source-id'
-Image "some-image" patched (dry run)
+Image Resource "some-image" patched (dry run)
 `,
 			}.TestKpack(t, cmdFunc)
 			assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -506,8 +506,8 @@ Image "some-image" patched (dry run)
 						"some-image",
 						"--dry-run",
 					},
-					ExpectedOutput: `Patching Image... (dry run)
-Image "some-image" patched (dry run)
+					ExpectedOutput: `Patching Image Resource... (dry run)
+Image Resource "some-image" patched (dry run)
 `,
 				}.TestKpack(t, cmdFunc)
 			})
@@ -553,7 +553,7 @@ status: {}
 						"--wait",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Patching Image... (dry run)
+					ExpectedErrorOutput: `Patching Image Resource... (dry run)
 	Skipping 'index.docker.io/library/some-tag-source:source-id'
 `,
 				}.TestKpack(t, cmdFunc)
@@ -575,9 +575,9 @@ status: {}
 					"--dry-run-with-image-upload",
 					"--wait",
 				},
-				ExpectedOutput: `Patching Image... (dry run with image upload)
+				ExpectedOutput: `Patching Image Resource... (dry run with image upload)
 	Uploading 'index.docker.io/library/some-tag-source:source-id'
-Image "some-image" patched (dry run with image upload)
+Image Resource "some-image" patched (dry run with image upload)
 `,
 			}.TestKpack(t, cmdFunc)
 			assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -593,8 +593,8 @@ Image "some-image" patched (dry run with image upload)
 						"some-image",
 						"--dry-run-with-image-upload",
 					},
-					ExpectedOutput: `Patching Image... (dry run with image upload)
-Image "some-image" patched (dry run with image upload)
+					ExpectedOutput: `Patching Image Resource... (dry run with image upload)
+Image Resource "some-image" patched (dry run with image upload)
 `,
 				}.TestKpack(t, cmdFunc)
 			})
@@ -640,7 +640,7 @@ status: {}
 						"--wait",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Patching Image... (dry run with image upload)
+					ExpectedErrorOutput: `Patching Image Resource... (dry run with image upload)
 	Uploading 'index.docker.io/library/some-tag-source:source-id'
 `,
 				}.TestKpack(t, cmdFunc)

@@ -40,8 +40,8 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 
 	cmd := &cobra.Command{
 		Use:   "status <image-name>",
-		Short: "Display status for an image build",
-		Long: `Prints detailed information about the status of a specific build of an image in the provided namespace.
+		Short: "Display status for an image resource build",
+		Long: `Prints detailed information about the status of a specific build of an image resource in the provided namespace.
 
 The build defaults to the latest build number.
 The namespace defaults to the kubernetes current-context namespace.

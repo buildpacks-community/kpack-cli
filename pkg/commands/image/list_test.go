@@ -130,7 +130,7 @@ test-image-3    True       COMMIT           test-registry.io/test-image-3@sha256
 					testhelpers.CommandTest{
 						Args:                []string{"-n", "test-namespace"},
 						ExpectErr:           true,
-						ExpectedErrorOutput: "Error: no images found\n",
+						ExpectedErrorOutput: "Error: no image resources found\n",
 					}.TestKpack(t, cmdFunc)
 
 				})
@@ -238,7 +238,7 @@ test-image-3    True       COMMIT           test-registry.io/test-image-3@sha256
 				it("returns a message that the namespace has no images", func() {
 					testhelpers.CommandTest{
 						ExpectErr:           true,
-						ExpectedErrorOutput: "Error: no images found\n",
+						ExpectedErrorOutput: "Error: no image resources found\n",
 					}.TestKpack(t, cmdFunc)
 
 				})
@@ -348,7 +348,7 @@ test-image-4    False      COMMIT           test-registry.io/test-image-4@sha256
 				it("returns a message that the namespace has no images", func() {
 					testhelpers.CommandTest{
 						ExpectErr:           true,
-						ExpectedErrorOutput: "Error: no images found\n",
+						ExpectedErrorOutput: "Error: no image resources found\n",
 					}.TestKpack(t, cmdFunc)
 
 				})

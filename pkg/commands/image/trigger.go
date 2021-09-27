@@ -27,8 +27,8 @@ func NewTriggerCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "trigger <name>",
-		Short: "Trigger an image build",
-		Long: `Trigger a build using current inputs for a specific image in the provided namespace.
+		Short: "Trigger an image resource build",
+		Long: `Trigger a build using current inputs for a specific image resource in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.`,
 		Example: "kp image trigger my-image",
@@ -60,7 +60,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 					return err
 				}
 
-				_, err = fmt.Fprintf(cmd.OutOrStderr(), "Triggered build for Image %q\n", args[0])
+				_, err = fmt.Fprintf(cmd.OutOrStderr(), "Triggered build for Image Resource %q\n", args[0])
 				return err
 			}
 		},
