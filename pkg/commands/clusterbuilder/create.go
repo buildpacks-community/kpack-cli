@@ -85,7 +85,12 @@ type CommandFlags struct {
 }
 
 func create(ctx context.Context, name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, waiter commands.ResourceWaiter) error {
-	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
+	kpConfigProvider, err := config.NewKpConfigProvider(ctx, cs.K8sClient)
+	if err != nil {
+		return err
+	}
+
+	kpConfig := kpConfigProvider.GetKpConfig(ctx)
 
 	if flags.tag == "" {
 		repo, err := kpConfig.DefaultRepository()
@@ -129,7 +134,6 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 		cb.Spec.Order = builder.CreateOrder(flags.buildpacks)
 	}
 
-	var err error
 	if flags.order != "" {
 		cb.Spec.Order, err = builder.ReadOrder(flags.order)
 		if err != nil {

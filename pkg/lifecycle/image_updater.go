@@ -80,7 +80,12 @@ func validateImage(img ggcrv1.Image) error {
 }
 
 func relocateImageToDefaultRepo(ctx context.Context, keychain authn.Keychain, img ggcrv1.Image, cfg ImageUpdaterConfig) (string, error) {
-	kpConfig := config.NewKpConfigProvider(cfg.ClientSet).GetKpConfig(ctx)
+	kpConfigProvider, err := config.NewKpConfigProvider(ctx, cfg.ClientSet.K8sClient)
+	if err != nil {
+		return "", err
+	}
+
+	kpConfig := kpConfigProvider.GetKpConfig(ctx)
 
 	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {

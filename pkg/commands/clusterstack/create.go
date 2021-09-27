@@ -73,7 +73,12 @@ func create(ctx context.Context, name, buildImageRef, runImageRef string, factor
 		return err
 	}
 
-	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
+	kpConfigProvider, err := config.NewKpConfigProvider(ctx, cs.K8sClient)
+	if err != nil {
+		return err
+	}
+
+	kpConfig := kpConfigProvider.GetKpConfig(ctx)
 
 	stack, err := factory.MakeStack(authn.DefaultKeychain, name, buildImageRef, runImageRef, kpConfig)
 	if err != nil {

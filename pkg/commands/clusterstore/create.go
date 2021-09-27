@@ -71,7 +71,12 @@ func create(ctx context.Context, name string, buildpackages []string, factory *c
 		return err
 	}
 
-	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
+	kpConfigProvider, err := config.NewKpConfigProvider(ctx, cs.K8sClient)
+	if err != nil {
+		return err
+	}
+
+	kpConfig := kpConfigProvider.GetKpConfig(ctx)
 
 	newStore, err := factory.MakeStore(authn.DefaultKeychain, name, kpConfig, buildpackages...)
 	if err != nil {
