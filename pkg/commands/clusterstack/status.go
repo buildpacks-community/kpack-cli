@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +35,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			stack, err := cs.KpackClient.KpackV1alpha2().ClusterStacks().Get(cmd.Context(), args[0], metav1.GetOptions{})
+			stack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(cmd.Context(), args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -49,7 +49,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	return cmd
 }
 
-func displayStackStatus(out io.Writer, s *v1alpha2.ClusterStack, verbose bool) error {
+func displayStackStatus(out io.Writer, s *v1alpha1.ClusterStack, verbose bool) error {
 	writer := commands.NewStatusWriter(out)
 
 	items := []string{
@@ -70,7 +70,7 @@ func displayStackStatus(out io.Writer, s *v1alpha2.ClusterStack, verbose bool) e
 	return writer.Write()
 }
 
-func getStatusText(s *v1alpha2.ClusterStack) string {
+func getStatusText(s *v1alpha1.ClusterStack) string {
 	if cond := s.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
 		if cond.Status == corev1.ConditionTrue {
 			return "Ready"

@@ -6,8 +6,7 @@ package clusterstore_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
-	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -61,12 +60,12 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
-	existingStore := &v1alpha2.ClusterStore{
+	existingStore := &v1alpha1.ClusterStore{
 		ObjectMeta: v1.ObjectMeta{
 			Name: "store-name",
 		},
-		Spec: v1alpha2.ClusterStoreSpec{
-			Sources: []corev1alpha1.StoreImage{
+		Spec: v1alpha1.ClusterStoreSpec{
+			Sources: []v1alpha1.StoreImage{
 				{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 			},
 		},
@@ -96,10 +95,10 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
-					Object: &v1alpha2.ClusterStore{
+					Object: &v1alpha1.ClusterStore{
 						ObjectMeta: existingStore.ObjectMeta,
-						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []corev1alpha1.StoreImage{
+						Spec: v1alpha1.ClusterStoreSpec{
+							Sources: []v1alpha1.StoreImage{
 								{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 								{Image: "default-registry.io/default-repo@sha256:new-buildpack-digest"},
 								{Image: "default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
@@ -169,7 +168,7 @@ ClusterStore "store-name" updated (no change)
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha2
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   creationTimestamp: null
@@ -195,10 +194,10 @@ status: {}
 				},
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
-						Object: &v1alpha2.ClusterStore{
+						Object: &v1alpha1.ClusterStore{
 							ObjectMeta: existingStore.ObjectMeta,
-							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []corev1alpha1.StoreImage{
+							Spec: v1alpha1.ClusterStoreSpec{
+								Sources: []v1alpha1.StoreImage{
 									{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 									{Image: "default-registry.io/default-repo@sha256:new-buildpack-digest"},
 									{Image: "default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
@@ -220,7 +219,7 @@ status: {}
 		it("can output in json format", func() {
 			const resourceJSON = `{
     "kind": "ClusterStore",
-    "apiVersion": "kpack.io/v1alpha2",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "store-name",
         "creationTimestamp": null
@@ -255,10 +254,10 @@ status: {}
 				},
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
-						Object: &v1alpha2.ClusterStore{
+						Object: &v1alpha1.ClusterStore{
 							ObjectMeta: existingStore.ObjectMeta,
-							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []corev1alpha1.StoreImage{
+							Spec: v1alpha1.ClusterStoreSpec{
+								Sources: []v1alpha1.StoreImage{
 									{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 									{Image: "default-registry.io/default-repo@sha256:new-buildpack-digest"},
 									{Image: "default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
@@ -279,7 +278,7 @@ status: {}
 
 		when("there are no changes in the update", func() {
 			it("can output original resource in requested format", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha2
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   creationTimestamp: null
@@ -357,7 +356,7 @@ ClusterStore "store-name" updated (dry run)
 
 		when("output flag is used", func() {
 			it("does not create a clusterstore and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha2
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   creationTimestamp: null
@@ -440,7 +439,7 @@ ClusterStore "store-name" updated (dry run with image upload)
 
 		when("output flag is used", func() {
 			it("does not create a clusterstore and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha2
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   creationTimestamp: null

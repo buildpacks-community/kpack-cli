@@ -6,7 +6,7 @@ package clusterstore
 import (
 	"errors"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +27,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			storeList, err := cs.KpackClient.KpackV1alpha2().ClusterStores().List(cmd.Context(), metav1.ListOptions{})
+			storeList, err := cs.KpackClient.KpackV1alpha1().ClusterStores().List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -45,7 +45,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	return cmd
 }
 
-func displayStoresTable(cmd *cobra.Command, storeList *v1alpha2.ClusterStoreList) error {
+func displayStoresTable(cmd *cobra.Command, storeList *v1alpha1.ClusterStoreList) error {
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY")
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func displayStoresTable(cmd *cobra.Command, storeList *v1alpha2.ClusterStoreList
 	return writer.Write()
 }
 
-func getReadyText(s v1alpha2.ClusterStore) string {
+func getReadyText(s v1alpha1.ClusterStore) string {
 	cond := s.Status.GetCondition(corev1alpha1.ConditionReady)
 	if cond == nil {
 		return "Unknown"

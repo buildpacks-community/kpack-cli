@@ -55,7 +55,7 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --buildpack my-b
 			name := args[0]
 			flags.namespace = cs.Namespace
 
-			bldr, err := cs.KpackClient.KpackV1alpha2().Builders(cs.Namespace).Get(ctx, name, metav1.GetOptions{})
+			bldr, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				if flags.tag == "" {
 					return errors.New("--tag is required to create the resource")

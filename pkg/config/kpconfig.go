@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	kpNamespace                         = "kpack"
-	kpConfigMapName                     = "kp-config"
+	kpNamespace                       = "kpack"
+	kpConfigMapName                   = "kp-config"
 	defaultRepositoryKey              = "default.repository"
 	defaultServiceAccountNameKey      = "default.repository.serviceaccount"
 	defaultServiceAccountNamespaceKey = "default.repository.serviceaccount.namespace"
@@ -22,13 +22,13 @@ const (
 
 type KpConfig struct {
 	defaultRepository string
-	serviceAccount      corev1.ObjectReference
+	serviceAccount    corev1.ObjectReference
 }
 
 func NewKpConfig(defaultRepository string, serviceAccount corev1.ObjectReference) KpConfig {
 	return KpConfig{
 		defaultRepository: defaultRepository,
-		serviceAccount:      serviceAccount,
+		serviceAccount:    serviceAccount,
 	}
 }
 

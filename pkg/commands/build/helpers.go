@@ -6,11 +6,11 @@ package build
 import (
 	"strings"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 )
 
-func getStatus(b v1alpha2.Build) string {
+func getStatus(b v1alpha1.Build) string {
 	cond := b.Status.GetCondition(corev1alpha1.ConditionSucceeded)
 	switch {
 	case cond.IsTrue():
@@ -24,18 +24,18 @@ func getStatus(b v1alpha2.Build) string {
 	}
 }
 
-func getStarted(b v1alpha2.Build) string {
+func getStarted(b v1alpha1.Build) string {
 	return b.CreationTimestamp.Time.Format("2006-01-02 15:04:05")
 }
 
-func getFinished(b v1alpha2.Build) string {
+func getFinished(b v1alpha1.Build) string {
 	if b.IsRunning() {
 		return ""
 	}
 	return b.Status.GetCondition(corev1alpha1.ConditionSucceeded).LastTransitionTime.Inner.Format("2006-01-02 15:04:05")
 }
 
-func getTruncatedReason(b v1alpha2.Build) string {
+func getTruncatedReason(b v1alpha1.Build) string {
 	r := getReasons(b)
 
 	if len(r) == 0 {
@@ -49,8 +49,8 @@ func getTruncatedReason(b v1alpha2.Build) string {
 	return mostImportantReason(r) + "+"
 }
 
-func getReasons(b v1alpha2.Build) []string {
-	s := strings.Split(b.Annotations[v1alpha2.BuildReasonAnnotation], ",")
+func getReasons(b v1alpha1.Build) []string {
+	s := strings.Split(b.Annotations[v1alpha1.BuildReasonAnnotation], ",")
 	if len(s) == 1 && s[0] == "" {
 		return nil
 	}

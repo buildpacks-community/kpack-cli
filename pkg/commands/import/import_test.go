@@ -7,8 +7,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
-	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -127,29 +126,29 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	expectedLifecycleImageConfig.Annotations[importTimestampKey] = timestampProvider.timestamp
 	expectedLifecycleImageConfig.Data["image"] = "default-registry.io/default-repo@sha256:lifecycle-image-digest"
 
-	store := &v1alpha2.ClusterStore{
+	store := &v1alpha1.ClusterStore{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha2.ClusterStoreKind,
-			APIVersion: "kpack.io/v1alpha2",
+			Kind:       v1alpha1.ClusterStoreKind,
+			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "store-name",
 			Annotations: map[string]string{
-				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"}]},"status":{}}`,
+				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"}]},"status":{}}`,
 				importTimestampKey: timestampProvider.timestamp,
 			},
 		},
-		Spec: v1alpha2.ClusterStoreSpec{
-			Sources: []corev1alpha1.StoreImage{
+		Spec: v1alpha1.ClusterStoreSpec{
+			Sources: []v1alpha1.StoreImage{
 				{Image: "default-registry.io/default-repo@sha256:buildpack-image-digest"},
 			},
 		},
 	}
 
-	stack := &v1alpha2.ClusterStack{
+	stack := &v1alpha1.ClusterStack{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha2.ClusterStackKind,
-			APIVersion: "kpack.io/v1alpha2",
+			Kind:       v1alpha1.ClusterStackKind,
+			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "stack-name",
@@ -157,12 +156,12 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				importTimestampKey: timestampProvider.timestamp,
 			},
 		},
-		Spec: v1alpha2.ClusterStackSpec{
+		Spec: v1alpha1.ClusterStackSpec{
 			Id: "stack-id",
-			BuildImage: v1alpha2.ClusterStackSpecImage{
+			BuildImage: v1alpha1.ClusterStackSpecImage{
 				Image: "default-registry.io/default-repo@sha256:build-image-digest",
 			},
-			RunImage: v1alpha2.ClusterStackSpecImage{
+			RunImage: v1alpha1.ClusterStackSpecImage{
 				Image: "default-registry.io/default-repo@sha256:build-image-digest",
 			},
 		},
@@ -171,10 +170,10 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 	defaultStack := stack.DeepCopy()
 	defaultStack.Name = "default"
 
-	builder := &v1alpha2.ClusterBuilder{
+	builder := &v1alpha1.ClusterBuilder{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha2.ClusterBuilderKind,
-			APIVersion: "kpack.io/v1alpha2",
+			Kind:       v1alpha1.ClusterBuilderKind,
+			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "clusterbuilder-name",
@@ -182,22 +181,22 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				importTimestampKey: timestampProvider.timestamp,
 			},
 		},
-		Spec: v1alpha2.ClusterBuilderSpec{
-			BuilderSpec: v1alpha2.BuilderSpec{
+		Spec: v1alpha1.ClusterBuilderSpec{
+			BuilderSpec: v1alpha1.BuilderSpec{
 				Tag: "default-registry.io/default-repo:clusterbuilder-clusterbuilder-name",
 				Stack: corev1.ObjectReference{
 					Name: "stack-name",
-					Kind: v1alpha2.ClusterStackKind,
+					Kind: v1alpha1.ClusterStackKind,
 				},
 				Store: corev1.ObjectReference{
 					Name: "store-name",
-					Kind: v1alpha2.ClusterStoreKind,
+					Kind: v1alpha1.ClusterStoreKind,
 				},
-				Order: []corev1alpha1.OrderEntry{
+				Order: []v1alpha1.OrderEntry{
 					{
-						Group: []corev1alpha1.BuildpackRef{
+						Group: []v1alpha1.BuildpackRef{
 							{
-								BuildpackInfo: corev1alpha1.BuildpackInfo{
+								BuildpackInfo: v1alpha1.BuildpackInfo{
 									Id: "buildpack-id",
 								},
 							},
@@ -241,8 +240,8 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("there are no stores, stacks, or cbs", func() {
 		it("creates stores, stacks, and cbs defined in the dependency descriptor", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
@@ -289,8 +288,8 @@ Imported resources
 		})
 
 		it("creates stores, stacks, and cbs defined in the dependency descriptor provided by stdin", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			descriptor, err := ioutil.ReadFile("./testdata/deps.yaml")
 			require.NoError(t, err)
@@ -341,8 +340,8 @@ Imported resources
 		})
 
 		it("creates stores, stacks, and cbs defined in the dependency descriptor for version 1", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
@@ -380,8 +379,8 @@ Imported resources
 
 		when("the show changes flag is used", func() {
 			it("shows a summary of changes for each resource", func() {
-				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
@@ -448,8 +447,8 @@ Imported resources
 			})
 
 			it("skips confirmation when the force flag is used", func() {
-				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
@@ -545,8 +544,8 @@ Imported resources
 			fakeDiffer.DiffResult = ""
 
 			it("updates the import timestamp and uses descriptive confirm message", func() {
-				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 				stack.Spec.BuildImage.Image = "some-uploaded-build-image@build-image-digest"
 				stack.Spec.RunImage.Image = "some-uploaded-run-image@build-image-digest"
@@ -608,8 +607,8 @@ Imported resources
 
 				expectedLifecycleImageConfig.Annotations = map[string]string{importTimestampKey: newTimestamp}
 				expectedStore.Annotations = map[string]string{importTimestampKey: newTimestamp}
-				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
@@ -662,7 +661,7 @@ Imported resources
 
 			expectedStore := store.DeepCopy()
 			expectedStore.Annotations[importTimestampKey] = newTimestamp
-			expectedStore.Spec.Sources = append(expectedStore.Spec.Sources, corev1alpha1.StoreImage{
+			expectedStore.Spec.Sources = append(expectedStore.Spec.Sources, v1alpha1.StoreImage{
 				Image: "default-registry.io/default-repo@sha256:another-buildpack-image-digest",
 			})
 
@@ -680,11 +679,11 @@ Imported resources
 
 			expectedBuilder := builder.DeepCopy()
 			expectedBuilder.Annotations[importTimestampKey] = newTimestamp
-			expectedBuilder.Spec.Order = []corev1alpha1.OrderEntry{
+			expectedBuilder.Spec.Order = []v1alpha1.OrderEntry{
 				{
-					Group: []corev1alpha1.BuildpackRef{
+					Group: []v1alpha1.BuildpackRef{
 						{
-							BuildpackInfo: corev1alpha1.BuildpackInfo{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
 								Id: "another-buildpack-id",
 							},
 						},
@@ -694,11 +693,11 @@ Imported resources
 
 			expectedDefaultBuilder := defaultBuilder.DeepCopy()
 			expectedDefaultBuilder.Annotations[importTimestampKey] = newTimestamp
-			expectedDefaultBuilder.Spec.Order = []corev1alpha1.OrderEntry{
+			expectedDefaultBuilder.Spec.Order = []v1alpha1.OrderEntry{
 				{
-					Group: []corev1alpha1.BuildpackRef{
+					Group: []v1alpha1.BuildpackRef{
 						{
-							BuildpackInfo: corev1alpha1.BuildpackInfo{
+							BuildpackInfo: v1alpha1.BuildpackInfo{
 								Id: "another-buildpack-id",
 							},
 						},
@@ -706,8 +705,8 @@ Imported resources
 				},
 			}
 
-			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"another-buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"another-buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"another-buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"another-buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			it("creates stores, stacks, and cbs defined in the dependency descriptor and updates the timestamp", func() {
 				testhelpers.CommandTest{
@@ -759,7 +758,7 @@ Imported resources
 			Args: []string{
 				"-f", "./testdata/invalid-deps.yaml",
 			},
-			ExpectedErrorOutput: "Error: did not find expected apiVersion, must be one of: [kp.kpack.io/v1alpha2 kp.kpack.io/v1alpha3]\n",
+			ExpectedErrorOutput: "Error: did not find expected apiVersion, must be one of: [kp.kpack.io/v1alpha1 kp.kpack.io/v1alpha3]\n",
 			ExpectErr:           true,
 		}.TestK8sAndKpack(t, cmdFunc)
 	})
@@ -781,8 +780,8 @@ Importing ClusterBuilder 'clusterbuilder-name'...
 Importing ClusterBuilder 'default'...
 `
 
-		builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+		builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		it("can output in yaml format", func() {
 			const resourceYAML = `apiVersion: v1
@@ -796,12 +795,12 @@ metadata:
   name: lifecycle-image
   namespace: kpack
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"}]},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"}]},"status":{}}'
   creationTimestamp: null
   name: store-name
 spec:
@@ -809,7 +808,7 @@ spec:
   - image: default-registry.io/default-repo@sha256:buildpack-image-digest
 status: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
 metadata:
   annotations:
@@ -826,7 +825,7 @@ status:
   buildImage: {}
   runImage: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
 metadata:
   annotations:
@@ -843,12 +842,12 @@ status:
   buildImage: {}
   runImage: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterBuilder
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: clusterbuilder-name
 spec:
@@ -868,12 +867,12 @@ spec:
 status:
   stack: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterBuilder
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: default
 spec:
@@ -938,13 +937,13 @@ status:
 }
 {
     "kind": "ClusterStore",
-    "apiVersion": "kpack.io/v1alpha2",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "store-name",
         "creationTimestamp": null,
         "annotations": {
             "kpack.io/import-timestamp": "2006-01-02T15:04:05Z",
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterStore\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"store-name\",\"creationTimestamp\":null},\"spec\":{\"sources\":[{\"image\":\"default-registry.io/default-repo@sha256:buildpack-image-digest\"}]},\"status\":{}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterStore\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"store-name\",\"creationTimestamp\":null},\"spec\":{\"sources\":[{\"image\":\"default-registry.io/default-repo@sha256:buildpack-image-digest\"}]},\"status\":{}}"
         }
     },
     "spec": {
@@ -958,7 +957,7 @@ status:
 }
 {
     "kind": "ClusterStack",
-    "apiVersion": "kpack.io/v1alpha2",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "stack-name",
         "creationTimestamp": null,
@@ -982,7 +981,7 @@ status:
 }
 {
     "kind": "ClusterStack",
-    "apiVersion": "kpack.io/v1alpha2",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "default",
         "creationTimestamp": null,
@@ -1006,13 +1005,13 @@ status:
 }
 {
     "kind": "ClusterBuilder",
-    "apiVersion": "kpack.io/v1alpha2",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "clusterbuilder-name",
         "creationTimestamp": null,
         "annotations": {
             "kpack.io/import-timestamp": "2006-01-02T15:04:05Z",
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
         }
     },
     "spec": {
@@ -1045,13 +1044,13 @@ status:
 }
 {
     "kind": "ClusterBuilder",
-    "apiVersion": "kpack.io/v1alpha2",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "default",
         "creationTimestamp": null,
         "annotations": {
             "kpack.io/import-timestamp": "2006-01-02T15:04:05Z",
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
         }
     },
     "spec": {
@@ -1112,8 +1111,8 @@ status:
 	})
 
 	when("dry-run flag is used", func() {
-		builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+		builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		it("does not create any resources and prints result with dry run indicated", func() {
 			const expectedOutput = `Importing Lifecycle... (dry run)
@@ -1159,12 +1158,12 @@ metadata:
   name: lifecycle-image
   namespace: kpack
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"}]},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"}]},"status":{}}'
   creationTimestamp: null
   name: store-name
 spec:
@@ -1172,7 +1171,7 @@ spec:
   - image: default-registry.io/default-repo@sha256:buildpack-image-digest
 status: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
 metadata:
   annotations:
@@ -1189,7 +1188,7 @@ status:
   buildImage: {}
   runImage: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
 metadata:
   annotations:
@@ -1206,12 +1205,12 @@ status:
   buildImage: {}
   runImage: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterBuilder
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: clusterbuilder-name
 spec:
@@ -1231,12 +1230,12 @@ spec:
 status:
   stack: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterBuilder
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: default
 spec:
@@ -1292,8 +1291,8 @@ Importing ClusterBuilder 'default'... (dry run)
 	})
 
 	when("dry-run-with-image-upload flag is used", func() {
-		builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+		builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		it("does not create any resources and prints result with dry run indicated", func() {
 			const expectedOutput = `Importing Lifecycle... (dry run with image upload)
@@ -1338,12 +1337,12 @@ metadata:
   name: lifecycle-image
   namespace: kpack
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"}]},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"}]},"status":{}}'
   creationTimestamp: null
   name: store-name
 spec:
@@ -1351,7 +1350,7 @@ spec:
   - image: default-registry.io/default-repo@sha256:buildpack-image-digest
 status: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
 metadata:
   annotations:
@@ -1368,7 +1367,7 @@ status:
   buildImage: {}
   runImage: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
 metadata:
   annotations:
@@ -1385,12 +1384,12 @@ status:
   buildImage: {}
   runImage: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterBuilder
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: clusterbuilder-name
 spec:
@@ -1410,12 +1409,12 @@ spec:
 status:
   stack: {}
 ---
-apiVersion: kpack.io/v1alpha2
+apiVersion: kpack.io/v1alpha1
 kind: ClusterBuilder
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: default
 spec:

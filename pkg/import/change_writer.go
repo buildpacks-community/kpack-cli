@@ -43,7 +43,7 @@ func writeLifecycleChange(ctx context.Context, keychain authn.Keychain, kpConfig
 
 func writeClusterStoresChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, stores []ClusterStore, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	for _, store := range stores {
-		oldStore, err := cs.KpackClient.KpackV1alpha2().ClusterStores().Get(ctx, store.Name, metav1.GetOptions{})
+		oldStore, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(ctx, store.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
@@ -66,7 +66,7 @@ func writeClusterStoresChange(ctx context.Context, keychain authn.Keychain, kpCo
 
 func writeClusterStacksChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, stacks []ClusterStack, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	for _, stack := range stacks {
-		oldStack, err := cs.KpackClient.KpackV1alpha2().ClusterStacks().Get(ctx, stack.Name, metav1.GetOptions{})
+		oldStack, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().Get(ctx, stack.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
@@ -89,7 +89,7 @@ func writeClusterStacksChange(ctx context.Context, keychain authn.Keychain, kpCo
 
 func writeClusterBuildersChange(ctx context.Context, builders []ClusterBuilder, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	for _, builder := range builders {
-		oldBuilder, err := cs.KpackClient.KpackV1alpha2().ClusterBuilders().Get(ctx, builder.Name, metav1.GetOptions{})
+		oldBuilder, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(ctx, builder.Name, metav1.GetOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}

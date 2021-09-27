@@ -7,12 +7,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
-
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/builder"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
@@ -54,7 +53,7 @@ kp builder patch my-builder --buildpack my-buildpack-id --buildpack my-other-bui
 
 			ctx := cmd.Context()
 
-			cb, err := cs.KpackClient.KpackV1alpha2().Builders(cs.Namespace).Get(ctx, name, metav1.GetOptions{})
+			cb, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Get(ctx, name, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -73,7 +72,7 @@ kp builder patch my-builder --buildpack my-buildpack-id --buildpack my-other-bui
 	return cmd
 }
 
-func patch(ctx context.Context, bldr *v1alpha2.Builder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
+func patch(ctx context.Context, bldr *v1alpha1.Builder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
 	patchedBldr := bldr.DeepCopy()
 
 	if flags.tag != "" {
@@ -112,7 +111,7 @@ func patch(ctx context.Context, bldr *v1alpha2.Builder, flags CommandFlags, ch *
 
 	hasPatch := len(patch) > 0
 	if hasPatch && !ch.IsDryRun() {
-		patchedBldr, err = cs.KpackClient.KpackV1alpha2().Builders(cs.Namespace).Patch(ctx, patchedBldr.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+		patchedBldr, err = cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).Patch(ctx, patchedBldr.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}

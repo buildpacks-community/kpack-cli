@@ -6,7 +6,7 @@ package builder
 import (
 	"sort"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -35,7 +35,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			builderList, err := cs.KpackClient.KpackV1alpha2().Builders(cs.Namespace).List(cmd.Context(), metav1.ListOptions{})
+			builderList, err := cs.KpackClient.KpackV1alpha1().Builders(cs.Namespace).List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -54,7 +54,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 	return cmd
 }
 
-func displayClusterBuildersTable(cmd *cobra.Command, builderList *v1alpha2.BuilderList) error {
+func displayClusterBuildersTable(cmd *cobra.Command, builderList *v1alpha1.BuilderList) error {
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "Name", "Ready", "Stack", "Image")
 	if err != nil {
 		return err
@@ -76,13 +76,13 @@ func displayClusterBuildersTable(cmd *cobra.Command, builderList *v1alpha2.Build
 	return writer.Write()
 }
 
-func Sort(builds []v1alpha2.Builder) func(i int, j int) bool {
+func Sort(builds []v1alpha1.Builder) func(i int, j int) bool {
 	return func(i, j int) bool {
 		return builds[j].ObjectMeta.Name > builds[i].ObjectMeta.Name
 	}
 }
 
-func getStatus(b v1alpha2.Builder) string {
+func getStatus(b v1alpha1.Builder) string {
 	cond := b.Status.GetCondition(corev1alpha1.ConditionReady)
 	switch {
 	case cond.IsTrue():

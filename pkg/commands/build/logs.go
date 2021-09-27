@@ -7,7 +7,7 @@ import (
 	"context"
 	"sort"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/logs"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -40,8 +40,8 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			buildList, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).List(cmd.Context(), metav1.ListOptions{
-				LabelSelector: v1alpha2.ImageLabel + "=" + args[0],
+			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(cmd.Context(), metav1.ListOptions{
+				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
 				return err
@@ -55,7 +55,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				if err != nil {
 					return err
 				}
-				return logs.NewBuildLogsClient(cs.K8sClient).Tail(context.Background(), cmd.OutOrStdout(), args[0], bld.Labels[v1alpha2.BuildNumberLabel], cs.Namespace)
+				return logs.NewBuildLogsClient(cs.K8sClient).Tail(context.Background(), cmd.OutOrStdout(), args[0], bld.Labels[v1alpha1.BuildNumberLabel], cs.Namespace)
 			}
 		},
 	}
