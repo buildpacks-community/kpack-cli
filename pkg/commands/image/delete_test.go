@@ -44,7 +44,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						image,
 					},
 					Args: []string{"some-image", "-n", "some-namespace"},
-					ExpectedOutput: `Image "some-image" deleted
+					ExpectedOutput: `Image Resource "some-image" deleted
 `,
 					ExpectDeletes: []clientgotesting.DeleteActionImpl{
 						{
@@ -92,7 +92,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						image,
 					},
 					Args: []string{"some-image"},
-					ExpectedOutput: `Image "some-image" deleted
+					ExpectedOutput: `Image Resource "some-image" deleted
 `,
 					ExpectDeletes: []clientgotesting.DeleteActionImpl{
 						{

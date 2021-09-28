@@ -25,8 +25,8 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List images",
-		Long: `Prints a table of the most important information about images in the provided namespace.
+		Short: "List image resources",
+		Long: `Prints a table of the most important information about image resources in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.`,
 		Example: `kp image list
@@ -62,7 +62,7 @@ kp image list --filter ready=true --filter latest-reason=commit,trigger`,
 			})
 
 			if len(imageList.Items) == 0 {
-				return errors.New("no images found")
+				return errors.New("no image resources found")
 			} else {
 				return displayImagesTable(cmd, imageList)
 			}

@@ -27,9 +27,9 @@ func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilPr
 
 	cmd := &cobra.Command{
 		Use:   "save <name> --tag <tag>",
-		Short: "Create or patch an image configuration",
-		Long: `Create or patch an image configuration by providing command line arguments.
-This image will be created only if it does not exist in the provided namespace, otherwise it will be patched.
+		Short: "Create or patch an image resource",
+		Long: `Create or patch an image resource by providing command line arguments.
+This image resource will be created only if it does not exist in the provided namespace, otherwise it will be patched.
 
 The --tag flag is required for a create but is immutable and will be ignored for a patch.
 The --cache-size flag can only be used to create or increase the size of the existing cache.
@@ -42,7 +42,7 @@ The flags for this command determine how the build will retrieve source code:
   "--blob" to use source code hosted in a blob store
   "--local-path" to use source code from the local machine
 
-Local source code will be pushed to the same registry provided for the image tag.
+Local source code will be pushed to the same registry provided for the image resource tag.
 Therefore, you must have credentials to access the registry on your machine.
 
 Environment variables may be provided by using the "--env" flag.

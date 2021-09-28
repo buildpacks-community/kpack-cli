@@ -22,7 +22,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "list [image-name]",
+		Use:   "list [image-resource-name]",
 		Short: "List builds",
 		Long: `Prints a table of the most important information about builds in the provided namespace.
 

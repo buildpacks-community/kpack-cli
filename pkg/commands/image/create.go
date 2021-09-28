@@ -27,9 +27,9 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 
 	cmd := &cobra.Command{
 		Use:   "create <name> --tag <tag>",
-		Short: "Create an image configuration",
-		Long: `Create an image configuration by providing command line arguments.
-This image will be created only if it does not exist in the provided namespace.
+		Short: "Create an image resource",
+		Long: `Create an image resource by providing command line arguments.
+This image resource will be created only if it does not exist in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.
 
@@ -39,7 +39,7 @@ The flags for this command determine how the build will retrieve source code:
   "--blob" to use source code hosted in a blob store
   "--local-path" to use source code from the local machine
 
-Local source code will be pushed to the same registry provided for the image tag.
+Local source code will be pushed to the same registry provided for the image resource tag.
 Therefore, you must have credentials to access the registry on your machine.
 --registry-ca-cert-path and --registry-verify-certs are only used for local source type.
 
@@ -85,7 +85,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the image will be created")
+	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the image resource will be created")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVar(&factory.GitRepo, "git", "", "git repository url")
 	cmd.Flags().StringVar(&factory.GitRevision, "git-revision", "", "git revision such as commit, tag, or branch (default \"main\")")
@@ -104,7 +104,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 }
 
 func create(ctx context.Context, name, tag string, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (*v1alpha2.Image, error) {
-	if err := ch.PrintStatus("Creating Image..."); err != nil {
+	if err := ch.PrintStatus("Creating Image Resource..."); err != nil {
 		return nil, err
 	}
 
@@ -129,5 +129,5 @@ func create(ctx context.Context, name, tag string, factory *image.Factory, ch *c
 		return nil, err
 	}
 
-	return img, ch.PrintResult("Image %q created", img.Name)
+	return img, ch.PrintResult("Image Resource %q created", img.Name)
 }

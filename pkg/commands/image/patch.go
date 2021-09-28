@@ -28,9 +28,9 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilP
 
 	cmd := &cobra.Command{
 		Use:   "patch <name>",
-		Short: "Patch an existing image configuration",
-		Long: `Patch an existing image configuration by providing command line arguments.
-This will fail if the image does not exist in the provided namespace.
+		Short: "Patch an existing image resource",
+		Long: `Patch an existing image resource by providing command line arguments.
+This will fail if the image resource does not exist in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.
 
@@ -40,7 +40,7 @@ The flags for this command determine how the build will retrieve source code:
   "--blob" to use source code hosted in a blob store
   "--local-path" to use source code from the local machine
 
-Local source code will be pushed to the same registry as the existing image tag.
+Local source code will be pushed to the same registry as the existing image resource tag.
 Therefore, you must have credentials to access the registry on your machine.
 
 Environment variables may be provided by using the "--env" flag.
@@ -111,14 +111,14 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables to add/replace")
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
 	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size as a kubernetes quantity")
-	cmd.Flags().BoolP("wait", "w", false, "wait for image patch to be reconciled and tail resulting build logs")
+	cmd.Flags().BoolP("wait", "w", false, "wait for image resource patch to be reconciled and tail resulting build logs")
 	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsCfg)
 	return cmd
 }
 
 func patch(ctx context.Context, img *v1alpha2.Image, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (bool, *v1alpha2.Image, error) {
-	if err := ch.PrintStatus("Patching Image..."); err != nil {
+	if err := ch.PrintStatus("Patching Image Resource..."); err != nil {
 		return false, nil, err
 	}
 
@@ -139,5 +139,5 @@ func patch(ctx context.Context, img *v1alpha2.Image, factory *image.Factory, ch 
 		return hasPatch, nil, err
 	}
 
-	return hasPatch, patchedImage, ch.PrintChangeResult(hasPatch, fmt.Sprintf("Image %q patched", img.Name))
+	return hasPatch, patchedImage, ch.PrintChangeResult(hasPatch, fmt.Sprintf("Image Resource %q patched", img.Name))
 }
