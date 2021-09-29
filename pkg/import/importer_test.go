@@ -1192,7 +1192,7 @@ clusterBuilders:
 							},
 							Spec: v1alpha1.ClusterBuilderSpec{
 								BuilderSpec: v1alpha1.BuilderSpec{
-									Tag:"gcr.io/my-cool-repo:clusterbuilder-default",
+									Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
 									Stack: corev1.ObjectReference{
 										Kind: "ClusterStack",
 										Name: "base",

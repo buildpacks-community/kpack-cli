@@ -82,7 +82,7 @@ func update(ctx context.Context, store *v1alpha1.ClusterStore, buildpackages []s
 		return err
 	}
 
-	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
+	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
 	updatedStore, storeUpdated, err := factory.AddToStore(authn.DefaultKeychain, store, kpConfig, buildpackages...)
 	if err != nil {

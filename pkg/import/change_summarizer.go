@@ -24,7 +24,7 @@ func SummarizeChange(
 
 	var summarizer changeSummarizer
 	iDiffer := &ImportDiffer{
-		Differ:         differ,
+		Differ:                 differ,
 		RelocatedImageProvider: relocatedImageProvider,
 	}
 

@@ -41,7 +41,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 	fakeRelocatedImageProvider := NewFakeRelocatedImageProvider()
 	kpConfig := config.NewKpConfig("my-cool-repo", corev1.ObjectReference{})
 	importDiffer := importpkg.ImportDiffer{
-		Differ:         fakeDiffer,
+		Differ:                 fakeDiffer,
 		RelocatedImageProvider: fakeRelocatedImageProvider,
 	}
 	fakeKeychain := &registryfakes.FakeKeychain{}

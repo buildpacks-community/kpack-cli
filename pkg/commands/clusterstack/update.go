@@ -85,7 +85,7 @@ func update(ctx context.Context, keychain authn.Keychain, stack *v1alpha1.Cluste
 		return err
 	}
 
-	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
+	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
 	hasUpdates, err := factory.UpdateStack(keychain, stack, buildImageRef, runImageRef, kpConfig)
 	if err != nil {

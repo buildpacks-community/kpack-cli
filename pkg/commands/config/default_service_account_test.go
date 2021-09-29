@@ -32,9 +32,11 @@ func testDefaultServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 					Namespace: "kpack",
 				},
 				Data: map[string]string{
-					"default.repository":                          "test-repo",
-					"default.repository.serviceaccount":           "default",
-					"default.repository.serviceaccount.namespace": "default",
+					"default.repository":                            "test-repo",
+					"default.repository.serviceaccount":             "default",
+					"default.repository.serviceaccount.namespace":   "default",
+					"canonical.repository.serviceaccount":           "default",
+					"canonical.repository.serviceaccount.namespace": "default",
 				},
 			}
 
@@ -53,8 +55,10 @@ func testDefaultServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 					Namespace: "kpack",
 				},
 				Data: map[string]string{
-					"default.repository":                "test-repo",
-					"default.repository.serviceaccount": "default",
+					"default.repository":                  "test-repo",
+					"default.repository.serviceaccount":   "default",
+					"canonical.repository":                "test-repo",
+					"canonical.repository.serviceaccount": "default",
 				},
 			}
 
@@ -116,9 +120,11 @@ func testDefaultServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 								Namespace: "kpack",
 							},
 							Data: map[string]string{
-								"default.repository":                          "test-repo",
-								"default.repository.serviceaccount":           "some-service-account",
-								"default.repository.serviceaccount.namespace": "kpack",
+								"default.repository":                            "test-repo",
+								"default.repository.serviceaccount":             "some-service-account",
+								"default.repository.serviceaccount.namespace":   "kpack",
+								"canonical.repository.serviceaccount":           "some-service-account",
+								"canonical.repository.serviceaccount.namespace": "kpack",
 							},
 						},
 					},
@@ -155,9 +161,11 @@ func testDefaultServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 								Namespace: "kpack",
 							},
 							Data: map[string]string{
-								"default.repository":                          "test-repo",
-								"default.repository.serviceaccount":           "some-service-account",
-								"default.repository.serviceaccount.namespace": "default",
+								"default.repository":                            "test-repo",
+								"default.repository.serviceaccount":             "some-service-account",
+								"default.repository.serviceaccount.namespace":   "default",
+								"canonical.repository.serviceaccount":           "some-service-account",
+								"canonical.repository.serviceaccount.namespace": "default",
 							},
 						},
 					},
@@ -178,9 +186,10 @@ func testDefaultServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 							Namespace: "kpack",
 						},
 						Data: map[string]string{
-							"default.repository":                          "",
-							"default.repository.serviceaccount":           "some-account",
-							"default.repository.serviceaccount.namespace": "kpack",
+							"default.repository.serviceaccount":             "some-account",
+							"default.repository.serviceaccount.namespace":   "kpack",
+							"canonical.repository.serviceaccount":           "some-account",
+							"canonical.repository.serviceaccount.namespace": "kpack",
 						},
 					},
 				},

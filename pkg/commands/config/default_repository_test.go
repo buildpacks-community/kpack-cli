@@ -81,6 +81,7 @@ func testDefaultRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 								Namespace: "kpack",
 							},
 							Data: map[string]string{
+								"canonical.repository":              "new-repo",
 								"default.repository":                "new-repo",
 								"default.repository.serviceaccount": "default",
 							},
@@ -103,9 +104,8 @@ func testDefaultRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 							Namespace: "kpack",
 						},
 						Data: map[string]string{
-							"default.repository":                          "new-repo",
-							"default.repository.serviceaccount":           "",
-							"default.repository.serviceaccount.namespace": "",
+							"default.repository":   "new-repo",
+							"canonical.repository": "new-repo",
 						},
 					},
 				},

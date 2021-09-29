@@ -39,7 +39,7 @@ kp config default-repository my-registry.com/my-default-repo`,
 				return err
 			}
 
-			configHelper := config.NewKpConfigProvider(cs)
+			configHelper := config.NewKpConfigProvider(cs.K8sClient)
 
 			if len(args) == 0 {
 				kpConfig := configHelper.GetKpConfig(ctx)
