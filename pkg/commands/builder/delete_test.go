@@ -6,7 +6,7 @@ package builder_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -33,7 +33,7 @@ func testBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace has been provided", func() {
 		when("a builder is available", func() {
 			it("deletes the builder", func() {
-				builder := &v1alpha2.Builder{
+				builder := &v1alpha1.Builder{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "some-builder",
 						Namespace: "test-namespace",
@@ -81,7 +81,7 @@ func testBuilderDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace has not been provided", func() {
 		when("a builder is available", func() {
 			it("deletes the builder", func() {
-				builder := &v1alpha2.Builder{
+				builder := &v1alpha1.Builder{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "some-builder",
 						Namespace: defaultNamespace,

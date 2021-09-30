@@ -6,8 +6,7 @@ package clusterstore_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
-	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -43,12 +42,12 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 	}
 
-	store := &v1alpha2.ClusterStore{
+	store := &v1alpha1.ClusterStore{
 		ObjectMeta: v1.ObjectMeta{
 			Name: storeName,
 		},
-		Spec: v1alpha2.ClusterStoreSpec{
-			Sources: []corev1alpha1.StoreImage{
+		Spec: v1alpha1.ClusterStoreSpec{
+			Sources: []v1alpha1.StoreImage{
 				{
 					Image: image1InStore,
 				},
@@ -57,23 +56,23 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			},
 		},
-		Status: v1alpha2.ClusterStoreStatus{
-			Buildpacks: []corev1alpha1.StoreBuildpack{
+		Status: v1alpha1.ClusterStoreStatus{
+			Buildpacks: []v1alpha1.StoreBuildpack{
 				{
-					BuildpackInfo: corev1alpha1.BuildpackInfo{
+					BuildpackInfo: v1alpha1.BuildpackInfo{
 						Id:      "some-buildpackage",
 						Version: "1.2.3",
 					},
-					StoreImage: corev1alpha1.StoreImage{
+					StoreImage: v1alpha1.StoreImage{
 						Image: image1InStore,
 					},
 				},
 				{
-					BuildpackInfo: corev1alpha1.BuildpackInfo{
+					BuildpackInfo: v1alpha1.BuildpackInfo{
 						Id:      "another-buildpackage",
 						Version: "4.5.6",
 					},
-					StoreImage: corev1alpha1.StoreImage{
+					StoreImage: v1alpha1.StoreImage{
 						Image: image2InStore,
 					},
 				},
@@ -92,10 +91,10 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
-					Object: &v1alpha2.ClusterStore{
+					Object: &v1alpha1.ClusterStore{
 						ObjectMeta: store.ObjectMeta,
-						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []corev1alpha1.StoreImage{
+						Spec: v1alpha1.ClusterStoreSpec{
+							Sources: []v1alpha1.StoreImage{
 								{
 									Image: image2InStore,
 								},
@@ -125,10 +124,10 @@ ClusterStore "some-store" updated
 			},
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
-					Object: &v1alpha2.ClusterStore{
+					Object: &v1alpha1.ClusterStore{
 						ObjectMeta: store.ObjectMeta,
-						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []corev1alpha1.StoreImage{},
+						Spec: v1alpha1.ClusterStoreSpec{
+							Sources: []v1alpha1.StoreImage{},
 						},
 						Status: store.Status,
 					},
@@ -188,7 +187,7 @@ ClusterStore "some-store" updated
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha2
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   creationTimestamp: null
@@ -221,10 +220,10 @@ status:
 				},
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
-						Object: &v1alpha2.ClusterStore{
+						Object: &v1alpha1.ClusterStore{
 							ObjectMeta: store.ObjectMeta,
-							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []corev1alpha1.StoreImage{
+							Spec: v1alpha1.ClusterStoreSpec{
+								Sources: []v1alpha1.StoreImage{
 									{
 										Image: image2InStore,
 									},
@@ -242,7 +241,7 @@ Removing buildpackage some-buildpackage@1.2.3
 		})
 
 		it("can output in json format", func() {
-			const resourceJSON = "{\n    \"kind\": \"ClusterStore\",\n    \"apiVersion\": \"kpack.io/v1alpha2\",\n    \"metadata\": {\n        \"name\": \"some-store\",\n        \"creationTimestamp\": null\n    },\n    \"spec\": {\n        \"sources\": [\n            {\n                \"image\": \"some/imageinStore2@sha256:1232alreadyInStore\"\n            }\n        ]\n    },\n    \"status\": {\n        \"buildpacks\": [\n            {\n                \"id\": \"some-buildpackage\",\n                \"version\": \"1.2.3\",\n                \"buildpackage\": {},\n                \"storeImage\": {\n                    \"image\": \"some/imageinStore1@sha256:1231alreadyInStore\"\n                }\n            },\n            {\n                \"id\": \"another-buildpackage\",\n                \"version\": \"4.5.6\",\n                \"buildpackage\": {},\n                \"storeImage\": {\n                    \"image\": \"some/imageinStore2@sha256:1232alreadyInStore\"\n                }\n            }\n        ]\n    }\n}\n"
+			const resourceJSON = "{\n    \"kind\": \"ClusterStore\",\n    \"apiVersion\": \"kpack.io/v1alpha1\",\n    \"metadata\": {\n        \"name\": \"some-store\",\n        \"creationTimestamp\": null\n    },\n    \"spec\": {\n        \"sources\": [\n            {\n                \"image\": \"some/imageinStore2@sha256:1232alreadyInStore\"\n            }\n        ]\n    },\n    \"status\": {\n        \"buildpacks\": [\n            {\n                \"id\": \"some-buildpackage\",\n                \"version\": \"1.2.3\",\n                \"buildpackage\": {},\n                \"storeImage\": {\n                    \"image\": \"some/imageinStore1@sha256:1231alreadyInStore\"\n                }\n            },\n            {\n                \"id\": \"another-buildpackage\",\n                \"version\": \"4.5.6\",\n                \"buildpackage\": {},\n                \"storeImage\": {\n                    \"image\": \"some/imageinStore2@sha256:1232alreadyInStore\"\n                }\n            }\n        ]\n    }\n}\n"
 
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
@@ -255,10 +254,10 @@ Removing buildpackage some-buildpackage@1.2.3
 				},
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
-						Object: &v1alpha2.ClusterStore{
+						Object: &v1alpha1.ClusterStore{
 							ObjectMeta: store.ObjectMeta,
-							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []corev1alpha1.StoreImage{
+							Spec: v1alpha1.ClusterStoreSpec{
+								Sources: []v1alpha1.StoreImage{
 									{
 										Image: image2InStore,
 									},
@@ -329,7 +328,7 @@ ClusterStore "some-store" updated (dry run)
 
 		when("output flag is used", func() {
 			it("does not update a clusterstore and prints the resource output in requested format", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha2
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStore
 metadata:
   creationTimestamp: null

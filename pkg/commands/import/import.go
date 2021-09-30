@@ -72,7 +72,7 @@ cat dependencies.yaml | kp import -f -`,
 
 			ctx := cmd.Context()
 
-			kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
+			kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
 			imgFetcher := rup.Fetcher(tlsConfig)
 			imgRelocator := rup.Relocator(ch.Writer(), tlsConfig, ch.CanChangeState())

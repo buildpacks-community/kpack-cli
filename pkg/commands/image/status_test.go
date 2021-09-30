@@ -6,7 +6,7 @@ package image_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -41,24 +41,24 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace is provided", func() {
 		when("the namespaces has images", func() {
 			it("returns a table of image details for git source", func() {
-				image := &v1alpha2.Image{
+				image := &v1alpha1.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      imageName,
 						Namespace: namespace,
 					},
-					Spec: v1alpha2.ImageSpec{
+					Spec: v1alpha1.ImageSpec{
 						Builder: corev1.ObjectReference{
 							Kind: "ClusterBuilder",
 							Name: "some-cluster-builder",
 						},
-						Source: corev1alpha1.SourceConfig{
-							Git: &corev1alpha1.Git{
+						Source: v1alpha1.SourceConfig{
+							Git: &v1alpha1.Git{
 								URL:      "some-git-url",
 								Revision: "some-git-revision",
 							},
 						},
 					},
-					Status: v1alpha2.ImageStatus{
+					Status: v1alpha1.ImageStatus{
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
 								{
@@ -70,13 +70,13 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 						LatestImage: "test-registry.io/test-image-1@sha256:abcdef123",
 					},
 				}
-				testNamespacedBuilds[0].Spec.Source = corev1alpha1.SourceConfig{
-					Git: &corev1alpha1.Git{
+				testNamespacedBuilds[0].Spec.Source = v1alpha1.SourceConfig{
+					Git: &v1alpha1.Git{
 						Revision: "successful-build-git-revision",
 					},
 				}
-				testNamespacedBuilds[2].Spec.Source = corev1alpha1.SourceConfig{
-					Git: &corev1alpha1.Git{
+				testNamespacedBuilds[2].Spec.Source = v1alpha1.SourceConfig{
+					Git: &v1alpha1.Git{
 						Revision: "failed-build-git-revision",
 					},
 				}
@@ -118,23 +118,23 @@ Git Revision:    failed-build-git-revision
 			})
 
 			it("returns a table of image details for blob source", func() {
-				image := &v1alpha2.Image{
+				image := &v1alpha1.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      imageName,
 						Namespace: namespace,
 					},
-					Spec: v1alpha2.ImageSpec{
+					Spec: v1alpha1.ImageSpec{
 						Builder: corev1.ObjectReference{
 							Kind: "ClusterBuilder",
 							Name: "some-cluster-builder",
 						},
-						Source: corev1alpha1.SourceConfig{
-							Blob: &corev1alpha1.Blob{
+						Source: v1alpha1.SourceConfig{
+							Blob: &v1alpha1.Blob{
 								URL: "some-blob-url",
 							},
 						},
 					},
-					Status: v1alpha2.ImageStatus{
+					Status: v1alpha1.ImageStatus{
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
 								{
@@ -181,21 +181,21 @@ Build Reason:    COMMIT,BUILDPACK
 			})
 
 			it("returns a table of image details for local source", func() {
-				image := &v1alpha2.Image{
+				image := &v1alpha1.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      imageName,
 						Namespace: namespace,
 					},
-					Spec: v1alpha2.ImageSpec{
+					Spec: v1alpha1.ImageSpec{
 						Builder: corev1.ObjectReference{
 							Kind: "ClusterBuilder",
 							Name: "some-cluster-builder",
 						},
-						Source: corev1alpha1.SourceConfig{
-							Registry: &corev1alpha1.Registry{},
+						Source: v1alpha1.SourceConfig{
+							Registry: &v1alpha1.Registry{},
 						},
 					},
-					Status: v1alpha2.ImageStatus{
+					Status: v1alpha1.ImageStatus{
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
 								{
@@ -256,18 +256,18 @@ Build Reason:    COMMIT,BUILDPACK
 	when("a namespace is not provided", func() {
 		when("the namespaces has images", func() {
 			it("returns a table of image details", func() {
-				image := &v1alpha2.Image{
+				image := &v1alpha1.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      imageName,
 						Namespace: defaultNamespace,
 					},
-					Spec: v1alpha2.ImageSpec{
+					Spec: v1alpha1.ImageSpec{
 						Builder: corev1.ObjectReference{
 							Kind: "ClusterBuilder",
 							Name: "some-cluster-builder",
 						},
 					},
-					Status: v1alpha2.ImageStatus{
+					Status: v1alpha1.ImageStatus{
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
 								{
@@ -327,18 +327,18 @@ Build Reason:    COMMIT,BUILDPACK
 
 	when("an image has no successful builds", func() {
 		it("does not display buildpack metadata heading", func() {
-			image := &v1alpha2.Image{
+			image := &v1alpha1.Image{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      imageName,
 					Namespace: defaultNamespace,
 				},
-				Spec: v1alpha2.ImageSpec{
+				Spec: v1alpha1.ImageSpec{
 					Builder: corev1.ObjectReference{
 						Kind: "ClusterBuilder",
 						Name: "some-cluster-builder",
 					},
 				},
-				Status: v1alpha2.ImageStatus{
+				Status: v1alpha1.ImageStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{

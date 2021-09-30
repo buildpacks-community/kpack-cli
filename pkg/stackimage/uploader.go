@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	IdLabel        = "io.buildpacks.stack.id"
+	IdLabel = "io.buildpacks.stack.id"
 )
 
 type Relocator interface {

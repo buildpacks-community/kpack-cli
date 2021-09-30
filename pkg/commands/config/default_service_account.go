@@ -43,7 +43,7 @@ kp config default-service-account my-service-account --service-account-namespace
 				return err
 			}
 
-			configHelper := config.NewKpConfigProvider(cs)
+			configHelper := config.NewKpConfigProvider(cs.K8sClient)
 
 			if len(args) == 0 {
 				kpConfig := configHelper.GetKpConfig(ctx)

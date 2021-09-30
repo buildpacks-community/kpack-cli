@@ -6,7 +6,7 @@ package image
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
@@ -19,16 +19,16 @@ func TestFilter(t *testing.T) {
 }
 
 func testFilter(t *testing.T, when spec.G, it spec.S) {
-	images := &v1alpha2.ImageList{
-		Items: []v1alpha2.Image{
+	images := &v1alpha1.ImageList{
+		Items: []v1alpha1.Image{
 			{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "test-image-1",
 					Namespace: "some-namespace",
 				},
-				Spec: v1alpha2.ImageSpec{
+				Spec: v1alpha1.ImageSpec{
 					Builder: corev1.ObjectReference{
-						Kind: v1alpha2.BuilderKind,
+						Kind: v1alpha1.BuilderKind,
 						Name: "some-builder",
 					},
 				},
@@ -38,9 +38,9 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 					Name:      "test-image-2",
 					Namespace: "some-namespace",
 				},
-				Spec: v1alpha2.ImageSpec{
+				Spec: v1alpha1.ImageSpec{
 					Builder: corev1.ObjectReference{
-						Kind: v1alpha2.ClusterBuilderKind,
+						Kind: v1alpha1.ClusterBuilderKind,
 						Name: "some-cluster-builder",
 					},
 				},
@@ -50,7 +50,7 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 					Name:      "test-image-3",
 					Namespace: "some-namespace",
 				},
-				Status: v1alpha2.ImageStatus{
+				Status: v1alpha1.ImageStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
@@ -66,7 +66,7 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 					Name:      "test-image-4",
 					Namespace: "some-namespace",
 				},
-				Status: v1alpha2.ImageStatus{
+				Status: v1alpha1.ImageStatus{
 					LatestBuildReason: "COMMIT,BUILDPACK",
 				},
 			},
@@ -113,20 +113,20 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
-	imagesWithSameBuilder := &v1alpha2.ImageList{
-		Items: []v1alpha2.Image{
+	imagesWithSameBuilder := &v1alpha1.ImageList{
+		Items: []v1alpha1.Image{
 			{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "test-image-1",
 					Namespace: "some-namespace",
 				},
-				Spec: v1alpha2.ImageSpec{
+				Spec: v1alpha1.ImageSpec{
 					Builder: corev1.ObjectReference{
-						Kind: v1alpha2.BuilderKind,
+						Kind: v1alpha1.BuilderKind,
 						Name: "some-builder",
 					},
 				},
-				Status: v1alpha2.ImageStatus{
+				Status: v1alpha1.ImageStatus{
 					LatestBuildReason: "COMMIT",
 				},
 			},
@@ -135,13 +135,13 @@ func testFilter(t *testing.T, when spec.G, it spec.S) {
 					Name:      "some-ignored-test-image",
 					Namespace: "some-namespace",
 				},
-				Spec: v1alpha2.ImageSpec{
+				Spec: v1alpha1.ImageSpec{
 					Builder: corev1.ObjectReference{
-						Kind: v1alpha2.BuilderKind,
+						Kind: v1alpha1.BuilderKind,
 						Name: "some-builder",
 					},
 				},
-				Status: v1alpha2.ImageStatus{
+				Status: v1alpha1.ImageStatus{
 					LatestBuildReason: "some-other-build-reason",
 				},
 			},

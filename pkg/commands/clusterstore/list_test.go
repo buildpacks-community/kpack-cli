@@ -6,7 +6,7 @@ package clusterstore_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -32,11 +32,11 @@ func testClusterStoreListCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("stores exist", func() {
 		it("returns a table of store details", func() {
-			store1 := &v1alpha2.ClusterStore{
+			store1 := &v1alpha1.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "test-store-1",
 				},
-				Status: v1alpha2.ClusterStoreStatus{
+				Status: v1alpha1.ClusterStoreStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
@@ -48,11 +48,11 @@ func testClusterStoreListCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}
 
-			store2 := &v1alpha2.ClusterStore{
+			store2 := &v1alpha1.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "test-store-2",
 				},
-				Status: v1alpha2.ClusterStoreStatus{
+				Status: v1alpha1.ClusterStoreStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{
@@ -64,11 +64,11 @@ func testClusterStoreListCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			}
 
-			store3 := &v1alpha2.ClusterStore{
+			store3 := &v1alpha1.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: "test-store-3",
 				},
-				Status: v1alpha2.ClusterStoreStatus{
+				Status: v1alpha1.ClusterStoreStatus{
 					Status: corev1alpha1.Status{
 						Conditions: []corev1alpha1.Condition{
 							{

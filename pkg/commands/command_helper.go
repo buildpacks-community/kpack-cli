@@ -10,7 +10,7 @@ import (
 	"reflect"
 
 	"github.com/pivotal/kpack/pkg/apis/build"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
@@ -223,16 +223,16 @@ func GetStringFlag(name string, cmd *cobra.Command) (string, error) {
 
 func getTypeToGVKLookup() map[reflect.Type]schema.GroupVersionKind {
 	v1GV := schema.GroupVersion{Group: v1.GroupName, Version: "v1"}
-	buildGV := schema.GroupVersion{Group: build.GroupName, Version: "v1alpha2"}
+	buildGV := schema.GroupVersion{Group: build.GroupName, Version: "v1alpha1"}
 
 	return map[reflect.Type]schema.GroupVersionKind{
 		reflect.TypeOf(&v1.Secret{}):               v1GV.WithKind("Secret"),
 		reflect.TypeOf(&v1.ServiceAccount{}):       v1GV.WithKind("ServiceAccount"),
 		reflect.TypeOf(&v1.ConfigMap{}):            v1GV.WithKind("ConfigMap"),
-		reflect.TypeOf(&v1alpha2.Image{}):          buildGV.WithKind("Image"),
-		reflect.TypeOf(&v1alpha2.Builder{}):        buildGV.WithKind(v1alpha2.BuilderKind),
-		reflect.TypeOf(&v1alpha2.ClusterStack{}):   buildGV.WithKind(v1alpha2.ClusterStackKind),
-		reflect.TypeOf(&v1alpha2.ClusterStore{}):   buildGV.WithKind(v1alpha2.ClusterStoreKind),
-		reflect.TypeOf(&v1alpha2.ClusterBuilder{}): buildGV.WithKind(v1alpha2.ClusterBuilderKind),
+		reflect.TypeOf(&v1alpha1.Image{}):          buildGV.WithKind("Image"),
+		reflect.TypeOf(&v1alpha1.Builder{}):        buildGV.WithKind(v1alpha1.BuilderKind),
+		reflect.TypeOf(&v1alpha1.ClusterStack{}):   buildGV.WithKind(v1alpha1.ClusterStackKind),
+		reflect.TypeOf(&v1alpha1.ClusterStore{}):   buildGV.WithKind(v1alpha1.ClusterStoreKind),
+		reflect.TypeOf(&v1alpha1.ClusterBuilder{}): buildGV.WithKind(v1alpha1.ClusterBuilderKind),
 	}
 }

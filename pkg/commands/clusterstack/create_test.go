@@ -6,7 +6,7 @@ package clusterstack_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -66,21 +66,21 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 	}
 
-	expectedStack := &v1alpha2.ClusterStack{
+	expectedStack := &v1alpha1.ClusterStack{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha2.ClusterStackKind,
-			APIVersion: "kpack.io/v1alpha2",
+			Kind:       v1alpha1.ClusterStackKind,
+			APIVersion: "kpack.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "stack-name",
 			Annotations: nil,
 		},
-		Spec: v1alpha2.ClusterStackSpec{
+		Spec: v1alpha1.ClusterStackSpec{
 			Id: "stack-id",
-			BuildImage: v1alpha2.ClusterStackSpecImage{
+			BuildImage: v1alpha1.ClusterStackSpecImage{
 				Image: "default-registry.io/default-repo@sha256:build-image-digest",
 			},
-			RunImage: v1alpha2.ClusterStackSpecImage{
+			RunImage: v1alpha1.ClusterStackSpecImage{
 				Image: "default-registry.io/default-repo@sha256:run-image-digest",
 			},
 		},
@@ -137,7 +137,7 @@ ClusterStack "stack-name" created
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha2
+			const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
 metadata:
   creationTimestamp: null
@@ -178,7 +178,7 @@ Uploading to 'default-registry.io/default-repo'...
 		it("can output in json format", func() {
 			const resourceJSON = `{
     "kind": "ClusterStack",
-    "apiVersion": "kpack.io/v1alpha2",
+    "apiVersion": "kpack.io/v1alpha1",
     "metadata": {
         "name": "stack-name",
         "creationTimestamp": null
@@ -248,7 +248,7 @@ ClusterStack "stack-name" created (dry run)
 
 		when("output flag is used", func() {
 			it("does not create a clusterstack and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha2
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
 metadata:
   creationTimestamp: null
@@ -309,7 +309,7 @@ ClusterStack "stack-name" created (dry run with image upload)
 
 		when("output flag is used", func() {
 			it("does not create a clusterstack and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha2
+				const resourceYAML = `apiVersion: kpack.io/v1alpha1
 kind: ClusterStack
 metadata:
   creationTimestamp: null

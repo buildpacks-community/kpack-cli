@@ -73,7 +73,7 @@ func create(ctx context.Context, name, buildImageRef, runImageRef string, factor
 		return err
 	}
 
-	kpConfig := config.NewKpConfigProvider(cs).GetKpConfig(ctx)
+	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
 	stack, err := factory.MakeStack(authn.DefaultKeychain, name, buildImageRef, runImageRef, kpConfig)
 	if err != nil {
@@ -81,7 +81,7 @@ func create(ctx context.Context, name, buildImageRef, runImageRef string, factor
 	}
 
 	if !ch.IsDryRun() {
-		stack, err = cs.KpackClient.KpackV1alpha2().ClusterStacks().Create(ctx, stack, metav1.CreateOptions{})
+		stack, err = cs.KpackClient.KpackV1alpha1().ClusterStacks().Create(ctx, stack, metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
