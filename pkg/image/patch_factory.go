@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
@@ -117,7 +118,7 @@ func (f *Factory) setSource(image *v1alpha1.Image) error {
 		if f.GitRepo != "" {
 			image.Spec.Source.Blob = nil
 			image.Spec.Source.Registry = nil
-			image.Spec.Source.Git = &v1alpha1.Git{
+			image.Spec.Source.Git = &corev1alpha1.Git{
 				URL:      f.GitRepo,
 				Revision: defaultRevision,
 			}
@@ -129,7 +130,7 @@ func (f *Factory) setSource(image *v1alpha1.Image) error {
 	} else if f.Blob != "" {
 		image.Spec.Source.Git = nil
 		image.Spec.Source.Registry = nil
-		image.Spec.Source.Blob = &v1alpha1.Blob{URL: f.Blob}
+		image.Spec.Source.Blob = &corev1alpha1.Blob{URL: f.Blob}
 	} else if f.LocalPath != "" {
 		ref, err := name.ParseReference(image.Spec.Tag)
 		if err != nil {
@@ -143,7 +144,7 @@ func (f *Factory) setSource(image *v1alpha1.Image) error {
 
 		image.Spec.Source.Git = nil
 		image.Spec.Source.Blob = nil
-		image.Spec.Source.Registry = &v1alpha1.Registry{Image: sourceRef}
+		image.Spec.Source.Registry = &corev1alpha1.Registry{Image: sourceRef}
 	}
 
 	return nil

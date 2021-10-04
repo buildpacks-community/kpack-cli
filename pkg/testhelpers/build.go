@@ -27,7 +27,7 @@ func MakeTestBuilds(image string, namespace string) []*v1alpha1.Build {
 			},
 		},
 		Spec: v1alpha1.BuildSpec{
-			Builder: v1alpha1.BuildBuilderSpec{
+			Builder: corev1alpha1.BuildBuilderSpec{
 				Image: "some-repo.com/my-builder",
 			},
 		},
@@ -43,7 +43,7 @@ func MakeTestBuilds(image string, namespace string) []*v1alpha1.Build {
 					},
 				},
 			},
-			BuildMetadata: v1alpha1.BuildpackMetadataList{
+			BuildMetadata: corev1alpha1.BuildpackMetadataList{
 				{
 					Id:       "bp-id-1",
 					Version:  "bp-version-1",
@@ -55,7 +55,7 @@ func MakeTestBuilds(image string, namespace string) []*v1alpha1.Build {
 					Homepage: "mysupercoolsite2.com",
 				},
 			},
-			Stack: v1alpha1.BuildStack{
+			Stack: corev1alpha1.BuildStack{
 				RunImage: "some-repo.com/run-image",
 			},
 			LatestImage: "repo.com/image-1:tag",
@@ -105,7 +105,7 @@ func MakeTestBuilds(image string, namespace string) []*v1alpha1.Build {
 			},
 		},
 		Spec: v1alpha1.BuildSpec{
-			Builder: v1alpha1.BuildBuilderSpec{
+			Builder: corev1alpha1.BuildBuilderSpec{
 				Image: "some-repo.com/my-builder",
 			},
 		},
@@ -118,7 +118,7 @@ func MakeTestBuilds(image string, namespace string) []*v1alpha1.Build {
 					},
 				},
 			},
-			BuildMetadata: v1alpha1.BuildpackMetadataList{
+			BuildMetadata: corev1alpha1.BuildpackMetadataList{
 				{
 					Id:       "bp-id-1",
 					Version:  "bp-version-1",
@@ -130,7 +130,7 @@ func MakeTestBuilds(image string, namespace string) []*v1alpha1.Build {
 					Homepage: "mysupercoolsite2.com",
 				},
 			},
-			Stack: v1alpha1.BuildStack{
+			Stack: corev1alpha1.BuildStack{
 				RunImage: "some-repo.com/run-image",
 			},
 			LatestImage: "repo.com/image-3:tag",

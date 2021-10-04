@@ -222,7 +222,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 						},
 					},
 					Spec: v1alpha1.BuildSpec{
-						Builder: v1alpha1.BuildBuilderSpec{
+						Builder: corev1alpha1.BuildBuilderSpec{
 							Image: "some-repo.com/my-builder",
 						},
 					},
@@ -237,7 +237,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 								},
 							},
 						},
-						BuildMetadata: v1alpha1.BuildpackMetadataList{
+						BuildMetadata: corev1alpha1.BuildpackMetadataList{
 							{
 								Id:       "bp-id-1",
 								Version:  "bp-version-1",
@@ -249,7 +249,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 								Homepage: "mysupercoolsite2.com",
 							},
 						},
-						Stack: v1alpha1.BuildStack{
+						Stack: corev1alpha1.BuildStack{
 							RunImage: "some-repo.com/run-image",
 						},
 						LatestImage: "repo.com/image-3:tag",
@@ -278,7 +278,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 						},
 					},
 					Spec: v1alpha1.BuildSpec{
-						Builder: v1alpha1.BuildBuilderSpec{
+						Builder: corev1alpha1.BuildBuilderSpec{
 							Image: "some-repo.com/my-builder",
 						},
 					},
@@ -286,7 +286,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 						Status: corev1alpha1.Status{
 							Conditions: corev1alpha1.Conditions{},
 						},
-						BuildMetadata: v1alpha1.BuildpackMetadataList{
+						BuildMetadata: corev1alpha1.BuildpackMetadataList{
 							{
 								Id:       "bp-id-1",
 								Version:  "bp-version-1",
@@ -298,7 +298,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 								Homepage: "mysupercoolsite2.com",
 							},
 						},
-						Stack: v1alpha1.BuildStack{
+						Stack: corev1alpha1.BuildStack{
 							RunImage: "some-repo.com/run-image",
 						},
 						LatestImage: "repo.com/image-3:tag",
@@ -352,7 +352,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 						},
 					},
 					Spec: v1alpha1.BuildSpec{
-						Builder: v1alpha1.BuildBuilderSpec{
+						Builder: corev1alpha1.BuildBuilderSpec{
 							Image: "some-repo.com/my-builder",
 						},
 					},
@@ -360,7 +360,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 						Status: corev1alpha1.Status{
 							Conditions: corev1alpha1.Conditions{},
 						},
-						BuildMetadata: v1alpha1.BuildpackMetadataList{
+						BuildMetadata: corev1alpha1.BuildpackMetadataList{
 							{
 								Id:       "bp-id-1",
 								Version:  "bp-version-1",
@@ -372,7 +372,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 								Homepage: "mysupercoolsite2.com",
 							},
 						},
-						Stack: v1alpha1.BuildStack{
+						Stack: corev1alpha1.BuildStack{
 							RunImage: "some-repo.com/run-image",
 						},
 						LatestImage: "repo.com/image-3:tag",

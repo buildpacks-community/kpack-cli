@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -152,14 +153,14 @@ func (f *Factory) getCacheSize() (*resource.Quantity, error) {
 	return &c, nil
 }
 
-func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
+func (f *Factory) makeSource(tag string) (corev1alpha1.SourceConfig, error) {
 	subPath := ""
 	if f.SubPath != nil {
 		subPath = *f.SubPath
 	}
 	if f.GitRepo != "" {
-		s := v1alpha1.SourceConfig{
-			Git: &v1alpha1.Git{
+		s := corev1alpha1.SourceConfig{
+			Git: &corev1alpha1.Git{
 				URL:      f.GitRepo,
 				Revision: defaultRevision,
 			},
@@ -170,8 +171,8 @@ func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
 		}
 		return s, nil
 	} else if f.Blob != "" {
-		return v1alpha1.SourceConfig{
-			Blob: &v1alpha1.Blob{
+		return corev1alpha1.SourceConfig{
+			Blob: &corev1alpha1.Blob{
 				URL: f.Blob,
 			},
 			SubPath: subPath,
@@ -179,21 +180,21 @@ func (f *Factory) makeSource(tag string) (v1alpha1.SourceConfig, error) {
 	} else {
 		ref, err := name.ParseReference(tag)
 		if err != nil {
-			return v1alpha1.SourceConfig{}, err
+			return corev1alpha1.SourceConfig{}, err
 		}
 
 		imgRepo := ref.Context().Name() + "-source"
 		if err = f.Printer.PrintStatus("Uploading to '%s'...", imgRepo); err != nil {
-			return v1alpha1.SourceConfig{}, err
+			return corev1alpha1.SourceConfig{}, err
 		}
 
 		sourceRef, err := f.SourceUploader.Upload(keychain, imgRepo, f.LocalPath)
 		if err != nil {
-			return v1alpha1.SourceConfig{}, err
+			return corev1alpha1.SourceConfig{}, err
 		}
 
-		return v1alpha1.SourceConfig{
-			Registry: &v1alpha1.Registry{
+		return corev1alpha1.SourceConfig{
+			Registry: &corev1alpha1.Registry{
 				Image: sourceRef,
 			},
 			SubPath: subPath,

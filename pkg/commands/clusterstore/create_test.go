@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -67,7 +68,7 @@ func testClusterStoreCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 			},
 			Spec: v1alpha1.ClusterStoreSpec{
-				Sources: []v1alpha1.StoreImage{
+				Sources: []corev1alpha1.StoreImage{
 					{Image: "default-registry.io/default-repo@sha256:buildpack-digest"},
 					{Image: "default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
 				},
