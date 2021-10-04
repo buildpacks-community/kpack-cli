@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -39,8 +40,8 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 				Name: "some-ccb",
 			},
 			ServiceAccount: "some-service-account",
-			Source: v1alpha1.SourceConfig{
-				Blob: &v1alpha1.Blob{
+			Source: corev1alpha1.SourceConfig{
+				Blob: &corev1alpha1.Blob{
 					URL: "some-blob-url",
 				},
 				SubPath: "some-sub-path",

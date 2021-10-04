@@ -104,20 +104,20 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha1.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -135,7 +135,7 @@ Reason:    this builder is not ready for the purpose of a test
 						},
 					},
 				},
-				BuilderMetadata: v1alpha1.BuildpackMetadataList{
+				BuilderMetadata: corev1alpha1.BuildpackMetadataList{
 					{
 						Id:       "org.cloudfoundry.nodejs",
 						Version:  "v0.2.1",
@@ -147,7 +147,7 @@ Reason:    this builder is not ready for the purpose of a test
 						Homepage: "https://github.com/paketo-buildpacks/go",
 					},
 				},
-				Stack: v1alpha1.BuildStack{
+				Stack: corev1alpha1.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 					ID:       "io.buildpacks.stacks.centos",
 				},
@@ -174,20 +174,20 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha1.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -228,20 +228,20 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha1.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -273,20 +273,20 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha1.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -304,7 +304,7 @@ Reason:    this builder is not ready for the purpose of a test
 						},
 					},
 				},
-				BuilderMetadata: v1alpha1.BuildpackMetadataList{
+				BuilderMetadata: corev1alpha1.BuildpackMetadataList{
 					{
 						Id:       "org.cloudfoundry.nodejs",
 						Version:  "v0.2.1",
@@ -316,7 +316,7 @@ Reason:    this builder is not ready for the purpose of a test
 						Homepage: "https://github.com/paketo-buildpacks/go",
 					},
 				},
-				Stack: v1alpha1.BuildStack{
+				Stack: corev1alpha1.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 					ID:       "io.buildpacks.stacks.centos",
 				},
@@ -343,20 +343,20 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha1.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -397,20 +397,20 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha1.ClusterStoreKind,
 					},
-					Order: []v1alpha1.OrderEntry{
+					Order: []corev1alpha1.OrderEntry{
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.nodejs",
 									},
 								},
 							},
 						},
 						{
-							Group: []v1alpha1.BuildpackRef{
+							Group: []corev1alpha1.BuildpackRef{
 								{
-									BuildpackInfo: v1alpha1.BuildpackInfo{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
 										Id: "org.cloudfoundry.go",
 									},
 								},
@@ -445,11 +445,11 @@ Reason:    this builder is not ready for the purpose of a test
 					})
 					when("the order is in the builder status", func() {
 						it("shows the build status using status.order", func() {
-							readyDefaultBuilder.Status.Order = []v1alpha1.OrderEntry{
+							readyDefaultBuilder.Status.Order = []corev1alpha1.OrderEntry{
 								{
-									Group: []v1alpha1.BuildpackRef{
+									Group: []corev1alpha1.BuildpackRef{
 										{
-											BuildpackInfo: v1alpha1.BuildpackInfo{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
 												Id:      "org.cloudfoundry.nodejs",
 												Version: "0.2.1",
 											},
@@ -457,9 +457,9 @@ Reason:    this builder is not ready for the purpose of a test
 									},
 								},
 								{
-									Group: []v1alpha1.BuildpackRef{
+									Group: []corev1alpha1.BuildpackRef{
 										{
-											BuildpackInfo: v1alpha1.BuildpackInfo{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
 												Id:      "org.cloudfoundry.go",
 												Version: "0.0.3",
 											},

@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -436,7 +437,7 @@ func buildpackagesForSource(sources []Source) []string {
 	return buildpackages
 }
 
-func createBuildpackageSuperset(firstStore, secondStore *v1alpha1.ClusterStore) []v1alpha1.StoreImage {
+func createBuildpackageSuperset(firstStore, secondStore *v1alpha1.ClusterStore) []corev1alpha1.StoreImage {
 	result := firstStore.Spec.Sources
 
 	for _, source := range secondStore.Spec.Sources {
@@ -448,7 +449,7 @@ func createBuildpackageSuperset(firstStore, secondStore *v1alpha1.ClusterStore) 
 	return result
 }
 
-func sourcesContainsSourceImage(sources []v1alpha1.StoreImage, sourceImage v1alpha1.StoreImage) bool {
+func sourcesContainsSourceImage(sources []corev1alpha1.StoreImage, sourceImage corev1alpha1.StoreImage) bool {
 	for _, source := range sources {
 		if source == sourceImage {
 			return true

@@ -51,8 +51,8 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 							Kind: "ClusterBuilder",
 							Name: "some-cluster-builder",
 						},
-						Source: v1alpha1.SourceConfig{
-							Git: &v1alpha1.Git{
+						Source: corev1alpha1.SourceConfig{
+							Git: &corev1alpha1.Git{
 								URL:      "some-git-url",
 								Revision: "some-git-revision",
 							},
@@ -70,13 +70,13 @@ func testImageStatusCommand(t *testing.T, when spec.G, it spec.S) {
 						LatestImage: "test-registry.io/test-image-1@sha256:abcdef123",
 					},
 				}
-				testNamespacedBuilds[0].Spec.Source = v1alpha1.SourceConfig{
-					Git: &v1alpha1.Git{
+				testNamespacedBuilds[0].Spec.Source = corev1alpha1.SourceConfig{
+					Git: &corev1alpha1.Git{
 						Revision: "successful-build-git-revision",
 					},
 				}
-				testNamespacedBuilds[2].Spec.Source = v1alpha1.SourceConfig{
-					Git: &v1alpha1.Git{
+				testNamespacedBuilds[2].Spec.Source = corev1alpha1.SourceConfig{
+					Git: &corev1alpha1.Git{
 						Revision: "failed-build-git-revision",
 					},
 				}
@@ -128,8 +128,8 @@ Git Revision:    failed-build-git-revision
 							Kind: "ClusterBuilder",
 							Name: "some-cluster-builder",
 						},
-						Source: v1alpha1.SourceConfig{
-							Blob: &v1alpha1.Blob{
+						Source: corev1alpha1.SourceConfig{
+							Blob: &corev1alpha1.Blob{
 								URL: "some-blob-url",
 							},
 						},
@@ -191,8 +191,8 @@ Build Reason:    COMMIT,BUILDPACK
 							Kind: "ClusterBuilder",
 							Name: "some-cluster-builder",
 						},
-						Source: v1alpha1.SourceConfig{
-							Registry: &v1alpha1.Registry{},
+						Source: corev1alpha1.SourceConfig{
+							Registry: &corev1alpha1.Registry{},
 						},
 					},
 					Status: v1alpha1.ImageStatus{

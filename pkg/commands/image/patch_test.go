@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -50,8 +51,8 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				Kind: v1alpha1.ClusterBuilderKind,
 				Name: "some-ccb",
 			},
-			Source: v1alpha1.SourceConfig{
-				Git: &v1alpha1.Git{
+			Source: corev1alpha1.SourceConfig{
+				Git: &corev1alpha1.Git{
 					URL:      "some-git-url",
 					Revision: "some-revision",
 				},
@@ -169,8 +170,8 @@ Image Resource "some-image" patched
 		})
 
 		it("git revision defaults to main if not provided with git", func() {
-			existingImage.Spec.Source = v1alpha1.SourceConfig{
-				Blob: &v1alpha1.Blob{
+			existingImage.Spec.Source = corev1alpha1.SourceConfig{
+				Blob: &corev1alpha1.Blob{
 					URL: "some-blob",
 				},
 			}

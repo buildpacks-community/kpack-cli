@@ -3,7 +3,9 @@
 
 package _import
 
-import "github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+import (
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+)
 
 const APIVersionV1 = "kp.kpack.io/v1alpha1"
 
@@ -21,7 +23,7 @@ type ClusterBuilderV1 struct {
 	Name  string                `yaml:"name"`
 	Stack string                `yaml:"stack"`
 	Store string                `yaml:"store"`
-	Order []v1alpha1.OrderEntry `yaml:"order"`
+	Order []corev1alpha1.OrderEntry `yaml:"order"`
 }
 
 func (d1 DependencyDescriptorV1) ToNextVersion() DependencyDescriptor {

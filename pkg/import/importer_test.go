@@ -121,7 +121,7 @@ clusterBuilders:
 							Name: "default",
 						},
 						Spec: v1alpha1.ClusterStoreSpec{
-							Sources: []v1alpha1.StoreImage{
+							Sources: []corev1alpha1.StoreImage{
 								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 							},
 						},
@@ -181,11 +181,11 @@ clusterBuilders:
 									Kind: "ClusterStore",
 									Name: "default",
 								},
-								Order: []v1alpha1.OrderEntry{
+								Order: []corev1alpha1.OrderEntry{
 									{
-										[]v1alpha1.BuildpackRef{
+										[]corev1alpha1.BuildpackRef{
 											{
-												BuildpackInfo: v1alpha1.BuildpackInfo{
+												BuildpackInfo: corev1alpha1.BuildpackInfo{
 													Id: "tanzu-buildpacks/dotnet-core",
 												},
 												Optional: false,
@@ -219,11 +219,11 @@ clusterBuilders:
 									Kind: "ClusterStore",
 									Name: "default",
 								},
-								Order: []v1alpha1.OrderEntry{
+								Order: []corev1alpha1.OrderEntry{
 									{
-										[]v1alpha1.BuildpackRef{
+										[]corev1alpha1.BuildpackRef{
 											{
-												BuildpackInfo: v1alpha1.BuildpackInfo{
+												BuildpackInfo: corev1alpha1.BuildpackInfo{
 													Id: "tanzu-buildpacks/dotnet-core",
 												},
 												Optional: false,
@@ -306,7 +306,7 @@ clusterBuilders:
 							Name: "default",
 						},
 						Spec: v1alpha1.ClusterStoreSpec{
-							Sources: []v1alpha1.StoreImage{
+							Sources: []corev1alpha1.StoreImage{
 								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 							},
 						},
@@ -366,11 +366,11 @@ clusterBuilders:
 									Kind: "ClusterStore",
 									Name: "default",
 								},
-								Order: []v1alpha1.OrderEntry{
+								Order: []corev1alpha1.OrderEntry{
 									{
-										[]v1alpha1.BuildpackRef{
+										[]corev1alpha1.BuildpackRef{
 											{
-												BuildpackInfo: v1alpha1.BuildpackInfo{
+												BuildpackInfo: corev1alpha1.BuildpackInfo{
 													Id: "tanzu-buildpacks/dotnet-core",
 												},
 												Optional: false,
@@ -404,11 +404,11 @@ clusterBuilders:
 									Kind: "ClusterStore",
 									Name: "default",
 								},
-								Order: []v1alpha1.OrderEntry{
+								Order: []corev1alpha1.OrderEntry{
 									{
-										[]v1alpha1.BuildpackRef{
+										[]corev1alpha1.BuildpackRef{
 											{
-												BuildpackInfo: v1alpha1.BuildpackInfo{
+												BuildpackInfo: corev1alpha1.BuildpackInfo{
 													Id: "tanzu-buildpacks/dotnet-core",
 												},
 												Optional: false,
@@ -462,7 +462,7 @@ clusterBuilders:
 							Name: "default",
 						},
 						Spec: v1alpha1.ClusterStoreSpec{
-							Sources: []v1alpha1.StoreImage{
+							Sources: []corev1alpha1.StoreImage{
 								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 							},
 						},
@@ -548,11 +548,11 @@ clusterBuilders:
 									Kind: "ClusterStore",
 									Name: "default",
 								},
-								Order: []v1alpha1.OrderEntry{
+								Order: []corev1alpha1.OrderEntry{
 									{
-										[]v1alpha1.BuildpackRef{
+										[]corev1alpha1.BuildpackRef{
 											{
-												BuildpackInfo: v1alpha1.BuildpackInfo{
+												BuildpackInfo: corev1alpha1.BuildpackInfo{
 													Id: "tanzu-buildpacks/dotnet-core",
 												},
 												Optional: false,
@@ -586,11 +586,11 @@ clusterBuilders:
 									Kind: "ClusterStore",
 									Name: "default",
 								},
-								Order: []v1alpha1.OrderEntry{
+								Order: []corev1alpha1.OrderEntry{
 									{
-										[]v1alpha1.BuildpackRef{
+										[]corev1alpha1.BuildpackRef{
 											{
-												BuildpackInfo: v1alpha1.BuildpackInfo{
+												BuildpackInfo: corev1alpha1.BuildpackInfo{
 													Id: "tanzu-buildpacks/dotnet-core",
 												},
 												Optional: false,
@@ -664,7 +664,7 @@ clusterBuilders:
 								Name: "default",
 							},
 							Spec: v1alpha1.ClusterStoreSpec{
-								Sources: []v1alpha1.StoreImage{
+								Sources: []corev1alpha1.StoreImage{
 									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newDotnetCoreDigest)},
 									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", nodejsDigest)},
@@ -754,11 +754,11 @@ clusterBuilders:
 										Kind: "ClusterStore",
 										Name: "default",
 									},
-									Order: []v1alpha1.OrderEntry{
+									Order: []corev1alpha1.OrderEntry{
 										{
-											[]v1alpha1.BuildpackRef{
+											[]corev1alpha1.BuildpackRef{
 												{
-													BuildpackInfo: v1alpha1.BuildpackInfo{
+													BuildpackInfo: corev1alpha1.BuildpackInfo{
 														Id: "tanzu-buildpacks/dotnet-core",
 													},
 													Optional: false,
@@ -766,9 +766,9 @@ clusterBuilders:
 											},
 										},
 										{
-											[]v1alpha1.BuildpackRef{
+											[]corev1alpha1.BuildpackRef{
 												{
-													BuildpackInfo: v1alpha1.BuildpackInfo{
+													BuildpackInfo: corev1alpha1.BuildpackInfo{
 														Id: "tanzu-buildpacks/nodejs",
 													},
 													Optional: false,
@@ -804,11 +804,11 @@ clusterBuilders:
 										Kind: "ClusterStore",
 										Name: "default",
 									},
-									Order: []v1alpha1.OrderEntry{
+									Order: []corev1alpha1.OrderEntry{
 										{
-											[]v1alpha1.BuildpackRef{
+											[]corev1alpha1.BuildpackRef{
 												{
-													BuildpackInfo: v1alpha1.BuildpackInfo{
+													BuildpackInfo: corev1alpha1.BuildpackInfo{
 														Id: "tanzu-buildpacks/dotnet-core",
 													},
 													Optional: false,
@@ -816,9 +816,9 @@ clusterBuilders:
 											},
 										},
 										{
-											[]v1alpha1.BuildpackRef{
+											[]corev1alpha1.BuildpackRef{
 												{
-													BuildpackInfo: v1alpha1.BuildpackInfo{
+													BuildpackInfo: corev1alpha1.BuildpackInfo{
 														Id: "tanzu-buildpacks/nodejs",
 													},
 													Optional: false,
@@ -873,7 +873,7 @@ clusterBuilders:
 							Name: "default",
 						},
 						Spec: v1alpha1.ClusterStoreSpec{
-							Sources: []v1alpha1.StoreImage{
+							Sources: []corev1alpha1.StoreImage{
 								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 							},
 						},
@@ -959,11 +959,11 @@ clusterBuilders:
 									Kind: "ClusterStore",
 									Name: "default",
 								},
-								Order: []v1alpha1.OrderEntry{
+								Order: []corev1alpha1.OrderEntry{
 									{
-										[]v1alpha1.BuildpackRef{
+										[]corev1alpha1.BuildpackRef{
 											{
-												BuildpackInfo: v1alpha1.BuildpackInfo{
+												BuildpackInfo: corev1alpha1.BuildpackInfo{
 													Id: "tanzu-buildpacks/dotnet-core",
 												},
 												Optional: false,
@@ -997,11 +997,11 @@ clusterBuilders:
 									Kind: "ClusterStore",
 									Name: "default",
 								},
-								Order: []v1alpha1.OrderEntry{
+								Order: []corev1alpha1.OrderEntry{
 									{
-										[]v1alpha1.BuildpackRef{
+										[]corev1alpha1.BuildpackRef{
 											{
-												BuildpackInfo: v1alpha1.BuildpackInfo{
+												BuildpackInfo: corev1alpha1.BuildpackInfo{
 													Id: "tanzu-buildpacks/dotnet-core",
 												},
 												Optional: false,
@@ -1061,7 +1061,7 @@ clusterBuilders:
 								Name: "default",
 							},
 							Spec: v1alpha1.ClusterStoreSpec{
-								Sources: []v1alpha1.StoreImage{
+								Sources: []corev1alpha1.StoreImage{
 									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newDotnetCoreDigest)},
 									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", nodejsDigest)},
@@ -1151,11 +1151,11 @@ clusterBuilders:
 										Kind: "ClusterStore",
 										Name: "default",
 									},
-									Order: []v1alpha1.OrderEntry{
+									Order: []corev1alpha1.OrderEntry{
 										{
-											[]v1alpha1.BuildpackRef{
+											[]corev1alpha1.BuildpackRef{
 												{
-													BuildpackInfo: v1alpha1.BuildpackInfo{
+													BuildpackInfo: corev1alpha1.BuildpackInfo{
 														Id: "tanzu-buildpacks/dotnet-core",
 													},
 													Optional: false,
@@ -1163,9 +1163,9 @@ clusterBuilders:
 											},
 										},
 										{
-											[]v1alpha1.BuildpackRef{
+											[]corev1alpha1.BuildpackRef{
 												{
-													BuildpackInfo: v1alpha1.BuildpackInfo{
+													BuildpackInfo: corev1alpha1.BuildpackInfo{
 														Id: "tanzu-buildpacks/nodejs",
 													},
 													Optional: false,
@@ -1201,11 +1201,11 @@ clusterBuilders:
 										Kind: "ClusterStore",
 										Name: "default",
 									},
-									Order: []v1alpha1.OrderEntry{
+									Order: []corev1alpha1.OrderEntry{
 										{
-											[]v1alpha1.BuildpackRef{
+											[]corev1alpha1.BuildpackRef{
 												{
-													BuildpackInfo: v1alpha1.BuildpackInfo{
+													BuildpackInfo: corev1alpha1.BuildpackInfo{
 														Id: "tanzu-buildpacks/dotnet-core",
 													},
 													Optional: false,
@@ -1213,9 +1213,9 @@ clusterBuilders:
 											},
 										},
 										{
-											[]v1alpha1.BuildpackRef{
+											[]corev1alpha1.BuildpackRef{
 												{
-													BuildpackInfo: v1alpha1.BuildpackInfo{
+													BuildpackInfo: corev1alpha1.BuildpackInfo{
 														Id: "tanzu-buildpacks/nodejs",
 													},
 													Optional: false,

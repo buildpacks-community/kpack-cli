@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -77,8 +78,8 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						Name: "default",
 					},
 					ServiceAccount: "default",
-					Source: v1alpha1.SourceConfig{
-						Git: &v1alpha1.Git{
+					Source: corev1alpha1.SourceConfig{
+						Git: &corev1alpha1.Git{
 							URL:      "some-git-url",
 							Revision: "some-git-rev",
 						},
@@ -188,8 +189,8 @@ Image Resource "some-image" created
 							Name: "default",
 						},
 						ServiceAccount: "default",
-						Source: v1alpha1.SourceConfig{
-							Git: &v1alpha1.Git{
+						Source: corev1alpha1.SourceConfig{
+							Git: &corev1alpha1.Git{
 								URL:      "some-git-url",
 								Revision: "some-git-rev",
 							},
@@ -266,8 +267,8 @@ Image Resource "some-image" created
 						Name: "default",
 					},
 					ServiceAccount: "default",
-					Source: v1alpha1.SourceConfig{
-						Registry: &v1alpha1.Registry{
+					Source: corev1alpha1.SourceConfig{
+						Registry: &corev1alpha1.Registry{
 							Image: "some-registry.io/some-repo-source:source-id",
 						},
 						SubPath: "some-sub-path",
@@ -326,8 +327,8 @@ Image Resource "some-image" created
 						Name:      "some-builder",
 					},
 					ServiceAccount: "default",
-					Source: v1alpha1.SourceConfig{
-						Blob: &v1alpha1.Blob{
+					Source: corev1alpha1.SourceConfig{
+						Blob: &corev1alpha1.Blob{
 							URL: "some-blob",
 						},
 					},
@@ -374,8 +375,8 @@ Image Resource "some-image" created
 						Name: "some-builder",
 					},
 					ServiceAccount: "default",
-					Source: v1alpha1.SourceConfig{
-						Blob: &v1alpha1.Blob{
+					Source: corev1alpha1.SourceConfig{
+						Blob: &corev1alpha1.Blob{
 							URL: "some-blob",
 						},
 					},
@@ -439,8 +440,8 @@ Image Resource "some-image" created
 						Name: "default",
 					},
 					ServiceAccount: "default",
-					Source: v1alpha1.SourceConfig{
-						Git: &v1alpha1.Git{
+					Source: corev1alpha1.SourceConfig{
+						Git: &corev1alpha1.Git{
 							URL:      "some-git-url",
 							Revision: "some-git-rev",
 						},
