@@ -6,7 +6,6 @@ package clusterbuilder
 import (
 	"context"
 	"fmt"
-	"path"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
@@ -93,7 +92,7 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 			return err
 		}
 
-		flags.tag = path.Join(repo, name)
+		flags.tag = fmt.Sprintf("%s:clusterbuilder-%s", repo, name)
 	}
 
 	cb := &v1alpha1.ClusterBuilder{
