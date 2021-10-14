@@ -13,8 +13,25 @@ import (
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 )
 
+func TestGetDefaultRepositoryWithSlashes(t *testing.T) {
+	spec.Run(t, "TestGetDefaultRepositoryWithSlashes", testGetDefaultRepositorySlashes)
+}
+
 func TestKpConfigProvider(t *testing.T) {
 	spec.Run(t, "TestKpConfigProvider", testKpConfigProvider)
+}
+
+func testGetDefaultRepositorySlashes(t *testing.T, when spec.G, it spec.S) {
+	when("Getting default repositories from kpack-config", func() {
+		it("gets it if it has any traililng slashes", func() {
+			kpConfig := NewKpConfig("some-new-repo/",
+				corev1.ObjectReference{Name: "some-sa", Namespace: "some-ns"})
+			want := "some-new-repo"
+			got, err := kpConfig.DefaultRepository()
+			require.NoError(t, err)
+			require.Equal(t, want, got)
+		})
+	})
 }
 
 func testKpConfigProvider(t *testing.T, when spec.G, it spec.S) {
