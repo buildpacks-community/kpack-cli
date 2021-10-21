@@ -22,11 +22,11 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 	const (
 		image            = "test-image"
 		defaultNamespace = "some-default-namespace"
-		expectedOutput   = `BUILD    STATUS      IMAGE                         REASON
-1        SUCCESS     repo.com/image-1:tag          CONFIG
-2        FAILURE     repo.com/image-2:tag          COMMIT+
-3        BUILDING    repo.com/image-3:tag          TRIGGER
-1        BUILDING    repo.com/other-image-1:tag    UNKNOWN
+		expectedOutput   = `BUILD    STATUS      BUILT IMAGE                   REASON     IMAGE RESOURCE
+1        SUCCESS     repo.com/image-1:tag          CONFIG     test-image
+2        FAILURE     repo.com/image-2:tag          COMMIT+    test-image
+3        BUILDING    repo.com/image-3:tag          TRIGGER    test-image
+1        BUILDING    repo.com/other-image-1:tag    UNKNOWN    some-other-image
 
 `
 	)
@@ -85,10 +85,10 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		when("an image is specified", func() {
-			const expectedOutput = `BUILD    STATUS      IMAGE                   REASON
-1        SUCCESS     repo.com/image-1:tag    CONFIG
-2        FAILURE     repo.com/image-2:tag    COMMIT+
-3        BUILDING    repo.com/image-3:tag    TRIGGER
+			const expectedOutput = `BUILD    STATUS      BUILT IMAGE             REASON     IMAGE RESOURCE
+1        SUCCESS     repo.com/image-1:tag    CONFIG     test-image
+2        FAILURE     repo.com/image-2:tag    COMMIT+    test-image
+3        BUILDING    repo.com/image-3:tag    TRIGGER    test-image
 
 `
 			when("there are builds", func() {
