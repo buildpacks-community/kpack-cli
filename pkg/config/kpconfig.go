@@ -3,7 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"strings"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -170,9 +170,5 @@ func (d KpConfigProvider) updateDefaultServiceAccount(ctx context.Context, exist
 }
 
 func sanitize(r string) (string, error) {
-	pattern, err := regexp.Compile(`^(.*)[\/]$`)
-	if err != nil {
-		return "", err
-	}
-	return pattern.ReplaceAllString(r, "$1"), nil
+	return strings.TrimSuffix(r, "/")
 }
