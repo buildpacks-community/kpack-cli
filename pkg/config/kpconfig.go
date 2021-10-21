@@ -2,8 +2,7 @@ package config
 
 import (
 	"context"
-	"fmt"
-	"regexp"
+	"strings"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -41,11 +40,7 @@ func (c KpConfig) DefaultRepository() (string, error) {
 		return "", errors.New("failed to get default repository: use \"kp config default-repository\" to set")
 	}
 
-	repo, err := sanitize(c.defaultRepository)
-	if err != nil {
-		return "", fmt.Errorf("failed to sanitize repo %s", c.defaultRepository)
-	}
-	return repo, nil
+	return sanitize(c.defaultRepository), nil
 }
 
 func (c KpConfig) ServiceAccount() corev1.ObjectReference {
@@ -169,10 +164,6 @@ func (d KpConfigProvider) updateDefaultServiceAccount(ctx context.Context, exist
 	return err
 }
 
-func sanitize(r string) (string, error) {
-	pattern, err := regexp.Compile(`^(.*)[\/]$`)
-	if err != nil {
-		return "", err
-	}
-	return pattern.ReplaceAllString(r, "$1"), nil
+func sanitize(r string) string {
+	return strings.TrimSuffix(r, "/")
 }
