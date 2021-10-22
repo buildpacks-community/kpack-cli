@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -39,7 +40,7 @@ func (c KpConfig) DefaultRepository() (string, error) {
 		return "", errors.New("failed to get default repository: use \"kp config default-repository\" to set")
 	}
 
-	return c.defaultRepository, nil
+	return sanitize(c.defaultRepository), nil
 }
 
 func (c KpConfig) ServiceAccount() corev1.ObjectReference {
@@ -161,4 +162,8 @@ func (d KpConfigProvider) updateDefaultServiceAccount(ctx context.Context, exist
 
 	_, err := d.client.CoreV1().ConfigMaps(kpConfigNamespace).Update(ctx, updatedConfig, metav1.UpdateOptions{})
 	return err
+}
+
+func sanitize(r string) string {
+	return strings.TrimSuffix(r, "/")
 }

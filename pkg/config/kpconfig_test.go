@@ -13,8 +13,25 @@ import (
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 )
 
+func TestKpConfig(t *testing.T) {
+	spec.Run(t, "TestKpConfig", testKpConfig)
+}
+
 func TestKpConfigProvider(t *testing.T) {
 	spec.Run(t, "TestKpConfigProvider", testKpConfigProvider)
+}
+
+func testKpConfig(t *testing.T, when spec.G, it spec.S) {
+	when("DefaultRepository", func() {
+		it("removes a trailing slash", func() {
+			kpConfig := NewKpConfig("some-new-repo/",
+				corev1.ObjectReference{Name: "some-sa", Namespace: "some-ns"})
+			want := "some-new-repo"
+			got, err := kpConfig.DefaultRepository()
+			require.NoError(t, err)
+			require.Equal(t, want, got)
+		})
+	})
 }
 
 func testKpConfigProvider(t *testing.T, when spec.G, it spec.S) {
@@ -66,38 +83,38 @@ func testKpConfigProvider(t *testing.T, when spec.G, it spec.S) {
 				serviceAccount:    corev1.ObjectReference{Name: "some-canonical-sa", Namespace: "some-canonical-ns"},
 			}, provider.GetKpConfig(ctx))
 		})
+	})
 
-		when("SetDefaultRepository", func() {
-			it("writes both sets of keys to the config map", func() {
-				k8sClient := k8sfakes.NewSimpleClientset()
-				provider := NewKpConfigProvider(k8sClient)
-				require.NoError(t, provider.SetDefaultRepository(ctx, "some-new-repo"))
-				kpConfig, err := k8sClient.CoreV1().ConfigMaps("kpack").Get(ctx, "kp-config", metav1.GetOptions{})
-				require.NoError(t, err)
-				require.Equal(t, map[string]string{
-					"canonical.repository": "some-new-repo",
-					"default.repository":   "some-new-repo",
-				}, kpConfig.Data)
-			})
+	when("SetDefaultRepository", func() {
+		it("writes both sets of keys to the config map", func() {
+			k8sClient := k8sfakes.NewSimpleClientset()
+			provider := NewKpConfigProvider(k8sClient)
+			require.NoError(t, provider.SetDefaultRepository(ctx, "some-new-repo"))
+			kpConfig, err := k8sClient.CoreV1().ConfigMaps("kpack").Get(ctx, "kp-config", metav1.GetOptions{})
+			require.NoError(t, err)
+			require.Equal(t, map[string]string{
+				"canonical.repository": "some-new-repo",
+				"default.repository":   "some-new-repo",
+			}, kpConfig.Data)
 		})
+	})
 
-		when("SetDefaultServiceAccount", func() {
-			it("writes both sets of keys to the config map", func() {
-				k8sClient := k8sfakes.NewSimpleClientset()
-				provider := NewKpConfigProvider(k8sClient)
-				require.NoError(t, provider.SetDefaultServiceAccount(ctx, corev1.ObjectReference{
-					Name:      "some-new-sa",
-					Namespace: "some-new-ns",
-				}))
-				kpConfig, err := k8sClient.CoreV1().ConfigMaps("kpack").Get(ctx, "kp-config", metav1.GetOptions{})
-				require.NoError(t, err)
-				require.Equal(t, map[string]string{
-					"canonical.repository.serviceaccount":           "some-new-sa",
-					"canonical.repository.serviceaccount.namespace": "some-new-ns",
-					"default.repository.serviceaccount":             "some-new-sa",
-					"default.repository.serviceaccount.namespace":   "some-new-ns",
-				}, kpConfig.Data)
-			})
+	when("SetDefaultServiceAccount", func() {
+		it("writes both sets of keys to the config map", func() {
+			k8sClient := k8sfakes.NewSimpleClientset()
+			provider := NewKpConfigProvider(k8sClient)
+			require.NoError(t, provider.SetDefaultServiceAccount(ctx, corev1.ObjectReference{
+				Name:      "some-new-sa",
+				Namespace: "some-new-ns",
+			}))
+			kpConfig, err := k8sClient.CoreV1().ConfigMaps("kpack").Get(ctx, "kp-config", metav1.GetOptions{})
+			require.NoError(t, err)
+			require.Equal(t, map[string]string{
+				"canonical.repository.serviceaccount":           "some-new-sa",
+				"canonical.repository.serviceaccount.namespace": "some-new-ns",
+				"default.repository.serviceaccount":             "some-new-sa",
+				"default.repository.serviceaccount.namespace":   "some-new-ns",
+			}, kpConfig.Data)
 		})
 	})
 }
