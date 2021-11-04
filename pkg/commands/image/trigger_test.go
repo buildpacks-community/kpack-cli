@@ -5,9 +5,9 @@ package image_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
@@ -47,10 +47,14 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 				actions, err := testhelpers.ActionRecorderList{clientSet}.ActionsByVerb()
 				require.NoError(t, err)
 
-				require.Len(t, actions.Updates, 1)
-				build := actions.Updates[0].GetObject().(*v1alpha1.Build)
-				require.Equal(t, build.Name, "build-three")
-				require.NotEmpty(t, build.Annotations[image.BuildNeededAnnotation])
+				require.Len(t, actions.Patches, 1)
+
+				var patch buildNeededPatch
+				err = json.Unmarshal(actions.Patches[0].GetPatch(), &patch)
+				require.NoError(t, err)
+
+				require.Equal(t, actions.Patches[0].GetName(), "build-three")
+				require.NotEmpty(t, patch.Metadata.Annotations.BuildNeededAnnotation)
 			})
 		})
 
@@ -88,10 +92,14 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 				actions, err := testhelpers.ActionRecorderList{clientSet}.ActionsByVerb()
 				require.NoError(t, err)
 
-				require.Len(t, actions.Updates, 1)
-				build := actions.Updates[0].GetObject().(*v1alpha1.Build)
-				require.Equal(t, build.Name, "build-three")
-				require.NotEmpty(t, build.Annotations[image.BuildNeededAnnotation])
+				require.Len(t, actions.Patches, 1)
+
+				var patch buildNeededPatch
+				err = json.Unmarshal(actions.Patches[0].GetPatch(), &patch)
+				require.NoError(t, err)
+
+				require.Equal(t, actions.Patches[0].GetName(), "build-three")
+				require.NotEmpty(t, patch.Metadata.Annotations.BuildNeededAnnotation)
 			})
 		})
 
@@ -110,4 +118,12 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 	})
+}
+
+type buildNeededPatch struct {
+	Metadata struct {
+		Annotations struct {
+			BuildNeededAnnotation string `json:"image.kpack.io/additionalBuildNeeded"`
+		} `json:"annotations"`
+	} `json:"metadata"`
 }

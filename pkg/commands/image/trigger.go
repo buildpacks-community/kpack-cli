@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/build"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
@@ -53,9 +54,16 @@ The namespace defaults to the kubernetes current-context namespace.`,
 			} else {
 				sort.Slice(buildList.Items, build.Sort(buildList.Items))
 
-				build := buildList.Items[len(buildList.Items)-1].DeepCopy()
-				build.Annotations[BuildNeededAnnotation] = time.Now().String()
-				_, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).Update(ctx, build, metav1.UpdateOptions{})
+				original := buildList.Items[len(buildList.Items)-1].DeepCopy()
+				patched := original.DeepCopy()
+				patched.Annotations[BuildNeededAnnotation] = time.Now().String()
+
+				patch, err := k8s.CreatePatch(original, patched)
+				if err != nil {
+					return err
+				}
+
+				_, err = cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).Patch(ctx, original.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 				if err != nil {
 					return err
 				}
