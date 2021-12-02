@@ -27,7 +27,6 @@ func newBuilds(c *KpackV1alpha2Client, namespace string) *builds {
 }
 
 func (c *builds) Create(ctx context.Context, build *buildV1alpha2.Build, opts v1.CreateOptions) (*buildV1alpha2.Build, error) {
-
 	v1Client := v1alpha1Client.KpackV1alpha1Client{}
 
 	convertedBuild, err := c.convertToV1Build(ctx, build)
@@ -49,7 +48,6 @@ func (c *builds) Create(ctx context.Context, build *buildV1alpha2.Build, opts v1
 }
 
 func (c *builds) Update(ctx context.Context, build *buildV1alpha2.Build, opts v1.UpdateOptions) (*buildV1alpha2.Build, error) {
-
 	v1Client := v1alpha1Client.KpackV1alpha1Client{}
 
 	convertedBuild, err := c.convertToV1Build(ctx, build)
@@ -71,7 +69,6 @@ func (c *builds) Update(ctx context.Context, build *buildV1alpha2.Build, opts v1
 }
 
 func (c *builds) UpdateStatus(ctx context.Context, build *buildV1alpha2.Build, opts v1.UpdateOptions) (*buildV1alpha2.Build, error) {
-
 	v1Client := v1alpha1Client.KpackV1alpha1Client{}
 
 	convertedBuild, err := c.convertToV1Build(ctx, build)
@@ -93,7 +90,6 @@ func (c *builds) UpdateStatus(ctx context.Context, build *buildV1alpha2.Build, o
 }
 
 func (c *builds) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-
 	v1Client := v1alpha1Client.KpackV1alpha1Client{}
 
 	err := v1Client.Builds(c.ns).Delete(ctx, name, opts)
@@ -104,7 +100,6 @@ func (c *builds) Delete(ctx context.Context, name string, opts v1.DeleteOptions)
 }
 
 func (c *builds) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-
 	v1Client := v1alpha1Client.KpackV1alpha1Client{}
 
 	err := v1Client.Builds(c.ns).DeleteCollection(ctx, opts, listOpts)
@@ -115,7 +110,6 @@ func (c *builds) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, li
 }
 
 func (c *builds) Get(ctx context.Context, name string, opts v1.GetOptions) (*buildV1alpha2.Build, error) {
-
 	v1Client := v1alpha1Client.KpackV1alpha1Client{}
 
 	v1Build, err := v1Client.Builds(c.ns).Get(ctx, name, opts)
@@ -131,7 +125,6 @@ func (c *builds) Get(ctx context.Context, name string, opts v1.GetOptions) (*bui
 }
 
 func (c *builds) List(ctx context.Context, opts v1.ListOptions) (*buildV1alpha2.BuildList, error) {
-
 	v1Client := v1alpha1Client.KpackV1alpha1Client{}
 	compatList, err := v1Client.Builds(c.ns).List(ctx, opts)
 	if err != nil {
@@ -156,7 +149,6 @@ func (c *builds) List(ctx context.Context, opts v1.ListOptions) (*buildV1alpha2.
 }
 
 func (c *builds) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-
 	v1Client := v1alpha1Client.KpackV1alpha1Client{}
 
 	watchable, err := v1Client.Builds(c.ns).Watch(ctx, opts)
@@ -167,7 +159,6 @@ func (c *builds) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interfac
 }
 
 func (c *builds) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *buildV1alpha2.Build, err error) {
-
 	v1Client := v1alpha1Client.KpackV1alpha1Client{}
 
 	v1Result, err := v1Client.Builds(c.ns).Patch(ctx, name, pt, data, opts, subresources...)
