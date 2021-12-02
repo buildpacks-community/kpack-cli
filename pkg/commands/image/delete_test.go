@@ -6,7 +6,7 @@ package image_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -33,7 +33,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace is provided", func() {
 		when("an image is available", func() {
 			it("deletes the image", func() {
-				image := &v1alpha1.Image{
+				image := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "some-image",
 						Namespace: "some-namespace",
@@ -81,7 +81,7 @@ func testImageDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace is not provided", func() {
 		when("an image is available", func() {
 			it("deletes the image", func() {
-				image := &v1alpha1.Image{
+				image := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "some-image",
 						Namespace: defaultNamespace,

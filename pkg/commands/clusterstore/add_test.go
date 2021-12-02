@@ -6,7 +6,7 @@ package clusterstore_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -61,11 +61,11 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
-	existingStore := &v1alpha1.ClusterStore{
+	existingStore := &v1alpha2.ClusterStore{
 		ObjectMeta: v1.ObjectMeta{
 			Name: "store-name",
 		},
-		Spec: v1alpha1.ClusterStoreSpec{
+		Spec: v1alpha2.ClusterStoreSpec{
 			Sources: []corev1alpha1.StoreImage{
 				{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 			},
@@ -96,9 +96,9 @@ func testClusterStoreAddCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 			ExpectUpdates: []clientgotesting.UpdateActionImpl{
 				{
-					Object: &v1alpha1.ClusterStore{
+					Object: &v1alpha2.ClusterStore{
 						ObjectMeta: existingStore.ObjectMeta,
-						Spec: v1alpha1.ClusterStoreSpec{
+						Spec: v1alpha2.ClusterStoreSpec{
 							Sources: []corev1alpha1.StoreImage{
 								{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 								{Image: "default-registry.io/default-repo@sha256:new-buildpack-digest"},
@@ -169,7 +169,7 @@ ClusterStore "store-name" updated (no change)
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+			const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   creationTimestamp: null
@@ -195,9 +195,9 @@ status: {}
 				},
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
-						Object: &v1alpha1.ClusterStore{
+						Object: &v1alpha2.ClusterStore{
 							ObjectMeta: existingStore.ObjectMeta,
-							Spec: v1alpha1.ClusterStoreSpec{
+							Spec: v1alpha2.ClusterStoreSpec{
 								Sources: []corev1alpha1.StoreImage{
 									{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 									{Image: "default-registry.io/default-repo@sha256:new-buildpack-digest"},
@@ -220,7 +220,7 @@ status: {}
 		it("can output in json format", func() {
 			const resourceJSON = `{
     "kind": "ClusterStore",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "store-name",
         "creationTimestamp": null
@@ -255,9 +255,9 @@ status: {}
 				},
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
-						Object: &v1alpha1.ClusterStore{
+						Object: &v1alpha2.ClusterStore{
 							ObjectMeta: existingStore.ObjectMeta,
-							Spec: v1alpha1.ClusterStoreSpec{
+							Spec: v1alpha2.ClusterStoreSpec{
 								Sources: []corev1alpha1.StoreImage{
 									{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 									{Image: "default-registry.io/default-repo@sha256:new-buildpack-digest"},
@@ -279,7 +279,7 @@ status: {}
 
 		when("there are no changes in the update", func() {
 			it("can output original resource in requested format", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   creationTimestamp: null
@@ -357,7 +357,7 @@ ClusterStore "store-name" updated (dry run)
 
 		when("output flag is used", func() {
 			it("does not create a clusterstore and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   creationTimestamp: null
@@ -440,7 +440,7 @@ ClusterStore "store-name" updated (dry run with image upload)
 
 		when("output flag is used", func() {
 			it("does not create a clusterstore and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStore
 metadata:
   creationTimestamp: null

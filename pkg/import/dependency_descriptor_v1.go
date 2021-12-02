@@ -20,9 +20,9 @@ type DependencyDescriptorV1 struct {
 }
 
 type ClusterBuilderV1 struct {
-	Name  string                `yaml:"name"`
-	Stack string                `yaml:"stack"`
-	Store string                `yaml:"store"`
+	Name  string                    `yaml:"name"`
+	Stack string                    `yaml:"stack"`
+	Store string                    `yaml:"store"`
 	Order []corev1alpha1.OrderEntry `yaml:"order"`
 }
 

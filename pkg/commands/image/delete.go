@@ -33,7 +33,7 @@ this will not delete your OCI image in the registry`,
 				return err
 			}
 
-			err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Delete(cmd.Context(), args[0], metav1.DeleteOptions{})
+			err = cs.KpackClient.KpackV1alpha2().Images(cs.Namespace).Delete(cmd.Context(), args[0], metav1.DeleteOptions{})
 			if err != nil {
 				return err
 			}

@@ -6,7 +6,7 @@ package image_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -34,12 +34,12 @@ func testImageListCommand(t *testing.T, when spec.G, it spec.S) {
 	when("a namespace is provided", func() {
 		when("the namespaces has images", func() {
 			it("returns a table of image details", func() {
-				image1 := &v1alpha1.Image{
+				image1 := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-1",
 						Namespace: "test-namespace",
 					},
-					Status: v1alpha1.ImageStatus{
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -52,12 +52,12 @@ func testImageListCommand(t *testing.T, when spec.G, it spec.S) {
 						LatestImage: "test-registry.io/test-image-1@sha256:abcdef123",
 					},
 				}
-				image2 := &v1alpha1.Image{
+				image2 := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-2",
 						Namespace: "test-namespace",
 					},
-					Status: v1alpha1.ImageStatus{
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -70,13 +70,13 @@ func testImageListCommand(t *testing.T, when spec.G, it spec.S) {
 						LatestImage: "test-registry.io/test-image-2@sha256:abcdef123",
 					},
 				}
-				image3 := &v1alpha1.Image{
+				image3 := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-3",
 						Namespace: "test-namespace",
 					},
-					Spec: v1alpha1.ImageSpec{},
-					Status: v1alpha1.ImageStatus{
+					Spec: v1alpha2.ImageSpec{},
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -89,12 +89,12 @@ func testImageListCommand(t *testing.T, when spec.G, it spec.S) {
 						LatestImage: "test-registry.io/test-image-3@sha256:abcdef123",
 					},
 				}
-				notInNamespaceImage := &v1alpha1.Image{
+				notInNamespaceImage := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-4",
 						Namespace: defaultNamespace,
 					},
-					Status: v1alpha1.ImageStatus{
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -141,12 +141,12 @@ test-image-3    True       COMMIT           test-registry.io/test-image-3@sha256
 	when("a namespace is not provided", func() {
 		when("the namespaces has images", func() {
 			it("returns a table of image details", func() {
-				image1 := &v1alpha1.Image{
+				image1 := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-1",
 						Namespace: defaultNamespace,
 					},
-					Status: v1alpha1.ImageStatus{
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -160,12 +160,12 @@ test-image-3    True       COMMIT           test-registry.io/test-image-3@sha256
 					},
 				}
 
-				image2 := &v1alpha1.Image{
+				image2 := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-2",
 						Namespace: defaultNamespace,
 					},
-					Status: v1alpha1.ImageStatus{
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -179,13 +179,13 @@ test-image-3    True       COMMIT           test-registry.io/test-image-3@sha256
 					},
 				}
 
-				image3 := &v1alpha1.Image{
+				image3 := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-3",
 						Namespace: defaultNamespace,
 					},
-					Spec: v1alpha1.ImageSpec{},
-					Status: v1alpha1.ImageStatus{
+					Spec: v1alpha2.ImageSpec{},
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -199,12 +199,12 @@ test-image-3    True       COMMIT           test-registry.io/test-image-3@sha256
 					},
 				}
 
-				notDefaultNamespaceImage := &v1alpha1.Image{
+				notDefaultNamespaceImage := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-4",
 						Namespace: "not-default-namespace",
 					},
-					Status: v1alpha1.ImageStatus{
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -249,12 +249,12 @@ test-image-3    True       COMMIT           test-registry.io/test-image-3@sha256
 	when("all namespaces is specified", func() {
 		when("the namespaces has images", func() {
 			it("returns a table of image details", func() {
-				image1 := &v1alpha1.Image{
+				image1 := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-1",
 						Namespace: defaultNamespace,
 					},
-					Status: v1alpha1.ImageStatus{
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -268,12 +268,12 @@ test-image-3    True       COMMIT           test-registry.io/test-image-3@sha256
 					},
 				}
 
-				image2 := &v1alpha1.Image{
+				image2 := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-2",
 						Namespace: defaultNamespace,
 					},
-					Status: v1alpha1.ImageStatus{
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -287,13 +287,13 @@ test-image-3    True       COMMIT           test-registry.io/test-image-3@sha256
 					},
 				}
 
-				image3 := &v1alpha1.Image{
+				image3 := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-3",
 						Namespace: defaultNamespace,
 					},
-					Spec: v1alpha1.ImageSpec{},
-					Status: v1alpha1.ImageStatus{
+					Spec: v1alpha2.ImageSpec{},
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{
@@ -307,12 +307,12 @@ test-image-3    True       COMMIT           test-registry.io/test-image-3@sha256
 					},
 				}
 
-				notDefaultNamespaceImage := &v1alpha1.Image{
+				notDefaultNamespaceImage := &v1alpha2.Image{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "test-image-4",
 						Namespace: "not-default-namespace",
 					},
-					Status: v1alpha1.ImageStatus{
+					Status: v1alpha2.ImageStatus{
 						LatestBuildReason: "COMMIT",
 						Status: corev1alpha1.Status{
 							Conditions: []corev1alpha1.Condition{

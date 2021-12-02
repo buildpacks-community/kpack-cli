@@ -6,7 +6,7 @@ package clusterbuilder
 import (
 	"sort"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -30,7 +30,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			clusterBuilderList, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().List(cmd.Context(), metav1.ListOptions{})
+			clusterBuilderList, err := cs.KpackClient.KpackV1alpha2().ClusterBuilders().List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -47,7 +47,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	return cmd
 }
 
-func displayClusterBuildersTable(cmd *cobra.Command, builderList *v1alpha1.ClusterBuilderList) error {
+func displayClusterBuildersTable(cmd *cobra.Command, builderList *v1alpha2.ClusterBuilderList) error {
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "Name", "Ready", "Stack", "Image")
 	if err != nil {
 		return err
@@ -69,13 +69,13 @@ func displayClusterBuildersTable(cmd *cobra.Command, builderList *v1alpha1.Clust
 	return writer.Write()
 }
 
-func Sort(builds []v1alpha1.ClusterBuilder) func(i int, j int) bool {
+func Sort(builds []v1alpha2.ClusterBuilder) func(i int, j int) bool {
 	return func(i, j int) bool {
 		return builds[j].ObjectMeta.Name > builds[i].ObjectMeta.Name
 	}
 }
 
-func getStatus(b v1alpha1.ClusterBuilder) string {
+func getStatus(b v1alpha2.ClusterBuilder) string {
 	cond := b.Status.GetCondition(corev1alpha1.ConditionReady)
 	switch {
 	case cond.IsTrue():

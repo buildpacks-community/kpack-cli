@@ -6,7 +6,7 @@ package clusterbuilder_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -34,24 +34,24 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 	)
 
 	var (
-		clusterBuilder1 = &v1alpha1.ClusterBuilder{
+		clusterBuilder1 = &v1alpha2.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.ClusterBuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-builder-1",
 			},
-			Spec: v1alpha1.ClusterBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.ClusterBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-1",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
 					Order: []corev1alpha1.OrderEntry{
 						{
@@ -79,7 +79,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 					Name:      "some-service-account",
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -95,24 +95,24 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 				LatestImage: "some-registry.com/test-builder-1:tag",
 			},
 		}
-		clusterBuilder2 = &v1alpha1.ClusterBuilder{
+		clusterBuilder2 = &v1alpha2.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.ClusterBuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-builder-2",
 			},
-			Spec: v1alpha1.ClusterBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.ClusterBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-2",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
 					Order: []corev1alpha1.OrderEntry{
 						{
@@ -140,7 +140,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 					Name:      "some-service-account",
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{
@@ -151,24 +151,24 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 				},
 			},
 		}
-		clusterBuilder3 = &v1alpha1.ClusterBuilder{
+		clusterBuilder3 = &v1alpha2.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.ClusterBuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-builder-3",
 			},
-			Spec: v1alpha1.ClusterBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.ClusterBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder-3",
 					Stack: corev1.ObjectReference{
 						Name: "test-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "test-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
 					Order: []corev1alpha1.OrderEntry{
 						{
@@ -196,7 +196,7 @@ test-builder-3    true     io.buildpacks.stacks.bionic    some-registry.com/test
 					Name:      "some-service-account",
 				},
 			},
-			Status: v1alpha1.BuilderStatus{
+			Status: v1alpha2.BuilderStatus{
 				Status: corev1alpha1.Status{
 					Conditions: []corev1alpha1.Condition{
 						{

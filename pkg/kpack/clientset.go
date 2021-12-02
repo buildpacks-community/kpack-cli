@@ -1,29 +1,26 @@
-// Copyright 2020-Present VMware, Inc.
-// SPDX-License-Identifier: Apache-2.0
-
-package k8s
+package kpack
 
 import (
+	"fmt"
 	"os"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/kpack"
+	kpackv1alpha1 "github.com/pivotal/kpack/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	// load credential helpers
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"github.com/pkg/errors"
-	"k8s.io/client-go/dynamic"
-	k8s "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	kpackClientset "github.com/pivotal/kpack/pkg/client/clientset/versioned"
+	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
+	kpackv1alpha2 "github.com/pivotal/kpack/pkg/client/clientset/versioned/typed/build/v1alpha2"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/util/flowcontrol"
 )
 
 type ClientSet struct {
-	KpackClient   kpackClientset.Interface
-	K8sClient     k8s.Interface
-	DynamicClient dynamic.Interface
-	Namespace     string
+	KpackClient kpack.Interface
+	Namespace   string
 }
 
 type ClientSetProvider interface {
@@ -49,43 +46,16 @@ func (d DefaultClientSetProvider) GetClientSet(namespace string) (ClientSet, err
 		return d.clientSet, err
 	}
 
-	if d.clientSet.DynamicClient, err = d.getDynamicClient(); err != nil {
-		return d.clientSet, err
-	}
-
-	d.clientSet.K8sClient, err = d.getK8sClient()
 	return d.clientSet, err
 }
 
-func (d DefaultClientSetProvider) getKpackClient() (kpackClientset.Interface, error) {
+func (d DefaultClientSetProvider) getKpackClient() (*kpack.Clientset, error) {
 	restConfig, err := d.restConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := kpack.NewForConfig(restConfig)
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
-}
-
-func (d DefaultClientSetProvider) getK8sClient() (*k8s.Clientset, error) {
-	restConfig, err := d.restConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	return k8s.NewForConfig(restConfig)
-}
-
-func (d DefaultClientSetProvider) getDynamicClient() (dynamic.Interface, error) {
-	restConfig, err := d.restConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	return dynamic.NewForConfig(restConfig)
+	return kpack.NewForConfig(restConfig)
 }
 
 func (d DefaultClientSetProvider) restConfig() (*rest.Config, error) {
@@ -121,4 +91,43 @@ func (d DefaultClientSetProvider) getDefaultNamespace() (string, error) {
 	}
 
 	return defaultNamespace, nil
+}
+
+type ClientSetWrapper struct {
+	v1alpha2Client kpackv1alpha2.KpackV1alpha2Interface
+}
+
+// KpackV1alpha1 retrieves the KpackV1alpha1Client
+func (c *ClientSetWrapper) KpackV1alpha1() kpackv1alpha1.KpackV1alpha1Interface {
+	return nil
+}
+
+// KpackV1alpha2 retrieves the KpackV1alpha2Client
+func (c *ClientSetWrapper) KpackV1alpha2() kpackv1alpha2.KpackV1alpha2Interface {
+	return c.v1alpha2Client
+}
+
+// Discovery retrieves the DiscoveryClient
+func (c *ClientSetWrapper) Discovery() discovery.DiscoveryInterface {
+	return nil
+}
+
+func NewForConfig(c *rest.Config) (kpack.Interface, error) {
+	configShallowCopy := *c
+	if configShallowCopy.RateLimiter == nil && configShallowCopy.QPS > 0 {
+		if configShallowCopy.Burst <= 0 {
+			return nil, fmt.Errorf("burst is required to be greater than 0 when RateLimiter is not set and QPS is set to greater than 0")
+		}
+		configShallowCopy.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(configShallowCopy.QPS, configShallowCopy.Burst)
+	}
+	var cs ClientSetWrapper
+	var err error
+
+	if c.GroupVersion.String() == kpackGroupVersionV1alpha2 {
+		cs.v1alpha2Client, err = kpackv1alpha2.NewForConfig(&configShallowCopy)
+		return &cs, err
+	}
+
+	cs.v1alpha2Client, err = NewBuildClientForConfig(&configShallowCopy)
+	return &cs, err
 }

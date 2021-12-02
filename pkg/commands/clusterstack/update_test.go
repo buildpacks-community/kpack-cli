@@ -7,7 +7,7 @@ package clusterstack_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
@@ -59,27 +59,27 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 		FakeFetcher: fakeFetcher,
 	}
 
-	stack := &v1alpha1.ClusterStack{
+	stack := &v1alpha2.ClusterStack{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "stack-name",
 		},
-		Spec: v1alpha1.ClusterStackSpec{
+		Spec: v1alpha2.ClusterStackSpec{
 			Id: "stack-id",
-			BuildImage: v1alpha1.ClusterStackSpecImage{
+			BuildImage: v1alpha2.ClusterStackSpecImage{
 				Image: "default-registry.io/default-repo@sha256:build-image-digest",
 			},
-			RunImage: v1alpha1.ClusterStackSpecImage{
+			RunImage: v1alpha2.ClusterStackSpecImage{
 				Image: "default-registry.io/default-repo@sha256:run-image-digest",
 			},
 		},
-		Status: v1alpha1.ClusterStackStatus{
-			ResolvedClusterStack: v1alpha1.ResolvedClusterStack{
+		Status: v1alpha2.ClusterStackStatus{
+			ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
 				Id: "stack-id",
-				BuildImage: v1alpha1.ClusterStackStatusImage{
+				BuildImage: v1alpha2.ClusterStackStatusImage{
 					LatestImage: "default-registry.io/default-repo@sha256:build-image-digest",
 					Image:       "default-registry.io/default-repo@sha256:build-image-digest",
 				},
-				RunImage: v1alpha1.ClusterStackStatusImage{
+				RunImage: v1alpha2.ClusterStackStatusImage{
 					LatestImage: "default-registry.io/default-repo@sha256:run-image-digest",
 					Image:       "default-registry.io/default-repo@sha256:run-image-digest",
 				},
@@ -108,14 +108,14 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	it("updates the stack id, run image, and build image", func() {
-		expectedStack := &v1alpha1.ClusterStack{
+		expectedStack := &v1alpha2.ClusterStack{
 			ObjectMeta: stack.ObjectMeta,
-			Spec: v1alpha1.ClusterStackSpec{
+			Spec: v1alpha2.ClusterStackSpec{
 				Id: "stack-id",
-				BuildImage: v1alpha1.ClusterStackSpecImage{
+				BuildImage: v1alpha2.ClusterStackSpecImage{
 					Image: "default-registry.io/default-repo@sha256:new-build-image-digest",
 				},
-				RunImage: v1alpha1.ClusterStackSpecImage{
+				RunImage: v1alpha2.ClusterStackSpecImage{
 					Image: "default-registry.io/default-repo@sha256:new-run-image-digest",
 				},
 			},
@@ -209,7 +209,7 @@ ClusterStack "stack-name" updated (no change)
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+			const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStack
 metadata:
   creationTimestamp: null
@@ -243,14 +243,14 @@ status:
 				},
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
-						Object: &v1alpha1.ClusterStack{
+						Object: &v1alpha2.ClusterStack{
 							ObjectMeta: stack.ObjectMeta,
-							Spec: v1alpha1.ClusterStackSpec{
+							Spec: v1alpha2.ClusterStackSpec{
 								Id: "stack-id",
-								BuildImage: v1alpha1.ClusterStackSpecImage{
+								BuildImage: v1alpha2.ClusterStackSpecImage{
 									Image: "default-registry.io/default-repo@sha256:new-build-image-digest",
 								},
-								RunImage: v1alpha1.ClusterStackSpecImage{
+								RunImage: v1alpha2.ClusterStackSpecImage{
 									Image: "default-registry.io/default-repo@sha256:new-run-image-digest",
 								},
 							},
@@ -270,7 +270,7 @@ Uploading to 'default-registry.io/default-repo'...
 		it("can output in json format", func() {
 			const resourceJSON = `{
     "kind": "ClusterStack",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "stack-name",
         "creationTimestamp": null
@@ -311,14 +311,14 @@ Uploading to 'default-registry.io/default-repo'...
 				},
 				ExpectUpdates: []clientgotesting.UpdateActionImpl{
 					{
-						Object: &v1alpha1.ClusterStack{
+						Object: &v1alpha2.ClusterStack{
 							ObjectMeta: stack.ObjectMeta,
-							Spec: v1alpha1.ClusterStackSpec{
+							Spec: v1alpha2.ClusterStackSpec{
 								Id: "stack-id",
-								BuildImage: v1alpha1.ClusterStackSpecImage{
+								BuildImage: v1alpha2.ClusterStackSpecImage{
 									Image: "default-registry.io/default-repo@sha256:new-build-image-digest",
 								},
-								RunImage: v1alpha1.ClusterStackSpecImage{
+								RunImage: v1alpha2.ClusterStackSpecImage{
 									Image: "default-registry.io/default-repo@sha256:new-run-image-digest",
 								},
 							},
@@ -349,7 +349,7 @@ Uploading to 'default-registry.io/default-repo'...
 			})
 
 			it("can output original resource in requested format", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStack
 metadata:
   creationTimestamp: null
@@ -418,7 +418,7 @@ ClusterStack "stack-name" updated (dry run)
 
 		when("output flag is used", func() {
 			it("does not update the clusterstack and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStack
 metadata:
   creationTimestamp: null
@@ -486,7 +486,7 @@ ClusterStack "stack-name" updated (dry run with image upload)
 
 		when("output flag is used", func() {
 			it("does not update the clusterstack and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterStack
 metadata:
   creationTimestamp: null

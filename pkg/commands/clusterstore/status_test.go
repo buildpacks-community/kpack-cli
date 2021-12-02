@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -32,11 +32,11 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("the store exists", func() {
 		const storeName = "some-store-name"
-		store := &v1alpha1.ClusterStore{
+		store := &v1alpha2.ClusterStore{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: storeName,
 			},
-			Status: v1alpha1.ClusterStoreStatus{
+			Status: v1alpha2.ClusterStoreStatus{
 				Buildpacks: []corev1alpha1.StoreBuildpack{
 					{
 						BuildpackInfo: corev1alpha1.BuildpackInfo{

@@ -8,7 +8,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +36,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(cmd.Context(), args[0], metav1.GetOptions{})
+			store, err := cs.KpackClient.KpackV1alpha2().ClusterStores().Get(cmd.Context(), args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -59,7 +59,7 @@ type buildpackageInfo struct {
 	homepage string
 }
 
-func displayStatus(out io.Writer, s *v1alpha1.ClusterStore) error {
+func displayStatus(out io.Writer, s *v1alpha2.ClusterStore) error {
 	statusWriter := commands.NewStatusWriter(out)
 	status := getStatusText(s)
 	if err := statusWriter.AddBlock("", "Status", status); err != nil {
@@ -68,7 +68,7 @@ func displayStatus(out io.Writer, s *v1alpha1.ClusterStore) error {
 	return statusWriter.Write()
 }
 
-func getStatusText(s *v1alpha1.ClusterStore) string {
+func getStatusText(s *v1alpha2.ClusterStore) string {
 	if cond := s.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
 		if cond.Status == corev1.ConditionTrue {
 			return "Ready"
@@ -79,7 +79,7 @@ func getStatusText(s *v1alpha1.ClusterStore) string {
 	return "Unknown"
 }
 
-func displayBuildpackages(out io.Writer, s *v1alpha1.ClusterStore) error {
+func displayBuildpackages(out io.Writer, s *v1alpha2.ClusterStore) error {
 	if err := displayStatus(out, s); err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func displayBuildpackages(out io.Writer, s *v1alpha1.ClusterStore) error {
 	return writer.Write()
 }
 
-func displayBuildpackagesDetailed(out io.Writer, s *v1alpha1.ClusterStore) error {
+func displayBuildpackagesDetailed(out io.Writer, s *v1alpha2.ClusterStore) error {
 	if err := displayStatus(out, s); err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func displayBuildpackagesDetailed(out io.Writer, s *v1alpha1.ClusterStore) error
 	return displayBuildpacks(out, buildpackages, buildpackageBps)
 }
 
-func getBuildpackageInfos(store *v1alpha1.ClusterStore) []buildpackageInfo {
+func getBuildpackageInfos(store *v1alpha2.ClusterStore) []buildpackageInfo {
 	buildpackagesMap := make(map[string]buildpackageInfo)
 
 	for _, buildpack := range store.Status.Buildpacks {

@@ -4,7 +4,7 @@
 package clusterstack
 
 import (
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -27,7 +27,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 				return err
 			}
 
-			stackList, err := cs.KpackClient.KpackV1alpha1().ClusterStacks().List(cmd.Context(), metav1.ListOptions{})
+			stackList, err := cs.KpackClient.KpackV1alpha2().ClusterStacks().List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -44,7 +44,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	return cmd
 }
 
-func displayStacksTable(cmd *cobra.Command, stackList *v1alpha1.ClusterStackList) error {
+func displayStacksTable(cmd *cobra.Command, stackList *v1alpha2.ClusterStackList) error {
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY", "ID")
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func displayStacksTable(cmd *cobra.Command, stackList *v1alpha1.ClusterStackList
 	return writer.Write()
 }
 
-func getReadyText(s v1alpha1.ClusterStack) string {
+func getReadyText(s v1alpha2.ClusterStack) string {
 	cond := s.Status.GetCondition(corev1alpha1.ConditionReady)
 	if cond == nil {
 		return "Unknown"

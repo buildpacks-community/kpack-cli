@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -40,13 +40,13 @@ The namespace defaults to the kubernetes current-context namespace.`,
 
 			ctx := cmd.Context()
 
-			image, err := cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Get(ctx, args[0], metav1.GetOptions{})
+			image, err := cs.KpackClient.KpackV1alpha2().Images(cs.Namespace).Get(ctx, args[0], metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(ctx, metav1.ListOptions{
-				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
+			buildList, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).List(ctx, metav1.ListOptions{
+				LabelSelector: v1alpha2.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
 				return err
@@ -62,7 +62,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 	return cmd
 }
 
-func displayImageStatus(cmd *cobra.Command, image *v1alpha1.Image, builds []v1alpha1.Build) error {
+func displayImageStatus(cmd *cobra.Command, image *v1alpha2.Image, builds []v1alpha2.Build) error {
 	statusWriter := commands.NewStatusWriter(cmd.OutOrStdout())
 	imgDetails := getImageDetails(image)
 	failedBuild := getLastFailedBuild(builds)
@@ -132,7 +132,7 @@ func displayImageStatus(cmd *cobra.Command, image *v1alpha1.Image, builds []v1al
 	return statusWriter.Write()
 }
 
-func buildStatus(build *v1alpha1.Build) []string {
+func buildStatus(build *v1alpha2.Build) []string {
 	items := []string{
 		"Id", getId(build),
 		"Build Reason", getReason(build),
@@ -143,7 +143,7 @@ func buildStatus(build *v1alpha1.Build) []string {
 	return items
 }
 
-func getConfigSource(image *v1alpha1.Image) []string {
+func getConfigSource(image *v1alpha2.Image) []string {
 	if image.Spec.Source.Git != nil {
 		return []string{
 			"Type", "GitUrl",
@@ -161,7 +161,7 @@ func getConfigSource(image *v1alpha1.Image) []string {
 	}
 }
 
-func getLastSuccessfulBuild(builds []v1alpha1.Build) *v1alpha1.Build {
+func getLastSuccessfulBuild(builds []v1alpha2.Build) *v1alpha2.Build {
 	for i, _ := range builds {
 		if builds[len(builds)-1-i].IsSuccess() {
 			return &builds[len(builds)-1-i]
@@ -170,7 +170,7 @@ func getLastSuccessfulBuild(builds []v1alpha1.Build) *v1alpha1.Build {
 	return nil
 }
 
-func getLastFailedBuild(builds []v1alpha1.Build) *v1alpha1.Build {
+func getLastFailedBuild(builds []v1alpha2.Build) *v1alpha2.Build {
 	for i, _ := range builds {
 		if builds[len(builds)-1-i].IsFailure() {
 			return &builds[len(builds)-1-i]
@@ -185,14 +185,14 @@ type imageDetails struct {
 	latestImage string
 }
 
-func getImageDetails(image *v1alpha1.Image) imageDetails {
+func getImageDetails(image *v1alpha2.Image) imageDetails {
 	details := imageDetails{
 		status:      "Unknown",
 		message:     "",
 		latestImage: "",
 	}
 
-	if cond := image.Status.GetCondition(v1alpha1.ConditionBuilderReady); cond != nil {
+	if cond := image.Status.GetCondition(v1alpha2.ConditionBuilderReady); cond != nil {
 		if cond.Status != corev1.ConditionTrue {
 			details.status = "Not Ready"
 			details.message = getNotReadyMessage(cond.Reason, image.Spec.Builder.Name)
@@ -219,29 +219,29 @@ func getImageDetails(image *v1alpha1.Image) imageDetails {
 }
 
 func getNotReadyMessage(reason, builderName string) string {
-	if reason == v1alpha1.BuilderNotFound {
+	if reason == v1alpha2.BuilderNotFound {
 		return fmt.Sprintf("Builder '%s' not found", builderName)
-	} else if reason == v1alpha1.BuilderNotReady {
+	} else if reason == v1alpha2.BuilderNotReady {
 		return fmt.Sprintf("Builder '%s' not ready", builderName)
 	}
 	return ""
 }
 
-func getId(build *v1alpha1.Build) string {
+func getId(build *v1alpha2.Build) string {
 	if build == nil {
 		return ""
 	}
-	if val, ok := build.Labels[v1alpha1.BuildNumberLabel]; ok {
+	if val, ok := build.Labels[v1alpha2.BuildNumberLabel]; ok {
 		return val
 	}
 	return ""
 }
 
-func getReason(build *v1alpha1.Build) string {
+func getReason(build *v1alpha2.Build) string {
 	if build == nil {
 		return ""
 	}
-	if val, ok := build.Annotations[v1alpha1.BuildReasonAnnotation]; ok {
+	if val, ok := build.Annotations[v1alpha2.BuildReasonAnnotation]; ok {
 		return val
 	}
 	return ""

@@ -6,7 +6,7 @@ package image
 import (
 	"sort"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -47,7 +47,7 @@ kp image list --filter ready=true --filter latest-reason=commit,trigger`,
 				imagesNamespace = cs.Namespace
 			}
 
-			imageList, err := cs.KpackClient.KpackV1alpha1().Images(imagesNamespace).List(cmd.Context(), metav1.ListOptions{})
+			imageList, err := cs.KpackClient.KpackV1alpha2().Images(imagesNamespace).List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -84,7 +84,7 @@ Supported filters and values:
 	return cmd
 }
 
-func displayImagesTable(cmd *cobra.Command, imageList *v1alpha1.ImageList) error {
+func displayImagesTable(cmd *cobra.Command, imageList *v1alpha2.ImageList) error {
 	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "READY", "LATEST REASON", "LATEST IMAGE", "NAMESPACE")
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func displayImagesTable(cmd *cobra.Command, imageList *v1alpha1.ImageList) error
 	return writer.Write()
 }
 
-func getReadyText(img v1alpha1.Image) string {
+func getReadyText(img v1alpha2.Image) string {
 	cond := img.Status.GetCondition(corev1alpha1.ConditionReady)
 	if cond == nil {
 		return "Unknown"
