@@ -95,9 +95,6 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 				Volume: &v1alpha2.ImagePersistentVolumeCache{
 					Size: cacheSize,
 				},
-				Registry: &v1alpha2.RegistryCache{
-					Tag: "",
-				},
 			},
 		},
 	}, nil

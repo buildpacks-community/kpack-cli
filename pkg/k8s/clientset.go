@@ -6,7 +6,6 @@ package k8s
 import (
 	"os"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/kpack"
 	// load credential helpers
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
@@ -16,11 +15,11 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	kpackClientset "github.com/pivotal/kpack/pkg/client/clientset/versioned"
+	"github.com/vmware-tanzu/kpack-cli/pkg/kpackcompat"
 )
 
 type ClientSet struct {
-	KpackClient   kpackClientset.Interface
+	KpackClient   kpackcompat.ClientsetInterface
 	K8sClient     k8s.Interface
 	DynamicClient dynamic.Interface
 	Namespace     string
@@ -57,13 +56,13 @@ func (d DefaultClientSetProvider) GetClientSet(namespace string) (ClientSet, err
 	return d.clientSet, err
 }
 
-func (d DefaultClientSetProvider) getKpackClient() (kpackClientset.Interface, error) {
+func (d DefaultClientSetProvider) getKpackClient() (kpackcompat.ClientsetInterface, error) {
 	restConfig, err := d.restConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := kpack.NewForConfig(restConfig)
+	client, err := kpackcompat.NewForConfig(restConfig)
 	if err != nil {
 		return nil, err
 	}

@@ -94,7 +94,6 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						Volume: &v1alpha2.ImagePersistentVolumeCache{
 							Size: &cacheSize,
 						},
-						Registry: &v1alpha2.RegistryCache{Tag: ""},
 					},
 				},
 			}
@@ -199,8 +198,7 @@ Image Resource "some-image" created
 							SubPath: "some-sub-path",
 						},
 						Cache: &v1alpha2.ImageCacheConfig{
-							Volume:   &v1alpha2.ImagePersistentVolumeCache{},
-							Registry: &v1alpha2.RegistryCache{Tag: ""},
+							Volume: &v1alpha2.ImagePersistentVolumeCache{},
 						},
 						Build: &v1alpha2.ImageBuild{
 							Env: []corev1.EnvVar{
@@ -280,8 +278,7 @@ Image Resource "some-image" created
 						SubPath: "some-sub-path",
 					},
 					Cache: &v1alpha2.ImageCacheConfig{
-						Volume:   &v1alpha2.ImagePersistentVolumeCache{},
-						Registry: &v1alpha2.RegistryCache{Tag: ""},
+						Volume: &v1alpha2.ImagePersistentVolumeCache{},
 					},
 					Build: &v1alpha2.ImageBuild{
 						Env: []corev1.EnvVar{
@@ -343,8 +340,7 @@ Image Resource "some-image" created
 						},
 					},
 					Cache: &v1alpha2.ImageCacheConfig{
-						Volume:   &v1alpha2.ImagePersistentVolumeCache{},
-						Registry: &v1alpha2.RegistryCache{Tag: ""},
+						Volume: &v1alpha2.ImagePersistentVolumeCache{},
 					},
 					Build: &v1alpha2.ImageBuild{},
 				},
@@ -395,8 +391,7 @@ Image Resource "some-image" created
 						},
 					},
 					Cache: &v1alpha2.ImageCacheConfig{
-						Volume:   &v1alpha2.ImagePersistentVolumeCache{},
-						Registry: &v1alpha2.RegistryCache{Tag: ""},
+						Volume: &v1alpha2.ImagePersistentVolumeCache{},
 					},
 					Build: &v1alpha2.ImageBuild{},
 				},
@@ -466,8 +461,7 @@ Image Resource "some-image" created
 						SubPath: "some-sub-path",
 					},
 					Cache: &v1alpha2.ImageCacheConfig{
-						Volume:   &v1alpha2.ImagePersistentVolumeCache{},
-						Registry: &v1alpha2.RegistryCache{Tag: ""},
+						Volume: &v1alpha2.ImagePersistentVolumeCache{},
 					},
 					Build: &v1alpha2.ImageBuild{
 						Env: []corev1.EnvVar{
@@ -486,7 +480,7 @@ Image Resource "some-image" created
 kind: Image
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cache":{"volume":{},"registry":{"tag":""}},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cache":{"volume":{}},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -500,8 +494,6 @@ spec:
     kind: ClusterBuilder
     name: default
   cache:
-    registry:
-      tag: ""
     volume: {}
   serviceAccountName: default
   source:
@@ -544,7 +536,7 @@ status: {}
         "namespace": "some-default-namespace",
         "creationTimestamp": null,
         "annotations": {
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"Image\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"some-image\",\"namespace\":\"some-default-namespace\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry.io/some-repo\",\"builder\":{\"kind\":\"ClusterBuilder\",\"name\":\"default\"},\"serviceAccountName\":\"default\",\"source\":{\"git\":{\"url\":\"some-git-url\",\"revision\":\"some-git-rev\"},\"subPath\":\"some-sub-path\"},\"cache\":{\"volume\":{},\"registry\":{\"tag\":\"\"}},\"build\":{\"env\":[{\"name\":\"some-key\",\"value\":\"some-val\"}],\"resources\":{}}},\"status\":{}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"Image\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"some-image\",\"namespace\":\"some-default-namespace\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry.io/some-repo\",\"builder\":{\"kind\":\"ClusterBuilder\",\"name\":\"default\"},\"serviceAccountName\":\"default\",\"source\":{\"git\":{\"url\":\"some-git-url\",\"revision\":\"some-git-rev\"},\"subPath\":\"some-sub-path\"},\"cache\":{\"volume\":{}},\"build\":{\"env\":[{\"name\":\"some-key\",\"value\":\"some-val\"}],\"resources\":{}}},\"status\":{}}"
         }
     },
     "spec": {
@@ -562,10 +554,7 @@ status: {}
             "subPath": "some-sub-path"
         },
         "cache": {
-            "volume": {},
-            "registry": {
-                "tag": ""
-            }
+            "volume": {}
         },
         "build": {
             "env": [
@@ -647,7 +636,7 @@ Image Resource "some-image" created (dry run)
 kind: Image
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cache":{"volume":{},"registry":{"tag":""}},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cache":{"volume":{}},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -661,8 +650,6 @@ spec:
     kind: ClusterBuilder
     name: default
   cache:
-    registry:
-      tag: ""
     volume: {}
   serviceAccountName: default
   source:
@@ -741,7 +728,7 @@ Image Resource "some-image" created (dry run with image upload)
 kind: Image
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cache":{"volume":{},"registry":{"tag":""}},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cache":{"volume":{}},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -755,8 +742,6 @@ spec:
     kind: ClusterBuilder
     name: default
   cache:
-    registry:
-      tag: ""
     volume: {}
   serviceAccountName: default
   source:

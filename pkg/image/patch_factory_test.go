@@ -139,7 +139,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.CacheSize = "3G"
 			_, patch, err := factory.MakePatch(img)
 			require.NoError(t, err)
-			require.Equal(t, `{"spec":{"cache":{"registry":{"tag":""},"volume":{"size":"3G"}}}}`, string(patch))
+			require.Equal(t, `{"spec":{"cache":{"volume":{"size":"3G"}}}}`, string(patch))
 		})
 
 		it("errors if cache size is decreased", func() {
@@ -147,9 +147,6 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			img.Spec.Cache = &v1alpha2.ImageCacheConfig{
 				Volume: &v1alpha2.ImagePersistentVolumeCache{
 					Size: &cacheSize,
-				},
-				Registry: &v1alpha2.RegistryCache{
-					Tag: "",
 				},
 			}
 
