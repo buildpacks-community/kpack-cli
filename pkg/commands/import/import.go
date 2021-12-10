@@ -33,10 +33,11 @@ func NewImportCommand(
 	newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 
 	var (
-		filename    string
-		showChanges bool
-		force       bool
-		tlsConfig   registry.TLSConfig
+		filename                string
+		showChanges             bool
+		force                   bool
+		tlsConfig               registry.TLSConfig
+		ignoreMajorVersionBumps bool
 	)
 
 	const (
@@ -137,6 +138,7 @@ cat dependencies.yaml | kp import -f -`,
 					ctx,
 					authn.DefaultKeychain,
 					kpConfig,
+					ignoreMajorVersionBumps,
 					rawDescriptor,
 				)
 				if err != nil {
@@ -154,6 +156,7 @@ cat dependencies.yaml | kp import -f -`,
 	cmd.Flags().StringVarP(&filename, "filename", "f", "", "dependency descriptor filename")
 	cmd.Flags().BoolVar(&showChanges, "show-changes", false, "show a summary of resource changes before importing")
 	cmd.Flags().BoolVar(&force, "force", false, "import without confirmation when showing changes")
+	cmd.Flags().BoolVar(&ignoreMajorVersionBumps, "ignore-major-version-bumps", false, "ignore new major versions of buildpackages")
 	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsConfig)
 	_ = cmd.MarkFlagRequired("filename")

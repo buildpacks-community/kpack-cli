@@ -4,6 +4,7 @@
 package buildpackage
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"os"
 
@@ -28,19 +29,41 @@ type Uploader struct {
 	Fetcher   Fetcher
 }
 
-func (u *Uploader) UploadBuildpackage(keychain authn.Keychain, buildPackage, repository string) (string, error) {
+type Metadata struct {
+	Version string `json:"version"`
+	Id      string `json:"id"`
+}
+
+func (u *Uploader) UploadBuildpackage(keychain authn.Keychain, buildPackage, repository string) (string, Metadata, error) {
 	tempDir, err := ioutil.TempDir("", "cnb-upload")
 	if err != nil {
-		return "", err
+		return "", Metadata{}, err
 	}
 	defer os.RemoveAll(tempDir)
 
 	image, err := u.read(keychain, buildPackage, tempDir)
 	if err != nil {
-		return "", err
+		return "", Metadata{}, err
 	}
 
-	return u.Relocator.Relocate(keychain, image, repository)
+	config, err := image.ConfigFile()
+	if err != nil {
+		return "", Metadata{}, err
+	}
+
+	metadataLabel := config.Config.Labels["io.buildpacks.buildpackage.metadata"]
+	var metadata Metadata
+	err = json.Unmarshal([]byte(metadataLabel), &metadata)
+	if err != nil {
+		return "", Metadata{}, err
+	}
+
+	relocate, err := u.Relocator.Relocate(keychain, image, repository)
+	if err != nil {
+		return "", Metadata{}, err
+	}
+
+	return relocate, metadata, nil
 }
 
 func (u *Uploader) read(keychain authn.Keychain, buildPackage, tempDir string) (v1.Image, error) {

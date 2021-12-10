@@ -32,12 +32,14 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 	when("UploadBuildpackage", func() {
 		when("cnb file is provided", func() {
 			it("it uploads to registry", func() {
-				image, err := uploader.UploadBuildpackage(fakeKeychain, "testdata/sample-bp.cnb", "kpackcr.org/somepath")
+				image, metadata, err := uploader.UploadBuildpackage(fakeKeychain, "testdata/sample-bp.cnb", "kpackcr.org/somepath")
 				require.NoError(t, err)
 
 				const expectedFixture = "kpackcr.org/somepath@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"
 				require.Equal(t, expectedFixture, image)
 				require.Equal(t, 1, relocator.CallCount())
+
+				require.Equal(t, Metadata{Id: "sample/buildpackage", Version: "0.0.1"}, metadata)
 			})
 		})
 
@@ -46,12 +48,12 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 				testImage, err := random.Image(10, 10)
 				require.NoError(t, err)
 
-				testImage, err = imagehelpers.SetStringLabel(testImage, "io.buildpacks.buildpackage.metadata", `{"id": "sample-buildpack/name"}`)
+				testImage, err = imagehelpers.SetStringLabel(testImage, "io.buildpacks.buildpackage.metadata", `{"id": "sample-buildpack/name", "version":"some-version"}`)
 				require.NoError(t, err)
 
 				fetcher.AddImage("some/remote-bp", testImage)
 
-				image, err := uploader.UploadBuildpackage(fakeKeychain, "some/remote-bp", "kpackcr.org/somepath")
+				image, metadata, err := uploader.UploadBuildpackage(fakeKeychain, "some/remote-bp", "kpackcr.org/somepath")
 				require.NoError(t, err)
 
 				digest, err := testImage.Digest()
@@ -60,6 +62,8 @@ func testBuildpackageUploader(t *testing.T, when spec.G, it spec.S) {
 				expectedImage := fmt.Sprintf("kpackcr.org/somepath@%s", digest)
 				require.Equal(t, expectedImage, image)
 				require.Equal(t, 1, relocator.CallCount())
+
+				require.Equal(t, Metadata{Id: "sample-buildpack/name", Version: "some-version"}, metadata)
 			})
 		})
 	})

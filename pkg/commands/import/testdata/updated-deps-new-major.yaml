@@ -1,0 +1,7 @@
+apiVersion: kp.kpack.io/v1alpha3
+kind: DependencyDescriptor
+clusterStores:
+- name: store-name
+  sources:
+  - image: some-registry.io/repo/buildpack-image-new
+
