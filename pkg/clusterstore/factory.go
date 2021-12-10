@@ -6,6 +6,7 @@ package clusterstore
 import (
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
@@ -19,7 +20,7 @@ import (
 )
 
 type BuildpackageUploader interface {
-	UploadBuildpackage(keychain authn.Keychain, buildPackage, repository string) (string, error)
+	UploadBuildpackage(keychain authn.Keychain, buildPackage, repository string) (string, buildpackage.Metadata, error)
 }
 
 type Printer interface {
@@ -64,7 +65,7 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 	}
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, defaultRepo)
+		uploadedBp, _, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, defaultRepo)
 		if err != nil {
 			return nil, err
 		}
@@ -77,8 +78,10 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 	return newStore, k8s.SetLastAppliedCfg(newStore)
 }
 
-func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha1.ClusterStore, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
+func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha1.ClusterStore, kpConfig config.KpConfig, ignoreMajorVersionBump bool, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
 	storeUpdated := false
+
+	existingVersions := existingStoreBuildpackVersions(store)
 
 	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
@@ -86,7 +89,7 @@ func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha1.ClusterSto
 	}
 
 	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, defaultRepo)
+		uploadedBp, metadata, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, defaultRepo)
 		if err != nil {
 			return nil, false, err
 		}
@@ -96,6 +99,25 @@ func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha1.ClusterSto
 				return store, false, err
 			}
 			continue
+		}
+
+		if version, ok := existingVersions[metadata.Id]; ok && ignoreMajorVersionBump {
+			existingVersion, err := semver.NewVersion(version)
+			if err != nil {
+				return nil, false, err
+			}
+
+			newVersion, err := semver.NewVersion(metadata.Version)
+			if err != nil {
+				return nil, false, err
+			}
+
+			if newVersion.Major() > existingVersion.Major() {
+				if err = f.Printer.Printlnf("\tSkipping adding %s to store due to major version bump %v to %v", metadata.Id, existingVersion, newVersion); err != nil {
+					return store, false, err
+				}
+				continue
+			}
 		}
 
 		store.Spec.Sources = append(store.Spec.Sources, corev1alpha1.StoreImage{
@@ -134,4 +156,23 @@ func storeContains(store *v1alpha1.ClusterStore, buildpackage string) bool {
 		}
 	}
 	return false
+}
+
+func existingStoreBuildpackVersions(store *v1alpha1.ClusterStore) map[string]string {
+	buildpacks := store.Status.Buildpacks
+
+	buildpackMap := map[string]string{}
+
+	for _, buildpack := range buildpacks {
+		if partOfBuildpackage(buildpack) {
+			continue
+		}
+		buildpackMap[buildpack.Id] = buildpack.Version
+	}
+
+	return buildpackMap
+}
+
+func partOfBuildpackage(buildpack corev1alpha1.StoreBuildpack) bool {
+	return buildpack.Buildpackage.Id != "" && buildpack.Buildpackage.Id != buildpack.Id
 }

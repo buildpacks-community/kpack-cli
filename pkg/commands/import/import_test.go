@@ -91,6 +91,15 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 				Ref:    "some-registry.io/repo/buildpack-image",
 				Digest: "buildpack-image-digest",
 			},
+			Version: "0.0.1",
+		},
+		registryfakes.BuildpackImgInfo{
+			Id: "buildpack-id",
+			ImageInfo: registryfakes.ImageInfo{
+				Ref:    "some-registry.io/repo/buildpack-image-new",
+				Digest: "buildpack-image-digest-new-version",
+			},
+			Version: "1.0.0",
 		},
 		registryfakes.BuildpackImgInfo{
 			Id: "another-buildpack-id",
@@ -747,6 +756,76 @@ Imported resources
 						{Object: expectedDefaultStack},
 						{Object: expectedBuilder},
 						{Object: expectedDefaultBuilder},
+					},
+				}.TestK8sAndKpack(t, cmdFunc)
+			})
+		})
+
+		when("the ignore-major-version-bumps flag is used", func() {
+			it("skips buildpackages with major version bumps", func() {
+				existingStore := &v1alpha1.ClusterStore{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       v1alpha1.ClusterStoreKind,
+						APIVersion: "kpack.io/v1alpha1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "store-name",
+						Annotations: map[string]string{
+							importTimestampKey: timestampProvider.timestamp,
+						},
+					},
+					Spec: v1alpha1.ClusterStoreSpec{
+						Sources: []corev1alpha1.StoreImage{
+							{Image: "default-registry.io/default-repo@sha256:buildpack-image-digest"},
+						},
+					},
+					Status: v1alpha1.ClusterStoreStatus{
+						Buildpacks: []corev1alpha1.StoreBuildpack{
+							{
+								BuildpackInfo: corev1alpha1.BuildpackInfo{
+									Id:      "buildpack-id",
+									Version: "0.0.1",
+								},
+								Buildpackage: corev1alpha1.BuildpackageInfo{
+									Id:      "buildpack-id",
+									Version: "0.0.1",
+								},
+							},
+							{
+								BuildpackInfo: corev1alpha1.BuildpackInfo{
+									Id:      "sub-buildpack",
+									Version: "0.2.0",
+								},
+								Buildpackage: corev1alpha1.BuildpackageInfo{
+									Id:      "buildpack-id",
+									Version: "0.0.1",
+								},
+							},
+						},
+					},
+				}
+
+				const newTimestamp = "new-timestamp"
+				timestampProvider.timestamp = newTimestamp
+				expectedStore := existingStore.DeepCopy()
+				expectedStore.Annotations[importTimestampKey] = newTimestamp
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						kpConfig,
+						existingStore,
+					},
+					Args: []string{
+						"-f", "./testdata/updated-deps-new-major.yaml",
+						"--ignore-major-version-bumps",
+					},
+					ExpectedOutput: `Importing ClusterStore 'store-name'...
+	Uploading 'default-registry.io/default-repo@sha256:buildpack-image-digest-new-version'
+	Skipping adding buildpack-id to store due to major version bump 0.0.1 to 1.0.0
+Imported resources
+`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{Object: expectedStore},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 			})

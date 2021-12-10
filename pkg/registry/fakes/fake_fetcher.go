@@ -34,7 +34,8 @@ type StackInfo struct {
 }
 
 type BuildpackImgInfo struct {
-	Id string
+	Id      string
+	Version string
 	ImageInfo
 }
 
@@ -81,7 +82,12 @@ func (f *Fetcher) AddImage(identifier string, image v1.Image) {
 func (f *Fetcher) AddBuildpackImages(infos ...BuildpackImgInfo) {
 	images := f.getImages()
 	for _, i := range infos {
-		metadata := fmt.Sprintf("{\"id\":%q}", i.Id)
+
+		if i.Version == "" {
+			i.Version = "0.0.1"
+		}
+
+		metadata := fmt.Sprintf("{\"id\":%q, \"version\":%q}", i.Id, i.Version)
 		images[i.Ref] = NewFakeLabeledImage(buildpackageMetadataLabel, metadata, i.Digest)
 	}
 }

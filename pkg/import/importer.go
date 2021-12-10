@@ -103,13 +103,13 @@ func (i *Importer) ReadDescriptor(rawDescriptor string) (DependencyDescriptor, e
 	return descriptor, nil
 }
 
-func (i *Importer) ImportDescriptor(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, rawDescriptor string) ([]runtime.Object, error) {
+func (i *Importer) ImportDescriptor(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, ignoreMajorVersionBump bool, rawDescriptor string) ([]runtime.Object, error) {
 	descriptor, err := i.ReadDescriptor(rawDescriptor)
 	if err != nil {
 		return nil, err
 	}
 
-	rDescriptor, objects, err := i.relocateDescriptor(ctx, keychain, kpConfig, i.timestampProvider.GetTimestamp(), descriptor)
+	rDescriptor, objects, err := i.relocateDescriptor(ctx, keychain, kpConfig, i.timestampProvider.GetTimestamp(), ignoreMajorVersionBump, descriptor)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (i *Importer) ImportDescriptorDryRun(ctx context.Context, keychain authn.Ke
 		return nil, err
 	}
 
-	_, objects, err := i.relocateDescriptor(ctx, keychain, kpConfig, i.timestampProvider.GetTimestamp(), descriptor)
+	_, objects, err := i.relocateDescriptor(ctx, keychain, kpConfig, i.timestampProvider.GetTimestamp(), false, descriptor)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (i *Importer) ImportDescriptorDryRun(ctx context.Context, keychain authn.Ke
 	return objects, nil
 }
 
-func (i *Importer) relocateDescriptor(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, ts string, descriptor DependencyDescriptor) (relocatedDescriptor, []runtime.Object, error) {
+func (i *Importer) relocateDescriptor(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, ts string, ignoreMajorVersionBump bool, descriptor DependencyDescriptor) (relocatedDescriptor, []runtime.Object, error) {
 	var (
 		updatedLifecycle *corev1.ConfigMap
 		err              error
@@ -180,7 +180,7 @@ func (i *Importer) relocateDescriptor(ctx context.Context, keychain authn.Keycha
 
 	clusterstores := make([]*v1alpha1.ClusterStore, 0)
 	for _, clusterStore := range descriptor.ClusterStores {
-		rStore, err := i.constructClusterStore(ctx, keychain, kpConfig, clusterStore)
+		rStore, err := i.constructClusterStore(ctx, keychain, kpConfig, ignoreMajorVersionBump, clusterStore)
 		if err != nil {
 			return relocatedDescriptor{}, nil, err
 		}
@@ -254,7 +254,7 @@ func (i *Importer) relocateLifecycle(ctx context.Context, keychain authn.Keychai
 	return newConfigMap, nil
 }
 
-func (i *Importer) constructClusterStore(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, store ClusterStore) (*v1alpha1.ClusterStore, error) {
+func (i *Importer) constructClusterStore(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, ignoreMajorVersionBump bool, store ClusterStore) (*v1alpha1.ClusterStore, error) {
 	if err := i.printer.PrintStatus("Importing ClusterStore '%s'...", store.Name); err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (i *Importer) constructClusterStore(ctx context.Context, keychain authn.Key
 
 	if existingStore != nil {
 		updatedStore := existingStore.DeepCopy()
-		updatedStore, _, err = i.clusterStoreFactory.AddToStore(keychain, updatedStore, kpConfig, buildpackagesForSource(store.Sources)...)
+		updatedStore, _, err = i.clusterStoreFactory.AddToStore(keychain, updatedStore, kpConfig, ignoreMajorVersionBump, buildpackagesForSource(store.Sources)...)
 		if err != nil {
 			return nil, err
 		}
