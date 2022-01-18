@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	kpacktesthelpers "github.com/pivotal/kpack/pkg/reconciler/testhelpers"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -242,7 +242,7 @@ clusterBuilders:
 			}.TestImporter(t)
 		})
 
-		it("can import v1alpha2 descriptor on new cluster", func() {
+		it("can import v1alpha1 descriptor on new cluster", func() {
 			dotnetCoreDigest := "dotnetcoredigest"
 			dotnetCoreId := "dotnet/core"
 			stackId := "io.stacks.mycoolstack"
@@ -274,7 +274,7 @@ clusterBuilders:
 					},
 				),
 				DependencyDescriptor: `
-apiVersion: kp.kpack.io/v1alpha2
+apiVersion: kp.kpack.io/v1alpha1
 kind: DependencyDescriptor
 defaultClusterBuilder: base
 defaultStack: base
@@ -838,7 +838,7 @@ clusterBuilders:
 			}.TestImporter(t)
 		})
 
-		it("can import v1alpha2 on an existing cluster", func() {
+		it("can import v1alpha1 descriptor on an existing cluster", func() {
 			newLifecycleDigest := "newlifecycledigest"
 			newDotnetCoreDigest := "newdotnetcoredigest"
 			newBuildImageDigest := "newbuildimagedigest"
@@ -1025,7 +1025,7 @@ clusterBuilders:
 					},
 				),
 				DependencyDescriptor: `
-apiVersion: kp.kpack.io/v1alpha2
+apiVersion: kp.kpack.io/v1alpha1
 kind: DependencyDescriptor
 defaultClusterBuilder: base
 defaultStack: base

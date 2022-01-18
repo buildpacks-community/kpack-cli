@@ -290,7 +290,7 @@ Image Resource "some-image" patched
 Image Resource "some-image" patched
 `,
 			ExpectPatches: []string{
-				`{"spec":{"cache":{"registry":{"tag":""},"volume":{"size":"3G"}}}}`,
+				`{"spec":{"cache":{"volume":{"size":"3G"}}}}`,
 			},
 		}.TestKpack(t, cmdFunc)
 		assert.Len(t, fakeImageWaiter.Calls, 0)

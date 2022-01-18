@@ -77,7 +77,6 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 			}
 
 			if ch.ShouldWait() {
-
 				_, err := newImageWaiter(cs).Wait(ctx, cmd.OutOrStdout(), img)
 				if err != nil {
 					return err

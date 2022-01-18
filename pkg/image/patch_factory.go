@@ -163,9 +163,6 @@ func (f *Factory) setCacheSize(image *v1alpha2.Image) error {
 			Volume: &v1alpha2.ImagePersistentVolumeCache{
 				Size: c,
 			},
-			Registry: &v1alpha2.RegistryCache{
-				Tag: "",
-			},
 		}
 	} else if image.Spec.Cache.Volume == nil {
 		image.Spec.Cache.Volume = &v1alpha2.ImagePersistentVolumeCache{
