@@ -33,12 +33,9 @@ func testTLSConfig(t *testing.T, when spec.G, it spec.S) {
 		require.NoError(t, err)
 		expectedSubject := cert.RawSubject
 
-		fetcher := registry.TLSConfig{
-			CaCertPath:  certPath,
-			VerifyCerts: false,
-		}
+		cfg := registry.NewTLSConfig(certPath, false)
 
-		transport, err := fetcher.Transport()
+		transport, err := cfg.Transport()
 		require.NoError(t, err)
 		subjects := transport.TLSClientConfig.RootCAs.Subjects()
 
@@ -53,12 +50,9 @@ func testTLSConfig(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it("sets skip verify to false when verify certs is true", func() {
-		fetcher := registry.TLSConfig{
-			CaCertPath:  "",
-			VerifyCerts: true,
-		}
+		cfg := registry.NewTLSConfig("", true)
 
-		transport, err := fetcher.Transport()
+		transport, err := cfg.Transport()
 		require.NoError(t, err)
 		require.False(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
