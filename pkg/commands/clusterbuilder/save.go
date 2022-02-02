@@ -53,7 +53,7 @@ kp cb save my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildp
 			}
 
 			name := args[0]
-			cb, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(ctx, name, metav1.GetOptions{})
+			cb, err := cs.KpackClient.KpackV1alpha2().ClusterBuilders().Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				if flags.stack == "" {
 					flags.stack = defaultStack

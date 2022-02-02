@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -30,7 +30,7 @@ func TestImageCreateCommand(t *testing.T) {
 	spec.Run(t, "TestImageCreateCommand", testImageCreateCommand)
 }
 
-func setLastAppliedAnnotation(i *v1alpha1.Image) error {
+func setLastAppliedAnnotation(i *v1alpha2.Image) error {
 	lastApplied, err := json.Marshal(i)
 	if err != nil {
 		return err
@@ -58,26 +58,23 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 		when("the image config is valid", func() {
 			cacheSize := resource.MustParse("2G")
-			expectedImage := &v1alpha1.Image{
+			expectedImage := &v1alpha2.Image{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Image",
-					APIVersion: "kpack.io/v1alpha1",
+					APIVersion: "kpack.io/v1alpha2",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "some-image",
 					Namespace:   namespace,
 					Annotations: map[string]string{},
-					//Annotations: map[string]string{
-					//	"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cacheSize":"2G","build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}`,
-					//},
 				},
-				Spec: v1alpha1.ImageSpec{
+				Spec: v1alpha2.ImageSpec{
 					Tag: "some-registry.io/some-repo",
 					Builder: corev1.ObjectReference{
-						Kind: v1alpha1.ClusterBuilderKind,
+						Kind: v1alpha2.ClusterBuilderKind,
 						Name: "default",
 					},
-					ServiceAccount: "default",
+					ServiceAccountName: "default",
 					Source: corev1alpha1.SourceConfig{
 						Git: &corev1alpha1.Git{
 							URL:      "some-git-url",
@@ -85,7 +82,7 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 						SubPath: "some-sub-path",
 					},
-					Build: &v1alpha1.ImageBuild{
+					Build: &v1alpha2.ImageBuild{
 						Env: []corev1.EnvVar{
 							{
 								Name:  "some-key",
@@ -93,7 +90,11 @@ func testImageCreateCommand(t *testing.T, when spec.G, it spec.S) {
 							},
 						},
 					},
-					CacheSize: &cacheSize,
+					Cache: &v1alpha2.ImageCacheConfig{
+						Volume: &v1alpha2.ImagePersistentVolumeCache{
+							Size: &cacheSize,
+						},
+					},
 				},
 			}
 
@@ -172,23 +173,23 @@ Image Resource "some-image" created
 	when("a namespace is not provided", func() {
 		when("the image config is valid", func() {
 			it("creates the image", func() {
-				expectedImage := &v1alpha1.Image{
+				expectedImage := &v1alpha2.Image{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Image",
-						APIVersion: "kpack.io/v1alpha1",
+						APIVersion: "kpack.io/v1alpha2",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "some-image",
 						Namespace:   defaultNamespace,
 						Annotations: map[string]string{},
 					},
-					Spec: v1alpha1.ImageSpec{
+					Spec: v1alpha2.ImageSpec{
 						Tag: "some-registry.io/some-repo",
 						Builder: corev1.ObjectReference{
-							Kind: v1alpha1.ClusterBuilderKind,
+							Kind: v1alpha2.ClusterBuilderKind,
 							Name: "default",
 						},
-						ServiceAccount: "default",
+						ServiceAccountName: "default",
 						Source: corev1alpha1.SourceConfig{
 							Git: &corev1alpha1.Git{
 								URL:      "some-git-url",
@@ -196,7 +197,10 @@ Image Resource "some-image" created
 							},
 							SubPath: "some-sub-path",
 						},
-						Build: &v1alpha1.ImageBuild{
+						Cache: &v1alpha2.ImageCacheConfig{
+							Volume: &v1alpha2.ImagePersistentVolumeCache{},
+						},
+						Build: &v1alpha2.ImageBuild{
 							Env: []corev1.EnvVar{
 								{
 									Name:  "some-key",
@@ -250,30 +254,33 @@ Image Resource "some-image" created
 
 	when("the image uses local source code", func() {
 		it("uploads the source image and creates the image config", func() {
-			expectedImage := &v1alpha1.Image{
+			expectedImage := &v1alpha2.Image{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Image",
-					APIVersion: "kpack.io/v1alpha1",
+					APIVersion: "kpack.io/v1alpha2",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "some-image",
 					Namespace:   defaultNamespace,
 					Annotations: map[string]string{},
 				},
-				Spec: v1alpha1.ImageSpec{
+				Spec: v1alpha2.ImageSpec{
 					Tag: "some-registry.io/some-repo",
 					Builder: corev1.ObjectReference{
-						Kind: v1alpha1.ClusterBuilderKind,
+						Kind: v1alpha2.ClusterBuilderKind,
 						Name: "default",
 					},
-					ServiceAccount: "default",
+					ServiceAccountName: "default",
 					Source: corev1alpha1.SourceConfig{
 						Registry: &corev1alpha1.Registry{
 							Image: "some-registry.io/some-repo-source:source-id",
 						},
 						SubPath: "some-sub-path",
 					},
-					Build: &v1alpha1.ImageBuild{
+					Cache: &v1alpha2.ImageCacheConfig{
+						Volume: &v1alpha2.ImagePersistentVolumeCache{},
+					},
+					Build: &v1alpha2.ImageBuild{
 						Env: []corev1.EnvVar{
 							{
 								Name:  "some-key",
@@ -309,30 +316,33 @@ Image Resource "some-image" created
 
 	when("the image uses a non-default builder", func() {
 		it("uploads the source image and creates the image config", func() {
-			expectedImage := &v1alpha1.Image{
+			expectedImage := &v1alpha2.Image{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Image",
-					APIVersion: "kpack.io/v1alpha1",
+					APIVersion: "kpack.io/v1alpha2",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "some-image",
 					Namespace:   defaultNamespace,
 					Annotations: map[string]string{},
 				},
-				Spec: v1alpha1.ImageSpec{
+				Spec: v1alpha2.ImageSpec{
 					Tag: "some-registry.io/some-repo",
 					Builder: corev1.ObjectReference{
-						Kind:      v1alpha1.BuilderKind,
+						Kind:      v1alpha2.BuilderKind,
 						Namespace: defaultNamespace,
 						Name:      "some-builder",
 					},
-					ServiceAccount: "default",
+					ServiceAccountName: "default",
 					Source: corev1alpha1.SourceConfig{
 						Blob: &corev1alpha1.Blob{
 							URL: "some-blob",
 						},
 					},
-					Build: &v1alpha1.ImageBuild{},
+					Cache: &v1alpha2.ImageCacheConfig{
+						Volume: &v1alpha2.ImagePersistentVolumeCache{},
+					},
+					Build: &v1alpha2.ImageBuild{},
 				},
 			}
 			require.NoError(t, setLastAppliedAnnotation(expectedImage))
@@ -358,29 +368,32 @@ Image Resource "some-image" created
 
 	when("the image uses a non-default cluster builder", func() {
 		it("uploads the source image and creates the image config", func() {
-			expectedImage := &v1alpha1.Image{
+			expectedImage := &v1alpha2.Image{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Image",
-					APIVersion: "kpack.io/v1alpha1",
+					APIVersion: "kpack.io/v1alpha2",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "some-image",
 					Namespace:   defaultNamespace,
 					Annotations: map[string]string{},
 				},
-				Spec: v1alpha1.ImageSpec{
+				Spec: v1alpha2.ImageSpec{
 					Tag: "some-registry.io/some-repo",
 					Builder: corev1.ObjectReference{
-						Kind: v1alpha1.ClusterBuilderKind,
+						Kind: v1alpha2.ClusterBuilderKind,
 						Name: "some-builder",
 					},
-					ServiceAccount: "default",
+					ServiceAccountName: "default",
 					Source: corev1alpha1.SourceConfig{
 						Blob: &corev1alpha1.Blob{
 							URL: "some-blob",
 						},
 					},
-					Build: &v1alpha1.ImageBuild{},
+					Cache: &v1alpha2.ImageCacheConfig{
+						Volume: &v1alpha2.ImagePersistentVolumeCache{},
+					},
+					Build: &v1alpha2.ImageBuild{},
 				},
 			}
 			require.NoError(t, setLastAppliedAnnotation(expectedImage))
@@ -423,23 +436,23 @@ Image Resource "some-image" created
 		})
 
 		when("the image config is valid", func() {
-			expectedImage := &v1alpha1.Image{
+			expectedImage := &v1alpha2.Image{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Image",
-					APIVersion: "kpack.io/v1alpha1",
+					APIVersion: "kpack.io/v1alpha2",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "some-image",
 					Namespace:   defaultNamespace,
 					Annotations: map[string]string{},
 				},
-				Spec: v1alpha1.ImageSpec{
+				Spec: v1alpha2.ImageSpec{
 					Tag: "some-registry.io/some-repo",
 					Builder: corev1.ObjectReference{
-						Kind: v1alpha1.ClusterBuilderKind,
+						Kind: v1alpha2.ClusterBuilderKind,
 						Name: "default",
 					},
-					ServiceAccount: "default",
+					ServiceAccountName: "default",
 					Source: corev1alpha1.SourceConfig{
 						Git: &corev1alpha1.Git{
 							URL:      "some-git-url",
@@ -447,7 +460,10 @@ Image Resource "some-image" created
 						},
 						SubPath: "some-sub-path",
 					},
-					Build: &v1alpha1.ImageBuild{
+					Cache: &v1alpha2.ImageCacheConfig{
+						Volume: &v1alpha2.ImagePersistentVolumeCache{},
+					},
+					Build: &v1alpha2.ImageBuild{
 						Env: []corev1.EnvVar{
 							{
 								Name:  "some-key",
@@ -460,11 +476,11 @@ Image Resource "some-image" created
 
 			it("can output in yaml format and does not wait", func() {
 				require.NoError(t, setLastAppliedAnnotation(expectedImage))
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Image
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cache":{"volume":{}},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -477,7 +493,9 @@ spec:
   builder:
     kind: ClusterBuilder
     name: default
-  serviceAccount: default
+  cache:
+    volume: {}
+  serviceAccountName: default
   source:
     git:
       revision: some-git-rev
@@ -512,13 +530,13 @@ status: {}
 				require.NoError(t, setLastAppliedAnnotation(expectedImage))
 				const resourceJSON = `{
     "kind": "Image",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "some-image",
         "namespace": "some-default-namespace",
         "creationTimestamp": null,
         "annotations": {
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"Image\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"some-image\",\"namespace\":\"some-default-namespace\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry.io/some-repo\",\"builder\":{\"kind\":\"ClusterBuilder\",\"name\":\"default\"},\"serviceAccount\":\"default\",\"source\":{\"git\":{\"url\":\"some-git-url\",\"revision\":\"some-git-rev\"},\"subPath\":\"some-sub-path\"},\"build\":{\"env\":[{\"name\":\"some-key\",\"value\":\"some-val\"}],\"resources\":{}}},\"status\":{}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"Image\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"some-image\",\"namespace\":\"some-default-namespace\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry.io/some-repo\",\"builder\":{\"kind\":\"ClusterBuilder\",\"name\":\"default\"},\"serviceAccountName\":\"default\",\"source\":{\"git\":{\"url\":\"some-git-url\",\"revision\":\"some-git-rev\"},\"subPath\":\"some-sub-path\"},\"cache\":{\"volume\":{}},\"build\":{\"env\":[{\"name\":\"some-key\",\"value\":\"some-val\"}],\"resources\":{}}},\"status\":{}}"
         }
     },
     "spec": {
@@ -527,13 +545,16 @@ status: {}
             "kind": "ClusterBuilder",
             "name": "default"
         },
-        "serviceAccount": "default",
+        "serviceAccountName": "default",
         "source": {
             "git": {
                 "url": "some-git-url",
                 "revision": "some-git-rev"
             },
             "subPath": "some-sub-path"
+        },
+        "cache": {
+            "volume": {}
         },
         "build": {
             "env": [
@@ -611,11 +632,11 @@ Image Resource "some-image" created (dry run)
 
 			when("output flag is used", func() {
 				it("does not create an image and prints the resource output", func() {
-					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+					const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Image
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cache":{"volume":{}},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -628,7 +649,9 @@ spec:
   builder:
     kind: ClusterBuilder
     name: default
-  serviceAccount: default
+  cache:
+    volume: {}
+  serviceAccountName: default
   source:
     git:
       revision: some-git-rev
@@ -701,11 +724,11 @@ Image Resource "some-image" created (dry run with image upload)
 
 			when("output flag is used", func() {
 				it("does not create an image and prints the resource output", func() {
-					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+					const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Image
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccount":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"cache":{"volume":{}},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -718,7 +741,9 @@ spec:
   builder:
     kind: ClusterBuilder
     name: default
-  serviceAccount: default
+  cache:
+    volume: {}
+  serviceAccountName: default
   source:
     git:
       revision: some-git-rev

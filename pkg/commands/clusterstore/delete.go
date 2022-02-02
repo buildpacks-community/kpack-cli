@@ -68,7 +68,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider, confirmationProvi
 }
 
 func deleteStore(ctx context.Context, cmd *cobra.Command, cs k8s.ClientSet, storeName string) error {
-	err := cs.KpackClient.KpackV1alpha1().ClusterStores().Delete(ctx, storeName, metav1.DeleteOptions{})
+	err := cs.KpackClient.KpackV1alpha2().ClusterStores().Delete(ctx, storeName, metav1.DeleteOptions{})
 	if k8serrors.IsNotFound(err) {
 		return errors.Errorf("Store %q does not exist", storeName)
 	} else if err != nil {

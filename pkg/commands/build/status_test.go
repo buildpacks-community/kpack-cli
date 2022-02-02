@@ -9,7 +9,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -208,25 +208,25 @@ bp-id-1         bp-version-1         mysupercoolsite.com
 bp-id-2         bp-version-2         mysupercoolsite2.com
 
 `
-				bld := &v1alpha1.Build{
+				bld := &v1alpha2.Build{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "bld-three",
 						Namespace:         "some-default-namespace",
 						CreationTimestamp: metav1.Time{Time: time.Time{}.Add(5 * time.Hour)},
 						Labels: map[string]string{
-							v1alpha1.ImageLabel:       image,
-							v1alpha1.BuildNumberLabel: "3",
+							v1alpha2.ImageLabel:       image,
+							v1alpha2.BuildNumberLabel: "3",
 						},
 						Annotations: map[string]string{
-							v1alpha1.BuildReasonAnnotation: "TRIGGER",
+							v1alpha2.BuildReasonAnnotation: "TRIGGER",
 						},
 					},
-					Spec: v1alpha1.BuildSpec{
+					Spec: v1alpha2.BuildSpec{
 						Builder: corev1alpha1.BuildBuilderSpec{
 							Image: "some-repo.com/my-builder",
 						},
 					},
-					Status: v1alpha1.BuildStatus{
+					Status: v1alpha2.BuildStatus{
 						Status: corev1alpha1.Status{
 							Conditions: corev1alpha1.Conditions{
 								{
@@ -264,25 +264,25 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 			})
 
 			it("does not display when the condition is empty", func() {
-				bld := &v1alpha1.Build{
+				bld := &v1alpha2.Build{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "bld-three",
 						Namespace:         "some-default-namespace",
 						CreationTimestamp: metav1.Time{Time: time.Time{}.Add(5 * time.Hour)},
 						Labels: map[string]string{
-							v1alpha1.ImageLabel:       image,
-							v1alpha1.BuildNumberLabel: "3",
+							v1alpha2.ImageLabel:       image,
+							v1alpha2.BuildNumberLabel: "3",
 						},
 						Annotations: map[string]string{
-							v1alpha1.BuildReasonAnnotation: "TRIGGER",
+							v1alpha2.BuildReasonAnnotation: "TRIGGER",
 						},
 					},
-					Spec: v1alpha1.BuildSpec{
+					Spec: v1alpha2.BuildSpec{
 						Builder: corev1alpha1.BuildBuilderSpec{
 							Image: "some-repo.com/my-builder",
 						},
 					},
-					Status: v1alpha1.BuildStatus{
+					Status: v1alpha2.BuildStatus{
 						Status: corev1alpha1.Status{
 							Conditions: corev1alpha1.Conditions{},
 						},
@@ -338,25 +338,25 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				diffBuilder := testhelpers.NewDiffBuilder(t)
 				diffPadding := strings.Repeat(" ", len("Reason:")+commands.StatusWriterPadding)
 
-				bld := &v1alpha1.Build{
+				bld := &v1alpha2.Build{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "bld-three",
 						Namespace:         "some-default-namespace",
 						CreationTimestamp: metav1.Time{Time: time.Time{}.Add(5 * time.Hour)},
 						Labels: map[string]string{
-							v1alpha1.ImageLabel:       image,
-							v1alpha1.BuildNumberLabel: "3",
+							v1alpha2.ImageLabel:       image,
+							v1alpha2.BuildNumberLabel: "3",
 						},
 						Annotations: map[string]string{
-							v1alpha1.BuildReasonAnnotation: "TRIGGER",
+							v1alpha2.BuildReasonAnnotation: "TRIGGER",
 						},
 					},
-					Spec: v1alpha1.BuildSpec{
+					Spec: v1alpha2.BuildSpec{
 						Builder: corev1alpha1.BuildBuilderSpec{
 							Image: "some-repo.com/my-builder",
 						},
 					},
-					Status: v1alpha1.BuildStatus{
+					Status: v1alpha2.BuildStatus{
 						Status: corev1alpha1.Status{
 							Conditions: corev1alpha1.Conditions{},
 						},
@@ -381,8 +381,8 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				}
 
 				it("generates reason from the changes string", func() {
-					bld.Annotations[v1alpha1.BuildReasonAnnotation] = "ignored-reason"
-					bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+					bld.Annotations[v1alpha2.BuildReasonAnnotation] = "ignored-reason"
+					bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "expected-reason",
@@ -403,7 +403,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 				when("single change", func() {
 					when("TRIGGER", func() {
 						it.Before(func() {
-							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+							bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "TRIGGER",
@@ -426,7 +426,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 					when("COMMIT", func() {
 						it.Before(func() {
-							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+							bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "COMMIT",
@@ -452,7 +452,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 					when("CONFIG", func() {
 						it.Before(func() {
-							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+							bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "CONFIG",
@@ -571,7 +571,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 					when("BUILDPACK", func() {
 						it.Before(func() {
-							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+							bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "BUILDPACK",
@@ -614,7 +614,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 					when("STACK", func() {
 						it.Before(func() {
-							bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+							bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "STACK",
@@ -641,7 +641,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 
 				when("multiple changes", func() {
 					it.Before(func() {
-						bld.Annotations[v1alpha1.BuildChangesAnnotation] = testhelpers.CompactJSON(`
+						bld.Annotations[v1alpha2.BuildChangesAnnotation] = testhelpers.CompactJSON(`
 [
   {
     "reason": "TRIGGER",

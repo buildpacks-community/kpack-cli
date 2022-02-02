@@ -6,7 +6,7 @@ package clusterbuilder_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -42,27 +42,27 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 		}
 
-		builder = &v1alpha1.ClusterBuilder{
+		builder = &v1alpha2.ClusterBuilder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.ClusterBuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.ClusterBuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: v1.ObjectMeta{
 				Name: "test-builder",
 				Annotations: map[string]string{
-					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`,
+					"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`,
 				},
 			},
-			Spec: v1alpha1.ClusterBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.ClusterBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry/some-project:clusterbuilder-test-builder",
 					Stack: corev1.ObjectReference{
 						Name: "some-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "some-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
 					Order: []corev1alpha1.OrderEntry{
 						{
@@ -127,7 +127,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 		it("creates a ClusterBuilder with the default stack", func() {
 			builder.Spec.Stack.Name = "default"
 			builder.Spec.Store.Name = "default"
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{"kind":"ClusterStore","name":"default"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{"kind":"ClusterStore","name":"default"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
@@ -166,7 +166,7 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("creates a ClusterBuilder with buildpack flags", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"},{"id":"org.cloudfoundry.go","version":"1.0.1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"},{"id":"org.cloudfoundry.go","version":"1.0.1"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 			builder.Spec.Order = []corev1alpha1.OrderEntry{
 				{
 					Group: []corev1alpha1.BuildpackRef{
@@ -229,27 +229,27 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 				Data: map[string]string{},
 			}
 
-			builder := &v1alpha1.ClusterBuilder{
+			builder := &v1alpha2.ClusterBuilder{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       v1alpha1.ClusterBuilderKind,
-					APIVersion: "kpack.io/v1alpha1",
+					Kind:       v1alpha2.ClusterBuilderKind,
+					APIVersion: "kpack.io/v1alpha2",
 				},
 				ObjectMeta: v1.ObjectMeta{
 					Name: "test-builder",
 					Annotations: map[string]string{
-						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"default"}},"status":{"stack":{}}}`,
+						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"default"}},"status":{"stack":{}}}`,
 					},
 				},
-				Spec: v1alpha1.ClusterBuilderSpec{
-					BuilderSpec: v1alpha1.BuilderSpec{
+				Spec: v1alpha2.ClusterBuilderSpec{
+					BuilderSpec: v1alpha2.BuilderSpec{
 						Tag: "some-registry/some-project:clusterbuilder-test-builder",
 						Stack: corev1.ObjectReference{
 							Name: "some-stack",
-							Kind: v1alpha1.ClusterStackKind,
+							Kind: v1alpha2.ClusterStackKind,
 						},
 						Store: corev1.ObjectReference{
 							Name: "some-store",
-							Kind: v1alpha1.ClusterStoreKind,
+							Kind: v1alpha2.ClusterStoreKind,
 						},
 						Order: []corev1alpha1.OrderEntry{
 							{
@@ -323,11 +323,11 @@ func testClusterBuilderSaveCommand(t *testing.T, when spec.G, it spec.S) {
 
 		when("output flag is used", func() {
 			it("can output in yaml format", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterBuilder
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: test-builder
 spec:
@@ -372,12 +372,12 @@ status:
 			it("can output in json format", func() {
 				const resourceJSON = `{
     "kind": "ClusterBuilder",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "test-builder",
         "creationTimestamp": null,
         "annotations": {
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"test-builder\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry/some-project:clusterbuilder-test-builder\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"some-stack\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"some-store\"},\"order\":[{\"group\":[{\"id\":\"org.cloudfoundry.nodejs\"}]},{\"group\":[{\"id\":\"org.cloudfoundry.go\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"test-builder\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry/some-project:clusterbuilder-test-builder\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"some-stack\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"some-store\"},\"order\":[{\"group\":[{\"id\":\"org.cloudfoundry.nodejs\"}]},{\"group\":[{\"id\":\"org.cloudfoundry.go\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
         }
     },
     "spec": {
@@ -457,11 +457,11 @@ status:
 			})
 
 			when("output flag is used", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterBuilder
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: test-builder
 spec:
@@ -542,11 +542,11 @@ status:
 
 		when("output flag is used", func() {
 			it("can output in yaml format", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterBuilder
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: test-builder
 spec:
@@ -591,12 +591,12 @@ status:
 			it("can output in json format", func() {
 				const resourceJSON = `{
     "kind": "ClusterBuilder",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "test-builder",
         "creationTimestamp": null,
         "annotations": {
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha1\",\"metadata\":{\"name\":\"test-builder\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry/some-project:clusterbuilder-test-builder\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"some-stack\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"some-store\"},\"order\":[{\"group\":[{\"id\":\"org.cloudfoundry.nodejs\"}]},{\"group\":[{\"id\":\"org.cloudfoundry.go\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"test-builder\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry/some-project:clusterbuilder-test-builder\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"some-stack\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"some-store\"},\"order\":[{\"group\":[{\"id\":\"org.cloudfoundry.nodejs\"}]},{\"group\":[{\"id\":\"org.cloudfoundry.go\"}]}],\"serviceAccountRef\":{\"namespace\":\"kpack\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
         }
     },
     "spec": {
@@ -657,11 +657,11 @@ status:
 
 			when("there are no changes in the patch", func() {
 				it("can output unpatched resource in requested format", func() {
-					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+					const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterBuilder
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: test-builder
 spec:
@@ -735,11 +735,11 @@ status:
 
 			when("output flag is used", func() {
 				it("does not patch a ClusterBuilder and prints the resource output", func() {
-					const resourceYAML = `apiVersion: kpack.io/v1alpha1
+					const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterBuilder
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha1","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"some-registry/some-project:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"kpack","name":"some-serviceaccount"}},"status":{"stack":{}}}'
   creationTimestamp: null
   name: test-builder
 spec:

@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -56,7 +56,7 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 			ctx := cmd.Context()
 
 			name := args[0]
-			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(ctx, name, metav1.GetOptions{})
+			store, err := cs.KpackClient.KpackV1alpha2().ClusterStores().Get(ctx, name, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				return errors.Errorf("ClusterStore '%s' does not exist", name)
 			} else if err != nil {
@@ -77,7 +77,7 @@ kp clusterstore add my-store -b ../path/to/my-local-buildpackage.cnb`,
 	return cmd
 }
 
-func update(ctx context.Context, store *v1alpha1.ClusterStore, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
+func update(ctx context.Context, store *v1alpha2.ClusterStore, buildpackages []string, factory *clusterstore.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
 	if err := ch.PrintStatus("Adding to ClusterStore..."); err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func update(ctx context.Context, store *v1alpha1.ClusterStore, buildpackages []s
 	}
 
 	if storeUpdated && !ch.IsDryRun() {
-		updatedStore, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(ctx, updatedStore, metav1.UpdateOptions{})
+		updatedStore, err = cs.KpackClient.KpackV1alpha2().ClusterStores().Update(ctx, updatedStore, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}

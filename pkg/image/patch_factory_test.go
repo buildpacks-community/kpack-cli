@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
@@ -28,25 +28,25 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		SourceUploader: fakes.NewFakeSourceUploader(ioutil.Discard, true),
 	}
 
-	img := &v1alpha1.Image{
+	img := &v1alpha2.Image{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "some-image",
 			Namespace: "some-namespace",
 		},
-		Spec: v1alpha1.ImageSpec{
+		Spec: v1alpha2.ImageSpec{
 			Tag: "some-tag",
 			Builder: corev1.ObjectReference{
-				Kind: v1alpha1.ClusterBuilderKind,
+				Kind: v1alpha2.ClusterBuilderKind,
 				Name: "some-ccb",
 			},
-			ServiceAccount: "some-service-account",
+			ServiceAccountName: "some-service-account",
 			Source: corev1alpha1.SourceConfig{
 				Blob: &corev1alpha1.Blob{
 					URL: "some-blob-url",
 				},
 				SubPath: "some-sub-path",
 			},
-			Build: &v1alpha1.ImageBuild{
+			Build: &v1alpha2.ImageBuild{
 				Env: []corev1.EnvVar{
 					{
 						Name:  "foo",
@@ -139,12 +139,16 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.CacheSize = "3G"
 			_, patch, err := factory.MakePatch(img)
 			require.NoError(t, err)
-			require.Equal(t, `{"spec":{"cacheSize":"3G"}}`, string(patch))
+			require.Equal(t, `{"spec":{"cache":{"volume":{"size":"3G"}}}}`, string(patch))
 		})
 
 		it("errors if cache size is decreased", func() {
 			cacheSize := resource.MustParse("2G")
-			img.Spec.CacheSize = &cacheSize
+			img.Spec.Cache = &v1alpha2.ImageCacheConfig{
+				Volume: &v1alpha2.ImagePersistentVolumeCache{
+					Size: &cacheSize,
+				},
+			}
 
 			factory.CacheSize = "1G"
 			_, _, err := factory.MakePatch(img)

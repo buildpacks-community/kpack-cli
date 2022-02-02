@@ -6,7 +6,7 @@ package builder_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -31,25 +31,25 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 	const defaultNamespace = "some-default-namespace"
 
 	var (
-		bldr = &v1alpha1.Builder{
+		bldr = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       v1alpha1.BuilderKind,
-				APIVersion: "kpack.io/v1alpha1",
+				Kind:       v1alpha2.BuilderKind,
+				APIVersion: "kpack.io/v1alpha2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-builder",
 				Namespace: "some-namespace",
 			},
-			Spec: v1alpha1.NamespacedBuilderSpec{
-				BuilderSpec: v1alpha1.BuilderSpec{
+			Spec: v1alpha2.NamespacedBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
 					Tag: "some-registry.com/test-builder",
 					Stack: corev1.ObjectReference{
 						Name: "some-stack",
-						Kind: v1alpha1.ClusterStackKind,
+						Kind: v1alpha2.ClusterStackKind,
 					},
 					Store: corev1.ObjectReference{
 						Name: "some-store",
-						Kind: v1alpha1.ClusterStoreKind,
+						Kind: v1alpha2.ClusterStoreKind,
 					},
 					Order: []corev1alpha1.OrderEntry{
 						{
@@ -72,7 +72,7 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				},
-				ServiceAccount: "default",
+				ServiceAccountName: "default",
 			},
 		}
 	)
@@ -186,7 +186,7 @@ func testBuilderPatchCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("output flag is used", func() {
 		it("can output in yaml format", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+			const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Builder
 metadata:
   creationTimestamp: null
@@ -198,7 +198,7 @@ spec:
     - id: org.cloudfoundry.test-bp
   - group:
     - id: org.cloudfoundry.fake-bp
-  serviceAccount: default
+  serviceAccountName: default
   stack:
     kind: ClusterStack
     name: some-other-stack
@@ -233,7 +233,7 @@ status:
 		it("can output in json format", func() {
 			const resourceJSON = `{
     "kind": "Builder",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "test-builder",
         "namespace": "some-namespace",
@@ -265,7 +265,7 @@ status:
                 ]
             }
         ],
-        "serviceAccount": "default"
+        "serviceAccountName": "default"
     },
     "status": {
         "stack": {}
@@ -295,7 +295,7 @@ status:
 
 		when("there are no changes in the patch", func() {
 			it("can output unpatched resource in requested format", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Builder
 metadata:
   creationTimestamp: null
@@ -307,7 +307,7 @@ spec:
     - id: org.cloudfoundry.nodejs
   - group:
     - id: org.cloudfoundry.go
-  serviceAccount: default
+  serviceAccountName: default
   stack:
     kind: ClusterStack
     name: some-stack
@@ -374,7 +374,7 @@ status:
 
 		when("output flag is used", func() {
 			it("does not create a Builder and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Builder
 metadata:
   creationTimestamp: null
@@ -386,7 +386,7 @@ spec:
     - id: org.cloudfoundry.test-bp
   - group:
     - id: org.cloudfoundry.fake-bp
-  serviceAccount: default
+  serviceAccountName: default
   stack:
     kind: ClusterStack
     name: some-other-stack

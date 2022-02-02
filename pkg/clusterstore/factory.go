@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,21 +41,21 @@ func NewFactory(printer Printer, relocator registry.Relocator, fetcher registry.
 	}
 }
 
-func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha1.ClusterStore, error) {
+func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha2.ClusterStore, error) {
 	if err := f.validate(buildpackages); err != nil {
 		return nil, err
 	}
 
-	newStore := &v1alpha1.ClusterStore{
+	newStore := &v1alpha2.ClusterStore{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha1.ClusterStoreKind,
-			APIVersion: "kpack.io/v1alpha1",
+			Kind:       v1alpha2.ClusterStoreKind,
+			APIVersion: "kpack.io/v1alpha2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Annotations: map[string]string{},
 		},
-		Spec: v1alpha1.ClusterStoreSpec{},
+		Spec: v1alpha2.ClusterStoreSpec{},
 	}
 
 	defaultRepo, err := kpConfig.DefaultRepository()
@@ -63,8 +63,8 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 		return nil, err
 	}
 
-	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, defaultRepo)
+	for _, bp := range buildpackages {
+		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, bp, defaultRepo)
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +77,7 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 	return newStore, k8s.SetLastAppliedCfg(newStore)
 }
 
-func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha1.ClusterStore, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha1.ClusterStore, bool, error) {
+func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha2.ClusterStore, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha2.ClusterStore, bool, error) {
 	storeUpdated := false
 
 	defaultRepo, err := kpConfig.DefaultRepository()
@@ -85,8 +85,8 @@ func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha1.ClusterSto
 		return nil, false, err
 	}
 
-	for _, buildpackage := range buildpackages {
-		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, buildpackage, defaultRepo)
+	for _, bp := range buildpackages {
+		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, bp, defaultRepo)
 		if err != nil {
 			return nil, false, err
 		}
@@ -120,7 +120,7 @@ func (f *Factory) validate(buildpackages []string) error {
 	return nil
 }
 
-func storeContains(store *v1alpha1.ClusterStore, buildpackage string) bool {
+func storeContains(store *v1alpha2.ClusterStore, buildpackage string) bool {
 	digest := strings.Split(buildpackage, "@")[1]
 
 	for _, image := range store.Spec.Sources {

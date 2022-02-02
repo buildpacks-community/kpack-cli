@@ -6,7 +6,7 @@ package image
 import (
 	"context"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -77,7 +77,6 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 			}
 
 			if ch.ShouldWait() {
-
 				_, err := newImageWaiter(cs).Wait(ctx, cmd.OutOrStdout(), img)
 				if err != nil {
 					return err
@@ -104,7 +103,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	return cmd
 }
 
-func create(ctx context.Context, name, tag string, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (*v1alpha1.Image, error) {
+func create(ctx context.Context, name, tag string, factory *image.Factory, ch *commands.CommandHelper, cs k8s.ClientSet) (*v1alpha2.Image, error) {
 	if err := ch.PrintStatus("Creating Image Resource..."); err != nil {
 		return nil, err
 	}
@@ -119,7 +118,7 @@ func create(ctx context.Context, name, tag string, factory *image.Factory, ch *c
 	}
 
 	if !ch.IsDryRun() {
-		img, err = cs.KpackClient.KpackV1alpha1().Images(cs.Namespace).Create(ctx, img, metav1.CreateOptions{})
+		img, err = cs.KpackClient.KpackV1alpha2().Images(cs.Namespace).Create(ctx, img, metav1.CreateOptions{})
 		if err != nil {
 			return nil, err
 		}

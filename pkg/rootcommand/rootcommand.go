@@ -6,6 +6,7 @@ import (
 
 	"github.com/pivotal/kpack/pkg/logs"
 	"github.com/spf13/cobra"
+	"github.com/vmware-tanzu/kpack-cli/pkg/kpackcompat"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	buildcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/build"
@@ -71,7 +72,7 @@ func getVersionCommand() *cobra.Command {
 
 func getImageCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	newImageWaiter := func(clientSet k8s.ClientSet) imgcmds.ImageWaiter {
-		return logs.NewImageWaiter(clientSet.KpackClient, logs.NewBuildLogsClient(clientSet.K8sClient))
+		return kpackcompat.NewImageWaiterForV1alpha2(logs.NewImageWaiter(clientSet.KpackClient, logs.NewBuildLogsClient(clientSet.K8sClient)))
 	}
 
 	imageRootCmd := &cobra.Command{

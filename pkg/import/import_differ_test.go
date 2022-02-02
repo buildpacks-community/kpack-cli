@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/registry/registryfakes"
 	"github.com/stretchr/testify/require"
@@ -48,11 +48,11 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 	fakeKeychain := &registryfakes.FakeKeychain{}
 
 	when("DiffClusterStore", func() {
-		oldStore := &v1alpha1.ClusterStore{
+		oldStore := &v1alpha2.ClusterStore{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "some-store",
 			},
-			Spec: v1alpha1.ClusterStoreSpec{
+			Spec: v1alpha2.ClusterStoreSpec{
 				Sources: []corev1alpha1.StoreImage{
 					{Image: "some-old-buildpackage"},
 					{Image: "some-same-buildpackage"},
@@ -102,16 +102,16 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 
 	when("DiffClusterStack", func() {
 		it("returns a diff of old and new cluster stack", func() {
-			oldStack := &v1alpha1.ClusterStack{
+			oldStack := &v1alpha2.ClusterStack{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "some-stack",
 				},
-				Spec: v1alpha1.ClusterStackSpec{
+				Spec: v1alpha2.ClusterStackSpec{
 					Id: "some-id",
-					BuildImage: v1alpha1.ClusterStackSpecImage{
+					BuildImage: v1alpha2.ClusterStackSpecImage{
 						Image: "some-build-image",
 					},
-					RunImage: v1alpha1.ClusterStackSpecImage{
+					RunImage: v1alpha2.ClusterStackSpecImage{
 						Image: "some-run-image",
 					},
 				},
@@ -148,12 +148,12 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 
 	when("DiffClusterBuilder", func() {
 		it("returns a diff of old and new cluster builder", func() {
-			oldBuilder := &v1alpha1.ClusterBuilder{
+			oldBuilder := &v1alpha2.ClusterBuilder{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "some-builder",
 				},
-				Spec: v1alpha1.ClusterBuilderSpec{
-					BuilderSpec: v1alpha1.BuilderSpec{
+				Spec: v1alpha2.ClusterBuilderSpec{
+					BuilderSpec: v1alpha2.BuilderSpec{
 						Store: corev1.ObjectReference{
 							Name: "some-store",
 						},

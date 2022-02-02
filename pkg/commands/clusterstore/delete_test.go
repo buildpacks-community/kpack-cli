@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/pkg/errors"
@@ -46,11 +46,11 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("confirmation is given by user", func() {
 		when("store exists", func() {
-			store := &v1alpha1.ClusterStore{
+			store := &v1alpha2.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: storeName,
 				},
-				Spec: v1alpha1.ClusterStoreSpec{
+				Spec: v1alpha2.ClusterStoreSpec{
 					Sources: []corev1alpha1.StoreImage{
 						{
 							Image: "some/imageInStore",
@@ -129,11 +129,11 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("force deletion flag is used", func() {
 		when("store exists", func() {
-			store := &v1alpha1.ClusterStore{
+			store := &v1alpha2.ClusterStore{
 				ObjectMeta: v1.ObjectMeta{
 					Name: storeName,
 				},
-				Spec: v1alpha1.ClusterStoreSpec{
+				Spec: v1alpha2.ClusterStoreSpec{
 					Sources: []corev1alpha1.StoreImage{
 						{
 							Image: "some/imageInStore",

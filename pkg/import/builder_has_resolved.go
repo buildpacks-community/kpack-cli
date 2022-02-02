@@ -4,7 +4,7 @@
 package _import
 
 import (
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,7 +16,7 @@ type builderWaitable struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Status v1alpha1.BuilderStatus `json:"status"`
+	Status v1alpha2.BuilderStatus `json:"status"`
 }
 
 func builderHasResolved(expectedStoreGen, expectedStackGen int64) func(event watch.Event) (bool, error) {

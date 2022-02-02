@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -49,7 +49,7 @@ kp cb patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpac
 			name := args[0]
 
 			ctx := cmd.Context()
-			cb, err := cs.KpackClient.KpackV1alpha1().ClusterBuilders().Get(ctx, name, metav1.GetOptions{})
+			cb, err := cs.KpackClient.KpackV1alpha2().ClusterBuilders().Get(ctx, name, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -67,7 +67,7 @@ kp cb patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpac
 	return cmd
 }
 
-func patch(ctx context.Context, cb *v1alpha1.ClusterBuilder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, waiter commands.ResourceWaiter) error {
+func patch(ctx context.Context, cb *v1alpha2.ClusterBuilder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, waiter commands.ResourceWaiter) error {
 	patchedCb := cb.DeepCopy()
 
 	if flags.tag != "" {
@@ -106,7 +106,7 @@ func patch(ctx context.Context, cb *v1alpha1.ClusterBuilder, flags CommandFlags,
 
 	hasPatch := len(patch) > 0
 	if hasPatch && !ch.IsDryRun() {
-		patchedCb, err = cs.KpackClient.KpackV1alpha1().ClusterBuilders().Patch(ctx, patchedCb.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+		patchedCb, err = cs.KpackClient.KpackV1alpha2().ClusterBuilders().Patch(ctx, patchedCb.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}

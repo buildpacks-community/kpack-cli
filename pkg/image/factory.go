@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +51,7 @@ type Factory struct {
 	Printer        Printer
 }
 
-func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error) {
+func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error) {
 	err := f.validateCreate()
 	if err != nil {
 		return nil, err
@@ -74,24 +74,28 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha1.Image, error
 
 	builder := f.makeBuilder(namespace)
 
-	return &v1alpha1.Image{
+	return &v1alpha2.Image{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Image",
-			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+			APIVersion: v1alpha2.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.ImageSpec{
-			Tag:            tag,
-			Builder:        builder,
-			ServiceAccount: "default",
-			Source:         source,
-			Build: &v1alpha1.ImageBuild{
+		Spec: v1alpha2.ImageSpec{
+			Tag:                tag,
+			Builder:            builder,
+			ServiceAccountName: "default",
+			Source:             source,
+			Build: &v1alpha2.ImageBuild{
 				Env: envVars,
 			},
-			CacheSize: cacheSize,
+			Cache: &v1alpha2.ImageCacheConfig{
+				Volume: &v1alpha2.ImagePersistentVolumeCache{
+					Size: cacheSize,
+				},
+			},
 		},
 	}, nil
 }
@@ -205,18 +209,18 @@ func (f *Factory) makeSource(tag string) (corev1alpha1.SourceConfig, error) {
 func (f *Factory) makeBuilder(namespace string) corev1.ObjectReference {
 	if f.Builder != "" {
 		return corev1.ObjectReference{
-			Kind:      v1alpha1.BuilderKind,
+			Kind:      v1alpha2.BuilderKind,
 			Namespace: namespace,
 			Name:      f.Builder,
 		}
 	} else if f.ClusterBuilder != "" {
 		return corev1.ObjectReference{
-			Kind: v1alpha1.ClusterBuilderKind,
+			Kind: v1alpha2.ClusterBuilderKind,
 			Name: f.ClusterBuilder,
 		}
 	} else {
 		return corev1.ObjectReference{
-			Kind: v1alpha1.ClusterBuilderKind,
+			Kind: v1alpha2.ClusterBuilderKind,
 			Name: "default",
 		}
 	}

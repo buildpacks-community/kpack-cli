@@ -44,9 +44,9 @@ type ClusterStack struct {
 }
 
 type ClusterBuilder struct {
-	Name         string                `yaml:"name"`
-	ClusterStack string                `yaml:"clusterStack"`
-	ClusterStore string                `yaml:"clusterStore"`
+	Name         string                    `yaml:"name"`
+	ClusterStack string                    `yaml:"clusterStack"`
+	ClusterStore string                    `yaml:"clusterStore"`
 	Order        []corev1alpha1.OrderEntry `yaml:"order"`
 }
 

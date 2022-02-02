@@ -6,7 +6,7 @@ package image_test
 import (
 	"testing"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
@@ -40,15 +40,15 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 		})
 	}
 
-	existingImage := &v1alpha1.Image{
+	existingImage := &v1alpha2.Image{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "some-image",
 			Namespace: defaultNamespace,
 		},
-		Spec: v1alpha1.ImageSpec{
+		Spec: v1alpha2.ImageSpec{
 			Tag: "some-tag",
 			Builder: corev1.ObjectReference{
-				Kind: v1alpha1.ClusterBuilderKind,
+				Kind: v1alpha2.ClusterBuilderKind,
 				Name: "some-ccb",
 			},
 			Source: corev1alpha1.SourceConfig{
@@ -58,7 +58,7 @@ func testImagePatchCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				SubPath: "some-path",
 			},
-			Build: &v1alpha1.ImageBuild{
+			Build: &v1alpha2.ImageBuild{
 				Env: []corev1.EnvVar{
 					{
 						Name:  "key1",
@@ -290,7 +290,7 @@ Image Resource "some-image" patched
 Image Resource "some-image" patched
 `,
 			ExpectPatches: []string{
-				`{"spec":{"cacheSize":"3G"}}`,
+				`{"spec":{"cache":{"volume":{"size":"3G"}}}}`,
 			},
 		}.TestKpack(t, cmdFunc)
 		assert.Len(t, fakeImageWaiter.Calls, 0)
@@ -325,7 +325,7 @@ Image Resource "some-image" patched
 
 	when("output flag is used", func() {
 		it("can output resources in yaml and does not wait", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+			const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Image
 metadata:
   creationTimestamp: null
@@ -373,7 +373,7 @@ status: {}
 		it("can output resources in json and does not wait", func() {
 			const resourceJSON = `{
     "kind": "Image",
-    "apiVersion": "kpack.io/v1alpha1",
+    "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "some-image",
         "namespace": "some-default-namespace",
@@ -430,7 +430,7 @@ status: {}
 		})
 
 		when("there are no changes in the patch", func() {
-			const resourceYAML = `apiVersion: kpack.io/v1alpha1
+			const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Image
 metadata:
   creationTimestamp: null
@@ -515,7 +515,7 @@ Image Resource "some-image" patched (dry run)
 
 		when("output flag is used", func() {
 			it("does not patch and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Image
 metadata:
   creationTimestamp: null
@@ -602,7 +602,7 @@ Image Resource "some-image" patched (dry run with image upload)
 
 		when("output flag is used", func() {
 			it("does not patch and prints the resource output", func() {
-				const resourceYAML = `apiVersion: kpack.io/v1alpha1
+				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: Image
 metadata:
   creationTimestamp: null

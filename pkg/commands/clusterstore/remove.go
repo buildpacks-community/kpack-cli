@@ -6,7 +6,7 @@ package clusterstore
 import (
 	"fmt"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -47,7 +47,7 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 
 			storeName := args[0]
 
-			store, err := cs.KpackClient.KpackV1alpha1().ClusterStores().Get(ctx, storeName, metav1.GetOptions{})
+			store, err := cs.KpackClient.KpackV1alpha2().ClusterStores().Get(ctx, storeName, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				return errors.Errorf("ClusterStore '%s' does not exist", storeName)
 			} else if err != nil {
@@ -70,7 +70,7 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 			removeBuildpackages(ch, store, buildpackages, bpToStoreImage)
 
 			if !ch.IsDryRun() {
-				store, err = cs.KpackClient.KpackV1alpha1().ClusterStores().Update(ctx, store, metav1.UpdateOptions{})
+				store, err = cs.KpackClient.KpackV1alpha2().ClusterStores().Update(ctx, store, metav1.UpdateOptions{})
 				if err != nil {
 					return err
 				}
@@ -91,7 +91,7 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 	return cmd
 }
 
-func getStoreImage(store *v1alpha1.ClusterStore, buildpackage string) (corev1alpha1.StoreImage, bool) {
+func getStoreImage(store *v1alpha2.ClusterStore, buildpackage string) (corev1alpha1.StoreImage, bool) {
 	for _, bp := range store.Status.Buildpacks {
 		if fmt.Sprintf("%s@%s", bp.Id, bp.Version) == buildpackage {
 			return bp.StoreImage, true
@@ -100,7 +100,7 @@ func getStoreImage(store *v1alpha1.ClusterStore, buildpackage string) (corev1alp
 	return corev1alpha1.StoreImage{}, false
 }
 
-func removeBuildpackages(ch *commands.CommandHelper, store *v1alpha1.ClusterStore, buildpackages []string, bpToStoreImage map[string]corev1alpha1.StoreImage) {
+func removeBuildpackages(ch *commands.CommandHelper, store *v1alpha2.ClusterStore, buildpackages []string, bpToStoreImage map[string]corev1alpha1.StoreImage) {
 	for _, bp := range buildpackages {
 		ch.Printlnf("Removing buildpackage %s", bp)
 

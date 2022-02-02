@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,8 +42,8 @@ The namespace defaults to the kubernetes current-context namespace.`,
 
 			ctx := cmd.Context()
 
-			buildList, err := cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).List(ctx, metav1.ListOptions{
-				LabelSelector: v1alpha1.ImageLabel + "=" + args[0],
+			buildList, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).List(ctx, metav1.ListOptions{
+				LabelSelector: v1alpha2.ImageLabel + "=" + args[0],
 			})
 			if err != nil {
 				return err
@@ -63,7 +63,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 					return err
 				}
 
-				_, err = cs.KpackClient.KpackV1alpha1().Builds(cs.Namespace).Patch(ctx, original.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+				_, err = cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).Patch(ctx, original.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 				if err != nil {
 					return err
 				}
