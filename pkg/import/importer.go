@@ -22,15 +22,8 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
-
-type ImageRelocator interface {
-	Relocate(keychain authn.Keychain, src v1.Image, destination string) (string, error)
-}
-
-type ImageFetcher interface {
-	Fetch(keychain authn.Keychain, image string) (v1.Image, error)
-}
 
 type TimestampProvider interface {
 	GetTimestamp() string
@@ -45,8 +38,8 @@ type Importer struct {
 	client              versioned.Interface
 	k8sClient           kubernetes.Interface
 	printer             Printer
-	imageRelocator      ImageRelocator
-	imageFetcher        ImageFetcher
+	imageRelocator      registry.Relocator
+	imageFetcher        registry.Fetcher
 	waiter              commands.ResourceWaiter
 	clusterStoreFactory *clusterstore.Factory
 	clusterStackFactory *clusterstack.Factory
@@ -60,7 +53,7 @@ type relocatedDescriptor struct {
 	clusterBuilders []*v1alpha2.ClusterBuilder
 }
 
-func NewImporter(printer Printer, k8sClient kubernetes.Interface, client versioned.Interface, fetcher ImageFetcher, relocator ImageRelocator, waiter commands.ResourceWaiter, timestampProvider TimestampProvider) *Importer {
+func NewImporter(printer Printer, k8sClient kubernetes.Interface, client versioned.Interface, fetcher registry.Fetcher, relocator registry.Relocator, waiter commands.ResourceWaiter, timestampProvider TimestampProvider) *Importer {
 	return &Importer{
 		imageRelocator:      relocator,
 		client:              client,

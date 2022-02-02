@@ -79,7 +79,7 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 			require.NoError(t, err)
 
 			output := &bytes.Buffer{}
-			relocator := registry.NewDefaultRelocator(output, registry.TLSConfig{})
+			relocator := registry.NewDefaultRelocator(output, registry.DefaultTLSConfig())
 			relocatedRef, err := relocator.Relocate(fakeKeychain, srcImage, dst)
 			require.NoError(t, err)
 
@@ -95,7 +95,7 @@ func testRelocateStackImages(t *testing.T, when spec.G, it spec.S) {
 			srcImage, err := random.Image(int64(100), int64(5))
 			require.NoError(t, err)
 
-			relocator := registry.NewDefaultRelocator(ioutil.Discard, registry.TLSConfig{})
+			relocator := registry.NewDefaultRelocator(ioutil.Discard, registry.DefaultTLSConfig())
 			_, err = relocator.Relocate(fakeKeychain, srcImage, "notuser/notimage:tag")
 			require.Error(t, err)
 		})

@@ -19,6 +19,19 @@ type TLSConfig struct {
 	VerifyCerts bool
 }
 
+func DefaultTLSConfig() TLSConfig {
+	return TLSConfig{
+		VerifyCerts: true,
+	}
+}
+
+func NewTLSConfig(caCertPath string, verifyCerts bool) TLSConfig {
+	return TLSConfig{
+		CaCertPath:  caCertPath,
+		VerifyCerts: verifyCerts,
+	}
+}
+
 func (t *TLSConfig) Transport() (*http.Transport, error) {
 	pool, err := x509.SystemCertPool()
 	if err != nil {

@@ -20,6 +20,7 @@ const (
 type Fetcher struct {
 	images    map[string]v1.Image
 	callCount int
+	err error
 }
 
 type ImageInfo struct {
@@ -63,6 +64,9 @@ func NewLifecycleImageFetcher(i ...LifecycleInfo) *Fetcher {
 
 func (f *Fetcher) Fetch(_ authn.Keychain, src string) (v1.Image, error) {
 	f.callCount++
+	if f.err != nil {
+		return nil, f.err
+	}
 	image, ok := f.images[src]
 	if !ok {
 		return nil, errors.Errorf("image not found: %q", src)
@@ -99,6 +103,10 @@ func (f *Fetcher) AddLifecycleImages(infos ...LifecycleInfo) {
 	for _, i := range infos {
 		images[i.Ref] = NewFakeLabeledImage(lifecycleMetadataLabel, i.Metadata, i.Digest)
 	}
+}
+
+func (f *Fetcher) SetError(err error) {
+	f.err = err
 }
 
 func (f *Fetcher) getImages() map[string]v1.Image {
