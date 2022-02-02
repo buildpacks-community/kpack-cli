@@ -9,6 +9,7 @@ import (
 	// load credential helpers
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/dynamic"
 	k8s "k8s.io/client-go/kubernetes"
@@ -19,7 +20,7 @@ import (
 )
 
 type ClientSet struct {
-	KpackClient   kpackcompat.ClientsetInterface
+	KpackClient   versioned.Interface
 	K8sClient     k8s.Interface
 	DynamicClient dynamic.Interface
 	Namespace     string
@@ -56,7 +57,7 @@ func (d DefaultClientSetProvider) GetClientSet(namespace string) (ClientSet, err
 	return d.clientSet, err
 }
 
-func (d DefaultClientSetProvider) getKpackClient() (kpackcompat.ClientsetInterface, error) {
+func (d DefaultClientSetProvider) getKpackClient() (versioned.Interface, error) {
 	restConfig, err := d.restConfig()
 	if err != nil {
 		return nil, err

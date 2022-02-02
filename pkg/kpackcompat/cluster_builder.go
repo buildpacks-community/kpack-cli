@@ -16,14 +16,14 @@ type clusterBuilders struct {
 	client v1alpha1client.KpackV1alpha1Interface
 }
 
-func newClusterBuilders(c *KpackV1alpha1CompatClient) *clusterBuilders {
+func newClusterBuilders(c *kpackV1alpha1CompatClient) *clusterBuilders {
 	return &clusterBuilders{
 		client: c.v1alpha1KpackClient,
 	}
 }
 
 func (b *clusterBuilders) Create(ctx context.Context, clusterBuilder *v1alpha2.ClusterBuilder, opts metav1.CreateOptions) (*v1alpha2.ClusterBuilder, error) {
-	convertedClusterBuilder, err := b.convertToV1ClusterBuilder(ctx, clusterBuilder)
+	convertedClusterBuilder, err := convertToV1ClusterBuilder(ctx, clusterBuilder)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (b *clusterBuilders) Create(ctx context.Context, clusterBuilder *v1alpha2.C
 		return nil, err
 	}
 
-	createdV2ClusterBuilder, err := b.convertFromV1ClusterBuilder(ctx, createdV1ClusterBuilder)
+	createdV2ClusterBuilder, err := convertFromV1ClusterBuilder(ctx, createdV1ClusterBuilder)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (b *clusterBuilders) Create(ctx context.Context, clusterBuilder *v1alpha2.C
 }
 
 func (b *clusterBuilders) Update(ctx context.Context, clusterBuilder *v1alpha2.ClusterBuilder, opts metav1.UpdateOptions) (*v1alpha2.ClusterBuilder, error) {
-	convertedClusterBuilder, err := b.convertToV1ClusterBuilder(ctx, clusterBuilder)
+	convertedClusterBuilder, err := convertToV1ClusterBuilder(ctx, clusterBuilder)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (b *clusterBuilders) Update(ctx context.Context, clusterBuilder *v1alpha2.C
 		return nil, err
 	}
 
-	updatedV2ClusterBuilder, err := b.convertFromV1ClusterBuilder(ctx, updatedV1ClusterBuilder)
+	updatedV2ClusterBuilder, err := convertFromV1ClusterBuilder(ctx, updatedV1ClusterBuilder)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (b *clusterBuilders) Update(ctx context.Context, clusterBuilder *v1alpha2.C
 }
 
 func (b *clusterBuilders) UpdateStatus(ctx context.Context, clusterBuilder *v1alpha2.ClusterBuilder, opts metav1.UpdateOptions) (*v1alpha2.ClusterBuilder, error) {
-	convertedClusterBuilder, err := b.convertToV1ClusterBuilder(ctx, clusterBuilder)
+	convertedClusterBuilder, err := convertToV1ClusterBuilder(ctx, clusterBuilder)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (b *clusterBuilders) UpdateStatus(ctx context.Context, clusterBuilder *v1al
 		return nil, err
 	}
 
-	updatedV2ClusterBuilder, err := b.convertFromV1ClusterBuilder(ctx, updatedV1image)
+	updatedV2ClusterBuilder, err := convertFromV1ClusterBuilder(ctx, updatedV1image)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (b *clusterBuilders) Get(ctx context.Context, name string, opts metav1.GetO
 		return nil, err
 	}
 
-	convertedClusterBuilder, err := b.convertFromV1ClusterBuilder(ctx, v1ClusterBuilder)
+	convertedClusterBuilder, err := convertFromV1ClusterBuilder(ctx, v1ClusterBuilder)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (b *clusterBuilders) List(ctx context.Context, opts metav1.ListOptions) (*v
 	}
 
 	for _, compatObj := range compatList.Items {
-		convertedClusterBuilder, err := b.convertFromV1ClusterBuilder(ctx, &compatObj)
+		convertedClusterBuilder, err := convertFromV1ClusterBuilder(ctx, &compatObj)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +145,7 @@ func (b *clusterBuilders) Patch(ctx context.Context, name string, pt types.Patch
 		return nil, err
 	}
 
-	v2Result, err := b.convertFromV1ClusterBuilder(ctx, v1Result)
+	v2Result, err := convertFromV1ClusterBuilder(ctx, v1Result)
 	if err != nil {
 		return nil, err
 	}
@@ -153,8 +153,7 @@ func (b *clusterBuilders) Patch(ctx context.Context, name string, pt types.Patch
 	return v2Result, nil
 }
 
-//TODO: bump kpack
-func (b *clusterBuilders) convertFromV1ClusterBuilder(ctx context.Context, v1ClusterBuilder *v1alpha1.ClusterBuilder) (*v1alpha2.ClusterBuilder, error) {
+func convertFromV1ClusterBuilder(ctx context.Context, v1ClusterBuilder *v1alpha1.ClusterBuilder) (*v1alpha2.ClusterBuilder, error) {
 	resultClusterBuilder := &v1alpha2.ClusterBuilder{}
 	err := resultClusterBuilder.ConvertFrom(ctx, v1ClusterBuilder)
 	if err != nil {
@@ -163,7 +162,7 @@ func (b *clusterBuilders) convertFromV1ClusterBuilder(ctx context.Context, v1Clu
 	return resultClusterBuilder, nil
 }
 
-func (b *clusterBuilders) convertToV1ClusterBuilder(ctx context.Context, v2ClusterBuilder *v1alpha2.ClusterBuilder) (*v1alpha1.ClusterBuilder, error) {
+func convertToV1ClusterBuilder(ctx context.Context, v2ClusterBuilder *v1alpha2.ClusterBuilder) (*v1alpha1.ClusterBuilder, error) {
 	resultClusterBuilder := &v1alpha1.ClusterBuilder{}
 	err := v2ClusterBuilder.ConvertTo(ctx, resultClusterBuilder)
 	if err != nil {

@@ -18,7 +18,7 @@ type sourceResolvers struct {
 }
 
 // newSourceResolvers returns a SourceResolvers
-func newSourceResolvers(c *KpackV1alpha1CompatClient, namespace string) *sourceResolvers {
+func newSourceResolvers(c *kpackV1alpha1CompatClient, namespace string) *sourceResolvers {
 	return &sourceResolvers{
 		client: c.v1alpha1KpackClient,
 		ns:     namespace,

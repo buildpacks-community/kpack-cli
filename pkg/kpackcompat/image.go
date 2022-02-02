@@ -18,7 +18,7 @@ type images struct {
 }
 
 // newImages returns a Images
-func newImages(c *KpackV1alpha1CompatClient, namespace string) *images {
+func newImages(c *kpackV1alpha1CompatClient, namespace string) *images {
 	return &images{
 		client: c.v1alpha1KpackClient,
 		ns:     namespace,
@@ -26,7 +26,7 @@ func newImages(c *KpackV1alpha1CompatClient, namespace string) *images {
 }
 
 func (i *images) Create(ctx context.Context, image *v1alpha2.Image, opts v1.CreateOptions) (*v1alpha2.Image, error) {
-	convertedImage, err := i.convertToV1Image(ctx, image)
+	convertedImage, err := convertToV1Image(ctx, image)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func (i *images) Create(ctx context.Context, image *v1alpha2.Image, opts v1.Crea
 		return nil, err
 	}
 
-	createdV2Image, err := i.convertFromV1Image(ctx, createdV1Image)
+	createdV2Image, err := convertFromV1Image(ctx, createdV1Image)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (i *images) Create(ctx context.Context, image *v1alpha2.Image, opts v1.Crea
 }
 
 func (i *images) Update(ctx context.Context, image *v1alpha2.Image, opts v1.UpdateOptions) (*v1alpha2.Image, error) {
-	convertedImage, err := i.convertToV1Image(ctx, image)
+	convertedImage, err := convertToV1Image(ctx, image)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (i *images) Update(ctx context.Context, image *v1alpha2.Image, opts v1.Upda
 		return nil, err
 	}
 
-	updatedV2Image, err := i.convertFromV1Image(ctx, updatedV1image)
+	updatedV2Image, err := convertFromV1Image(ctx, updatedV1image)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (i *images) Update(ctx context.Context, image *v1alpha2.Image, opts v1.Upda
 }
 
 func (i *images) UpdateStatus(ctx context.Context, image *v1alpha2.Image, opts v1.UpdateOptions) (*v1alpha2.Image, error) {
-	convertedImage, err := i.convertToV1Image(ctx, image)
+	convertedImage, err := convertToV1Image(ctx, image)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (i *images) UpdateStatus(ctx context.Context, image *v1alpha2.Image, opts v
 		return nil, err
 	}
 
-	updatedV2Image, err := i.convertFromV1Image(ctx, updatedV1image)
+	updatedV2Image, err := convertFromV1Image(ctx, updatedV1image)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (i *images) Get(ctx context.Context, name string, opts v1.GetOptions) (*v1a
 		return nil, err
 	}
 
-	convertedImage, err := i.convertFromV1Image(ctx, v1Image)
+	convertedImage, err := convertFromV1Image(ctx, v1Image)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (i *images) List(ctx context.Context, opts v1.ListOptions) (*v1alpha2.Image
 	}
 
 	for _, compatObj := range compatList.Items {
-		convertedImage, err := i.convertFromV1Image(ctx, &compatObj)
+		convertedImage, err := convertFromV1Image(ctx, &compatObj)
 		if err != nil {
 			return nil, err
 		}
@@ -148,7 +148,7 @@ func (i *images) Patch(ctx context.Context, name string, pt types.PatchType, dat
 		return nil, err
 	}
 
-	v2Result, err := i.convertFromV1Image(ctx, v1Result)
+	v2Result, err := convertFromV1Image(ctx, v1Result)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (i *images) Patch(ctx context.Context, name string, pt types.PatchType, dat
 	return v2Result, nil
 }
 
-func (i *images) convertFromV1Image(ctx context.Context, v1Image *v1alpha1.Image) (*v1alpha2.Image, error) {
+func convertFromV1Image(ctx context.Context, v1Image *v1alpha1.Image) (*v1alpha2.Image, error) {
 	resultImage := v1alpha2.Image{}
 	err := resultImage.ConvertFrom(ctx, v1Image)
 	if err != nil {
@@ -165,7 +165,7 @@ func (i *images) convertFromV1Image(ctx context.Context, v1Image *v1alpha1.Image
 	return &resultImage, nil
 }
 
-func (i *images) convertToV1Image(ctx context.Context, v2Image *v1alpha2.Image) (*v1alpha1.Image, error) {
+func convertToV1Image(ctx context.Context, v2Image *v1alpha2.Image) (*v1alpha1.Image, error) {
 	resultImage := &v1alpha1.Image{}
 	err := v2Image.ConvertTo(ctx, resultImage)
 	if err != nil {

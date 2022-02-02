@@ -16,14 +16,14 @@ type clusterStacks struct {
 	client v1alpha1client.KpackV1alpha1Interface
 }
 
-func newClusterStacks(c *KpackV1alpha1CompatClient) *clusterStacks {
+func newClusterStacks(c *kpackV1alpha1CompatClient) *clusterStacks {
 	return &clusterStacks{
 		client: c.v1alpha1KpackClient,
 	}
 }
 
 func (s *clusterStacks) Create(ctx context.Context, clusterStack *v1alpha2.ClusterStack, opts metav1.CreateOptions) (*v1alpha2.ClusterStack, error) {
-	convertedClusterStack, err := s.convertToV1ClusterStack(ctx, clusterStack)
+	convertedClusterStack, err := convertToV1ClusterStack(ctx, clusterStack)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (s *clusterStacks) Create(ctx context.Context, clusterStack *v1alpha2.Clust
 		return nil, err
 	}
 
-	createdV2ClusterStack, err := s.convertFromV1ClusterStack(ctx, createdV1ClusterStack)
+	createdV2ClusterStack, err := convertFromV1ClusterStack(ctx, createdV1ClusterStack)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (s *clusterStacks) Create(ctx context.Context, clusterStack *v1alpha2.Clust
 }
 
 func (s *clusterStacks) Update(ctx context.Context, clusterStack *v1alpha2.ClusterStack, opts metav1.UpdateOptions) (*v1alpha2.ClusterStack, error) {
-	convertedClusterStack, err := s.convertToV1ClusterStack(ctx, clusterStack)
+	convertedClusterStack, err := convertToV1ClusterStack(ctx, clusterStack)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (s *clusterStacks) Update(ctx context.Context, clusterStack *v1alpha2.Clust
 		return nil, err
 	}
 
-	updatedV2ClusterStack, err := s.convertFromV1ClusterStack(ctx, updatedV1ClusterStack)
+	updatedV2ClusterStack, err := convertFromV1ClusterStack(ctx, updatedV1ClusterStack)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (s *clusterStacks) Update(ctx context.Context, clusterStack *v1alpha2.Clust
 }
 
 func (s *clusterStacks) UpdateStatus(ctx context.Context, clusterStack *v1alpha2.ClusterStack, opts metav1.UpdateOptions) (*v1alpha2.ClusterStack, error) {
-	convertedClusterStack, err := s.convertToV1ClusterStack(ctx, clusterStack)
+	convertedClusterStack, err := convertToV1ClusterStack(ctx, clusterStack)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (s *clusterStacks) UpdateStatus(ctx context.Context, clusterStack *v1alpha2
 		return nil, err
 	}
 
-	updatedV2ClusterStack, err := s.convertFromV1ClusterStack(ctx, updatedV1image)
+	updatedV2ClusterStack, err := convertFromV1ClusterStack(ctx, updatedV1image)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (s *clusterStacks) Get(ctx context.Context, name string, opts metav1.GetOpt
 		return nil, err
 	}
 
-	convertedClusterStack, err := s.convertFromV1ClusterStack(ctx, v1ClusterStack)
+	convertedClusterStack, err := convertFromV1ClusterStack(ctx, v1ClusterStack)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (s *clusterStacks) List(ctx context.Context, opts metav1.ListOptions) (*v1a
 	}
 
 	for _, compatObj := range compatList.Items {
-		convertedClusterStack, err := s.convertFromV1ClusterStack(ctx, &compatObj)
+		convertedClusterStack, err := convertFromV1ClusterStack(ctx, &compatObj)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +145,7 @@ func (s *clusterStacks) Patch(ctx context.Context, name string, pt types.PatchTy
 		return nil, err
 	}
 
-	v2Result, err := s.convertFromV1ClusterStack(ctx, v1Result)
+	v2Result, err := convertFromV1ClusterStack(ctx, v1Result)
 	if err != nil {
 		return nil, err
 	}
@@ -153,8 +153,7 @@ func (s *clusterStacks) Patch(ctx context.Context, name string, pt types.PatchTy
 	return v2Result, nil
 }
 
-//TODO: bump kpack
-func (s *clusterStacks) convertFromV1ClusterStack(ctx context.Context, v1ClusterStack *v1alpha1.ClusterStack) (*v1alpha2.ClusterStack, error) {
+func convertFromV1ClusterStack(ctx context.Context, v1ClusterStack *v1alpha1.ClusterStack) (*v1alpha2.ClusterStack, error) {
 	resultClusterStack := &v1alpha2.ClusterStack{}
 	err := resultClusterStack.ConvertFrom(ctx, v1ClusterStack)
 	if err != nil {
@@ -163,7 +162,7 @@ func (s *clusterStacks) convertFromV1ClusterStack(ctx context.Context, v1Cluster
 	return resultClusterStack, nil
 }
 
-func (s *clusterStacks) convertToV1ClusterStack(ctx context.Context, v2ClusterStack *v1alpha2.ClusterStack) (*v1alpha1.ClusterStack, error) {
+func convertToV1ClusterStack(ctx context.Context, v2ClusterStack *v1alpha2.ClusterStack) (*v1alpha1.ClusterStack, error) {
 	resultClusterStack := &v1alpha1.ClusterStack{}
 	err := v2ClusterStack.ConvertTo(ctx, resultClusterStack)
 	if err != nil {

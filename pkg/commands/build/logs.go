@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
+	"github.com/pivotal/kpack/pkg/logs"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +16,6 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/build"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
-	"github.com/vmware-tanzu/kpack-cli/pkg/logs"
 )
 
 func NewLogsCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {

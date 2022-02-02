@@ -17,7 +17,7 @@ type builds struct {
 	ns     string
 }
 
-func newBuilds(c *KpackV1alpha1CompatClient, namespace string) *builds {
+func newBuilds(c *kpackV1alpha1CompatClient, namespace string) *builds {
 	return &builds{
 		client: c.v1alpha1KpackClient,
 		ns:     namespace,
@@ -25,7 +25,7 @@ func newBuilds(c *KpackV1alpha1CompatClient, namespace string) *builds {
 }
 
 func (b *builds) Create(ctx context.Context, build *v1alpha2.Build, opts v1.CreateOptions) (*v1alpha2.Build, error) {
-	convertedBuild, err := b.convertToV1Build(ctx, build)
+	convertedBuild, err := convertToV1Build(ctx, build)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (b *builds) Create(ctx context.Context, build *v1alpha2.Build, opts v1.Crea
 		return nil, err
 	}
 
-	createdV2Build, err := b.convertFromV1Build(ctx, createdV1Build)
+	createdV2Build, err := convertFromV1Build(ctx, createdV1Build)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (b *builds) Create(ctx context.Context, build *v1alpha2.Build, opts v1.Crea
 }
 
 func (b *builds) Update(ctx context.Context, build *v1alpha2.Build, opts v1.UpdateOptions) (*v1alpha2.Build, error) {
-	convertedBuild, err := b.convertToV1Build(ctx, build)
+	convertedBuild, err := convertToV1Build(ctx, build)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (b *builds) Update(ctx context.Context, build *v1alpha2.Build, opts v1.Upda
 		return nil, err
 	}
 
-	updatedV2Build, err := b.convertFromV1Build(ctx, updatedV1build)
+	updatedV2Build, err := convertFromV1Build(ctx, updatedV1build)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (b *builds) Update(ctx context.Context, build *v1alpha2.Build, opts v1.Upda
 }
 
 func (b *builds) UpdateStatus(ctx context.Context, build *v1alpha2.Build, opts v1.UpdateOptions) (*v1alpha2.Build, error) {
-	convertedBuild, err := b.convertToV1Build(ctx, build)
+	convertedBuild, err := convertToV1Build(ctx, build)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (b *builds) UpdateStatus(ctx context.Context, build *v1alpha2.Build, opts v
 		return nil, err
 	}
 
-	updatedV2Build, err := b.convertFromV1Build(ctx, updatedV1build)
+	updatedV2Build, err := convertFromV1Build(ctx, updatedV1build)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (b *builds) Get(ctx context.Context, name string, opts v1.GetOptions) (*v1a
 		return nil, err
 	}
 
-	convertedBuild, err := b.convertFromV1Build(ctx, v1Build)
+	convertedBuild, err := convertFromV1Build(ctx, v1Build)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (b *builds) List(ctx context.Context, opts v1.ListOptions) (*v1alpha2.Build
 	}
 
 	for _, compatObj := range compatList.Items {
-		convertedBuild, err := b.convertFromV1Build(ctx, &compatObj)
+		convertedBuild, err := convertFromV1Build(ctx, &compatObj)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +147,7 @@ func (b *builds) Patch(ctx context.Context, name string, pt types.PatchType, dat
 		return nil, err
 	}
 
-	v2Result, err := b.convertFromV1Build(ctx, v1Result)
+	v2Result, err := convertFromV1Build(ctx, v1Result)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (b *builds) Patch(ctx context.Context, name string, pt types.PatchType, dat
 	return v2Result, nil
 }
 
-func (b *builds) convertFromV1Build(ctx context.Context, build *v1alpha1.Build) (*v1alpha2.Build, error) {
+func convertFromV1Build(ctx context.Context, build *v1alpha1.Build) (*v1alpha2.Build, error) {
 	resultBuild := &v1alpha2.Build{}
 	err := resultBuild.ConvertFrom(ctx, build)
 	if err != nil {
@@ -164,7 +164,7 @@ func (b *builds) convertFromV1Build(ctx context.Context, build *v1alpha1.Build) 
 	return resultBuild, nil
 }
 
-func (b *builds) convertToV1Build(ctx context.Context, v2Build *v1alpha2.Build) (*v1alpha1.Build, error) {
+func convertToV1Build(ctx context.Context, v2Build *v1alpha2.Build) (*v1alpha1.Build, error) {
 	resultBuild := &v1alpha1.Build{}
 	err := v2Build.ConvertTo(ctx, resultBuild)
 	if err != nil {

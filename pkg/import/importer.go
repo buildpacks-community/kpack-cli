@@ -9,8 +9,8 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
-	"github.com/vmware-tanzu/kpack-cli/pkg/kpackcompat"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,7 +42,7 @@ type Printer interface {
 }
 
 type Importer struct {
-	client              kpackcompat.ClientsetInterface
+	client              versioned.Interface
 	k8sClient           kubernetes.Interface
 	printer             Printer
 	imageRelocator      ImageRelocator
@@ -60,7 +60,7 @@ type relocatedDescriptor struct {
 	clusterBuilders []*v1alpha2.ClusterBuilder
 }
 
-func NewImporter(printer Printer, k8sClient kubernetes.Interface, client kpackcompat.ClientsetInterface, fetcher ImageFetcher, relocator ImageRelocator, waiter commands.ResourceWaiter, timestampProvider TimestampProvider) *Importer {
+func NewImporter(printer Printer, k8sClient kubernetes.Interface, client versioned.Interface, fetcher ImageFetcher, relocator ImageRelocator, waiter commands.ResourceWaiter, timestampProvider TimestampProvider) *Importer {
 	return &Importer{
 		imageRelocator:      relocator,
 		client:              client,

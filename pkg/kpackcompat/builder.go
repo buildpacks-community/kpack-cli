@@ -17,7 +17,7 @@ type builders struct {
 	ns     string
 }
 
-func newBuilders(c *KpackV1alpha1CompatClient, namespace string) *builders {
+func newBuilders(c *kpackV1alpha1CompatClient, namespace string) *builders {
 	return &builders{
 		client: c.v1alpha1KpackClient,
 		ns:     namespace,
@@ -156,7 +156,6 @@ func (b *builders) Patch(ctx context.Context, name string, pt types.PatchType, d
 	return v2Result, nil
 }
 
-//TODO: bump kpack
 func (b *builders) convertFromV1Builder(ctx context.Context, v1Builder *v1alpha1.Builder) (*v1alpha2.Builder, error) {
 	resultBuilder := &v1alpha2.Builder{}
 	err := resultBuilder.ConvertFrom(ctx, v1Builder)

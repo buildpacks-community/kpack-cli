@@ -16,7 +16,7 @@ type clusterStores struct {
 	client v1alpha1client.KpackV1alpha1Interface
 }
 
-func newClusterStores(c *KpackV1alpha1CompatClient) *clusterStores {
+func newClusterStores(c *kpackV1alpha1CompatClient) *clusterStores {
 	return &clusterStores{
 		client: c.v1alpha1KpackClient,
 	}
@@ -153,7 +153,6 @@ func (s *clusterStores) Patch(ctx context.Context, name string, pt types.PatchTy
 	return v2Result, nil
 }
 
-//TODO: bump kpack
 func (s *clusterStores) convertFromV1ClusterStore(ctx context.Context, v1ClusterStore *v1alpha1.ClusterStore) (*v1alpha2.ClusterStore, error) {
 	resultClusterStore := &v1alpha2.ClusterStore{}
 	err := resultClusterStore.ConvertFrom(ctx, v1ClusterStore)
