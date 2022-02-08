@@ -6,7 +6,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-containerregistry/pkg/authn"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
