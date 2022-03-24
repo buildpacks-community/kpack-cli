@@ -12,6 +12,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
@@ -67,7 +68,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 
 			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, ch.IsUploading()), rup.Fetcher(tlsCfg))
 
-			return update(ctx, authn.DefaultKeychain, stack, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
+			return patch(ctx, authn.DefaultKeychain, stack, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -80,20 +81,22 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func update(ctx context.Context, keychain authn.Keychain, stack *v1alpha2.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
+func patch(ctx context.Context, keychain authn.Keychain, stack *v1alpha2.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
 	if err := ch.PrintStatus("Updating ClusterStack..."); err != nil {
 		return err
 	}
 
 	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
-	hasUpdates, err := factory.UpdateStack(keychain, stack, buildImageRef, runImageRef, kpConfig)
+	p, err := factory.MakeStackPatch(keychain, stack, buildImageRef, runImageRef, kpConfig)
 	if err != nil {
 		return err
 	}
 
+	hasUpdates := len(p) > 0
+
 	if hasUpdates && !ch.IsDryRun() {
-		stack, err = cs.KpackClient.KpackV1alpha2().ClusterStacks().Update(ctx, stack, metav1.UpdateOptions{})
+		stack, err = cs.KpackClient.KpackV1alpha2().ClusterStacks().Patch(ctx, stack.Name, types.MergePatchType, p, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}

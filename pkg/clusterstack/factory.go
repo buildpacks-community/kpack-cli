@@ -4,11 +4,9 @@
 package clusterstack
 
 import (
-	"strings"
-
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
-	"github.com/pkg/errors"
+	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
@@ -82,73 +80,44 @@ func (f *Factory) MakeStack(keychain authn.Keychain, name, buildImageTag, runIma
 	}, nil
 }
 
-func (f *Factory) UpdateStack(keychain authn.Keychain, stack *v1alpha2.ClusterStack, buildImageTag, runImageTag string, kpConfig config.KpConfig) (bool, error) {
+func (f *Factory) MakeStackPatch(keychain authn.Keychain, stack *v1alpha2.ClusterStack, buildImageTag, runImageTag string, kpConfig config.KpConfig) ([]byte, error) {
 	stackID, err := f.validate(keychain, buildImageTag, runImageTag)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
+	relocatedBuildImageRef, relocatedRunImageRef, err := f.uploadStackImages(keychain, buildImageTag, runImageTag, kpConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	newStack := updatedStack(stack, relocatedBuildImageRef, relocatedRunImageRef, stackID)
+	return k8s.CreatePatch(stack, newStack)
+}
+
+func (f *Factory) uploadStackImages(keychain authn.Keychain, buildImageTag, runImageTag string, kpConfig config.KpConfig) (string, string, error) {
 	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
-		return false, err
+		return "", "", err
 	}
 
 	if err := f.Printer.PrintStatus("Uploading to '%s'...", defaultRepo); err != nil {
-		return false, err
+		return "", "", err
 	}
 
-	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(keychain, buildImageTag, runImageTag, defaultRepo)
-	if err != nil {
-		return false, err
-	}
-
-	if wasUpdated, err := wasUpdated(stack, relocatedBuildImageRef, relocatedRunImageRef, stackID); err != nil {
-		return false, err
-	} else if !wasUpdated {
-		return false, f.Printer.Printlnf("Build and Run images already exist in stack")
-	}
-	return true, nil
+	return f.Uploader.UploadStackImages(keychain, buildImageTag, runImageTag, defaultRepo)
 }
 
 func (f *Factory) validate(keychain authn.Keychain, buildTag, runTag string) (string, error) {
 	return f.Uploader.ValidateStackIDs(keychain, buildTag, runTag)
 }
 
-func wasUpdated(stack *v1alpha2.ClusterStack, buildImageRef, runImageRef, stackId string) (bool, error) {
-	oldBuildDigest, err := getDigest(stack.Status.BuildImage.LatestImage)
-	if err != nil {
-		return false, err
-	}
+func updatedStack(stack *v1alpha2.ClusterStack, buildImageRef, runImageRef, stackId string) *v1alpha2.ClusterStack {
+	newStack := stack.DeepCopy()
 
-	newBuildDigest, err := getDigest(buildImageRef)
-	if err != nil {
-		return false, err
-	}
+	newStack.Spec.BuildImage.Image = buildImageRef
+	newStack.Spec.RunImage.Image = runImageRef
+	newStack.Spec.Id = stackId
 
-	oldRunDigest, err := getDigest(stack.Status.RunImage.LatestImage)
-	if err != nil {
-		return false, err
-	}
-
-	newRunDigest, err := getDigest(runImageRef)
-	if err != nil {
-		return false, err
-	}
-
-	if oldBuildDigest != newBuildDigest && oldRunDigest != newRunDigest {
-		stack.Spec.BuildImage.Image = buildImageRef
-		stack.Spec.RunImage.Image = runImageRef
-		stack.Spec.Id = stackId
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func getDigest(ref string) (string, error) {
-	s := strings.Split(ref, "@")
-	if len(s) != 2 {
-		return "", errors.Errorf("failed to get image digest from reference %q", ref)
-	}
-	return s[1], nil
+	return newStack
 }
