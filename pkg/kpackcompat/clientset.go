@@ -34,7 +34,6 @@ func (c *ClientSetWrapper) KpackV1alpha2() v1alpha2.KpackV1alpha2Interface {
 	return newV1Alpha1CompatClient(c.kpackClientSet)
 }
 
-
 func NewForConfig(c *rest.Config) (versioned.Interface, error) {
 	realClientSet, err := versioned.NewForConfig(c)
 	if err != nil {

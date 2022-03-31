@@ -260,13 +260,7 @@ func (i *Importer) constructClusterStore(ctx context.Context, keychain authn.Key
 	}
 
 	if existingStore != nil {
-		updatedStore := existingStore.DeepCopy()
-		updatedStore, _, err = i.clusterStoreFactory.AddToStore(keychain, updatedStore, kpConfig, buildpackagesForSource(store.Sources)...)
-		if err != nil {
-			return nil, err
-		}
-
-		return updatedStore, nil
+		return i.clusterStoreFactory.AddToStore(keychain, existingStore, kpConfig, buildpackagesForSource(store.Sources)...)
 	}
 
 	newStore, err := i.clusterStoreFactory.MakeStore(keychain, store.Name, kpConfig, buildpackagesForSource(store.Sources)...)
@@ -298,7 +292,6 @@ func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder Clu
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get default repository")
 	}
-
 	newCB := &v1alpha2.ClusterBuilder{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       v1alpha2.ClusterBuilderKind,
