@@ -49,6 +49,9 @@ func testPatchCommand(imageCommand func(clientSetProvider k8s.ClientSetProvider,
 			},
 			Spec: v1alpha2.ImageSpec{
 				Tag: "some-tag",
+				AdditionalTags: []string{
+					"some-other-tag",
+				},
 				Builder: corev1.ObjectReference{
 					Kind: v1alpha2.ClusterBuilderKind,
 					Name: "some-ccb",
@@ -219,6 +222,47 @@ Image Resource "some-image" patched
 			})
 		})
 
+		when("patching additional tags", func() {
+			it("can delete additional tags", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						existingImage,
+					},
+					Args: []string{
+						"some-image",
+						"--delete-additional-tag", "some-other-tag",
+					},
+					ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
+`,
+					ExpectPatches: []string{
+						`{"spec":{"additionalTags":null}}`,
+					},
+				}.TestKpack(t, cmdFunc)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+
+			it("can add new additional tags", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						existingImage,
+					},
+					Args: []string{
+						"some-image",
+						"--additional-tag", "some-new-tag",
+					},
+					ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
+`,
+					ExpectPatches: []string{
+						`{"spec":{"additionalTags":["some-other-tag","some-new-tag"]}}`,
+					},
+				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+		})
+
 		when("patching env vars", func() {
 			it("can delete env vars", func() {
 				testhelpers.CommandTest{
@@ -334,6 +378,8 @@ metadata:
   name: some-image
   namespace: some-default-namespace
 spec:
+  additionalTags:
+  - some-other-tag
   build:
     env:
     - name: key1
@@ -405,7 +451,10 @@ status: {}
                 }
             ],
             "resources": {}
-        }
+        },
+        "additionalTags": [
+            "some-other-tag"
+        ]
     },
     "status": {}
 }
@@ -439,6 +488,8 @@ metadata:
   name: some-image
   namespace: some-default-namespace
 spec:
+  additionalTags:
+  - some-other-tag
   build:
     env:
     - name: key1
@@ -524,6 +575,8 @@ metadata:
   name: some-image
   namespace: some-default-namespace
 spec:
+  additionalTags:
+  - some-other-tag
   build:
     env:
     - name: key1
@@ -611,6 +664,8 @@ metadata:
   name: some-image
   namespace: some-default-namespace
 spec:
+  additionalTags:
+  - some-other-tag
   build:
     env:
     - name: key1

@@ -37,22 +37,24 @@ type Printer interface {
 }
 
 type Factory struct {
-	SourceUploader SourceUploader
-	GitRepo        string
-	GitRevision    string
-	Blob           string
-	LocalPath      string
-	SubPath        *string
-	Builder        string
-	ClusterBuilder string
-	Env            []string
-	CacheSize      string
-	DeleteEnv      []string
-	Printer        Printer
+	SourceUploader       SourceUploader
+	AdditionalTags       []string
+	GitRepo              string
+	GitRevision          string
+	Blob                 string
+	LocalPath            string
+	SubPath              *string
+	Builder              string
+	ClusterBuilder       string
+	Env                  []string
+	CacheSize            string
+	DeleteEnv            []string
+	DeleteAdditionalTags []string
+	Printer              Printer
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error) {
-	err := f.validateCreate()
+	err := f.validateCreate(tag)
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +87,7 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 		},
 		Spec: v1alpha2.ImageSpec{
 			Tag:                tag,
+			AdditionalTags:     f.AdditionalTags,
 			Builder:            builder,
 			ServiceAccountName: "default",
 			Source:             source,
@@ -100,7 +103,23 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 	}, nil
 }
 
-func (f *Factory) validateCreate() error {
+func (f *Factory) validateCreate(tag string) error {
+	if err := f.validateTagsSameRegistry(tag); err != nil {
+		return err
+	}
+
+	if err := f.validateSourceCreate(); err != nil {
+		return err
+	}
+
+	if err := f.validateBuilder(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *Factory) validateSourceCreate() error {
 	sourceSet := paramSet{}
 	sourceSet.add("git", f.GitRepo)
 	sourceSet.add("blob", f.Blob)
@@ -110,6 +129,14 @@ func (f *Factory) validateCreate() error {
 		return errors.New("image source must be one of git, blob, or local-path")
 	}
 
+	if (sourceSet.contains("blob") || sourceSet.contains("local-path")) && f.GitRevision != "" {
+		return errors.New("git-revision is incompatible with blob and local path image sources")
+	}
+
+	return nil
+}
+
+func (f *Factory) validateBuilder() error {
 	builderSet := paramSet{}
 	builderSet.add("builder", f.Builder)
 	builderSet.add("cluster-builder", f.ClusterBuilder)
@@ -117,7 +144,21 @@ func (f *Factory) validateCreate() error {
 	if len(builderSet) > 1 {
 		return errors.New("must provide one of builder or cluster-builder")
 	}
+	return nil
+}
 
+func (f *Factory) validateTagsSameRegistry(tag string) error {
+	mainTag, err := name.NewTag(tag, name.WeakValidation)
+	if err == nil {
+		for _, t := range f.AdditionalTags {
+			addT, err := name.NewTag(t, name.WeakValidation)
+			if err == nil {
+				if addT.RegistryStr() != mainTag.RegistryStr() {
+					return errors.Errorf("all additional tags must have the same registry as tag. expected: %s, got: %s", mainTag.RegistryStr(), addT.RegistryStr())
+				}
+			}
+		}
+	}
 	return nil
 }
 
