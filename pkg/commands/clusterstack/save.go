@@ -33,6 +33,7 @@ Therefore, you must have credentials to access the registry on your machine.
 Additionally, your cluster must have read access to the registry.
 
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
+The default service account used is read from the "default.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
 		Example: `kp clusterstack save my-stack --build-image my-registry.com/build --run-image my-registry.com/run
 kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,

@@ -46,6 +46,7 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 		return nil, err
 	}
 
+	sa := kpConfig.ServiceAccount()
 	newStore := &v1alpha2.ClusterStore{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       v1alpha2.ClusterStoreKind,
@@ -55,7 +56,9 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 			Name:        name,
 			Annotations: map[string]string{},
 		},
-		Spec: v1alpha2.ClusterStoreSpec{},
+		Spec: v1alpha2.ClusterStoreSpec{
+			ServiceAccountRef: &sa,
+		},
 	}
 
 	defaultRepo, err := kpConfig.DefaultRepository()
@@ -77,39 +80,37 @@ func (f *Factory) MakeStore(keychain authn.Keychain, name string, kpConfig confi
 	return newStore, k8s.SetLastAppliedCfg(newStore)
 }
 
-func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha2.ClusterStore, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha2.ClusterStore, bool, error) {
-	storeUpdated := false
+func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha2.ClusterStore, kpConfig config.KpConfig, buildpackages ...string) (*v1alpha2.ClusterStore, error) {
+	updatedStore := store.DeepCopy()
 
 	defaultRepo, err := kpConfig.DefaultRepository()
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	for _, bp := range buildpackages {
 		uploadedBp, err := f.Uploader.UploadBuildpackage(keychain, bp, defaultRepo)
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
 
-		if storeContains(store, uploadedBp) {
+		if storeContains(updatedStore, uploadedBp) {
 			if err = f.Printer.Printlnf("\tBuildpackage already exists in the store"); err != nil {
-				return store, false, err
+				return nil, err
 			}
 			continue
 		}
 
-		store.Spec.Sources = append(store.Spec.Sources, corev1alpha1.StoreImage{
+		updatedStore.Spec.Sources = append(updatedStore.Spec.Sources, corev1alpha1.StoreImage{
 			Image: uploadedBp,
 		})
 
 		if err = f.Printer.Printlnf("\tAdded Buildpackage"); err != nil {
-			return nil, false, err
+			return nil, err
 		}
-
-		storeUpdated = true
 	}
 
-	return store, storeUpdated, nil
+	return updatedStore, nil
 }
 
 func (f *Factory) validate(buildpackages []string) error {

@@ -42,7 +42,10 @@ func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 		Long: `Updates the run and build images of a specific cluster-scoped stack.
 
 The run and build images will be uploaded to the the registry configured on your stack.
-Therefore, you must have credentials to access the registry on your machine.`,
+Therefore, you must have credentials to access the registry on your machine.
+
+The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
+The default service account used is read from the "default.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.`,
 		Example: `kp clusterstack update my-stack --build-image my-registry.com/build --run-image my-registry.com/run
 kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
 		Args:         commands.ExactArgsWithUsage(1),
@@ -87,24 +90,30 @@ func update(ctx context.Context, keychain authn.Keychain, stack *v1alpha2.Cluste
 
 	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
-	hasUpdates, err := factory.UpdateStack(keychain, stack, buildImageRef, runImageRef, kpConfig)
+	updatedStack, err := factory.UpdateStack(keychain, stack, buildImageRef, runImageRef, kpConfig)
 	if err != nil {
 		return err
 	}
 
-	if hasUpdates && !ch.IsDryRun() {
-		stack, err = cs.KpackClient.KpackV1alpha2().ClusterStacks().Update(ctx, stack, metav1.UpdateOptions{})
-		if err != nil {
-			return err
-		}
-		if err := w.Wait(ctx, stack); err != nil {
-			return err
-		}
-	}
-
-	if err = ch.PrintObj(stack); err != nil {
+	patch, err := k8s.CreatePatch(stack, updatedStack)
+	if err != nil {
 		return err
 	}
 
-	return ch.PrintChangeResult(hasUpdates, "ClusterStack %q updated", stack.Name)
+	hasUpdates := len(patch) > 0
+	if hasUpdates && !ch.IsDryRun() {
+		updatedStack, err = cs.KpackClient.KpackV1alpha2().ClusterStacks().Update(ctx, updatedStack, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+		if err := w.Wait(ctx, updatedStack); err != nil {
+			return err
+		}
+	}
+
+	if err = ch.PrintObj(updatedStack); err != nil {
+		return err
+	}
+
+	return ch.PrintChangeResult(hasUpdates, "ClusterStack %q updated", updatedStack.Name)
 }

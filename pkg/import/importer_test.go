@@ -44,8 +44,175 @@ func testImporter(t *testing.T, when spec.G, it spec.S) {
 		stackId          = "io.stacks.mycoolstack"
 		buildImageDigest = "buildimagedigest"
 		runImageDigest   = "runimagedigest"
+
+		kpConfig = config.NewKpConfig(
+			"gcr.io/my-cool-repo",
+			corev1.ObjectReference{
+				Namespace: "some-namespace",
+				Name:      "some-serviceaccount",
+			},
+		)
+
+		existingLifecycle = &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "lifecycle-image",
+				Namespace: "kpack",
+			},
+			Data: map[string]string{
+				"image": "old/image",
+			},
+		}
 	)
 	when("importing dependencies", func() {
+		var (
+			expectedDefaultClusterStore   runtime.Object
+			expectedClusterStack          runtime.Object
+			expectedDefaultClusterStack   runtime.Object
+			expectedClusterBuilder        runtime.Object
+			expectedDefaultClusterBuilder runtime.Object
+		)
+
+		it.Before(func() {
+			expectedDefaultClusterStore = annotate(t, &v1alpha2.ClusterStore{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterStore",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "default",
+				},
+				Spec: v1alpha2.ClusterStoreSpec{
+					Sources: []corev1alpha1.StoreImage{
+						{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
+					},
+					ServiceAccountRef: &corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, kubectlAnnotation, timestampAnnotation)
+			expectedClusterStack = annotate(t, &v1alpha2.ClusterStack{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterStack",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "base",
+				},
+				Spec: v1alpha2.ClusterStackSpec{
+					Id: stackId,
+					BuildImage: v1alpha2.ClusterStackSpecImage{
+						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+					},
+					RunImage: v1alpha2.ClusterStackSpecImage{
+						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+					},
+					ServiceAccountRef: &corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, timestampAnnotation)
+			expectedDefaultClusterStack = annotate(t, &v1alpha2.ClusterStack{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterStack",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "default",
+				},
+				Spec: v1alpha2.ClusterStackSpec{
+					Id: stackId,
+					BuildImage: v1alpha2.ClusterStackSpecImage{
+						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+					},
+					RunImage: v1alpha2.ClusterStackSpecImage{
+						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+					},
+					ServiceAccountRef: &corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, timestampAnnotation)
+			expectedClusterBuilder = annotate(t, &v1alpha2.ClusterBuilder{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterBuilder",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "base",
+				},
+				Spec: v1alpha2.ClusterBuilderSpec{
+					BuilderSpec: v1alpha2.BuilderSpec{
+						Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
+						Stack: corev1.ObjectReference{
+							Kind: "ClusterStack",
+							Name: "base",
+						},
+						Store: corev1.ObjectReference{
+							Kind: "ClusterStore",
+							Name: "default",
+						},
+						Order: []corev1alpha1.OrderEntry{
+							{
+								[]corev1alpha1.BuildpackRef{
+									{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
+											Id: "tanzu-buildpacks/dotnet-core",
+										},
+										Optional: false,
+									},
+								},
+							},
+						},
+					},
+					ServiceAccountRef: corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, kubectlAnnotation, timestampAnnotation)
+			expectedDefaultClusterBuilder = annotate(t, &v1alpha2.ClusterBuilder{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterBuilder",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "default",
+				},
+				Spec: v1alpha2.ClusterBuilderSpec{
+					BuilderSpec: v1alpha2.BuilderSpec{
+						Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
+						Stack: corev1.ObjectReference{
+							Kind: "ClusterStack",
+							Name: "base",
+						},
+						Store: corev1.ObjectReference{
+							Kind: "ClusterStore",
+							Name: "default",
+						},
+						Order: []corev1alpha1.OrderEntry{
+							{
+								[]corev1alpha1.BuildpackRef{
+									{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
+											Id: "tanzu-buildpacks/dotnet-core",
+										},
+										Optional: false,
+									},
+								},
+							},
+						},
+					},
+					ServiceAccountRef: corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, kubectlAnnotation, timestampAnnotation)
+		})
+
 		it("can import on a new cluster", func() {
 			TestImport{
 				Images: map[string]v1.Image{
@@ -55,23 +222,9 @@ func testImporter(t *testing.T, when spec.G, it spec.S) {
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
 				},
 				Objects: []runtime.Object{
-					&corev1.ConfigMap{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "lifecycle-image",
-							Namespace: "kpack",
-						},
-						Data: map[string]string{
-							"image": "old/image",
-						},
-					},
+					existingLifecycle,
 				},
-				KpConfig: config.NewKpConfig(
-					"gcr.io/my-cool-repo",
-					corev1.ObjectReference{
-						Namespace: "kpack",
-						Name:      "some-service-account",
-					},
-				),
+				KpConfig: kpConfig,
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha3
 kind: DependencyDescriptor
@@ -112,132 +265,11 @@ clusterBuilders:
 					},
 				},
 				ExpectCreates: []runtime.Object{
-					annotate(t, &v1alpha2.ClusterStore{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStore",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []corev1alpha1.StoreImage{
-								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
-							},
-						},
-					}, kubectlAnnotation, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterStack{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStack",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "base",
-						},
-						Spec: v1alpha2.ClusterStackSpec{
-							Id: stackId,
-							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-							},
-							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-							},
-						},
-					}, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterStack{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStack",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterStackSpec{
-							Id: stackId,
-							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-							},
-							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-							},
-						},
-					}, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterBuilder{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterBuilder",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "base",
-						},
-						Spec: v1alpha2.ClusterBuilderSpec{
-							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
-								Stack: corev1.ObjectReference{
-									Kind: "ClusterStack",
-									Name: "base",
-								},
-								Store: corev1.ObjectReference{
-									Kind: "ClusterStore",
-									Name: "default",
-								},
-								Order: []corev1alpha1.OrderEntry{
-									{
-										[]corev1alpha1.BuildpackRef{
-											{
-												BuildpackInfo: corev1alpha1.BuildpackInfo{
-													Id: "tanzu-buildpacks/dotnet-core",
-												},
-												Optional: false,
-											},
-										},
-									},
-								},
-							},
-							ServiceAccountRef: corev1.ObjectReference{
-								Namespace: "kpack",
-								Name:      "some-service-account",
-							},
-						},
-					}, kubectlAnnotation, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterBuilder{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterBuilder",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterBuilderSpec{
-							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
-								Stack: corev1.ObjectReference{
-									Kind: "ClusterStack",
-									Name: "base",
-								},
-								Store: corev1.ObjectReference{
-									Kind: "ClusterStore",
-									Name: "default",
-								},
-								Order: []corev1alpha1.OrderEntry{
-									{
-										[]corev1alpha1.BuildpackRef{
-											{
-												BuildpackInfo: corev1alpha1.BuildpackInfo{
-													Id: "tanzu-buildpacks/dotnet-core",
-												},
-												Optional: false,
-											},
-										},
-									},
-								},
-							},
-							ServiceAccountRef: corev1.ObjectReference{
-								Namespace: "kpack",
-								Name:      "some-service-account",
-							},
-						},
-					}, kubectlAnnotation, timestampAnnotation),
+					expectedDefaultClusterStore,
+					expectedClusterStack,
+					expectedDefaultClusterStack,
+					expectedClusterBuilder,
+					expectedDefaultClusterBuilder,
 				},
 			}.TestImporter(t)
 		})
@@ -256,23 +288,9 @@ clusterBuilders:
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
 				},
 				Objects: []runtime.Object{
-					&corev1.ConfigMap{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "lifecycle-image",
-							Namespace: "kpack",
-						},
-						Data: map[string]string{
-							"image": "old/image",
-						},
-					},
+					existingLifecycle,
 				},
-				KpConfig: config.NewKpConfig(
-					"gcr.io/my-cool-repo",
-					corev1.ObjectReference{
-						Namespace: "kpack",
-						Name:      "some-service-account",
-					},
-				),
+				KpConfig: kpConfig,
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha1
 kind: DependencyDescriptor
@@ -297,323 +315,217 @@ clusterBuilders:
     - id: tanzu-buildpacks/dotnet-core
 `,
 				ExpectCreates: []runtime.Object{
-					annotate(t, &v1alpha2.ClusterStore{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStore",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []corev1alpha1.StoreImage{
-								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
-							},
-						},
-					}, kubectlAnnotation, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterStack{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStack",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "base",
-						},
-						Spec: v1alpha2.ClusterStackSpec{
-							Id: stackId,
-							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-							},
-							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-							},
-						},
-					}, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterStack{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStack",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterStackSpec{
-							Id: stackId,
-							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-							},
-							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-							},
-						},
-					}, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterBuilder{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterBuilder",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "base",
-						},
-						Spec: v1alpha2.ClusterBuilderSpec{
-							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
-								Stack: corev1.ObjectReference{
-									Kind: "ClusterStack",
-									Name: "base",
-								},
-								Store: corev1.ObjectReference{
-									Kind: "ClusterStore",
-									Name: "default",
-								},
-								Order: []corev1alpha1.OrderEntry{
-									{
-										[]corev1alpha1.BuildpackRef{
-											{
-												BuildpackInfo: corev1alpha1.BuildpackInfo{
-													Id: "tanzu-buildpacks/dotnet-core",
-												},
-												Optional: false,
-											},
-										},
-									},
-								},
-							},
-							ServiceAccountRef: corev1.ObjectReference{
-								Namespace: "kpack",
-								Name:      "some-service-account",
-							},
-						},
-					}, kubectlAnnotation, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterBuilder{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterBuilder",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterBuilderSpec{
-							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
-								Stack: corev1.ObjectReference{
-									Kind: "ClusterStack",
-									Name: "base",
-								},
-								Store: corev1.ObjectReference{
-									Kind: "ClusterStore",
-									Name: "default",
-								},
-								Order: []corev1alpha1.OrderEntry{
-									{
-										[]corev1alpha1.BuildpackRef{
-											{
-												BuildpackInfo: corev1alpha1.BuildpackInfo{
-													Id: "tanzu-buildpacks/dotnet-core",
-												},
-												Optional: false,
-											},
-										},
-									},
-								},
-							},
-							ServiceAccountRef: corev1.ObjectReference{
-								Namespace: "kpack",
-								Name:      "some-service-account",
-							},
-						},
-					}, kubectlAnnotation, timestampAnnotation),
+					expectedDefaultClusterStore,
+					expectedClusterStack,
+					expectedDefaultClusterStack,
+					expectedClusterBuilder,
+					expectedDefaultClusterBuilder,
 				},
 			}.TestImporter(t)
 		})
 
-		it("can import on an existing cluster", func() {
-			newLifecycleDigest := "newlifecycledigest"
-			newDotnetCoreDigest := "newdotnetcoredigest"
-			newBuildImageDigest := "newbuildimagedigest"
-			newRunImageDigest := "newrunimagedigest"
-			nodejsDigest := "nodejsdigest"
-			nodejsId := "node/js"
+		when("importing to an existing cluster", func() {
+			var (
+				existingClusterStore          runtime.Object
+				existingClusterStack          runtime.Object
+				existingDefaultClusterStack   runtime.Object
+				existingClusterBuilder        runtime.Object
+				existingDefaultClusterBuilder runtime.Object
+			)
 
-			TestImport{
-				Images: map[string]v1.Image{
-					"new-image.com/lifecycle":              fakes.NewFakeImage(newLifecycleDigest),
-					"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), newDotnetCoreDigest),
-					"new-image.com/buildpacks/nodejs":      fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", nodejsId), nodejsDigest),
-					"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newRunImageDigest),
-					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newBuildImageDigest),
-				},
-				Objects: []runtime.Object{
-					&corev1.ConfigMap{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "lifecycle-image",
-							Namespace: "kpack",
+			it.Before(func() {
+				existingClusterStore = annotate(t, &v1alpha2.ClusterStore{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ClusterStore",
+						APIVersion: "kpack.io/v1alpha2",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "default",
+					},
+					Spec: v1alpha2.ClusterStoreSpec{
+						Sources: []corev1alpha1.StoreImage{
+							{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 						},
-						Data: map[string]string{
-							"image": "old/image",
+						ServiceAccountRef: &corev1.ObjectReference{
+							Namespace: "some-namespace",
+							Name:      "some-serviceaccount",
 						},
 					},
-					annotate(t, &v1alpha2.ClusterStore{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStore",
-							APIVersion: "kpack.io/v1alpha2",
+				}, timestampAnnotation)
+				existingClusterStack = annotate(t, &v1alpha2.ClusterStack{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ClusterStack",
+						APIVersion: "kpack.io/v1alpha2",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "base",
+					},
+					Spec: v1alpha2.ClusterStackSpec{
+						Id: stackId,
+						BuildImage: v1alpha2.ClusterStackSpecImage{
+							Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
+						RunImage: v1alpha2.ClusterStackSpecImage{
+							Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 						},
-						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []corev1alpha1.StoreImage{
-								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
+						ServiceAccountRef: &corev1.ObjectReference{
+							Namespace: "some-namespace",
+							Name:      "some-serviceaccount",
+						},
+					},
+					Status: v1alpha2.ClusterStackStatus{
+						Status: corev1alpha1.Status{},
+						ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
+							BuildImage: v1alpha2.ClusterStackStatusImage{
+								LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+								Image:       "",
+							},
+							RunImage: v1alpha2.ClusterStackStatusImage{
+								LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+								Image:       "",
 							},
 						},
-					}, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterStack{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStack",
-							APIVersion: "kpack.io/v1alpha2",
+					},
+				}, timestampAnnotation)
+				existingDefaultClusterStack = annotate(t, &v1alpha2.ClusterStack{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ClusterStack",
+						APIVersion: "kpack.io/v1alpha2",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "default",
+					},
+					Spec: v1alpha2.ClusterStackSpec{
+						Id: stackId,
+						BuildImage: v1alpha2.ClusterStackSpecImage{
+							Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "base",
+						RunImage: v1alpha2.ClusterStackSpecImage{
+							Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 						},
-						Spec: v1alpha2.ClusterStackSpec{
-							Id: stackId,
-							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+						ServiceAccountRef: &corev1.ObjectReference{
+							Namespace: "some-namespace",
+							Name:      "some-serviceaccount",
+						},
+					},
+					Status: v1alpha2.ClusterStackStatus{
+						Status: corev1alpha1.Status{},
+						ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
+							BuildImage: v1alpha2.ClusterStackStatusImage{
+								LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+								Image:       "",
 							},
-							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-							},
-						},
-						Status: v1alpha2.ClusterStackStatus{
-							Status: corev1alpha1.Status{},
-							ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
-								BuildImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-									Image:       "",
-								},
-								RunImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-									Image:       "",
-								},
-							},
-						},
-					}, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterStack{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStack",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterStackSpec{
-							Id: stackId,
-							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-							},
-							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+							RunImage: v1alpha2.ClusterStackStatusImage{
+								LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+								Image:       "",
 							},
 						},
-						Status: v1alpha2.ClusterStackStatus{
-							Status: corev1alpha1.Status{},
-							ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
-								BuildImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-									Image:       "",
-								},
-								RunImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-									Image:       "",
-								},
+					},
+				}, timestampAnnotation)
+				existingClusterBuilder = annotate(t, &v1alpha2.ClusterBuilder{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ClusterBuilder",
+						APIVersion: "kpack.io/v1alpha2",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "base",
+					},
+					Spec: v1alpha2.ClusterBuilderSpec{
+						BuilderSpec: v1alpha2.BuilderSpec{
+							Tag: "gcr.io/my-cool-repo",
+							Stack: corev1.ObjectReference{
+								Kind: "ClusterStack",
+								Name: "base",
 							},
-						},
-					}, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterBuilder{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterBuilder",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "base",
-						},
-						Spec: v1alpha2.ClusterBuilderSpec{
-							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: "gcr.io/my-cool-repo",
-								Stack: corev1.ObjectReference{
-									Kind: "ClusterStack",
-									Name: "base",
-								},
-								Store: corev1.ObjectReference{
-									Kind: "ClusterStore",
-									Name: "default",
-								},
-								Order: []corev1alpha1.OrderEntry{
-									{
-										[]corev1alpha1.BuildpackRef{
-											{
-												BuildpackInfo: corev1alpha1.BuildpackInfo{
-													Id: "tanzu-buildpacks/dotnet-core",
-												},
-												Optional: false,
+							Store: corev1.ObjectReference{
+								Kind: "ClusterStore",
+								Name: "default",
+							},
+							Order: []corev1alpha1.OrderEntry{
+								{
+									[]corev1alpha1.BuildpackRef{
+										{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "tanzu-buildpacks/dotnet-core",
 											},
+											Optional: false,
 										},
 									},
 								},
 							},
-							ServiceAccountRef: corev1.ObjectReference{
-								Namespace: "kpack",
-								Name:      "some-service-account",
+						},
+						ServiceAccountRef: corev1.ObjectReference{
+							Namespace: "some-namespace",
+							Name:      "some-serviceaccount",
+						},
+					},
+				}, kubectlAnnotation, timestampAnnotation)
+				existingDefaultClusterBuilder = annotate(t, &v1alpha2.ClusterBuilder{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ClusterBuilder",
+						APIVersion: "kpack.io/v1alpha2",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "default",
+					},
+					Spec: v1alpha2.ClusterBuilderSpec{
+						BuilderSpec: v1alpha2.BuilderSpec{
+							Tag: "gcr.io/my-cool-repo",
+							Stack: corev1.ObjectReference{
+								Kind: "ClusterStack",
+								Name: "base",
 							},
-						},
-					}, kubectlAnnotation, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterBuilder{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterBuilder",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterBuilderSpec{
-							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: "gcr.io/my-cool-repo",
-								Stack: corev1.ObjectReference{
-									Kind: "ClusterStack",
-									Name: "base",
-								},
-								Store: corev1.ObjectReference{
-									Kind: "ClusterStore",
-									Name: "default",
-								},
-								Order: []corev1alpha1.OrderEntry{
-									{
-										[]corev1alpha1.BuildpackRef{
-											{
-												BuildpackInfo: corev1alpha1.BuildpackInfo{
-													Id: "tanzu-buildpacks/dotnet-core",
-												},
-												Optional: false,
+							Store: corev1.ObjectReference{
+								Kind: "ClusterStore",
+								Name: "default",
+							},
+							Order: []corev1alpha1.OrderEntry{
+								{
+									[]corev1alpha1.BuildpackRef{
+										{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "tanzu-buildpacks/dotnet-core",
 											},
+											Optional: false,
 										},
 									},
 								},
 							},
-							ServiceAccountRef: corev1.ObjectReference{
-								Namespace: "kpack",
-								Name:      "some-service-account",
-							},
 						},
-					}, kubectlAnnotation, timestampAnnotation),
-				},
-				KpConfig: config.NewKpConfig(
-					"gcr.io/my-cool-repo",
-					corev1.ObjectReference{
-						Namespace: "kpack",
-						Name:      "some-service-account",
+						ServiceAccountRef: corev1.ObjectReference{
+							Namespace: "some-namespace",
+							Name:      "some-serviceaccount",
+						},
 					},
-				),
-				DependencyDescriptor: `
+				}, kubectlAnnotation, timestampAnnotation)
+			})
+
+			it("can import on an existing cluster", func() {
+				newLifecycleDigest := "newlifecycledigest"
+				newDotnetCoreDigest := "newdotnetcoredigest"
+				newBuildImageDigest := "newbuildimagedigest"
+				newRunImageDigest := "newrunimagedigest"
+				nodejsDigest := "nodejsdigest"
+				nodejsId := "node/js"
+
+				TestImport{
+					Images: map[string]v1.Image{
+						"new-image.com/lifecycle":              fakes.NewFakeImage(newLifecycleDigest),
+						"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), newDotnetCoreDigest),
+						"new-image.com/buildpacks/nodejs":      fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", nodejsId), nodejsDigest),
+						"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newRunImageDigest),
+						"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newBuildImageDigest),
+					},
+					Objects: []runtime.Object{
+						existingLifecycle,
+						existingClusterStore,
+						existingClusterStack,
+						existingDefaultClusterStack,
+						existingClusterBuilder,
+						existingDefaultClusterBuilder,
+					},
+					KpConfig: kpConfig,
+					DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha3
 kind: DependencyDescriptor
 defaultClusterBuilder: base
@@ -642,389 +554,240 @@ clusterBuilders:
     - id: tanzu-buildpacks/nodejs
 `,
 
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: annotate(t, &corev1.ConfigMap{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "lifecycle-image",
-								Namespace: "kpack",
-							},
-							Data: map[string]string{
-								"image": fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newLifecycleDigest),
-							},
-						}, timestampAnnotation),
-					},
-					{
-						Object: annotate(t, &v1alpha2.ClusterStore{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "ClusterStore",
-								APIVersion: "kpack.io/v1alpha2",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "default",
-							},
-							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []corev1alpha1.StoreImage{
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newDotnetCoreDigest)},
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", nodejsDigest)},
-								},
-							},
-						}, timestampAnnotation),
-					},
-					{
-						Object: annotate(t, &v1alpha2.ClusterStack{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "ClusterStack",
-								APIVersion: "kpack.io/v1alpha2",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "base",
-							},
-							Spec: v1alpha2.ClusterStackSpec{
-								Id: stackId,
-								BuildImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
-								},
-								RunImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
-								},
-							},
-							Status: v1alpha2.ClusterStackStatus{
-								Status: corev1alpha1.Status{},
-								ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
-									BuildImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-									},
-									RunImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-									},
-								},
-							},
-						}, timestampAnnotation),
-					},
-					{
-						Object: annotate(t, &v1alpha2.ClusterStack{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "ClusterStack",
-								APIVersion: "kpack.io/v1alpha2",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "default",
-							},
-							Spec: v1alpha2.ClusterStackSpec{
-								Id: stackId,
-								BuildImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
-								},
-								RunImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
-								},
-							},
-							Status: v1alpha2.ClusterStackStatus{
-								Status: corev1alpha1.Status{},
-								ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
-									BuildImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-									},
-									RunImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-									},
-								},
-							},
-						}, timestampAnnotation),
-					},
-					{
-						Object: annotate(t, &v1alpha2.ClusterBuilder{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "ClusterBuilder",
-								APIVersion: "kpack.io/v1alpha2",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "base",
-							},
-							Spec: v1alpha2.ClusterBuilderSpec{
-								BuilderSpec: v1alpha2.BuilderSpec{
-									Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
-									Stack: corev1.ObjectReference{
-										Kind: "ClusterStack",
-										Name: "base",
-									},
-									Store: corev1.ObjectReference{
-										Kind: "ClusterStore",
-										Name: "default",
-									},
-									Order: []corev1alpha1.OrderEntry{
-										{
-											[]corev1alpha1.BuildpackRef{
-												{
-													BuildpackInfo: corev1alpha1.BuildpackInfo{
-														Id: "tanzu-buildpacks/dotnet-core",
-													},
-													Optional: false,
-												},
-											},
-										},
-										{
-											[]corev1alpha1.BuildpackRef{
-												{
-													BuildpackInfo: corev1alpha1.BuildpackInfo{
-														Id: "tanzu-buildpacks/nodejs",
-													},
-													Optional: false,
-												},
-											},
-										},
-									},
-								},
-								ServiceAccountRef: corev1.ObjectReference{
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: annotate(t, &corev1.ConfigMap{
+								ObjectMeta: metav1.ObjectMeta{
+									Name:      "lifecycle-image",
 									Namespace: "kpack",
-									Name:      "some-service-account",
 								},
-							},
-						}, kubectlAnnotation, timestampAnnotation),
-					},
-					{
-						Object: annotate(t, &v1alpha2.ClusterBuilder{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "ClusterBuilder",
-								APIVersion: "kpack.io/v1alpha2",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "default",
-							},
-							Spec: v1alpha2.ClusterBuilderSpec{
-								BuilderSpec: v1alpha2.BuilderSpec{
-									Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
-									Stack: corev1.ObjectReference{
-										Kind: "ClusterStack",
-										Name: "base",
-									},
-									Store: corev1.ObjectReference{
-										Kind: "ClusterStore",
-										Name: "default",
-									},
-									Order: []corev1alpha1.OrderEntry{
-										{
-											[]corev1alpha1.BuildpackRef{
-												{
-													BuildpackInfo: corev1alpha1.BuildpackInfo{
-														Id: "tanzu-buildpacks/dotnet-core",
-													},
-													Optional: false,
-												},
-											},
-										},
-										{
-											[]corev1alpha1.BuildpackRef{
-												{
-													BuildpackInfo: corev1alpha1.BuildpackInfo{
-														Id: "tanzu-buildpacks/nodejs",
-													},
-													Optional: false,
-												},
-											},
-										},
-									},
+								Data: map[string]string{
+									"image": fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newLifecycleDigest),
 								},
-								ServiceAccountRef: corev1.ObjectReference{
-									Namespace: "kpack",
-									Name:      "some-service-account",
+							}, timestampAnnotation),
+						},
+						{
+							Object: annotate(t, &v1alpha2.ClusterStore{
+								TypeMeta: metav1.TypeMeta{
+									Kind:       "ClusterStore",
+									APIVersion: "kpack.io/v1alpha2",
 								},
-							},
-						}, kubectlAnnotation, timestampAnnotation),
-					},
-				},
-			}.TestImporter(t)
-		})
-
-		it("can import v1alpha1 descriptor on an existing cluster", func() {
-			newLifecycleDigest := "newlifecycledigest"
-			newDotnetCoreDigest := "newdotnetcoredigest"
-			newBuildImageDigest := "newbuildimagedigest"
-			newRunImageDigest := "newrunimagedigest"
-			nodejsDigest := "nodejsdigest"
-			nodejsId := "node/js"
-
-			TestImport{
-				Images: map[string]v1.Image{
-					"new-image.com/lifecycle":              fakes.NewFakeImage(newLifecycleDigest),
-					"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), newDotnetCoreDigest),
-					"new-image.com/buildpacks/nodejs":      fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", nodejsId), nodejsDigest),
-					"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newRunImageDigest),
-					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newBuildImageDigest),
-				},
-				Objects: []runtime.Object{
-					&corev1.ConfigMap{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "lifecycle-image",
-							Namespace: "kpack",
-						},
-						Data: map[string]string{
-							"image": "old/image",
-						},
-					},
-					annotate(t, &v1alpha2.ClusterStore{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStore",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []corev1alpha1.StoreImage{
-								{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
-							},
-						},
-					}, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterStack{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStack",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "base",
-						},
-						Spec: v1alpha2.ClusterStackSpec{
-							Id: stackId,
-							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-							},
-							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-							},
-						},
-						Status: v1alpha2.ClusterStackStatus{
-							Status: corev1alpha1.Status{},
-							ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
-								BuildImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-									Image:       "",
-								},
-								RunImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-									Image:       "",
-								},
-							},
-						},
-					}, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterStack{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterStack",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterStackSpec{
-							Id: stackId,
-							BuildImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-							},
-							RunImage: v1alpha2.ClusterStackSpecImage{
-								Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-							},
-						},
-						Status: v1alpha2.ClusterStackStatus{
-							Status: corev1alpha1.Status{},
-							ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
-								BuildImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-									Image:       "",
-								},
-								RunImage: v1alpha2.ClusterStackStatusImage{
-									LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-									Image:       "",
-								},
-							},
-						},
-					}, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterBuilder{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterBuilder",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "base",
-						},
-						Spec: v1alpha2.ClusterBuilderSpec{
-							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: "gcr.io/my-cool-repo",
-								Stack: corev1.ObjectReference{
-									Kind: "ClusterStack",
-									Name: "base",
-								},
-								Store: corev1.ObjectReference{
-									Kind: "ClusterStore",
+								ObjectMeta: metav1.ObjectMeta{
 									Name: "default",
 								},
-								Order: []corev1alpha1.OrderEntry{
-									{
-										[]corev1alpha1.BuildpackRef{
-											{
-												BuildpackInfo: corev1alpha1.BuildpackInfo{
-													Id: "tanzu-buildpacks/dotnet-core",
-												},
-												Optional: false,
-											},
-										},
+								Spec: v1alpha2.ClusterStoreSpec{
+									Sources: []corev1alpha1.StoreImage{
+										{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
+										{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newDotnetCoreDigest)},
+										{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", nodejsDigest)},
+									},
+									ServiceAccountRef: &corev1.ObjectReference{
+										Namespace: "some-namespace",
+										Name:      "some-serviceaccount",
 									},
 								},
-							},
-							ServiceAccountRef: corev1.ObjectReference{
-								Namespace: "kpack",
-								Name:      "some-service-account",
-							},
+							}, timestampAnnotation),
 						},
-					}, kubectlAnnotation, timestampAnnotation),
-					annotate(t, &v1alpha2.ClusterBuilder{
-						TypeMeta: metav1.TypeMeta{
-							Kind:       "ClusterBuilder",
-							APIVersion: "kpack.io/v1alpha2",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "default",
-						},
-						Spec: v1alpha2.ClusterBuilderSpec{
-							BuilderSpec: v1alpha2.BuilderSpec{
-								Tag: "gcr.io/my-cool-repo",
-								Stack: corev1.ObjectReference{
-									Kind: "ClusterStack",
+						{
+							Object: annotate(t, &v1alpha2.ClusterStack{
+								TypeMeta: metav1.TypeMeta{
+									Kind:       "ClusterStack",
+									APIVersion: "kpack.io/v1alpha2",
+								},
+								ObjectMeta: metav1.ObjectMeta{
 									Name: "base",
 								},
-								Store: corev1.ObjectReference{
-									Kind: "ClusterStore",
-									Name: "default",
+								Spec: v1alpha2.ClusterStackSpec{
+									Id: stackId,
+									BuildImage: v1alpha2.ClusterStackSpecImage{
+										Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
+									},
+									RunImage: v1alpha2.ClusterStackSpecImage{
+										Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
+									},
+									ServiceAccountRef: &corev1.ObjectReference{
+										Namespace: "some-namespace",
+										Name:      "some-serviceaccount",
+									},
 								},
-								Order: []corev1alpha1.OrderEntry{
-									{
-										[]corev1alpha1.BuildpackRef{
-											{
-												BuildpackInfo: corev1alpha1.BuildpackInfo{
-													Id: "tanzu-buildpacks/dotnet-core",
-												},
-												Optional: false,
-											},
+								Status: v1alpha2.ClusterStackStatus{
+									Status: corev1alpha1.Status{},
+									ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
+										BuildImage: v1alpha2.ClusterStackStatusImage{
+											LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+										},
+										RunImage: v1alpha2.ClusterStackStatusImage{
+											LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 										},
 									},
 								},
-							},
-							ServiceAccountRef: corev1.ObjectReference{
-								Namespace: "kpack",
-								Name:      "some-service-account",
-							},
+							}, timestampAnnotation),
 						},
-					}, kubectlAnnotation, timestampAnnotation),
-				},
-				KpConfig: config.NewKpConfig(
-					"gcr.io/my-cool-repo",
-					corev1.ObjectReference{
-						Namespace: "kpack",
-						Name:      "some-service-account",
+						{
+							Object: annotate(t, &v1alpha2.ClusterStack{
+								TypeMeta: metav1.TypeMeta{
+									Kind:       "ClusterStack",
+									APIVersion: "kpack.io/v1alpha2",
+								},
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "default",
+								},
+								Spec: v1alpha2.ClusterStackSpec{
+									Id: stackId,
+									BuildImage: v1alpha2.ClusterStackSpecImage{
+										Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
+									},
+									RunImage: v1alpha2.ClusterStackSpecImage{
+										Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
+									},
+									ServiceAccountRef: &corev1.ObjectReference{
+										Namespace: "some-namespace",
+										Name:      "some-serviceaccount",
+									},
+								},
+								Status: v1alpha2.ClusterStackStatus{
+									Status: corev1alpha1.Status{},
+									ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
+										BuildImage: v1alpha2.ClusterStackStatusImage{
+											LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+										},
+										RunImage: v1alpha2.ClusterStackStatusImage{
+											LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+										},
+									},
+								},
+							}, timestampAnnotation),
+						},
+						{
+							Object: annotate(t, &v1alpha2.ClusterBuilder{
+								TypeMeta: metav1.TypeMeta{
+									Kind:       "ClusterBuilder",
+									APIVersion: "kpack.io/v1alpha2",
+								},
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "base",
+								},
+								Spec: v1alpha2.ClusterBuilderSpec{
+									BuilderSpec: v1alpha2.BuilderSpec{
+										Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
+										Stack: corev1.ObjectReference{
+											Kind: "ClusterStack",
+											Name: "base",
+										},
+										Store: corev1.ObjectReference{
+											Kind: "ClusterStore",
+											Name: "default",
+										},
+										Order: []corev1alpha1.OrderEntry{
+											{
+												[]corev1alpha1.BuildpackRef{
+													{
+														BuildpackInfo: corev1alpha1.BuildpackInfo{
+															Id: "tanzu-buildpacks/dotnet-core",
+														},
+														Optional: false,
+													},
+												},
+											},
+											{
+												[]corev1alpha1.BuildpackRef{
+													{
+														BuildpackInfo: corev1alpha1.BuildpackInfo{
+															Id: "tanzu-buildpacks/nodejs",
+														},
+														Optional: false,
+													},
+												},
+											},
+										},
+									},
+									ServiceAccountRef: corev1.ObjectReference{
+										Namespace: "some-namespace",
+										Name:      "some-serviceaccount",
+									},
+								},
+							}, kubectlAnnotation, timestampAnnotation),
+						},
+						{
+							Object: annotate(t, &v1alpha2.ClusterBuilder{
+								TypeMeta: metav1.TypeMeta{
+									Kind:       "ClusterBuilder",
+									APIVersion: "kpack.io/v1alpha2",
+								},
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "default",
+								},
+								Spec: v1alpha2.ClusterBuilderSpec{
+									BuilderSpec: v1alpha2.BuilderSpec{
+										Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
+										Stack: corev1.ObjectReference{
+											Kind: "ClusterStack",
+											Name: "base",
+										},
+										Store: corev1.ObjectReference{
+											Kind: "ClusterStore",
+											Name: "default",
+										},
+										Order: []corev1alpha1.OrderEntry{
+											{
+												[]corev1alpha1.BuildpackRef{
+													{
+														BuildpackInfo: corev1alpha1.BuildpackInfo{
+															Id: "tanzu-buildpacks/dotnet-core",
+														},
+														Optional: false,
+													},
+												},
+											},
+											{
+												[]corev1alpha1.BuildpackRef{
+													{
+														BuildpackInfo: corev1alpha1.BuildpackInfo{
+															Id: "tanzu-buildpacks/nodejs",
+														},
+														Optional: false,
+													},
+												},
+											},
+										},
+									},
+									ServiceAccountRef: corev1.ObjectReference{
+										Namespace: "some-namespace",
+										Name:      "some-serviceaccount",
+									},
+								},
+							}, kubectlAnnotation, timestampAnnotation),
+						},
 					},
-				),
-				DependencyDescriptor: `
+				}.TestImporter(t)
+			})
+
+			it("can import v1alpha1 descriptor on an existing cluster", func() {
+				newLifecycleDigest := "newlifecycledigest"
+				newDotnetCoreDigest := "newdotnetcoredigest"
+				newBuildImageDigest := "newbuildimagedigest"
+				newRunImageDigest := "newrunimagedigest"
+				nodejsDigest := "nodejsdigest"
+				nodejsId := "node/js"
+
+				TestImport{
+					Images: map[string]v1.Image{
+						"new-image.com/lifecycle":              fakes.NewFakeImage(newLifecycleDigest),
+						"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), newDotnetCoreDigest),
+						"new-image.com/buildpacks/nodejs":      fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", nodejsId), nodejsDigest),
+						"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newRunImageDigest),
+						"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newBuildImageDigest),
+					},
+					Objects: []runtime.Object{
+						existingLifecycle,
+						existingClusterStore,
+						existingClusterStack,
+						existingDefaultClusterStack,
+						existingClusterBuilder,
+						existingDefaultClusterBuilder,
+					},
+					KpConfig: kpConfig,
+					DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha1
 kind: DependencyDescriptor
 defaultClusterBuilder: base
@@ -1050,189 +813,202 @@ clusterBuilders:
   - group:
     - id: tanzu-buildpacks/nodejs
 `,
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: annotate(t, &v1alpha2.ClusterStore{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "ClusterStore",
-								APIVersion: "kpack.io/v1alpha2",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "default",
-							},
-							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []corev1alpha1.StoreImage{
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newDotnetCoreDigest)},
-									{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", nodejsDigest)},
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: annotate(t, &v1alpha2.ClusterStore{
+								TypeMeta: metav1.TypeMeta{
+									Kind:       "ClusterStore",
+									APIVersion: "kpack.io/v1alpha2",
 								},
-							},
-						}, timestampAnnotation),
-					},
-					{
-						Object: annotate(t, &v1alpha2.ClusterStack{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "ClusterStack",
-								APIVersion: "kpack.io/v1alpha2",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "base",
-							},
-							Spec: v1alpha2.ClusterStackSpec{
-								Id: stackId,
-								BuildImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "default",
 								},
-								RunImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
-								},
-							},
-							Status: v1alpha2.ClusterStackStatus{
-								Status: corev1alpha1.Status{},
-								ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
-									BuildImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+								Spec: v1alpha2.ClusterStoreSpec{
+									Sources: []corev1alpha1.StoreImage{
+										{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
+										{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newDotnetCoreDigest)},
+										{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", nodejsDigest)},
 									},
-									RunImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+									ServiceAccountRef: &corev1.ObjectReference{
+										Namespace: "some-namespace",
+										Name:      "some-serviceaccount",
 									},
 								},
-							},
-						}, timestampAnnotation),
-					},
-					{
-						Object: annotate(t, &v1alpha2.ClusterStack{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "ClusterStack",
-								APIVersion: "kpack.io/v1alpha2",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "default",
-							},
-							Spec: v1alpha2.ClusterStackSpec{
-								Id: stackId,
-								BuildImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
+							}, timestampAnnotation),
+						},
+						{
+							Object: annotate(t, &v1alpha2.ClusterStack{
+								TypeMeta: metav1.TypeMeta{
+									Kind:       "ClusterStack",
+									APIVersion: "kpack.io/v1alpha2",
 								},
-								RunImage: v1alpha2.ClusterStackSpecImage{
-									Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "base",
 								},
-							},
-							Status: v1alpha2.ClusterStackStatus{
-								Status: corev1alpha1.Status{},
-								ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
-									BuildImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+								Spec: v1alpha2.ClusterStackSpec{
+									Id: stackId,
+									BuildImage: v1alpha2.ClusterStackSpecImage{
+										Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
 									},
-									RunImage: v1alpha2.ClusterStackStatusImage{
-										LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+									RunImage: v1alpha2.ClusterStackSpecImage{
+										Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
+									},
+									ServiceAccountRef: &corev1.ObjectReference{
+										Namespace: "some-namespace",
+										Name:      "some-serviceaccount",
 									},
 								},
-							},
-						}, timestampAnnotation),
-					},
-					{
-						Object: annotate(t, &v1alpha2.ClusterBuilder{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "ClusterBuilder",
-								APIVersion: "kpack.io/v1alpha2",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "base",
-							},
-							Spec: v1alpha2.ClusterBuilderSpec{
-								BuilderSpec: v1alpha2.BuilderSpec{
-									Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
-									Stack: corev1.ObjectReference{
-										Kind: "ClusterStack",
-										Name: "base",
-									},
-									Store: corev1.ObjectReference{
-										Kind: "ClusterStore",
-										Name: "default",
-									},
-									Order: []corev1alpha1.OrderEntry{
-										{
-											[]corev1alpha1.BuildpackRef{
-												{
-													BuildpackInfo: corev1alpha1.BuildpackInfo{
-														Id: "tanzu-buildpacks/dotnet-core",
-													},
-													Optional: false,
-												},
-											},
+								Status: v1alpha2.ClusterStackStatus{
+									Status: corev1alpha1.Status{},
+									ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
+										BuildImage: v1alpha2.ClusterStackStatusImage{
+											LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
 										},
-										{
-											[]corev1alpha1.BuildpackRef{
-												{
-													BuildpackInfo: corev1alpha1.BuildpackInfo{
-														Id: "tanzu-buildpacks/nodejs",
-													},
-													Optional: false,
-												},
-											},
+										RunImage: v1alpha2.ClusterStackStatusImage{
+											LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
 										},
 									},
 								},
-								ServiceAccountRef: corev1.ObjectReference{
-									Namespace: "kpack",
-									Name:      "some-service-account",
+							}, timestampAnnotation),
+						},
+						{
+							Object: annotate(t, &v1alpha2.ClusterStack{
+								TypeMeta: metav1.TypeMeta{
+									Kind:       "ClusterStack",
+									APIVersion: "kpack.io/v1alpha2",
 								},
-							},
-						}, kubectlAnnotation, timestampAnnotation),
-					},
-					{
-						Object: annotate(t, &v1alpha2.ClusterBuilder{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "ClusterBuilder",
-								APIVersion: "kpack.io/v1alpha2",
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: "default",
-							},
-							Spec: v1alpha2.ClusterBuilderSpec{
-								BuilderSpec: v1alpha2.BuilderSpec{
-									Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
-									Stack: corev1.ObjectReference{
-										Kind: "ClusterStack",
-										Name: "base",
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "default",
+								},
+								Spec: v1alpha2.ClusterStackSpec{
+									Id: stackId,
+									BuildImage: v1alpha2.ClusterStackSpecImage{
+										Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newBuildImageDigest),
 									},
-									Store: corev1.ObjectReference{
-										Kind: "ClusterStore",
-										Name: "default",
+									RunImage: v1alpha2.ClusterStackSpecImage{
+										Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", newRunImageDigest),
 									},
-									Order: []corev1alpha1.OrderEntry{
-										{
-											[]corev1alpha1.BuildpackRef{
-												{
-													BuildpackInfo: corev1alpha1.BuildpackInfo{
-														Id: "tanzu-buildpacks/dotnet-core",
+									ServiceAccountRef: &corev1.ObjectReference{
+										Namespace: "some-namespace",
+										Name:      "some-serviceaccount",
+									},
+								},
+								Status: v1alpha2.ClusterStackStatus{
+									Status: corev1alpha1.Status{},
+									ResolvedClusterStack: v1alpha2.ResolvedClusterStack{
+										BuildImage: v1alpha2.ClusterStackStatusImage{
+											LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+										},
+										RunImage: v1alpha2.ClusterStackStatusImage{
+											LatestImage: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+										},
+									},
+								},
+							}, timestampAnnotation),
+						},
+						{
+							Object: annotate(t, &v1alpha2.ClusterBuilder{
+								TypeMeta: metav1.TypeMeta{
+									Kind:       "ClusterBuilder",
+									APIVersion: "kpack.io/v1alpha2",
+								},
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "base",
+								},
+								Spec: v1alpha2.ClusterBuilderSpec{
+									BuilderSpec: v1alpha2.BuilderSpec{
+										Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
+										Stack: corev1.ObjectReference{
+											Kind: "ClusterStack",
+											Name: "base",
+										},
+										Store: corev1.ObjectReference{
+											Kind: "ClusterStore",
+											Name: "default",
+										},
+										Order: []corev1alpha1.OrderEntry{
+											{
+												[]corev1alpha1.BuildpackRef{
+													{
+														BuildpackInfo: corev1alpha1.BuildpackInfo{
+															Id: "tanzu-buildpacks/dotnet-core",
+														},
+														Optional: false,
 													},
-													Optional: false,
 												},
 											},
-										},
-										{
-											[]corev1alpha1.BuildpackRef{
-												{
-													BuildpackInfo: corev1alpha1.BuildpackInfo{
-														Id: "tanzu-buildpacks/nodejs",
+											{
+												[]corev1alpha1.BuildpackRef{
+													{
+														BuildpackInfo: corev1alpha1.BuildpackInfo{
+															Id: "tanzu-buildpacks/nodejs",
+														},
+														Optional: false,
 													},
-													Optional: false,
 												},
 											},
 										},
 									},
+									ServiceAccountRef: corev1.ObjectReference{
+										Namespace: "some-namespace",
+										Name:      "some-serviceaccount",
+									},
 								},
-								ServiceAccountRef: corev1.ObjectReference{
-									Namespace: "kpack",
-									Name:      "some-service-account",
+							}, kubectlAnnotation, timestampAnnotation),
+						},
+						{
+							Object: annotate(t, &v1alpha2.ClusterBuilder{
+								TypeMeta: metav1.TypeMeta{
+									Kind:       "ClusterBuilder",
+									APIVersion: "kpack.io/v1alpha2",
 								},
-							},
-						}, kubectlAnnotation, timestampAnnotation),
+								ObjectMeta: metav1.ObjectMeta{
+									Name: "default",
+								},
+								Spec: v1alpha2.ClusterBuilderSpec{
+									BuilderSpec: v1alpha2.BuilderSpec{
+										Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
+										Stack: corev1.ObjectReference{
+											Kind: "ClusterStack",
+											Name: "base",
+										},
+										Store: corev1.ObjectReference{
+											Kind: "ClusterStore",
+											Name: "default",
+										},
+										Order: []corev1alpha1.OrderEntry{
+											{
+												[]corev1alpha1.BuildpackRef{
+													{
+														BuildpackInfo: corev1alpha1.BuildpackInfo{
+															Id: "tanzu-buildpacks/dotnet-core",
+														},
+														Optional: false,
+													},
+												},
+											},
+											{
+												[]corev1alpha1.BuildpackRef{
+													{
+														BuildpackInfo: corev1alpha1.BuildpackInfo{
+															Id: "tanzu-buildpacks/nodejs",
+														},
+														Optional: false,
+													},
+												},
+											},
+										},
+									},
+									ServiceAccountRef: corev1.ObjectReference{
+										Namespace: "some-namespace",
+										Name:      "some-serviceaccount",
+									},
+								},
+							}, kubectlAnnotation, timestampAnnotation),
+						},
 					},
-				},
-			}.TestImporter(t)
+				}.TestImporter(t)
+			})
 		})
 
 		it("does not create any resources if any relocation fails", func() {
@@ -1243,23 +1019,9 @@ clusterBuilders:
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
 				},
 				Objects: []runtime.Object{
-					&corev1.ConfigMap{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "lifecycle-image",
-							Namespace: "kpack",
-						},
-						Data: map[string]string{
-							"image": "old/image",
-						},
-					},
+					existingLifecycle,
 				},
-				KpConfig: config.NewKpConfig(
-					"gcr.io/my-cool-repo",
-					corev1.ObjectReference{
-						Namespace: "kpack",
-						Name:      "some-service-account",
-					},
-				),
+				KpConfig: kpConfig,
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha3
 kind: DependencyDescriptor
@@ -1303,23 +1065,9 @@ clusterBuilders:
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
 				},
 				Objects: []runtime.Object{
-					&corev1.ConfigMap{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "lifecycle-image",
-							Namespace: "kpack",
-						},
-						Data: map[string]string{
-							"image": "old/image",
-						},
-					},
+					existingLifecycle,
 				},
-				KpConfig: config.NewKpConfig(
-					"gcr.io/my-cool-repo",
-					corev1.ObjectReference{
-						Namespace: "kpack",
-						Name:      "some-service-account",
-					},
-				),
+				KpConfig: kpConfig,
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha3
 kind: DependencyDescriptor

@@ -20,7 +20,7 @@ const (
 type Fetcher struct {
 	images    map[string]v1.Image
 	callCount int
-	err error
+	err       error
 }
 
 type ImageInfo struct {

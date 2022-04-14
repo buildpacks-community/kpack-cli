@@ -34,6 +34,7 @@ Therefore, you must have credentials to access the registry on your machine.
 
 This clusterstore will be created only if it does not exist.
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
+The default service account used is read from the "default.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
 		Example: `kp clusterstore create my-store -b my-registry.com/my-buildpackage
 kp clusterstore create my-store -b my-registry.com/my-buildpackage -b my-registry.com/my-other-buildpackage

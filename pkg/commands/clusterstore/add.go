@@ -84,12 +84,18 @@ func update(ctx context.Context, store *v1alpha2.ClusterStore, buildpackages []s
 
 	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
-	updatedStore, storeUpdated, err := factory.AddToStore(authn.DefaultKeychain, store, kpConfig, buildpackages...)
+	updatedStore, err := factory.AddToStore(authn.DefaultKeychain, store, kpConfig, buildpackages...)
 	if err != nil {
 		return err
 	}
 
-	if storeUpdated && !ch.IsDryRun() {
+	patch, err := k8s.CreatePatch(store, updatedStore)
+	if err != nil {
+		return err
+	}
+
+	hasUpdates := len(patch) > 0
+	if hasUpdates && !ch.IsDryRun() {
 		updatedStore, err = cs.KpackClient.KpackV1alpha2().ClusterStores().Update(ctx, updatedStore, metav1.UpdateOptions{})
 		if err != nil {
 			return err
@@ -103,5 +109,5 @@ func update(ctx context.Context, store *v1alpha2.ClusterStore, buildpackages []s
 		return err
 	}
 
-	return ch.PrintChangeResult(storeUpdated, "ClusterStore %q updated", updatedStore.Name)
+	return ch.PrintChangeResult(hasUpdates, "ClusterStore %q updated", updatedStore.Name)
 }
