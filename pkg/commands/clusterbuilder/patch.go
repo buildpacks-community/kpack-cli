@@ -68,18 +68,18 @@ kp cb patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpac
 }
 
 func patch(ctx context.Context, cb *v1alpha2.ClusterBuilder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, waiter commands.ResourceWaiter) error {
-	patchedCb := cb.DeepCopy()
+	updatedCb := cb.DeepCopy()
 
 	if flags.tag != "" {
-		patchedCb.Spec.Tag = flags.tag
+		updatedCb.Spec.Tag = flags.tag
 	}
 
 	if flags.stack != "" {
-		patchedCb.Spec.Stack.Name = flags.stack
+		updatedCb.Spec.Stack.Name = flags.stack
 	}
 
 	if flags.store != "" {
-		patchedCb.Spec.Store.Name = flags.store
+		updatedCb.Spec.Store.Name = flags.store
 	}
 
 	if len(flags.buildpacks) > 0 && flags.order != "" {
@@ -92,32 +92,32 @@ func patch(ctx context.Context, cb *v1alpha2.ClusterBuilder, flags CommandFlags,
 			return err
 		}
 
-		patchedCb.Spec.Order = orderEntries
+		updatedCb.Spec.Order = orderEntries
 	}
 
 	if len(flags.buildpacks) > 0 {
-		patchedCb.Spec.Order = builder.CreateOrder(flags.buildpacks)
+		updatedCb.Spec.Order = builder.CreateOrder(flags.buildpacks)
 	}
 
-	patch, err := k8s.CreatePatch(cb, patchedCb)
+	patch, err := k8s.CreatePatch(cb, updatedCb)
 	if err != nil {
 		return err
 	}
 
 	hasPatch := len(patch) > 0
 	if hasPatch && !ch.IsDryRun() {
-		patchedCb, err = cs.KpackClient.KpackV1alpha2().ClusterBuilders().Patch(ctx, patchedCb.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+		updatedCb, err = cs.KpackClient.KpackV1alpha2().ClusterBuilders().Patch(ctx, updatedCb.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}
-		if err := waiter.Wait(ctx, patchedCb); err != nil {
+		if err := waiter.Wait(ctx, updatedCb); err != nil {
 			return err
 		}
 	}
 
-	if err = ch.PrintObj(patchedCb); err != nil {
+	if err = ch.PrintObj(updatedCb); err != nil {
 		return err
 	}
 
-	return ch.PrintChangeResult(hasPatch, "ClusterBuilder %q patched", patchedCb.Name)
+	return ch.PrintChangeResult(hasPatch, "ClusterBuilder %q patched", updatedCb.Name)
 }

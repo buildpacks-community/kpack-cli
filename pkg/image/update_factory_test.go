@@ -24,53 +24,73 @@ func TestPatchFactory(t *testing.T) {
 }
 
 func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
-	factory := image.Factory{
-		SourceUploader: fakes.NewFakeSourceUploader(ioutil.Discard, true),
-	}
+	var (
+		factory = image.Factory{
+			SourceUploader: fakes.NewFakeSourceUploader(ioutil.Discard, true),
+		}
 
-	img := &v1alpha2.Image{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "some-image",
-			Namespace: "some-namespace",
-		},
-		Spec: v1alpha2.ImageSpec{
-			Tag: "some-tag",
-			Builder: corev1.ObjectReference{
-				Kind: v1alpha2.ClusterBuilderKind,
-				Name: "some-ccb",
+		img = &v1alpha2.Image{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "some-image",
+				Namespace: "some-namespace",
 			},
-			ServiceAccountName: "some-service-account",
-			Source: corev1alpha1.SourceConfig{
-				Blob: &corev1alpha1.Blob{
-					URL: "some-blob-url",
+			Spec: v1alpha2.ImageSpec{
+				Tag: "some-tag",
+				Builder: corev1.ObjectReference{
+					Kind: v1alpha2.ClusterBuilderKind,
+					Name: "some-ccb",
 				},
-				SubPath: "some-sub-path",
-			},
-			Build: &v1alpha2.ImageBuild{
-				Env: []corev1.EnvVar{
-					{
-						Name:  "foo",
-						Value: "",
+				ServiceAccountName: "some-service-account",
+				Source: corev1alpha1.SourceConfig{
+					Blob: &corev1alpha1.Blob{
+						URL: "some-blob-url",
+					},
+					SubPath: "some-sub-path",
+				},
+				Build: &v1alpha2.ImageBuild{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "foo",
+							Value: "",
+						},
 					},
 				},
+				AdditionalTags: []string{"some-other-tag"},
 			},
-			AdditionalTags: []string{"some-other-tag"},
-		},
-	}
+		}
+
+		expectedImg *v1alpha2.Image
+	)
+
+	it.Before(func() {
+		expectedImg = img.DeepCopy()
+	})
 
 	it("defaults the git revision to main", func() {
 		factory.GitRepo = "some-repo"
-		_, patch, err := factory.MakePatch(img)
+
+		expectedImg.Spec.Source = corev1alpha1.SourceConfig{
+			Git: &corev1alpha1.Git{
+				URL:      "some-repo",
+				Revision: "main",
+			},
+			SubPath: "some-sub-path",
+		}
+
+		updatedImage, err := factory.UpdateImage(img)
 		require.NoError(t, err)
-		require.Equal(t, `{"spec":{"source":{"blob":null,"git":{"revision":"main","url":"some-repo"}}}}`, string(patch))
+		require.Equal(t, expectedImg, updatedImage)
 	})
 
 	it("adds and removes service accounts", func() {
 		factory.AdditionalTags = []string{"some-new-tag"}
 		factory.DeleteAdditionalTags = []string{"some-other-tag"}
-		_, patch, err := factory.MakePatch(img)
+
+		expectedImg.Spec.AdditionalTags = []string{"some-new-tag"}
+
+		updatedImage, err := factory.UpdateImage(img)
 		require.NoError(t, err)
-		require.Equal(t, `{"spec":{"additionalTags":["some-new-tag"]}}`, string(patch))
+		require.Equal(t, expectedImg, updatedImage)
 	})
 
 	when("too many source types are provided", func() {
@@ -78,7 +98,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.GitRepo = "some-git-repo"
 			factory.Blob = "some-blob"
 			factory.LocalPath = "some-local-path"
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.EqualError(t, err, "image source must be one of git, blob, or local-path")
 		})
 	})
@@ -87,7 +107,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		it("returns an error message", func() {
 			factory.Blob = "some-blob"
 			factory.GitRevision = "some-revision"
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.EqualError(t, err, "git-revision is incompatible with blob and local path image sources")
 		})
 	})
@@ -95,7 +115,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	when("git revision is provided with an existing non-git source types", func() {
 		it("returns an error message", func() {
 			factory.GitRevision = "some-revision"
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.EqualError(t, err, "git-revision is incompatible with existing image source")
 		})
 	})
@@ -104,7 +124,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		it("returns an error message", func() {
 			factory.Builder = "some-builder"
 			factory.ClusterBuilder = "some-cluster-builder"
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.EqualError(t, err, "must provide one of builder or cluster-builder")
 		})
 	})
@@ -113,7 +133,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		it("returns an error message", func() {
 			factory.DeleteEnv = []string{"foo"}
 			factory.Env = []string{"foo=bar"}
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.EqualError(t, err, "duplicate delete-env and env-var parameter 'foo'")
 		})
 	})
@@ -121,7 +141,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	when("delete-env does not exist in the current image", func() {
 		it("returns an error message", func() {
 			factory.DeleteEnv = []string{"bar"}
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.EqualError(t, err, "delete-env parameter 'bar' not found in existing image configuration")
 		})
 	})
@@ -129,9 +149,9 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	when("an AdditionalTag already exists", func() {
 		it("does not re-add it", func() {
 			factory.AdditionalTags = []string{"some-other-tag"}
-			_, patch, err := factory.MakePatch(img)
+			updatedImage, err := factory.UpdateImage(img)
 			require.NoError(t, err)
-			require.Equal(t, ``, string(patch))
+			require.Equal(t, img, updatedImage)
 		})
 	})
 
@@ -139,7 +159,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		it("returns an error message", func() {
 			factory.DeleteAdditionalTags = []string{"some-other-tag"}
 			factory.AdditionalTags = []string{"some-other-tag"}
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.EqualError(t, err, "duplicate delete-additional-tag and additional-tag parameter 'some-other-tag'")
 		})
 	})
@@ -147,7 +167,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	when("delete-additional-tag does not exist in the current image", func() {
 		it("returns an error message", func() {
 			factory.DeleteAdditionalTags = []string{"bar"}
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.EqualError(t, err, "delete-additional-tag parameter 'bar' not found in existing image additional tags")
 		})
 	})
@@ -155,7 +175,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	when("the image.spec.build is nil", func() {
 		it("does not panic", func() {
 			img.Spec.Build = nil
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.NoError(t, err)
 		})
 	})
@@ -163,18 +183,32 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 	when("an env var has an equal sign in the value", func() {
 		it("handles the env var", func() {
 			factory.Env = append(factory.Env, `BP_MAVEN_BUILD_ARGUMENTS="-Dmaven.test.skip=true -Pk8s package"`)
-			_, patch, err := factory.MakePatch(img)
+
+			expectedImg.Spec.Build.Env = append(expectedImg.Spec.Build.Env, corev1.EnvVar{
+				Name:  "BP_MAVEN_BUILD_ARGUMENTS",
+				Value: `"-Dmaven.test.skip=true -Pk8s package"`,
+			})
+
+			updatedImg, err := factory.UpdateImage(img)
 			require.NoError(t, err)
-			require.Equal(t, `{"spec":{"build":{"env":[{"name":"foo"},{"name":"BP_MAVEN_BUILD_ARGUMENTS","value":"\"-Dmaven.test.skip=true -Pk8s package\""}]}}}`, string(patch))
+			require.Equal(t, expectedImg, updatedImg)
 		})
 	})
 
 	when("patching cache size", func() {
 		it("can set a new cache size", func() {
 			factory.CacheSize = "3G"
-			_, patch, err := factory.MakePatch(img)
+
+			s := resource.MustParse("3G")
+			expectedImg.Spec.Cache = &v1alpha2.ImageCacheConfig{
+				Volume: &v1alpha2.ImagePersistentVolumeCache{
+					Size: &s,
+				},
+			}
+
+			updatedImg, err := factory.UpdateImage(img)
 			require.NoError(t, err)
-			require.Equal(t, `{"spec":{"cache":{"volume":{"size":"3G"}}}}`, string(patch))
+			require.Equal(t, expectedImg, updatedImg)
 		})
 
 		it("errors if cache size is decreased", func() {
@@ -186,13 +220,13 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			factory.CacheSize = "1G"
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.EqualError(t, err, "cache size cannot be decreased, current: 2G, requested: 1G")
 		})
 
 		it("errors if cache size is invalid", func() {
 			factory.CacheSize = "invalid"
-			_, _, err := factory.MakePatch(img)
+			_, err := factory.UpdateImage(img)
 			require.EqualError(t, err, "invalid cache size, must be valid quantity ex. 2G")
 		})
 	})
