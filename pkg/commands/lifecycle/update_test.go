@@ -8,15 +8,13 @@ import (
 
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/lifecycle"
+	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
-	clientgotesting "k8s.io/client-go/testing"
-
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands/lifecycle"
-	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestUpdateCommand(t *testing.T) {
@@ -24,7 +22,6 @@ func TestUpdateCommand(t *testing.T) {
 }
 
 func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
-
 	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
 		FakeFetcher: registryfakes.NewLifecycleImageFetcher(
 			registryfakes.LifecycleInfo{
@@ -128,10 +125,8 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			Args: []string{
 				"--image", "some-registry.io/repo/lifecycle-image",
 			},
-			ExpectUpdates: []clientgotesting.UpdateActionImpl{
-				{
-					Object: updatedLifecycleImageConfig,
-				},
+			ExpectPatches: []string{
+				`{"data":{"image":"default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"}}`,
 			},
 			ExpectedOutput: `Updating lifecycle image...
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
@@ -161,10 +156,8 @@ metadata:
 					"--image", "some-registry.io/repo/lifecycle-image",
 					"--output", "yaml",
 				},
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: updatedLifecycleImageConfig,
-					},
+				ExpectPatches: []string{
+					`{"data":{"image":"default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"}}`,
 				},
 				ExpectedOutput: resourceYAML,
 				ExpectedErrorOutput: `Updating lifecycle image...
@@ -197,10 +190,8 @@ metadata:
 					"--image", "some-registry.io/repo/lifecycle-image",
 					"--output", "json",
 				},
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: updatedLifecycleImageConfig,
-					},
+				ExpectPatches: []string{
+					`{"data":{"image":"default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"}}`,
 				},
 				ExpectedOutput: resourceJSON,
 				ExpectedErrorOutput: `Updating lifecycle image...

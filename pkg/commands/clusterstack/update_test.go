@@ -12,13 +12,6 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
-	k8sfakes "k8s.io/client-go/kubernetes/fake"
-	clientgotesting "k8s.io/client-go/testing"
-
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	clusterstackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstack"
 	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
@@ -26,6 +19,11 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
 	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+	k8sfakes "k8s.io/client-go/kubernetes/fake"
 )
 
 func TestUpdateCommand(t *testing.T) {
@@ -108,23 +106,6 @@ func testUpdateCommand(imageCommand func(clientSetProvider k8s.ClientSetProvider
 			config.Data["default.repository.serviceaccount"] = "some-new-serviceaccount"
 			config.Data["default.repository.serviceaccount.namespace"] = "some-new-namespace"
 
-			expectedStack := &v1alpha2.ClusterStack{
-				ObjectMeta: stack.ObjectMeta,
-				Spec: v1alpha2.ClusterStackSpec{
-					Id: "stack-id",
-					BuildImage: v1alpha2.ClusterStackSpecImage{
-						Image: "default-registry.io/default-repo@sha256:new-build-image-digest",
-					},
-					RunImage: v1alpha2.ClusterStackSpecImage{
-						Image: "default-registry.io/default-repo@sha256:new-run-image-digest",
-					},
-					ServiceAccountRef: &corev1.ObjectReference{
-						Namespace: "some-namespace",
-						Name:      "some-serviceaccount",
-					},
-				},
-				Status: stack.Status,
-			}
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
 					config,
@@ -137,10 +118,8 @@ func testUpdateCommand(imageCommand func(clientSetProvider k8s.ClientSetProvider
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: expectedStack,
-					},
+				ExpectPatches: []string{
+					`{"spec":{"buildImage":{"image":"default-registry.io/default-repo@sha256:new-build-image-digest"},"runImage":{"image":"default-registry.io/default-repo@sha256:new-run-image-digest"}}}`,
 				},
 				ExpectedOutput: `Updating ClusterStack...
 Uploading to 'default-registry.io/default-repo'...
@@ -214,26 +193,8 @@ status:
 						"--run-image", "some-registry.io/repo/new-run",
 						"--output", "yaml",
 					},
-					ExpectUpdates: []clientgotesting.UpdateActionImpl{
-						{
-							Object: &v1alpha2.ClusterStack{
-								ObjectMeta: stack.ObjectMeta,
-								Spec: v1alpha2.ClusterStackSpec{
-									Id: "stack-id",
-									BuildImage: v1alpha2.ClusterStackSpecImage{
-										Image: "default-registry.io/default-repo@sha256:new-build-image-digest",
-									},
-									RunImage: v1alpha2.ClusterStackSpecImage{
-										Image: "default-registry.io/default-repo@sha256:new-run-image-digest",
-									},
-									ServiceAccountRef: &corev1.ObjectReference{
-										Namespace: "some-namespace",
-										Name:      "some-serviceaccount",
-									},
-								},
-								Status: stack.Status,
-							},
-						},
+					ExpectPatches: []string{
+						`{"spec":{"buildImage":{"image":"default-registry.io/default-repo@sha256:new-build-image-digest"},"runImage":{"image":"default-registry.io/default-repo@sha256:new-run-image-digest"}}}`,
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Updating ClusterStack...
@@ -290,26 +251,8 @@ Uploading to 'default-registry.io/default-repo'...
 						"--run-image", "some-registry.io/repo/new-run",
 						"--output", "json",
 					},
-					ExpectUpdates: []clientgotesting.UpdateActionImpl{
-						{
-							Object: &v1alpha2.ClusterStack{
-								ObjectMeta: stack.ObjectMeta,
-								Spec: v1alpha2.ClusterStackSpec{
-									Id: "stack-id",
-									BuildImage: v1alpha2.ClusterStackSpecImage{
-										Image: "default-registry.io/default-repo@sha256:new-build-image-digest",
-									},
-									RunImage: v1alpha2.ClusterStackSpecImage{
-										Image: "default-registry.io/default-repo@sha256:new-run-image-digest",
-									},
-									ServiceAccountRef: &corev1.ObjectReference{
-										Namespace: "some-namespace",
-										Name:      "some-serviceaccount",
-									},
-								},
-								Status: stack.Status,
-							},
-						},
+					ExpectPatches: []string{
+						`{"spec":{"buildImage":{"image":"default-registry.io/default-repo@sha256:new-build-image-digest"},"runImage":{"image":"default-registry.io/default-repo@sha256:new-run-image-digest"}}}`,
 					},
 					ExpectedOutput: resourceJSON,
 					ExpectedErrorOutput: `Updating ClusterStack...

@@ -12,13 +12,6 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
-	k8sfakes "k8s.io/client-go/kubernetes/fake"
-	clientgotesting "k8s.io/client-go/testing"
-
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	storecmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
 	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
@@ -26,6 +19,11 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
 	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+	k8sfakes "k8s.io/client-go/kubernetes/fake"
 )
 
 func TestClusterStoreAddCommand(t *testing.T) {
@@ -106,23 +104,8 @@ func testAddCommand(clusterStackCommand func(clientSetProvider k8s.ClientSetProv
 					"--registry-ca-cert-path", "some-cert-path",
 					"--registry-verify-certs",
 				},
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: &v1alpha2.ClusterStore{
-							ObjectMeta: existingStore.ObjectMeta,
-							Spec: v1alpha2.ClusterStoreSpec{
-								ServiceAccountRef: &corev1.ObjectReference{
-									Namespace: "some-namespace",
-									Name:      "some-serviceaccount",
-								},
-								Sources: []corev1alpha1.StoreImage{
-									{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
-									{Image: "default-registry.io/default-repo@sha256:new-buildpack-digest"},
-									{Image: "default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
-								},
-							},
-						},
-					},
+				ExpectPatches: []string{
+					`{"spec":{"sources":[{"image":"default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},{"image":"default-registry.io/default-repo@sha256:new-buildpack-digest"},{"image":"default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]}}`,
 				},
 				ExpectedOutput: `Adding to ClusterStore...
 	Uploading 'default-registry.io/default-repo@sha256:new-buildpack-digest'
@@ -197,23 +180,8 @@ status: {}
 						"-b", localCNBPath,
 						"--output", "yaml",
 					},
-					ExpectUpdates: []clientgotesting.UpdateActionImpl{
-						{
-							Object: &v1alpha2.ClusterStore{
-								ObjectMeta: existingStore.ObjectMeta,
-								Spec: v1alpha2.ClusterStoreSpec{
-									ServiceAccountRef: &corev1.ObjectReference{
-										Namespace: "some-namespace",
-										Name:      "some-serviceaccount",
-									},
-									Sources: []corev1alpha1.StoreImage{
-										{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
-										{Image: "default-registry.io/default-repo@sha256:new-buildpack-digest"},
-										{Image: "default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
-									},
-								},
-							},
-						},
+					ExpectPatches: []string{
+						`{"spec":{"sources":[{"image":"default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},{"image":"default-registry.io/default-repo@sha256:new-buildpack-digest"},{"image":"default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]}}`,
 					},
 					ExpectedOutput: resourceYAML,
 					ExpectedErrorOutput: `Adding to ClusterStore...
@@ -265,24 +233,7 @@ status: {}
 						"-b", localCNBPath,
 						"--output", "json",
 					},
-					ExpectUpdates: []clientgotesting.UpdateActionImpl{
-						{
-							Object: &v1alpha2.ClusterStore{
-								ObjectMeta: existingStore.ObjectMeta,
-								Spec: v1alpha2.ClusterStoreSpec{
-									ServiceAccountRef: &corev1.ObjectReference{
-										Namespace: "some-namespace",
-										Name:      "some-serviceaccount",
-									},
-									Sources: []corev1alpha1.StoreImage{
-										{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
-										{Image: "default-registry.io/default-repo@sha256:new-buildpack-digest"},
-										{Image: "default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
-									},
-								},
-							},
-						},
-					},
+					ExpectPatches:  []string{`{"spec":{"sources":[{"image":"default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},{"image":"default-registry.io/default-repo@sha256:new-buildpack-digest"},{"image":"default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"}]}}`},
 					ExpectedOutput: resourceJSON,
 					ExpectedErrorOutput: `Adding to ClusterStore...
 	Uploading 'default-registry.io/default-repo@sha256:new-buildpack-digest'

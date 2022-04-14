@@ -9,47 +9,45 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (f *Factory) MakePatch(img *v1alpha2.Image) (*v1alpha2.Image, []byte, error) {
+func (f *Factory) UpdateImage(img *v1alpha2.Image) (*v1alpha2.Image, error) {
 	if img.Spec.Build == nil {
 		img.Spec.Build = &v1alpha2.ImageBuild{}
 	}
 
-	err := f.validatePatch(img)
+	err := f.validateUpdate(img)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	patchedImage := img.DeepCopy()
+	updatedImage := img.DeepCopy()
 
-	err = f.setSource(patchedImage)
+	err = f.setSource(updatedImage)
 	if err != nil {
-		return patchedImage, nil, err
+		return nil, err
 	}
 
-	f.setAdditionalTags(patchedImage)
+	f.setAdditionalTags(updatedImage)
 
-	err = f.setCacheSize(patchedImage)
+	err = f.setCacheSize(updatedImage)
 	if err != nil {
-		return patchedImage, nil, err
+		return nil, err
 	}
 
-	err = f.setBuild(patchedImage)
+	err = f.setBuild(updatedImage)
 	if err != nil {
-		return patchedImage, nil, err
+		return nil, err
 	}
 
-	f.setBuilder(patchedImage)
+	f.setBuilder(updatedImage)
 
-	patch, err := k8s.CreatePatch(img, patchedImage)
-	return patchedImage, patch, err
+	return updatedImage, nil
 }
 
-func (f *Factory) validatePatch(img *v1alpha2.Image) error {
-	if err := f.validateSourcePatch(img); err != nil {
+func (f *Factory) validateUpdate(img *v1alpha2.Image) error {
+	if err := f.validateSourceUpdate(img); err != nil {
 		return err
 	}
 
@@ -64,7 +62,7 @@ func (f *Factory) validatePatch(img *v1alpha2.Image) error {
 	return f.validateAdditionalTags(img)
 }
 
-func (f *Factory) validateSourcePatch(img *v1alpha2.Image) error {
+func (f *Factory) validateSourceUpdate(img *v1alpha2.Image) error {
 	sourceSet := paramSet{}
 	sourceSet.add("git", f.GitRepo)
 	sourceSet.add("blob", f.Blob)

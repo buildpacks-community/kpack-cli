@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
@@ -94,9 +95,9 @@ func update(ctx context.Context, store *v1alpha2.ClusterStore, buildpackages []s
 		return err
 	}
 
-	hasUpdates := len(patch) > 0
-	if hasUpdates && !ch.IsDryRun() {
-		updatedStore, err = cs.KpackClient.KpackV1alpha2().ClusterStores().Update(ctx, updatedStore, metav1.UpdateOptions{})
+	hasPatch := len(patch) > 0
+	if hasPatch && !ch.IsDryRun() {
+		updatedStore, err = cs.KpackClient.KpackV1alpha2().ClusterStores().Patch(ctx, updatedStore.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}
@@ -109,5 +110,5 @@ func update(ctx context.Context, store *v1alpha2.ClusterStore, buildpackages []s
 		return err
 	}
 
-	return ch.PrintChangeResult(hasUpdates, "ClusterStore %q updated", updatedStore.Name)
+	return ch.PrintChangeResult(hasPatch, "ClusterStore %q updated", updatedStore.Name)
 }

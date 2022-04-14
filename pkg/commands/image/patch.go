@@ -85,12 +85,12 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 				factory.SubPath = &subPath
 			}
 
-			patched, img, err := patch(ctx, img, &factory, ch, cs)
+			wasPatched, img, err := patch(ctx, img, &factory, ch, cs)
 			if err != nil {
 				return err
 			}
 
-			if patched && ch.ShouldWait() {
+			if wasPatched && ch.ShouldWait() {
 				_, err = newImageWaiter(cs).Wait(cmd.Context(), cmd.OutOrStdout(), img)
 				if err != nil {
 					return err
@@ -124,22 +124,27 @@ func patch(ctx context.Context, img *v1alpha2.Image, factory *image.Factory, ch 
 		return false, nil, err
 	}
 
-	patchedImage, patch, err := factory.MakePatch(img)
+	updatedImage, err := factory.UpdateImage(img)
 	if err != nil {
 		return false, nil, err
 	}
 
-	hasPatch := len(patch) > 0
+	p, err := k8s.CreatePatch(img, updatedImage)
+	if err != nil {
+		return false, nil, err
+	}
+
+	hasPatch := len(p) > 0
 	if hasPatch && !ch.IsDryRun() {
-		patchedImage, err = cs.KpackClient.KpackV1alpha2().Images(cs.Namespace).Patch(ctx, img.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+		updatedImage, err = cs.KpackClient.KpackV1alpha2().Images(cs.Namespace).Patch(ctx, img.Name, types.MergePatchType, p, metav1.PatchOptions{})
 		if err != nil {
 			return hasPatch, nil, err
 		}
 	}
 
-	if err = ch.PrintObj(patchedImage); err != nil {
+	if err = ch.PrintObj(updatedImage); err != nil {
 		return hasPatch, nil, err
 	}
 
-	return hasPatch, patchedImage, ch.PrintChangeResult(hasPatch, fmt.Sprintf("Image Resource %q patched", img.Name))
+	return hasPatch, updatedImage, ch.PrintChangeResult(hasPatch, fmt.Sprintf("Image Resource %q patched", img.Name))
 }
