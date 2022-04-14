@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
@@ -95,30 +94,24 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				return err
 			}
 
-			updatedSA := serviceAccount.DeepCopy()
-
-			updatedSA.Secrets = append(updatedSA.Secrets, corev1.ObjectReference{Name: args[0]})
+			serviceAccount.Secrets = append(serviceAccount.Secrets, corev1.ObjectReference{Name: args[0]})
 
 			if secret.Type == corev1.SecretTypeDockerConfigJson {
-				updatedSA.ImagePullSecrets = append(updatedSA.ImagePullSecrets, corev1.LocalObjectReference{Name: args[0]})
+				serviceAccount.ImagePullSecrets = append(serviceAccount.ImagePullSecrets, corev1.LocalObjectReference{Name: args[0]})
 			}
 
-			if err = updateManagedSecretsAnnotation(err, updatedSA, args[0], target); err != nil {
+			if err = updateManagedSecretsAnnotation(err, serviceAccount, args[0], target); err != nil {
 				return err
 			}
 
 			if !ch.IsDryRun() {
-				patch, err := k8s.CreatePatch(serviceAccount, updatedSA)
-				if err != nil {
-					return err
-				}
-				updatedSA, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Patch(ctx, updatedSA.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+				serviceAccount, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(ctx, serviceAccount, metav1.UpdateOptions{})
 				if err != nil {
 					return err
 				}
 			}
 
-			if err = ch.PrintObj(updatedSA); err != nil {
+			if err = ch.PrintObj(serviceAccount); err != nil {
 				return err
 			}
 

@@ -63,7 +63,7 @@ kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../
 				return err
 			}
 
-			return patch(ctx, authn.DefaultKeychain, cStack, buildImageRef, runImageRef, factory, ch, cs, w)
+			return update(ctx, authn.DefaultKeychain, cStack, buildImageRef, runImageRef, factory, ch, cs, w)
 		},
 	}
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")

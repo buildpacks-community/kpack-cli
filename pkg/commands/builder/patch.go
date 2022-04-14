@@ -73,18 +73,18 @@ kp builder patch my-builder --buildpack my-buildpack-id --buildpack my-other-bui
 }
 
 func patch(ctx context.Context, bldr *v1alpha2.Builder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
-	updatedBldr := bldr.DeepCopy()
+	patchedBldr := bldr.DeepCopy()
 
 	if flags.tag != "" {
-		updatedBldr.Spec.Tag = flags.tag
+		patchedBldr.Spec.Tag = flags.tag
 	}
 
 	if flags.stack != "" {
-		updatedBldr.Spec.Stack.Name = flags.stack
+		patchedBldr.Spec.Stack.Name = flags.stack
 	}
 
 	if flags.store != "" {
-		updatedBldr.Spec.Store.Name = flags.store
+		patchedBldr.Spec.Store.Name = flags.store
 	}
 
 	if len(flags.buildpacks) > 0 && flags.order != "" {
@@ -97,32 +97,32 @@ func patch(ctx context.Context, bldr *v1alpha2.Builder, flags CommandFlags, ch *
 			return err
 		}
 
-		updatedBldr.Spec.Order = orderEntries
+		patchedBldr.Spec.Order = orderEntries
 	}
 
 	if len(flags.buildpacks) > 0 {
-		updatedBldr.Spec.Order = builder.CreateOrder(flags.buildpacks)
+		patchedBldr.Spec.Order = builder.CreateOrder(flags.buildpacks)
 	}
 
-	patch, err := k8s.CreatePatch(bldr, updatedBldr)
+	patch, err := k8s.CreatePatch(bldr, patchedBldr)
 	if err != nil {
 		return err
 	}
 
 	hasPatch := len(patch) > 0
 	if hasPatch && !ch.IsDryRun() {
-		updatedBldr, err = cs.KpackClient.KpackV1alpha2().Builders(cs.Namespace).Patch(ctx, updatedBldr.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+		patchedBldr, err = cs.KpackClient.KpackV1alpha2().Builders(cs.Namespace).Patch(ctx, patchedBldr.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}
-		if err := w.Wait(ctx, updatedBldr); err != nil {
+		if err := w.Wait(ctx, patchedBldr); err != nil {
 			return err
 		}
 	}
 
-	if err = ch.PrintObj(updatedBldr); err != nil {
+	if err = ch.PrintObj(patchedBldr); err != nil {
 		return err
 	}
 
-	return ch.PrintChangeResult(hasPatch, "Builder %q patched", updatedBldr.Name)
+	return ch.PrintChangeResult(hasPatch, "Builder %q patched", patchedBldr.Name)
 }

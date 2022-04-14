@@ -5,12 +5,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
+
+	k8s "k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -53,10 +52,10 @@ func (c KpConfig) ServiceAccount() corev1.ObjectReference {
 }
 
 type KpConfigProvider struct {
-	client kubernetes.Interface
+	client k8s.Interface
 }
 
-func NewKpConfigProvider(client kubernetes.Interface) KpConfigProvider {
+func NewKpConfigProvider(client k8s.Interface) KpConfigProvider {
 	return KpConfigProvider{client: client}
 }
 
@@ -149,12 +148,7 @@ func (d KpConfigProvider) updateDefaultRepository(ctx context.Context, existingC
 	updatedConfig.Data[defaultRepositoryKey] = repo
 	updatedConfig.Data[canonicalRepositoryKey] = repo
 
-	patch, err := k8s.CreatePatch(existingConfig, updatedConfig)
-	if err != nil {
-		return err
-	}
-
-	_, err = d.client.CoreV1().ConfigMaps(kpConfigNamespace).Patch(ctx, updatedConfig.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+	_, err := d.client.CoreV1().ConfigMaps(kpConfigNamespace).Update(ctx, updatedConfig, metav1.UpdateOptions{})
 	return err
 }
 
@@ -166,12 +160,7 @@ func (d KpConfigProvider) updateDefaultServiceAccount(ctx context.Context, exist
 	updatedConfig.Data[defaultServiceAccountNamespaceKey] = sa.Namespace
 	updatedConfig.Data[canonicalServiceAccountNamespaceKey] = sa.Namespace
 
-	patch, err := k8s.CreatePatch(existingConfig, updatedConfig)
-	if err != nil {
-		return err
-	}
-
-	_, err = d.client.CoreV1().ConfigMaps(kpConfigNamespace).Patch(ctx, updatedConfig.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+	_, err := d.client.CoreV1().ConfigMaps(kpConfigNamespace).Update(ctx, updatedConfig, metav1.UpdateOptions{})
 	return err
 }
 

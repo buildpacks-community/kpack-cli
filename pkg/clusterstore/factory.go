@@ -4,7 +4,6 @@
 package clusterstore
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -112,41 +111,6 @@ func (f *Factory) AddToStore(keychain authn.Keychain, store *v1alpha2.ClusterSto
 	}
 
 	return updatedStore, nil
-}
-
-func (f *Factory) RemoveFromStore(store *v1alpha2.ClusterStore, buildpackages ...string) (*v1alpha2.ClusterStore, error) {
-	newStore := store.DeepCopy()
-
-	bpToStoreImage := map[string]corev1alpha1.StoreImage{}
-	for _, bp := range buildpackages {
-		if storeImage, ok := getStoreImage(store, bp); !ok {
-			return nil, errors.Errorf("Buildpackage '%s' does not exist in the ClusterStore", bp)
-		} else {
-			bpToStoreImage[bp] = storeImage
-		}
-	}
-
-	for _, bp := range buildpackages {
-		f.Printer.Printlnf("Removing buildpackage %s", bp)
-
-		for i, img := range newStore.Spec.Sources {
-			if img.Image == bpToStoreImage[bp].Image {
-				newStore.Spec.Sources = append(newStore.Spec.Sources[:i], newStore.Spec.Sources[i+1:]...)
-				break
-			}
-		}
-	}
-
-	return newStore, nil
-}
-
-func getStoreImage(store *v1alpha2.ClusterStore, buildpackage string) (corev1alpha1.StoreImage, bool) {
-	for _, bp := range store.Status.Buildpacks {
-		if fmt.Sprintf("%s@%s", bp.Id, bp.Version) == buildpackage {
-			return bp.StoreImage, true
-		}
-	}
-	return corev1alpha1.StoreImage{}, false
 }
 
 func (f *Factory) validate(buildpackages []string) error {
