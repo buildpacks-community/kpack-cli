@@ -113,4 +113,21 @@ func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 			require.EqualError(t, err, "cache size must be greater than 0")
 		})
 	})
+
+	when("additional tags", func() {
+		factory.Blob = "some-blob"
+		it("can be set", func() {
+			additionalTags := []string{"test-registry.io/some-tag", "test-registry.io/some-other-tag"}
+			factory.AdditionalTags = additionalTags
+			img, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+			require.NoError(t, err)
+			require.Equal(t, img.Spec.AdditionalTags, additionalTags)
+		})
+
+		it("validates additional tags are same registry", func() {
+			factory.AdditionalTags = []string{"test-registry.io/some-tag", "other-test-registry.io/some-other-tag"}
+			_, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+			require.EqualError(t, err, "all additional tags must have the same registry as tag. expected: test-registry.io, got: other-test-registry.io")
+		})
+	})
 }

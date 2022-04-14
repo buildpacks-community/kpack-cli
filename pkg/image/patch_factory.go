@@ -30,6 +30,8 @@ func (f *Factory) MakePatch(img *v1alpha2.Image) (*v1alpha2.Image, []byte, error
 		return patchedImage, nil, err
 	}
 
+	f.setAdditionalTags(patchedImage)
+
 	err = f.setCacheSize(patchedImage)
 	if err != nil {
 		return patchedImage, nil, err
@@ -47,6 +49,22 @@ func (f *Factory) MakePatch(img *v1alpha2.Image) (*v1alpha2.Image, []byte, error
 }
 
 func (f *Factory) validatePatch(img *v1alpha2.Image) error {
+	if err := f.validateSourcePatch(img); err != nil {
+		return err
+	}
+
+	if err := f.validateBuilder(); err != nil {
+		return err
+	}
+
+	if err := f.validateEnvVars(img); err != nil {
+		return err
+	}
+
+	return f.validateAdditionalTags(img)
+}
+
+func (f *Factory) validateSourcePatch(img *v1alpha2.Image) error {
 	sourceSet := paramSet{}
 	sourceSet.add("git", f.GitRepo)
 	sourceSet.add("blob", f.Blob)
@@ -64,14 +82,10 @@ func (f *Factory) validatePatch(img *v1alpha2.Image) error {
 		return errors.New("git-revision is incompatible with existing image source")
 	}
 
-	builderSet := paramSet{}
-	builderSet.add("builder", f.Builder)
-	builderSet.add("cluster-builder", f.ClusterBuilder)
+	return nil
+}
 
-	if len(builderSet) > 1 {
-		return errors.New("must provide one of builder or cluster-builder")
-	}
-
+func (f *Factory) validateEnvVars(img *v1alpha2.Image) error {
 	envVars, err := f.makeEnvVars()
 	if err != nil {
 		return err
@@ -104,7 +118,37 @@ func (f *Factory) validatePatch(img *v1alpha2.Image) error {
 			return errors.Errorf("duplicate delete-env and env-var parameter '%s'", varName)
 		}
 	}
+	return nil
+}
 
+func (f *Factory) validateAdditionalTags(img *v1alpha2.Image) error {
+	for _, deleteTag := range f.DeleteAdditionalTags {
+		found := false
+
+		for _, existingTag := range img.Spec.AdditionalTags {
+			if existingTag == deleteTag {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return errors.Errorf("delete-additional-tag parameter '%s' not found in existing image additional tags", deleteTag)
+		}
+
+		found = false
+
+		for _, newAdditionalTag := range f.AdditionalTags {
+			if newAdditionalTag == deleteTag {
+				found = true
+				break
+			}
+		}
+
+		if found {
+			return errors.Errorf("duplicate delete-additional-tag and additional-tag parameter '%s'", deleteTag)
+		}
+	}
 	return nil
 }
 
@@ -148,6 +192,7 @@ func (f *Factory) setSource(image *v1alpha2.Image) error {
 
 	return nil
 }
+
 func (f *Factory) setCacheSize(image *v1alpha2.Image) error {
 	if f.CacheSize == "" {
 		return nil
@@ -176,6 +221,34 @@ func (f *Factory) setCacheSize(image *v1alpha2.Image) error {
 	}
 
 	return nil
+}
+
+func (f *Factory) setAdditionalTags(image *v1alpha2.Image) {
+	for _, additionalTagToDelete := range f.DeleteAdditionalTags {
+		for i, at := range image.Spec.AdditionalTags {
+			if at == additionalTagToDelete {
+				image.Spec.AdditionalTags = append(image.Spec.AdditionalTags[:i], image.Spec.AdditionalTags[i+1:]...)
+				break
+			}
+		}
+	}
+
+	for _, additionalTag := range f.AdditionalTags {
+		if tagExists(additionalTag, image.Spec.AdditionalTags) {
+			continue
+		}
+
+		image.Spec.AdditionalTags = append(image.Spec.AdditionalTags, additionalTag)
+	}
+}
+
+func tagExists(newTag string, existingTags []string) bool {
+	for _, e := range existingTags {
+		if e == newTag {
+			return true
+		}
+	}
+	return false
 }
 
 func (f *Factory) setBuild(image *v1alpha2.Image) error {

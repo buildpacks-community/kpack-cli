@@ -54,6 +54,7 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 					},
 				},
 			},
+			AdditionalTags: []string{"some-other-tag"},
 		},
 	}
 
@@ -62,6 +63,14 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		_, patch, err := factory.MakePatch(img)
 		require.NoError(t, err)
 		require.Equal(t, `{"spec":{"source":{"blob":null,"git":{"revision":"main","url":"some-repo"}}}}`, string(patch))
+	})
+
+	it("adds and removes service accounts", func() {
+		factory.AdditionalTags = []string{"some-new-tag"}
+		factory.DeleteAdditionalTags = []string{"some-other-tag"}
+		_, patch, err := factory.MakePatch(img)
+		require.NoError(t, err)
+		require.Equal(t, `{"spec":{"additionalTags":["some-new-tag"]}}`, string(patch))
 	})
 
 	when("too many source types are provided", func() {
@@ -114,6 +123,32 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.DeleteEnv = []string{"bar"}
 			_, _, err := factory.MakePatch(img)
 			require.EqualError(t, err, "delete-env parameter 'bar' not found in existing image configuration")
+		})
+	})
+
+	when("an AdditionalTag already exists", func() {
+		it("does not re-add it", func() {
+			factory.AdditionalTags = []string{"some-other-tag"}
+			_, patch, err := factory.MakePatch(img)
+			require.NoError(t, err)
+			require.Equal(t, ``, string(patch))
+		})
+	})
+
+	when("DeleteAdditionalTags and AdditionalTags have the same value", func() {
+		it("returns an error message", func() {
+			factory.DeleteAdditionalTags = []string{"some-other-tag"}
+			factory.AdditionalTags = []string{"some-other-tag"}
+			_, _, err := factory.MakePatch(img)
+			require.EqualError(t, err, "duplicate delete-additional-tag and additional-tag parameter 'some-other-tag'")
+		})
+	})
+
+	when("delete-additional-tag does not exist in the current image", func() {
+		it("returns an error message", func() {
+			factory.DeleteAdditionalTags = []string{"bar"}
+			_, _, err := factory.MakePatch(img)
+			require.EqualError(t, err, "delete-additional-tag parameter 'bar' not found in existing image additional tags")
 		})
 	})
 

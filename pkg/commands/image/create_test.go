@@ -72,6 +72,10 @@ func testCreateCommand(imageCommand func(clientSetProvider k8s.ClientSetProvider
 					},
 					Spec: v1alpha2.ImageSpec{
 						Tag: "some-registry.io/some-repo",
+						AdditionalTags: []string{
+							"some-registry.io/some-tag",
+							"some-registry.io/some-other-tag",
+						},
 						Builder: corev1.ObjectReference{
 							Kind: v1alpha2.ClusterBuilderKind,
 							Name: "default",
@@ -106,6 +110,8 @@ func testCreateCommand(imageCommand func(clientSetProvider k8s.ClientSetProvider
 						Args: []string{
 							"some-image",
 							"--tag", "some-registry.io/some-repo",
+							"--additional-tag", "some-registry.io/some-tag",
+							"--additional-tag", "some-registry.io/some-other-tag",
 							"--git", "some-git-url",
 							"--git-revision", "some-git-rev",
 							"--sub-path", "some-sub-path",
@@ -136,6 +142,8 @@ Image Resource "some-image" created
 						Args: []string{
 							"some-image",
 							"--tag", "some-registry.io/some-repo",
+							"--additional-tag", "some-registry.io/some-tag",
+							"--additional-tag", "some-registry.io/some-other-tag",
 							"--git", "some-git-url",
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
