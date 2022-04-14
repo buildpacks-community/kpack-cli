@@ -4,14 +4,12 @@
 package clusterstore
 
 import (
-	"fmt"
-
-	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
-	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
@@ -54,61 +52,39 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 				return err
 			}
 
-			bpToStoreImage := map[string]corev1alpha1.StoreImage{}
-			for _, bp := range buildpackages {
-				if storeImage, ok := getStoreImage(store, bp); !ok {
-					return errors.Errorf("Buildpackage '%s' does not exist in the ClusterStore", bp)
-				} else {
-					bpToStoreImage[bp] = storeImage
-				}
-			}
+			factory := clusterstore.NewFactory(ch, nil, nil)
 
 			if err = ch.PrintStatus("Removing Buildpackages..."); err != nil {
 				return err
 			}
 
-			removeBuildpackages(ch, store, buildpackages, bpToStoreImage)
-
-			if !ch.IsDryRun() {
-				store, err = cs.KpackClient.KpackV1alpha2().ClusterStores().Update(ctx, store, metav1.UpdateOptions{})
-				if err != nil {
-					return err
-				}
-				if err := w.Wait(ctx, store); err != nil {
-					return err
-				}
-			}
-
-			if err = ch.PrintObj(store); err != nil {
+			updatedStore, err := factory.RemoveFromStore(store, buildpackages...)
+			if err != nil {
 				return err
 			}
 
-			return ch.PrintResult("ClusterStore %q updated", store.Name)
+			if !ch.IsDryRun() {
+				patch, err := k8s.CreatePatch(store, updatedStore)
+				if err != nil {
+					return err
+				}
+				updatedStore, err = cs.KpackClient.KpackV1alpha2().ClusterStores().Patch(ctx, updatedStore.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+				if err != nil {
+					return err
+				}
+				if err := w.Wait(ctx, updatedStore); err != nil {
+					return err
+				}
+			}
+
+			if err = ch.PrintObj(updatedStore); err != nil {
+				return err
+			}
+
+			return ch.PrintResult("ClusterStore %q updated", updatedStore.Name)
 		},
 	}
 	cmd.Flags().StringArrayVarP(&buildpackages, "buildpackage", "b", []string{}, "buildpackage to remove")
 	commands.SetDryRunOutputFlags(cmd)
 	return cmd
-}
-
-func getStoreImage(store *v1alpha2.ClusterStore, buildpackage string) (corev1alpha1.StoreImage, bool) {
-	for _, bp := range store.Status.Buildpacks {
-		if fmt.Sprintf("%s@%s", bp.Id, bp.Version) == buildpackage {
-			return bp.StoreImage, true
-		}
-	}
-	return corev1alpha1.StoreImage{}, false
-}
-
-func removeBuildpackages(ch *commands.CommandHelper, store *v1alpha2.ClusterStore, buildpackages []string, bpToStoreImage map[string]corev1alpha1.StoreImage) {
-	for _, bp := range buildpackages {
-		ch.Printlnf("Removing buildpackage %s", bp)
-
-		for i, img := range store.Spec.Sources {
-			if img.Image == bpToStoreImage[bp].Image {
-				store.Spec.Sources = append(store.Spec.Sources[:i], store.Spec.Sources[i+1:]...)
-				break
-			}
-		}
-	}
 }

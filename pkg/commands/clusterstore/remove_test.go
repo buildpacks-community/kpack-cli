@@ -12,15 +12,13 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
-	clientgotesting "k8s.io/client-go/testing"
-
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
 	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
 	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 )
 
 func TestClusterStoreRemoveCommand(t *testing.T) {
@@ -90,20 +88,8 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 				storeName,
 				"--buildpackage", "some-buildpackage@1.2.3",
 			},
-			ExpectUpdates: []clientgotesting.UpdateActionImpl{
-				{
-					Object: &v1alpha2.ClusterStore{
-						ObjectMeta: store.ObjectMeta,
-						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []corev1alpha1.StoreImage{
-								{
-									Image: image2InStore,
-								},
-							},
-						},
-						Status: store.Status,
-					},
-				},
+			ExpectPatches: []string{
+				`{"spec":{"sources":[{"image":"some/imageinStore2@sha256:1232alreadyInStore"}]}}`,
 			},
 			ExpectedOutput: `Removing Buildpackages...
 Removing buildpackage some-buildpackage@1.2.3
@@ -123,16 +109,8 @@ ClusterStore "some-store" updated
 				"-b", "some-buildpackage@1.2.3",
 				"-b", "another-buildpackage@4.5.6",
 			},
-			ExpectUpdates: []clientgotesting.UpdateActionImpl{
-				{
-					Object: &v1alpha2.ClusterStore{
-						ObjectMeta: store.ObjectMeta,
-						Spec: v1alpha2.ClusterStoreSpec{
-							Sources: []corev1alpha1.StoreImage{},
-						},
-						Status: store.Status,
-					},
-				},
+			ExpectPatches: []string{
+				`{"spec":{"sources":null}}`,
 			},
 			ExpectedOutput: `Removing Buildpackages...
 Removing buildpackage some-buildpackage@1.2.3
@@ -168,6 +146,7 @@ ClusterStore "some-store" updated
 				"-b", "does-not-exist-buildpackage@7.8.9",
 			},
 			ExpectErr:           true,
+			ExpectedOutput:      "Removing Buildpackages...\n",
 			ExpectedErrorOutput: "Error: Buildpackage 'does-not-exist-buildpackage@7.8.9' does not exist in the ClusterStore\n",
 		}.TestKpack(t, cmdFunc)
 	})
@@ -182,6 +161,7 @@ ClusterStore "some-store" updated
 				"-b", "does-not-exist-buildpackage@7.8.9",
 			},
 			ExpectErr:           true,
+			ExpectedOutput:      "Removing Buildpackages...\n",
 			ExpectedErrorOutput: "Error: Buildpackage 'does-not-exist-buildpackage@7.8.9' does not exist in the ClusterStore\n",
 		}.TestKpack(t, cmdFunc)
 	})
@@ -219,20 +199,8 @@ status:
 					"--buildpackage", "some-buildpackage@1.2.3",
 					"--output", "yaml",
 				},
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: &v1alpha2.ClusterStore{
-							ObjectMeta: store.ObjectMeta,
-							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []corev1alpha1.StoreImage{
-									{
-										Image: image2InStore,
-									},
-								},
-							},
-							Status: store.Status,
-						},
-					},
+				ExpectPatches: []string{
+					`{"spec":{"sources":[{"image":"some/imageinStore2@sha256:1232alreadyInStore"}]}}`,
 				},
 				ExpectedOutput: resourceYAML,
 				ExpectedErrorOutput: `Removing Buildpackages...
@@ -253,20 +221,8 @@ Removing buildpackage some-buildpackage@1.2.3
 					"--buildpackage", "some-buildpackage@1.2.3",
 					"--output", "json",
 				},
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: &v1alpha2.ClusterStore{
-							ObjectMeta: store.ObjectMeta,
-							Spec: v1alpha2.ClusterStoreSpec{
-								Sources: []corev1alpha1.StoreImage{
-									{
-										Image: image2InStore,
-									},
-								},
-							},
-							Status: store.Status,
-						},
-					},
+				ExpectPatches: []string{
+					`{"spec":{"sources":[{"image":"some/imageinStore2@sha256:1232alreadyInStore"}]}}`,
 				},
 				ExpectedOutput: resourceJSON,
 				ExpectedErrorOutput: `Removing Buildpackages...

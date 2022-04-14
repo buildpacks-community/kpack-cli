@@ -63,16 +63,6 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					}
 
-					expectedServiceAccount := &corev1.ServiceAccount{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      "default",
-							Namespace: defaultNamespace,
-							Annotations: map[string]string{
-								secretcmds.ManagedSecretAnnotationKey: `{"foo":"bar"}`,
-							},
-						},
-					}
-
 					testhelpers.CommandTest{
 						Objects: []runtime.Object{
 							secretOne,
@@ -81,10 +71,8 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						Args: []string{secretName},
 						ExpectedOutput: `Secret "some-secret" deleted
 `,
-						ExpectUpdates: []clientgotesting.UpdateActionImpl{
-							{
-								Object: expectedServiceAccount,
-							},
+						ExpectPatches: []string{
+							`{"imagePullSecrets":null,"metadata":{"annotations":{"kpack.io/managedSecret":"{\"foo\":\"bar\"}"}},"secrets":null}`,
 						},
 						ExpectDeletes: []clientgotesting.DeleteActionImpl{
 							{
@@ -158,16 +146,6 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					}
 
-					expectedServiceAccount := &corev1.ServiceAccount{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      "default",
-							Namespace: namespace,
-							Annotations: map[string]string{
-								secretcmds.ManagedSecretAnnotationKey: `{"foo":"bar"}`,
-							},
-						},
-					}
-
 					testhelpers.CommandTest{
 						Objects: []runtime.Object{
 							secretOne,
@@ -176,10 +154,8 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						Args: []string{secretName, "-n", namespace},
 						ExpectedOutput: `Secret "some-secret" deleted
 `,
-						ExpectUpdates: []clientgotesting.UpdateActionImpl{
-							{
-								Object: expectedServiceAccount,
-							},
+						ExpectPatches: []string{
+							`{"imagePullSecrets":null,"metadata":{"annotations":{"kpack.io/managedSecret":"{\"foo\":\"bar\"}"}},"secrets":null}`,
 						},
 						ExpectDeletes: []clientgotesting.DeleteActionImpl{
 							{

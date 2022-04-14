@@ -6,13 +6,11 @@ import (
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
-	clientgotesting "k8s.io/client-go/testing"
-
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestDefaultRepositoryCommand(t *testing.T) {
@@ -69,25 +67,13 @@ func testDefaultRepositoryCommand(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			testhelpers.CommandTest{
-				Objects:             []runtime.Object{kpConfig},
-				Args:                []string{"new-repo"},
+				Objects: []runtime.Object{kpConfig},
+				Args:    []string{"new-repo"},
+				ExpectPatches: []string{
+					`{"data":{"canonical.repository":"new-repo","default.repository":"new-repo"}}`,
+				},
 				ExpectedOutput:      "kp-config set\n",
 				ExpectedErrorOutput: "",
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: &corev1.ConfigMap{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "kp-config",
-								Namespace: "kpack",
-							},
-							Data: map[string]string{
-								"canonical.repository":              "new-repo",
-								"default.repository":                "new-repo",
-								"default.repository.serviceaccount": "default",
-							},
-						},
-					},
-				},
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
 

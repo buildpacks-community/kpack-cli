@@ -88,28 +88,37 @@ func (f *Factory) UpdateStack(keychain authn.Keychain, stack *v1alpha2.ClusterSt
 		return nil, err
 	}
 
-	updatedStack := stack.DeepCopy()
-
-	defaultRepo, err := kpConfig.DefaultRepository()
+	relocatedBuildImageRef, relocatedRunImageRef, err := f.uploadStackImages(keychain, buildImageTag, runImageTag, kpConfig)
 	if err != nil {
 		return nil, err
+	}
+
+	return updatedStack(stack, relocatedBuildImageRef, relocatedRunImageRef, stackID), nil
+}
+
+func (f *Factory) uploadStackImages(keychain authn.Keychain, buildImageTag, runImageTag string, kpConfig config.KpConfig) (string, string, error) {
+	defaultRepo, err := kpConfig.DefaultRepository()
+	if err != nil {
+		return "", "", err
 	}
 
 	if err := f.Printer.PrintStatus("Uploading to '%s'...", defaultRepo); err != nil {
-		return nil, err
+		return "", "", err
 	}
 
-	relocatedBuildImageRef, relocatedRunImageRef, err := f.Uploader.UploadStackImages(keychain, buildImageTag, runImageTag, defaultRepo)
-	if err != nil {
-		return nil, err
-	}
-
-	updatedStack.Spec.Id = stackID
-	updatedStack.Spec.BuildImage.Image = relocatedBuildImageRef
-	updatedStack.Spec.RunImage.Image = relocatedRunImageRef
-	return updatedStack, nil
+	return f.Uploader.UploadStackImages(keychain, buildImageTag, runImageTag, defaultRepo)
 }
 
 func (f *Factory) validate(keychain authn.Keychain, buildTag, runTag string) (string, error) {
 	return f.Uploader.ValidateStackIDs(keychain, buildTag, runTag)
+}
+
+func updatedStack(stack *v1alpha2.ClusterStack, buildImageRef, runImageRef, stackId string) *v1alpha2.ClusterStack {
+	newStack := stack.DeepCopy()
+
+	newStack.Spec.BuildImage.Image = buildImageRef
+	newStack.Spec.RunImage.Image = runImageRef
+	newStack.Spec.Id = stackId
+
+	return newStack
 }

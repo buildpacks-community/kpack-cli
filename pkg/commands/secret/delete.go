@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
@@ -41,11 +42,18 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			wasModified, err := deleteSecretsFromServiceAccount(serviceAccount, args[0])
+			updatedSA, err := deleteSecretsFromServiceAccount(serviceAccount, args[0])
 			if err != nil {
 				return err
-			} else if wasModified {
-				_, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Update(ctx, serviceAccount, metav1.UpdateOptions{})
+			}
+
+			patch, err := k8s.CreatePatch(serviceAccount, updatedSA)
+			if err != nil {
+				return err
+			}
+
+			if len(patch) > 0 {
+				_, err = cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Patch(ctx, updatedSA.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 				if err != nil {
 					return err
 				}
@@ -66,34 +74,32 @@ The namespace defaults to the kubernetes current-context namespace.`,
 	return &command
 }
 
-func deleteSecretsFromServiceAccount(sa *corev1.ServiceAccount, name string) (bool, error) {
-	managedSecrets, err := readManagedSecrets(sa)
+func deleteSecretsFromServiceAccount(sa *corev1.ServiceAccount, name string) (*corev1.ServiceAccount, error) {
+	updatedSA := sa.DeepCopy()
+	managedSecrets, err := readManagedSecrets(updatedSA)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	modified := false
-	for i, s := range sa.Secrets {
+	for i, s := range updatedSA.Secrets {
 		if s.Name == name {
-			sa.Secrets = append(sa.Secrets[:i], sa.Secrets[i+1:]...)
+			updatedSA.Secrets = append(updatedSA.Secrets[:i], updatedSA.Secrets[i+1:]...)
 			delete(managedSecrets, s.Name)
-			modified = true
 			break
 		}
 	}
-	for i, s := range sa.ImagePullSecrets {
+	for i, s := range updatedSA.ImagePullSecrets {
 		if s.Name == name {
-			sa.ImagePullSecrets = append(sa.ImagePullSecrets[:i], sa.ImagePullSecrets[i+1:]...)
+			updatedSA.ImagePullSecrets = append(updatedSA.ImagePullSecrets[:i], updatedSA.ImagePullSecrets[i+1:]...)
 			delete(managedSecrets, s.Name)
-			modified = true
 			break
 		}
 	}
 
-	err = writeManagedSecrets(managedSecrets, sa)
+	err = writeManagedSecrets(managedSecrets, updatedSA)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	return modified, nil
+	return updatedSA, nil
 }

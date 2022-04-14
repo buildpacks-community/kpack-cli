@@ -14,6 +14,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
@@ -107,7 +108,7 @@ func (i *Importer) ImportDescriptor(ctx context.Context, keychain authn.Keychain
 	}
 
 	if rDescriptor.lifecycle != nil {
-		if err := i.updateLifecycleConfigMap(ctx, rDescriptor.lifecycle); err != nil {
+		if err := i.patchLifecycleConfigMap(ctx, rDescriptor.lifecycle); err != nil {
 			return nil, err
 		}
 	}
@@ -326,8 +327,18 @@ func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder Clu
 	return newCB, nil
 }
 
-func (i *Importer) updateLifecycleConfigMap(ctx context.Context, updatedLifecycle *corev1.ConfigMap) error {
-	_, err := i.k8sClient.CoreV1().ConfigMaps("kpack").Update(ctx, updatedLifecycle, metav1.UpdateOptions{})
+func (i *Importer) patchLifecycleConfigMap(ctx context.Context, updatedLifecycle *corev1.ConfigMap) error {
+	existingLifecycle, err := i.k8sClient.CoreV1().ConfigMaps("kpack").Get(ctx, updatedLifecycle.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	patch, err := k8s.CreatePatch(existingLifecycle, updatedLifecycle)
+	if err != nil {
+		return err
+	}
+
+	_, err = i.k8sClient.CoreV1().ConfigMaps("kpack").Patch(ctx, updatedLifecycle.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 
 	return err
 }
@@ -348,7 +359,11 @@ func (i *Importer) saveClusterStore(ctx context.Context, relocatedStore *v1alpha
 		updateStore := existingStore.DeepCopy()
 		updateStore.Spec.Sources = createBuildpackageSuperset(updateStore, relocatedStore)
 		updateStore.Annotations = k8s.MergeAnnotations(updateStore.Annotations, relocatedStore.Annotations)
-		store, err = i.client.KpackV1alpha2().ClusterStores().Update(ctx, updateStore, metav1.UpdateOptions{})
+		patch, err := k8s.CreatePatch(existingStore, updateStore)
+		if err != nil {
+			return 0, err
+		}
+		store, err = i.client.KpackV1alpha2().ClusterStores().Patch(ctx, updateStore.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return 0, err
 		}
@@ -377,7 +392,11 @@ func (i *Importer) saveClusterStack(ctx context.Context, relocatedStack *v1alpha
 		updateStack := exstingStack.DeepCopy()
 		updateStack.Spec = relocatedStack.Spec
 		updateStack.Annotations = k8s.MergeAnnotations(updateStack.Annotations, relocatedStack.Annotations)
-		stack, err = i.client.KpackV1alpha2().ClusterStacks().Update(ctx, updateStack, metav1.UpdateOptions{})
+		patch, err := k8s.CreatePatch(exstingStack, updateStack)
+		if err != nil {
+			return 0, err
+		}
+		stack, err = i.client.KpackV1alpha2().ClusterStacks().Patch(ctx, updateStack.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return 0, err
 		}
@@ -405,7 +424,11 @@ func (i *Importer) saveClusterBuilder(ctx context.Context, storeToGeneration, st
 		updateBuilder := existingBuilder.DeepCopy()
 		updateBuilder.Spec = relocatedBuilder.Spec
 		updateBuilder.Annotations = k8s.MergeAnnotations(updateBuilder.Annotations, relocatedBuilder.Annotations)
-		builder, err = i.client.KpackV1alpha2().ClusterBuilders().Update(ctx, updateBuilder, metav1.UpdateOptions{})
+		patch, err := k8s.CreatePatch(existingBuilder, updateBuilder)
+		if err != nil {
+			return err
+		}
+		builder, err = i.client.KpackV1alpha2().ClusterBuilders().Patch(ctx, updateBuilder.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}

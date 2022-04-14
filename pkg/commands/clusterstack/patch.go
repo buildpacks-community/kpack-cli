@@ -12,6 +12,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
@@ -29,7 +30,7 @@ type ImageRelocator interface {
 	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
 }
 
-func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
+func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -37,17 +38,18 @@ func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 	)
 
 	cmd := &cobra.Command{
-		Use:   "update <name>",
-		Short: "Update a cluster stack",
-		Long: `Updates the run and build images of a specific cluster-scoped stack.
+		Use:     "patch <name>",
+		Aliases: []string{"update"},
+		Short:   "Patch a cluster stack",
+		Long: `Patches the run and build images of a specific cluster-scoped stack.
 
 The run and build images will be uploaded to the the registry configured on your stack.
 Therefore, you must have credentials to access the registry on your machine.
 
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 The default service account used is read from the "default.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.`,
-		Example: `kp clusterstack update my-stack --build-image my-registry.com/build --run-image my-registry.com/run
-kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
+		Example: `kp clusterstack patch my-stack --build-image my-registry.com/build --run-image my-registry.com/run
+kp clusterstack patch my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -70,7 +72,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 
 			factory := clusterstack.NewFactory(ch, rup.Relocator(ch.Writer(), tlsCfg, ch.IsUploading()), rup.Fetcher(tlsCfg))
 
-			return update(ctx, authn.DefaultKeychain, stack, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
+			return patch(ctx, authn.DefaultKeychain, stack, buildImageRef, runImageRef, factory, ch, cs, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -83,7 +85,7 @@ kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image .
 	return cmd
 }
 
-func update(ctx context.Context, keychain authn.Keychain, stack *v1alpha2.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
+func patch(ctx context.Context, keychain authn.Keychain, stack *v1alpha2.ClusterStack, buildImageRef, runImageRef string, factory *clusterstack.Factory, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
 	if err := ch.PrintStatus("Updating ClusterStack..."); err != nil {
 		return err
 	}
@@ -95,14 +97,14 @@ func update(ctx context.Context, keychain authn.Keychain, stack *v1alpha2.Cluste
 		return err
 	}
 
-	patch, err := k8s.CreatePatch(stack, updatedStack)
+	p, err := k8s.CreatePatch(stack, updatedStack)
 	if err != nil {
 		return err
 	}
 
-	hasUpdates := len(patch) > 0
+	hasUpdates := len(p) > 0
 	if hasUpdates && !ch.IsDryRun() {
-		updatedStack, err = cs.KpackClient.KpackV1alpha2().ClusterStacks().Update(ctx, updatedStack, metav1.UpdateOptions{})
+		stack, err = cs.KpackClient.KpackV1alpha2().ClusterStacks().Patch(ctx, updatedStack.Name, types.MergePatchType, p, metav1.PatchOptions{})
 		if err != nil {
 			return err
 		}
