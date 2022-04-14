@@ -13,16 +13,18 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
-	importcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/import"
-	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
+	clientgotesting "k8s.io/client-go/testing"
+
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
+	importcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/import"
+	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestImportCommand(t *testing.T) {
@@ -284,8 +286,10 @@ Imported resources
 					builder,
 					defaultBuilder,
 				},
-				ExpectPatches: []string{
-					`{"data":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"2006-01-02T15:04:05Z"}}}`,
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedLifecycleImageConfig,
+					},
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
 			require.Len(t, fakeWaiter.WaitCalls, 5)
@@ -334,8 +338,10 @@ Imported resources
 					builder,
 					defaultBuilder,
 				},
-				ExpectPatches: []string{
-					`{"data":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"2006-01-02T15:04:05Z"}}}`,
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedLifecycleImageConfig,
+					},
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
 			require.Len(t, fakeWaiter.WaitCalls, 5)
@@ -441,8 +447,10 @@ Imported resources
 						builder,
 						defaultBuilder,
 					},
-					ExpectPatches: []string{
-						`{"data":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"2006-01-02T15:04:05Z"}}}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedLifecycleImageConfig,
+						},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 				require.NoError(t, fakeConfirmationProvider.WasRequestedWithMsg("Confirm with y:"))
@@ -508,8 +516,10 @@ Imported resources
 						builder,
 						defaultBuilder,
 					},
-					ExpectPatches: []string{
-						`{"data":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"2006-01-02T15:04:05Z"}}}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedLifecycleImageConfig,
+						},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 				require.Equal(t, false, fakeConfirmationProvider.WasRequested())
@@ -583,12 +593,13 @@ Importing ClusterBuilder 'clusterbuilder-name'...
 Importing ClusterBuilder 'default'...
 Imported resources
 `,
-					ExpectPatches: []string{
-						`{"data":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}},"spec":{"buildImage":{"image":"default-registry.io/default-repo@sha256:build-image-digest"},"runImage":{"image":"default-registry.io/default-repo@sha256:build-image-digest"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}}}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{Object: expectedLifecycleImageConfig},
+						{Object: expectedStore},
+						{Object: expectedStack},
+						{Object: expectedDefaultStack},
+						{Object: expectedBuilder},
+						{Object: expectedDefaultBuilder},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 				require.Len(t, fakeWaiter.WaitCalls, 5)
@@ -639,11 +650,13 @@ Importing ClusterBuilder 'clusterbuilder-name'...
 Importing ClusterBuilder 'default'...
 Imported resources
 `,
-					ExpectPatches: []string{
-						`{"data":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}}}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{Object: expectedLifecycleImageConfig},
+						{Object: expectedStore},
+						{Object: expectedStack},
+						{Object: expectedDefaultStack},
+						{Object: expectedBuilder},
+						{Object: expectedDefaultBuilder},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -736,12 +749,13 @@ Importing ClusterBuilder 'clusterbuilder-name'...
 Importing ClusterBuilder 'default'...
 Imported resources
 `,
-					ExpectPatches: []string{
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"another-buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}},"spec":{"order":[{"group":[{"id":"another-buildpack-id"}]}]}}`,
-						`{"data":{"image":"default-registry.io/default-repo@sha256:another-lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"},{"image":"default-registry.io/default-repo@sha256:another-buildpack-image-digest"}]}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}},"spec":{"buildImage":{"image":"default-registry.io/default-repo@sha256:another-build-image-digest"},"id":"another-stack-id","runImage":{"image":"default-registry.io/default-repo@sha256:another-run-image-digest"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"another-buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}},"spec":{"order":[{"group":[{"id":"another-buildpack-id"}]}]}}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{Object: expectedLifecycleImageConfig},
+						{Object: expectedStore},
+						{Object: expectedStack},
+						{Object: expectedDefaultStack},
+						{Object: expectedBuilder},
+						{Object: expectedDefaultBuilder},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -917,8 +931,10 @@ status:
 						builder,
 						defaultBuilder,
 					},
-					ExpectPatches: []string{
-						`{"data":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"2006-01-02T15:04:05Z"}}}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedLifecycleImageConfig,
+						},
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -1186,8 +1202,10 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
 					builder,
 					defaultBuilder,
 				},
-				ExpectPatches: []string{
-					`{"data":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"2006-01-02T15:04:05Z"}}}`,
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedLifecycleImageConfig,
+					},
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
 		})

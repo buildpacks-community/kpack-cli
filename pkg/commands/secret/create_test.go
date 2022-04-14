@@ -10,13 +10,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
-	secretcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/secret"
-	"github.com/vmware-tanzu/kpack-cli/pkg/secret"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
+	clientgotesting "k8s.io/client-go/testing"
+
+	secretcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/secret"
+	"github.com/vmware-tanzu/kpack-cli/pkg/secret"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestSecretCreateCommand(t *testing.T) {
@@ -79,6 +81,22 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Type: corev1.SecretTypeDockerConfigJson,
 				}
 
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+						Annotations: map[string]string{
+							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.DockerhubUrl),
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
@@ -89,8 +107,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
 					},
-					ExpectPatches: []string{
-						`{"imagePullSecrets":[{"name":"my-docker-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-docker-cred\":\"https://index.docker.io/v1/\"}"}},"secrets":[{"name":"my-docker-cred"}]}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -119,6 +139,22 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Type: corev1.SecretTypeDockerConfigJson,
 				}
 
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+						Annotations: map[string]string{
+							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, registry),
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
@@ -129,8 +165,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
 					},
-					ExpectPatches: []string{
-						`{"imagePullSecrets":[{"name":"my-registry-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-registry-cred\":\"my-registry.io\"}"}},"secrets":[{"name":"my-registry-cred"}]}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -157,6 +195,22 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Type: corev1.SecretTypeDockerConfigJson,
 				}
 
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+						Annotations: map[string]string{
+							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.GcrUrl),
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
@@ -167,8 +221,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
 					},
-					ExpectPatches: []string{
-						`{"imagePullSecrets":[{"name":"my-gcr-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-gcr-cred\":\"gcr.io\"}"}},"secrets":[{"name":"my-gcr-cred"}]}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -198,6 +254,19 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Type: corev1.SecretTypeSSHAuth,
 				}
 
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+						Annotations: map[string]string{
+							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
+						},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
@@ -208,8 +277,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedGitSecret,
 					},
-					ExpectPatches: []string{
-						`{"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-git-ssh-cred\":\"git@github.com\"}"}},"secrets":[{"name":"my-git-ssh-cred"}]}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -241,6 +312,19 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Type: corev1.SecretTypeBasicAuth,
 				}
 
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: namespace,
+						Annotations: map[string]string{
+							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
+						},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultNamespacedServiceAccount,
@@ -251,8 +335,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedGitSecret,
 					},
-					ExpectPatches: []string{
-						`{"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-git-basic-cred\":\"https://github.com\"}"}},"secrets":[{"name":"my-git-basic-cred"}]}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -282,6 +368,22 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Type: corev1.SecretTypeDockerConfigJson,
 				}
 
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.DockerhubUrl),
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultServiceAccount,
@@ -292,8 +394,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
 					},
-					ExpectPatches: []string{
-						`{"imagePullSecrets":[{"name":"my-docker-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-docker-cred\":\"https://index.docker.io/v1/\"}"}},"secrets":[{"name":"my-docker-cred"}]}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -322,6 +426,22 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Type: corev1.SecretTypeDockerConfigJson,
 				}
 
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, registry),
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultServiceAccount,
@@ -332,8 +452,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
 					},
-					ExpectPatches: []string{
-						`{"imagePullSecrets":[{"name":"my-registry-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-registry-cred\":\"my-registry.io\"}"}},"secrets":[{"name":"my-registry-cred"}]}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -360,6 +482,22 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Type: corev1.SecretTypeDockerConfigJson,
 				}
 
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.GcrUrl),
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: secretName},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultServiceAccount,
@@ -370,8 +508,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
 					},
-					ExpectPatches: []string{
-						`{"imagePullSecrets":[{"name":"my-gcr-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-gcr-cred\":\"gcr.io\"}"}},"secrets":[{"name":"my-gcr-cred"}]}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -401,6 +541,19 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Type: corev1.SecretTypeSSHAuth,
 				}
 
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
+						},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultServiceAccount,
@@ -411,8 +564,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedGitSecret,
 					},
-					ExpectPatches: []string{
-						`{"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-git-ssh-cred\":\"git@github.com\"}"}},"secrets":[{"name":"my-git-ssh-cred"}]}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -444,6 +599,19 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					Type: corev1.SecretTypeBasicAuth,
 				}
 
+				expectedServiceAccount := &corev1.ServiceAccount{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "default",
+						Namespace: defaultNamespace,
+						Annotations: map[string]string{
+							secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, gitRepo),
+						},
+					},
+					Secrets: []corev1.ObjectReference{
+						{Name: secretName},
+					},
+				}
+
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
 						defaultServiceAccount,
@@ -454,8 +622,10 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 					ExpectCreates: []runtime.Object{
 						expectedGitSecret,
 					},
-					ExpectPatches: []string{
-						`{"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-git-basic-cred\":\"https://github.com\"}"}},"secrets":[{"name":"my-git-basic-cred"}]}`,
+					ExpectUpdates: []clientgotesting.UpdateActionImpl{
+						{
+							Object: expectedServiceAccount,
+						},
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -479,6 +649,22 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				corev1.DockerConfigJsonKey: []byte(expectedDockerConfig),
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
+		}
+
+		expectedServiceAccount := &corev1.ServiceAccount{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "default",
+				Namespace: defaultNamespace,
+				Annotations: map[string]string{
+					secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s"}`, secretName, secret.DockerhubUrl),
+				},
+			},
+			ImagePullSecrets: []corev1.LocalObjectReference{
+				{Name: secretName},
+			},
+			Secrets: []corev1.ObjectReference{
+				{Name: secretName},
+			},
 		}
 
 		fetcher.passwords["DOCKER_PASSWORD"] = dockerPassword
@@ -521,8 +707,10 @@ secrets:
 				ExpectCreates: []runtime.Object{
 					expectedDockerSecret,
 				},
-				ExpectPatches: []string{
-					`{"imagePullSecrets":[{"name":"my-docker-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-docker-cred\":\"https://index.docker.io/v1/\"}"}},"secrets":[{"name":"my-docker-cred"}]}`,
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedServiceAccount,
+					},
 				},
 			}.TestK8s(t, cmdFunc)
 		})
@@ -578,8 +766,10 @@ secrets:
 				ExpectCreates: []runtime.Object{
 					expectedDockerSecret,
 				},
-				ExpectPatches: []string{
-					`{"imagePullSecrets":[{"name":"my-docker-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-docker-cred\":\"https://index.docker.io/v1/\"}"}},"secrets":[{"name":"my-docker-cred"}]}`,
+				ExpectUpdates: []clientgotesting.UpdateActionImpl{
+					{
+						Object: expectedServiceAccount,
+					},
 				},
 			}.TestK8s(t, cmdFunc)
 		})

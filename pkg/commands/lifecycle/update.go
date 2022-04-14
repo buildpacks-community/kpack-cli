@@ -22,17 +22,16 @@ func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 	)
 
 	cmd := &cobra.Command{
-		Use:     "patch --image <image-tag>",
-		Aliases: []string{"update"},
-		Short:   "Patch lifecycle image used by kpack",
-		Long: `Patch lifecycle image used by kpack
+		Use:   "update --image <image-tag>",
+		Short: "Update lifecycle image used by kpack",
+		Long: `Update lifecycle image used by kpack
 
 The Lifecycle image will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
 
 The default repository is read from the "default.repository" key of the "kp-config" ConfigMap within "kpack" namespace.
 `,
-		Example:      "kp lifecycle patch --image my-registry.com/lifecycle",
+		Example:      "kp lifecycle update --image my-registry.com/lifecycle",
 		Args:         commands.ExactArgsWithUsage(0),
 		SilenceUsage: true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -52,7 +51,7 @@ The default repository is read from the "default.repository" key of the "kp-conf
 				return err
 			}
 
-			if err = ch.PrintStatus("Patching lifecycle config..."); err != nil {
+			if err = ch.PrintStatus("Updating lifecycle image..."); err != nil {
 				return err
 			}
 
@@ -74,7 +73,7 @@ The default repository is read from the "default.repository" key of the "kp-conf
 				return err
 			}
 
-			return ch.PrintResult("Patched lifecycle config")
+			return ch.PrintResult("Updated lifecycle image")
 		},
 	}
 	cmd.Flags().StringVarP(&image, "image", "i", "", "location of the image")

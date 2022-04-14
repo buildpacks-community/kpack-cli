@@ -167,7 +167,7 @@ func getStackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	}
 	stackRootCmd.AddCommand(
 		clusterstackcmds.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
-		clusterstackcmds.NewPatchCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterstackcmds.NewUpdateCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
 		clusterstackcmds.NewSaveCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
 		clusterstackcmds.NewListCommand(clientSetProvider),
 		clusterstackcmds.NewStatusCommand(clientSetProvider),
