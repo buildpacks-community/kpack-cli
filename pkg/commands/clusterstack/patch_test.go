@@ -27,7 +27,7 @@ import (
 )
 
 func TestUpdateCommand(t *testing.T) {
-	spec.Run(t, "TestUpdateCommand", testUpdateCommand(clusterstackcmds.NewUpdateCommand))
+	spec.Run(t, "TestUpdateCommand", testUpdateCommand(clusterstackcmds.NewPatchCommand))
 }
 
 func testUpdateCommand(imageCommand func(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command) func(t *testing.T, when spec.G, it spec.S) {

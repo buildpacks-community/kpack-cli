@@ -30,7 +30,7 @@ type ImageRelocator interface {
 	Relocate(writer io.Writer, image v1.Image, dest string) (string, error)
 }
 
-func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
+func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
 		buildImageRef string
 		runImageRef   string
@@ -38,17 +38,18 @@ func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 	)
 
 	cmd := &cobra.Command{
-		Use:   "update <name>",
-		Short: "Update a cluster stack",
-		Long: `Updates the run and build images of a specific cluster-scoped stack.
+		Use:     "patch <name>",
+		Aliases: []string{"update"},
+		Short:   "Patch a cluster stack",
+		Long: `Patches the run and build images of a specific cluster-scoped stack.
 
 The run and build images will be uploaded to the the registry configured on your stack.
 Therefore, you must have credentials to access the registry on your machine.
 
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 The default service account used is read from the "default.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.`,
-		Example: `kp clusterstack update my-stack --build-image my-registry.com/build --run-image my-registry.com/run
-kp clusterstack update my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
+		Example: `kp clusterstack patch my-stack --build-image my-registry.com/build --run-image my-registry.com/run
+kp clusterstack patch my-stack --build-image ../path/to/build.tar --run-image ../path/to/run.tar`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
