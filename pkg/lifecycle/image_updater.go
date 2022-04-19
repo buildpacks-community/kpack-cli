@@ -62,7 +62,7 @@ func UpdateImage(ctx context.Context, keychain authn.Keychain, srcImgLocation st
 	}
 
 	if !cfg.DryRun {
-		cm, err = updateConfigMap(ctx, cm, cfg.ClientSet.K8sClient)
+		cm, err = patchConfigMap(ctx, cm, cfg.ClientSet.K8sClient)
 	}
 	return cm, err
 }

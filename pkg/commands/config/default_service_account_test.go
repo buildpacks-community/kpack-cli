@@ -6,13 +6,11 @@ import (
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
-	clientgotesting "k8s.io/client-go/testing"
-
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestDefaultServiceAccountCommand(t *testing.T) {
@@ -112,22 +110,8 @@ func testDefaultServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 				Args:                []string{"some-service-account"},
 				ExpectedOutput:      "kp-config set\n",
 				ExpectedErrorOutput: "",
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: &corev1.ConfigMap{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "kp-config",
-								Namespace: "kpack",
-							},
-							Data: map[string]string{
-								"default.repository":                            "test-repo",
-								"default.repository.serviceaccount":             "some-service-account",
-								"default.repository.serviceaccount.namespace":   "kpack",
-								"canonical.repository.serviceaccount":           "some-service-account",
-								"canonical.repository.serviceaccount.namespace": "kpack",
-							},
-						},
-					},
+				ExpectPatches: []string{
+					`{"data":{"canonical.repository.serviceaccount":"some-service-account","canonical.repository.serviceaccount.namespace":"kpack","default.repository.serviceaccount":"some-service-account","default.repository.serviceaccount.namespace":"kpack"}}`,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
 		})
@@ -153,22 +137,8 @@ func testDefaultServiceAccountCommand(t *testing.T, when spec.G, it spec.S) {
 				},
 				ExpectedOutput:      "kp-config set\n",
 				ExpectedErrorOutput: "",
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: &corev1.ConfigMap{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "kp-config",
-								Namespace: "kpack",
-							},
-							Data: map[string]string{
-								"default.repository":                            "test-repo",
-								"default.repository.serviceaccount":             "some-service-account",
-								"default.repository.serviceaccount.namespace":   "default",
-								"canonical.repository.serviceaccount":           "some-service-account",
-								"canonical.repository.serviceaccount.namespace": "default",
-							},
-						},
-					},
+				ExpectPatches: []string{
+					`{"data":{"canonical.repository.serviceaccount":"some-service-account","canonical.repository.serviceaccount.namespace":"default","default.repository.serviceaccount":"some-service-account","default.repository.serviceaccount.namespace":"default"}}`,
 				},
 			}.TestK8sAndKpack(t, cmdFunc)
 		})

@@ -25,8 +25,8 @@ func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilPr
 
 	cmd := &cobra.Command{
 		Use:   "save <name>",
-		Short: "Create or update a cluster stack",
-		Long: `Create or update a cluster-scoped stack by providing command line arguments.
+		Short: "Create or patch a cluster stack",
+		Long: `Create or patch a cluster-scoped stack by providing command line arguments.
 
 The run and build images will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
@@ -63,7 +63,7 @@ kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../
 				return err
 			}
 
-			return update(ctx, authn.DefaultKeychain, cStack, buildImageRef, runImageRef, factory, ch, cs, w)
+			return patch(ctx, authn.DefaultKeychain, cStack, buildImageRef, runImageRef, factory, ch, cs, w)
 		},
 	}
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")

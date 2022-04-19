@@ -8,15 +8,13 @@ import (
 
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/lifecycle"
+	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
-	clientgotesting "k8s.io/client-go/testing"
-
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands/lifecycle"
-	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestUpdateCommand(t *testing.T) {
@@ -24,7 +22,6 @@ func TestUpdateCommand(t *testing.T) {
 }
 
 func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
-
 	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
 		FakeFetcher: registryfakes.NewLifecycleImageFetcher(
 			registryfakes.LifecycleInfo{
@@ -72,7 +69,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--image", "some-registry.io/repo/lifecycle-image",
 			},
 			ExpectErr:           true,
-			ExpectedOutput:      "Updating lifecycle image...\n",
+			ExpectedOutput:      "Patching lifecycle config...\n",
 			ExpectedErrorOutput: "Error: configmap \"lifecycle-image\" not found in \"kpack\" namespace\n",
 		}.TestK8s(t, cmdFunc)
 	})
@@ -91,7 +88,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--image", "some-registry.io/repo/image-without-metadata",
 			},
 			ExpectErr:           true,
-			ExpectedOutput:      "Updating lifecycle image...\n",
+			ExpectedOutput:      "Patching lifecycle config...\n",
 			ExpectedErrorOutput: "Error: image missing lifecycle metadata\n",
 		}.TestK8s(t, cmdFunc)
 	})
@@ -114,7 +111,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--image", "some-registry.io/repo/lifecycle-image",
 			},
 			ExpectErr:           true,
-			ExpectedOutput:      "Updating lifecycle image...\n",
+			ExpectedOutput:      "Patching lifecycle config...\n",
 			ExpectedErrorOutput: "Error: failed to get default repository: use \"kp config default-repository\" to set\n",
 		}.TestK8s(t, cmdFunc)
 	})
@@ -128,14 +125,12 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			Args: []string{
 				"--image", "some-registry.io/repo/lifecycle-image",
 			},
-			ExpectUpdates: []clientgotesting.UpdateActionImpl{
-				{
-					Object: updatedLifecycleImageConfig,
-				},
+			ExpectPatches: []string{
+				`{"data":{"image":"default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"}}`,
 			},
-			ExpectedOutput: `Updating lifecycle image...
+			ExpectedOutput: `Patching lifecycle config...
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
-Updated lifecycle image
+Patched lifecycle config
 `,
 		}.TestK8s(t, cmdFunc)
 	})
@@ -161,13 +156,11 @@ metadata:
 					"--image", "some-registry.io/repo/lifecycle-image",
 					"--output", "yaml",
 				},
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: updatedLifecycleImageConfig,
-					},
+				ExpectPatches: []string{
+					`{"data":{"image":"default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"}}`,
 				},
 				ExpectedOutput: resourceYAML,
-				ExpectedErrorOutput: `Updating lifecycle image...
+				ExpectedErrorOutput: `Patching lifecycle config...
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
 			}.TestK8s(t, cmdFunc)
@@ -197,13 +190,11 @@ metadata:
 					"--image", "some-registry.io/repo/lifecycle-image",
 					"--output", "json",
 				},
-				ExpectUpdates: []clientgotesting.UpdateActionImpl{
-					{
-						Object: updatedLifecycleImageConfig,
-					},
+				ExpectPatches: []string{
+					`{"data":{"image":"default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"}}`,
 				},
 				ExpectedOutput: resourceJSON,
-				ExpectedErrorOutput: `Updating lifecycle image...
+				ExpectedErrorOutput: `Patching lifecycle config...
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
 			}.TestK8s(t, cmdFunc)
@@ -221,9 +212,9 @@ metadata:
 					"--image", "some-registry.io/repo/lifecycle-image",
 					"--dry-run",
 				},
-				ExpectedOutput: `Updating lifecycle image... (dry run)
+				ExpectedOutput: `Patching lifecycle config... (dry run)
 	Skipping 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
-Updated lifecycle image (dry run)
+Patched lifecycle config (dry run)
 `,
 			}.TestK8s(t, cmdFunc)
 		})
@@ -251,7 +242,7 @@ metadata:
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Updating lifecycle image... (dry run)
+					ExpectedErrorOutput: `Patching lifecycle config... (dry run)
 	Skipping 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
 				}.TestK8s(t, cmdFunc)
@@ -270,9 +261,9 @@ metadata:
 					"--image", "some-registry.io/repo/lifecycle-image",
 					"--dry-run-with-image-upload",
 				},
-				ExpectedOutput: `Updating lifecycle image... (dry run with image upload)
+				ExpectedOutput: `Patching lifecycle config... (dry run with image upload)
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
-Updated lifecycle image (dry run with image upload)
+Patched lifecycle config (dry run with image upload)
 `,
 			}.TestK8s(t, cmdFunc)
 		})
@@ -300,7 +291,7 @@ metadata:
 						"--output", "yaml",
 					},
 					ExpectedOutput: resourceYAML,
-					ExpectedErrorOutput: `Updating lifecycle image... (dry run with image upload)
+					ExpectedErrorOutput: `Patching lifecycle config... (dry run with image upload)
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
 				}.TestK8s(t, cmdFunc)
