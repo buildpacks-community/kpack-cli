@@ -25,8 +25,8 @@ func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilPr
 
 	cmd := &cobra.Command{
 		Use:   "save <name>",
-		Short: "Create or update a cluster stack",
-		Long: `Create or update a cluster-scoped stack by providing command line arguments.
+		Short: "Create or patch a cluster stack",
+		Long: `Create or patch a cluster-scoped stack by providing command line arguments.
 
 The run and build images will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
