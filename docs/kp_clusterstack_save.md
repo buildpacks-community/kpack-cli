@@ -1,10 +1,10 @@
 ## kp clusterstack save
 
-Create or update a cluster stack
+Create or patch a cluster stack
 
 ### Synopsis
 
-Create or update a cluster-scoped stack by providing command line arguments.
+Create or patch a cluster-scoped stack by providing command line arguments.
 
 The run and build images will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.

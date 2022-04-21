@@ -11,5 +11,5 @@ Lifecycle Commands
 ### SEE ALSO
 
 * [kp](kp.md)	 - 
-* [kp lifecycle update](kp_lifecycle_update.md)	 - Update lifecycle image used by kpack
+* [kp lifecycle patch](kp_lifecycle_patch.md)	 - Patch lifecycle image used by kpack
 
