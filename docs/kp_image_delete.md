@@ -1,12 +1,13 @@
 ## kp image delete
 
-Delete an image
+Delete an image resource
 
 ### Synopsis
 
-Delete an image and its associated image builds in the provided namespace.
+Delete an image resource and its associated builds in the provided namespace.
 
 namespace defaults to the kubernetes current-context namespace.
+this will not delete your OCI image in the registry
 
 ```
 kp image delete <name> [flags]

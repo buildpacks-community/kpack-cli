@@ -55,7 +55,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
   -h, --help                   help for create
   -n, --namespace string       kubernetes namespace
       --output string          print Kubernetes resources in the specified format; supported formats are: yaml, json.
-                                 The output can be used with the "kubectl apply -f" command. To allow this, the command 
+                                 The output can be used with the "kubectl apply -f" command. To allow this, the command
                                  updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
       --registry string        registry
       --registry-user string   registry user

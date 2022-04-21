@@ -1,10 +1,10 @@
 ## kp image status
 
-Display status of an image
+Display status of an image resource
 
 ### Synopsis
 
-Prints detailed information about the status of a specific image in the provided namespace.
+Prints detailed information about the status of a specific image resource in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.
 

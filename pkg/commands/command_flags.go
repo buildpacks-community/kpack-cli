@@ -19,7 +19,7 @@ func SetDryRunOutputFlags(cmd *cobra.Command) {
   The --dry-run flag can be used in combination with the --output flag to
   view the Kubernetes resource(s) without sending anything to the server.`)
 	cmd.Flags().String(OutputFlag, "", `print Kubernetes resources in the specified format; supported formats are: yaml, json.
-  The output can be used with the "kubectl apply -f" command. To allow this, the command 
+  The output can be used with the "kubectl apply -f" command. To allow this, the command
   updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.`)
 }
 

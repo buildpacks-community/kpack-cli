@@ -40,7 +40,7 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --buildpack my-b
   -n, --namespace string    kubernetes namespace
   -o, --order string        path to buildpack order yaml
       --output string       print Kubernetes resources in the specified format; supported formats are: yaml, json.
-                              The output can be used with the "kubectl apply -f" command. To allow this, the command 
+                              The output can be used with the "kubectl apply -f" command. To allow this, the command
                               updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
   -s, --stack string        stack resource to use (default "default" for a create)
       --store string        buildpack store to use (default "default" for a create)

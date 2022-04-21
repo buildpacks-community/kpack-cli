@@ -1,10 +1,10 @@
 ## kp build logs
 
-Tails logs for an image build
+Tails logs for an image resource build
 
 ### Synopsis
 
-Tails logs from the containers of a specific build of an image in the provided namespace.
+Tails logs from the containers of a specific build of an image resource in the provided namespace.
 
 The build defaults to the latest build number.
 The namespace defaults to the kubernetes current-context namespace.

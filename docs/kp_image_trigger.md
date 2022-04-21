@@ -1,10 +1,10 @@
 ## kp image trigger
 
-Trigger an image build
+Trigger an image resource build
 
 ### Synopsis
 
-Trigger a build using current inputs for a specific image in the provided namespace.
+Trigger a build using current inputs for a specific image resource in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.
 

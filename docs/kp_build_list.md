@@ -9,7 +9,7 @@ Prints a table of the most important information about builds in the provided na
 The namespace defaults to the kubernetes current-context namespace.
 
 ```
-kp build list [image-name] [flags]
+kp build list [image-resource-name] [flags]
 ```
 
 ### Examples

@@ -1,10 +1,10 @@
 ## kp image list
 
-List images
+List image resources
 
 ### Synopsis
 
-Prints a table of the most important information about images in the provided namespace.
+Prints a table of the most important information about image resources in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.
 

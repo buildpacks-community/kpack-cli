@@ -11,6 +11,7 @@ Therefore, you must have credentials to access the registry on your machine.
 Additionally, your cluster must have read access to the registry.
 
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
+The default service account used is read from the "default.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.
 
 
 ```
@@ -37,7 +38,7 @@ kp clusterstack create my-stack --build-image ../path/to/build.tar --run-image .
                                          resource from --output without image uploads will result in a reconcile failure.
   -h, --help                           help for create
       --output string                  print Kubernetes resources in the specified format; supported formats are: yaml, json.
-                                         The output can be used with the "kubectl apply -f" command. To allow this, the command 
+                                         The output can be used with the "kubectl apply -f" command. To allow this, the command
                                          updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
       --registry-ca-cert-path string   add CA certificate for registry API (format: /tmp/ca.crt)
       --registry-verify-certs          set whether to verify server's certificate chain and host name (default true)

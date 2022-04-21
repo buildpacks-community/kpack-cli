@@ -1,11 +1,11 @@
 ## kp image create
 
-Create an image configuration
+Create an image resource
 
 ### Synopsis
 
-Create an image configuration by providing command line arguments.
-This image will be created only if it does not exist in the provided namespace.
+Create an image resource by providing command line arguments.
+This image resource will be created only if it does not exist in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.
 
@@ -15,7 +15,7 @@ The flags for this command determine how the build will retrieve source code:
   "--blob" to use source code hosted in a blob store
   "--local-path" to use source code from the local machine
 
-Local source code will be pushed to the same registry provided for the image tag.
+Local source code will be pushed to the same registry provided for the image resource tag.
 Therefore, you must have credentials to access the registry on your machine.
 --registry-ca-cert-path and --registry-verify-certs are only used for local source type.
 
@@ -40,6 +40,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 ### Options
 
 ```
+      --additional-tag stringArray     additional tags to push the OCI image to
       --blob string                    source code blob url
   -b, --builder string                 builder name
       --cache-size string              cache size as a kubernetes quantity (default "2G")
@@ -58,12 +59,12 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
       --local-path string              path to local source code
   -n, --namespace string               kubernetes namespace
       --output string                  print Kubernetes resources in the specified format; supported formats are: yaml, json.
-                                         The output can be used with the "kubectl apply -f" command. To allow this, the command 
+                                         The output can be used with the "kubectl apply -f" command. To allow this, the command
                                          updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
       --registry-ca-cert-path string   add CA certificate for registry API (format: /tmp/ca.crt)
       --registry-verify-certs          set whether to verify server's certificate chain and host name (default true)
       --sub-path string                build code at the sub path located within the source code directory
-  -t, --tag string                     registry location where the image will be created
+  -t, --tag string                     registry location where the OCI image will be created
   -w, --wait                           wait for image create to be reconciled and tail resulting build logs
 ```
 

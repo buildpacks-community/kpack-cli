@@ -29,4 +29,6 @@ kp --help
 
 ## [Documentation](docs/kp.md)
 
+Update docs with `go run cmd/docs/main.go`
+
 ## [Docker Image](https://hub.docker.com/r/kpack/kp) (kpack/kp)

@@ -35,7 +35,7 @@ kp lifecycle update --image my-registry.com/lifecycle
   -h, --help                           help for update
   -i, --image string                   location of the image
       --output string                  print Kubernetes resources in the specified format; supported formats are: yaml, json.
-                                         The output can be used with the "kubectl apply -f" command. To allow this, the command 
+                                         The output can be used with the "kubectl apply -f" command. To allow this, the command
                                          updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
       --registry-ca-cert-path string   add CA certificate for registry API (format: /tmp/ca.crt)
       --registry-verify-certs          set whether to verify server's certificate chain and host name (default true)

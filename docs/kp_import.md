@@ -34,7 +34,7 @@ cat dependencies.yaml | kp import -f -
       --force                          import without confirmation when showing changes
   -h, --help                           help for import
       --output string                  print Kubernetes resources in the specified format; supported formats are: yaml, json.
-                                         The output can be used with the "kubectl apply -f" command. To allow this, the command 
+                                         The output can be used with the "kubectl apply -f" command. To allow this, the command
                                          updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
       --registry-ca-cert-path string   add CA certificate for registry API (format: /tmp/ca.crt)
       --registry-verify-certs          set whether to verify server's certificate chain and host name (default true)

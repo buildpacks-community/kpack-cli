@@ -1,10 +1,10 @@
 ## kp build status
 
-Display status for an image build
+Display status for an image resource build
 
 ### Synopsis
 
-Prints detailed information about the status of a specific build of an image in the provided namespace.
+Prints detailed information about the status of a specific build of an image resource in the provided namespace.
 
 The build defaults to the latest build number.
 The namespace defaults to the kubernetes current-context namespace.
