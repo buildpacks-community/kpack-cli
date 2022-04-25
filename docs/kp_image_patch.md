@@ -69,6 +69,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
       --output string                       print Kubernetes resources in the specified format; supported formats are: yaml, json.
                                               The output can be used with the "kubectl apply -f" command. To allow this, the command
                                               updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
+                                              The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
       --registry-ca-cert-path string        add CA certificate for registry API (format: /tmp/ca.crt)
       --registry-verify-certs               set whether to verify server's certificate chain and host name (default true)
       --sub-path string                     build code at the sub path located within the source code directory
