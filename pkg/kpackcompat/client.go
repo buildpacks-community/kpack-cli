@@ -7,6 +7,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const LatestKpackAPIVersion = "v1alpha2"
+
 type kpackV1alpha1CompatClient struct {
 	v1alpha1KpackClient v1alpha1.KpackV1alpha1Interface
 }

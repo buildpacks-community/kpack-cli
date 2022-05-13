@@ -37,6 +37,7 @@ kp builder patch my-builder --buildpack my-buildpack-id --buildpack my-other-bui
       --output string       print Kubernetes resources in the specified format; supported formats are: yaml, json.
                               The output can be used with the "kubectl apply -f" command. To allow this, the command
                               updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
+                              The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
   -s, --stack string        stack resource to use
       --store string        buildpack store to use
   -t, --tag string          registry location where the builder will be created

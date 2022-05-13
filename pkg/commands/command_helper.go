@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/kpackcompat"
 )
 
 type CommandHelper struct {
@@ -223,7 +224,7 @@ func GetStringFlag(name string, cmd *cobra.Command) (string, error) {
 
 func getTypeToGVKLookup() map[reflect.Type]schema.GroupVersionKind {
 	v1GV := schema.GroupVersion{Group: v1.GroupName, Version: "v1"}
-	buildGV := schema.GroupVersion{Group: build.GroupName, Version: "v1alpha2"}
+	buildGV := schema.GroupVersion{Group: build.GroupName, Version: kpackcompat.LatestKpackAPIVersion}
 
 	return map[reflect.Type]schema.GroupVersionKind{
 		reflect.TypeOf(&v1.Secret{}):               v1GV.WithKind("Secret"),
