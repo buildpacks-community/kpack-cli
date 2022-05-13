@@ -43,6 +43,7 @@ Local source code will be pushed to the same registry provided for the image res
 Therefore, you must have credentials to access the registry on your machine.
 --registry-ca-cert-path and --registry-verify-certs are only used for local source type.
 
+  "--service-account" to use alternate k8s service account, default is "default"
 Environment variables may be provided by using the "--env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
 For example, "--env key1=value1 --env key2=value2 ...".`,
@@ -85,6 +86,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 			return nil
 		},
 	}
+	cmd.Flags().StringVarP(&factory.ServiceAccount, "service-account", "s", "default", "Service Account used in Image Resource")
 	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the OCI image will be created")
 	cmd.Flags().StringArrayVar(&factory.AdditionalTags, "additional-tag", []string{}, "additional tags to push the OCI image to")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")

@@ -427,6 +427,59 @@ Image Resource "some-image" created
 			})
 		})
 
+		when("service account is provided", func() {
+			const serviceaccount = "some-serviceaccount"
+			it("uses the provided service account", func() {
+				expectedImage := &v1alpha2.Image{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Image",
+						APIVersion: "kpack.io/v1alpha2",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "some-image",
+						Namespace:   defaultNamespace,
+						Annotations: map[string]string{},
+					},
+					Spec: v1alpha2.ImageSpec{
+						Tag: "some-registry.io/some-repo",
+						Builder: corev1.ObjectReference{
+							Kind: v1alpha2.ClusterBuilderKind,
+							Name: "some-builder",
+						},
+						ServiceAccountName: serviceaccount,
+						Source: corev1alpha1.SourceConfig{
+							Blob: &corev1alpha1.Blob{
+								URL: "some-blob",
+							},
+						},
+						Cache: &v1alpha2.ImageCacheConfig{
+							Volume: &v1alpha2.ImagePersistentVolumeCache{},
+						},
+						Build: &v1alpha2.ImageBuild{},
+					},
+				}
+				require.NoError(t, setLastAppliedAnnotation(expectedImage))
+
+				testhelpers.CommandTest{
+					Args: []string{
+						"some-image",
+						"--tag", "some-registry.io/some-repo",
+						"--blob", "some-blob",
+						"--service-account", serviceaccount,
+						"--cluster-builder", "some-builder",
+					},
+					ExpectedOutput: `Creating Image Resource...
+Image Resource "some-image" created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedImage,
+					},
+				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+		})
+
 		when("output flag is used", func() {
 			when("the image config is invalid", func() {
 				it("returns an error", func() {

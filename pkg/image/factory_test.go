@@ -130,4 +130,15 @@ func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 			require.EqualError(t, err, "all additional tags must have the same registry as tag. expected: test-registry.io, got: other-test-registry.io")
 		})
 	})
+
+	when("service account", func() {
+		factory.Blob = "some-blob"
+		it("can be set", func() {
+			factory.ServiceAccount = "test-service-account"
+			img, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+			require.NoError(t, err)
+			require.Equal(t, img.Spec.ServiceAccountName, factory.ServiceAccount)
+		})
+
+	})
 }
