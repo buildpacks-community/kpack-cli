@@ -1,6 +1,6 @@
 ## kp secret create
 
-Create a secret for a service account
+Create a secret and link it to a service account
 
 ### Synopsis
 
