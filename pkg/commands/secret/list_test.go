@@ -33,7 +33,7 @@ func testSecretListCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("listing secrets", func() {
 		when("listing secrets in the default namespace", func() {
-			when("there are secrets", func() {
+			when("there are secrets in the default service account", func() {
 				it("lists the secrets", func() {
 					serviceAccount := &corev1.ServiceAccount{
 						ObjectMeta: v1.ObjectMeta{
@@ -77,6 +77,51 @@ secret-two      some-git-url
 				})
 			})
 
+			when("there are secrets in a custom service account", func() {
+				it("lists the secrets", func() {
+					serviceAccount := &corev1.ServiceAccount{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "some-sa",
+							Namespace: defaultNamespace,
+							Annotations: map[string]string{
+								secretcmds.ManagedSecretAnnotationKey: `{"secret-one":"https://index.docker.io/v1/", "secret-two":"some-git-url", "secret-three":""}`,
+							},
+						},
+						Secrets: []corev1.ObjectReference{
+							{
+								Name: "secret-one",
+							},
+							{
+								Name: "secret-two",
+							},
+							{
+								Name: "secret-three",
+							},
+						},
+						ImagePullSecrets: []corev1.LocalObjectReference{
+							{
+								Name: "secret-one",
+							},
+						},
+					}
+
+					const expectedOutput = `NAME            TARGET
+secret-one      https://index.docker.io/v1/
+secret-three    
+secret-two      some-git-url
+
+`
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							serviceAccount,
+						},
+						Args:           []string{"--service-account", "some-sa"},
+						ExpectedOutput: expectedOutput,
+					}.TestK8s(t, cmdFunc)
+				})
+			})
+
 			when("there are no secrets", func() {
 				it("prints an appropriate message", func() {
 					serviceAccount := &corev1.ServiceAccount{
@@ -91,7 +136,7 @@ secret-two      some-git-url
 							serviceAccount,
 						},
 						ExpectErr:           true,
-						ExpectedErrorOutput: "Error: no secrets found in \"some-default-namespace\" namespace\n",
+						ExpectedErrorOutput: "Error: no secrets found in \"some-default-namespace\" namespace for \"default\" service account\n",
 					}.TestK8s(t, cmdFunc)
 				})
 			})
@@ -160,7 +205,7 @@ secret-two      some-git-url
 						},
 						Args:                []string{"-n", namespace},
 						ExpectErr:           true,
-						ExpectedErrorOutput: "Error: no secrets found in \"some-namespace\" namespace\n",
+						ExpectedErrorOutput: "Error: no secrets found in \"some-namespace\" namespace for \"default\" service account\n",
 					}.TestK8s(t, cmdFunc)
 				})
 			})

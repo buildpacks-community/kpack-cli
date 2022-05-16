@@ -18,15 +18,18 @@ import (
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, secretFactory *secret.Factory) *cobra.Command {
 	var (
-		namespace string
+		namespace      string
+		serviceAccount string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "create <name>",
-		Short: "Create a secret configuration",
-		Long: `Create a secret configuration using registry or git credentials in the provided namespace.
+		Short: "Create a secret for a service account",
+		Long: `Create a secret for a service account using registry or git credentials in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.
+
+The service account defaults to the "default" service account.
 
 The flags for this command determine the type of secret that will be created:
 
@@ -90,7 +93,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				return err
 			}
 
-			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(ctx, "default", metav1.GetOptions{})
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(ctx, serviceAccount, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -134,6 +137,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 	cmd.Flags().StringVarP(&secretFactory.GitUrl, "git-url", "", "", "git url")
 	cmd.Flags().StringVarP(&secretFactory.GitSshKeyFile, "git-ssh-key", "", "", "path to a file containing the GitUrl SSH private key")
 	cmd.Flags().StringVarP(&secretFactory.GitUser, "git-user", "", "", "git user")
+	cmd.Flags().StringVar(&serviceAccount, "service-account", "default", "service account name to use")
 	commands.SetDryRunOutputFlags(cmd)
 	return cmd
 }

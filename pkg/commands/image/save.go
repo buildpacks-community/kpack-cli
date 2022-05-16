@@ -45,8 +45,6 @@ The flags for this command determine how the build will retrieve source code:
 Local source code will be pushed to the same registry provided for the image resource tag.
 Therefore, you must have credentials to access the registry on your machine.
 
-  "--service-account" to use alternate k8s service account, default is "default"
-
 Environment variables may be provided by using the "--env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
 For example, "--env key1=value1 --env key2=value2 ...".`,
@@ -111,7 +109,6 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 		},
 	}
 	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the image will be created")
-	cmd.Flags().StringVarP(&factory.ServiceAccount, "service-account", "s", "default", "Service Account used in Image Resource")
 	cmd.Flags().StringArrayVar(&factory.AdditionalTags, "additional-tag", []string{}, "additional tags to push the OCI image to")
 	cmd.Flags().StringArrayVar(&factory.DeleteAdditionalTags, "delete-additional-tag", []string{}, "additional tags to remove")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
@@ -125,6 +122,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables")
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
+	cmd.Flags().StringVar(&factory.ServiceAccount, "service-account", "", "service account name to use")
 	cmd.Flags().BoolP("wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
 	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsCfg)

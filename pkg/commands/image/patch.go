@@ -113,6 +113,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables to add/replace")
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
 	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size as a kubernetes quantity")
+	cmd.Flags().StringVar(&factory.ServiceAccount, "service-account", "", "service account name to use")
 	cmd.Flags().BoolP("wait", "w", false, "wait for image resource patch to be reconciled and tail resulting build logs")
 	commands.SetImgUploadDryRunOutputFlags(cmd)
 	commands.SetTLSFlags(cmd, &tlsCfg)

@@ -21,8 +21,9 @@ kp secret delete my-secret
 ### Options
 
 ```
-  -h, --help               help for delete
-  -n, --namespace string   kubernetes namespace
+  -h, --help                     help for delete
+  -n, --namespace string         kubernetes namespace
+      --service-account string   service account name to use (default "default")
 ```
 
 ### SEE ALSO

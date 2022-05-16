@@ -10,13 +10,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
-	secretcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/secret"
-	"github.com/vmware-tanzu/kpack-cli/pkg/secret"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
+
+	secretcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/secret"
+	"github.com/vmware-tanzu/kpack-cli/pkg/secret"
+	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
 func TestSecretCreateCommand(t *testing.T) {
@@ -56,6 +57,57 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
+	customNamespacedServiceAccount := &corev1.ServiceAccount{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "some-sa",
+			Namespace: namespace,
+		},
+	}
+
+	it("can create a secret and update a service account", func() {
+
+		var (
+			registry               = "my-registry.io"
+			registryUser           = "my-registry-user"
+			registryPassword       = "dummy-password"
+			secretName             = "my-registry-cred"
+			expectedRegistryConfig = fmt.Sprintf("{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}}", registry, registryUser, registryPassword)
+		)
+
+		fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
+
+		expectedRegistrySecret := &corev1.Secret{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      secretName,
+				Namespace: namespace,
+			},
+			Data: map[string][]byte{
+				corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+		}
+
+		testhelpers.CommandTest{
+			Objects: []runtime.Object{
+				customNamespacedServiceAccount,
+			},
+			Args: []string{secretName,
+				"--registry", registry,
+				"--registry-user", registryUser,
+				"--service-account", "some-sa",
+				"-n", namespace},
+			ExpectedOutput: `Secret "my-registry-cred" created
+`,
+			ExpectCreates: []runtime.Object{
+				expectedRegistrySecret,
+			},
+			ExpectPatches: []string{
+				`{"imagePullSecrets":[{"name":"my-registry-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-registry-cred\":\"my-registry.io\"}"}},"secrets":[{"name":"my-registry-cred"}]}`,
+			},
+		}.TestK8s(t, cmdFunc)
+
+	})
+
 	when("namespace is provided", func() {
 		when("creating a dockerhub secret", func() {
 			var (
@@ -67,7 +119,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["DOCKER_PASSWORD"] = dockerPassword
 
-			it("creates a secret with the correct annotations for docker in the provided namespace and updates the service account", func() {
+			it("creates a secret with the correct annotations for docker in the provided namespace and updates the default service account", func() {
 				expectedDockerSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,
@@ -107,7 +159,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
 
-			it("creates a secret with the correct annotations for the registry in the provided namespace and updates the service account", func() {
+			it("creates a secret with the correct annotations for the registry in the provided namespace and updates the default service account", func() {
 				expectedDockerSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,
@@ -145,7 +197,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords[gcrServiceAccountFile] = `{"some-key":"some-value"}`
 
-			it("creates a secret with the correct annotations for the registry in the provided namespace and updates the service account", func() {
+			it("creates a secret with the correct annotations for the registry in the provided namespace and updates the default service account", func() {
 				expectedDockerSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,
@@ -183,7 +235,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords[gitSshFile] = "some git ssh key"
 
-			it("creates a secret with the correct annotations for git ssh in the provided namespace and updates the service account", func() {
+			it("creates a secret with the correct annotations for git ssh in the provided namespace and updates the default service account", func() {
 				expectedGitSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,
@@ -225,7 +277,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["GIT_PASSWORD"] = gitPassword
 
-			it("creates a secret with the correct annotations for git basic auth in the provided namespace and updates the service account", func() {
+			it("creates a secret with the correct annotations for git basic auth in the provided namespace and updates the default service account", func() {
 				expectedGitSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,
@@ -270,7 +322,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["DOCKER_PASSWORD"] = dockerPassword
 
-			it("creates a secret with the correct annotations for docker in the default namespace and updates the service account", func() {
+			it("creates a secret with the correct annotations for docker in the default namespace and updates the default service account", func() {
 				expectedDockerSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,
@@ -310,7 +362,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
 
-			it("creates a secret with the correct annotations for the registry in the default namespace and updates the service account", func() {
+			it("creates a secret with the correct annotations for the registry in the default namespace and updates the default service account", func() {
 				expectedDockerSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,
@@ -348,7 +400,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords[gcrServiceAccountFile] = `{"some-key":"some-value"}`
 
-			it("creates a secret with the correct annotations for gcr in the default namespace and updates the service account", func() {
+			it("creates a secret with the correct annotations for gcr in the default namespace and updates the default service account", func() {
 				expectedDockerSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,
@@ -386,7 +438,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords[gitSshFile] = "some git ssh key"
 
-			it("creates a secret with the correct annotations for git ssh in the default namespace and updates the service account", func() {
+			it("creates a secret with the correct annotations for git ssh in the default namespace and updates the default service account", func() {
 				expectedGitSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,
@@ -428,7 +480,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 			fetcher.passwords["GIT_PASSWORD"] = gitPassword
 
-			it("creates a secret with the correct annotations for git basic auth in the default namespace and updates the service account", func() {
+			it("creates a secret with the correct annotations for git basic auth in the default namespace and updates the default service account", func() {
 				expectedGitSecret := &corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      secretName,

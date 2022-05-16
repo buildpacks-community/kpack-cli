@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	defaultStack = "default"
-	defaultStore = "default"
+	defaultStack          = "default"
+	defaultStore          = "default"
+	defaultServiceAccount = "default"
 )
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
@@ -68,18 +69,20 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --buildpack my
 	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'\n  repeat for each buildpack in order, or supply once with comma-separated list")
+	cmd.Flags().StringVar(&flags.serviceAccount, "service-account", defaultServiceAccount, "service account name to use")
 	commands.SetDryRunOutputFlags(cmd)
 	_ = cmd.MarkFlagRequired("tag")
 	return cmd
 }
 
 type CommandFlags struct {
-	tag        string
-	namespace  string
-	stack      string
-	store      string
-	order      string
-	buildpacks []string
+	tag            string
+	namespace      string
+	stack          string
+	store          string
+	order          string
+	buildpacks     []string
+	serviceAccount string
 }
 
 func create(ctx context.Context, name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
@@ -105,7 +108,7 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 					Kind: v1alpha2.ClusterStoreKind,
 				},
 			},
-			ServiceAccountName: "default",
+			ServiceAccountName: flags.serviceAccount,
 		},
 	}
 

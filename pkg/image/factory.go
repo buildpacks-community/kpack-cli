@@ -4,17 +4,18 @@
 package image
 
 import (
+	"io"
+	"sort"
+	"strings"
+
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sort"
-	"strings"
 )
 
 const (
@@ -49,8 +50,8 @@ type Factory struct {
 	CacheSize            string
 	DeleteEnv            []string
 	DeleteAdditionalTags []string
-	ServiceAccount       string
 	Printer              Printer
+	ServiceAccount       string
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error) {
@@ -75,6 +76,10 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 	}
 
 	builder := f.makeBuilder(namespace)
+
+	if f.ServiceAccount == "" {
+		f.ServiceAccount = "default"
+	}
 
 	return &v1alpha2.Image{
 		TypeMeta: metav1.TypeMeta{

@@ -17,7 +17,8 @@ import (
 
 func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
-		namespace string
+		namespace      string
+		serviceAccount string
 	)
 
 	command := cobra.Command{
@@ -37,7 +38,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 
 			ctx := cmd.Context()
 
-			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(ctx, "default", metav1.GetOptions{})
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(ctx, serviceAccount, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -70,6 +71,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 	}
 
 	command.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
+	command.Flags().StringVar(&serviceAccount, "service-account", "default", "service account name to use")
 
 	return &command
 }

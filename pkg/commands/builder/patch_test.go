@@ -100,11 +100,12 @@ func testPatchCommand(builderCommand func(clientSetProvider k8s.ClientSetProvide
 					"--store", "some-other-store",
 					"--order", "./testdata/patched-order.yaml",
 					"-n", bldr.Namespace,
+					"--service-account", "some-other-sa",
 				},
 				ExpectedOutput: `Builder "test-builder" patched
 `,
 				ExpectPatches: []string{
-					`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
+					`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"serviceAccountName":"some-other-sa","stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 			require.Len(t, fakeWaiter.WaitCalls, 1)
@@ -123,16 +124,18 @@ func testPatchCommand(builderCommand func(clientSetProvider k8s.ClientSetProvide
 					"--stack", "some-other-stack",
 					"--store", "some-other-store",
 					"--order", "./testdata/patched-order.yaml",
+					"--service-account", "some-sa",
 				},
 				ExpectedOutput: `Builder "test-builder" patched
 `,
 				ExpectPatches: []string{
-					`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
+					`{"spec":{"order":[{"group":[{"id":"org.cloudfoundry.test-bp"}]},{"group":[{"id":"org.cloudfoundry.fake-bp"}]}],"serviceAccountName":"some-sa","stack":{"name":"some-other-stack"},"store":{"name":"some-other-store"},"tag":"some-other-tag"}}`,
 				},
 			}.TestKpack(t, cmdFunc)
 		})
 
 		it("does not patch if there are no changes", func() {
+			bldr.Spec.ServiceAccountName = "some-other-sa"
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
 					bldr,

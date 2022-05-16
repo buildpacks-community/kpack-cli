@@ -68,6 +68,7 @@ kp builder patch my-builder --buildpack my-buildpack-id --buildpack my-other-bui
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'\n  repeat for each buildpack in order, or supply once with comma-separated list")
+	cmd.Flags().StringVar(&flags.serviceAccount, "service-account", "", "service account name to use")
 	commands.SetDryRunOutputFlags(cmd)
 	return cmd
 }
@@ -85,6 +86,10 @@ func patch(ctx context.Context, bldr *v1alpha2.Builder, flags CommandFlags, ch *
 
 	if flags.store != "" {
 		updatedBldr.Spec.Store.Name = flags.store
+	}
+
+	if flags.serviceAccount != "" {
+		updatedBldr.Spec.ServiceAccountName = flags.serviceAccount
 	}
 
 	if len(flags.buildpacks) > 0 && flags.order != "" {
