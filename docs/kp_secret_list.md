@@ -1,6 +1,6 @@
 ## kp secret list
 
-List secrets for a service account
+List secrets attached to a service account
 
 ### Synopsis
 

@@ -23,7 +23,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 	command := cobra.Command{
 		Use:   "list",
-		Short: "List secrets for a service account",
+		Short: "List secrets attached to a service account",
 		Long: `List secrets for a service account in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.
