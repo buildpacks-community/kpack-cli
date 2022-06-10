@@ -72,6 +72,7 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
                                               The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
       --registry-ca-cert-path string        add CA certificate for registry API (format: /tmp/ca.crt)
       --registry-verify-certs               set whether to verify server's certificate chain and host name (default true)
+      --service-account string              service account name to use
       --sub-path string                     build code at the sub path located within the source code directory
   -w, --wait                                wait for image resource patch to be reconciled and tail resulting build logs
 ```

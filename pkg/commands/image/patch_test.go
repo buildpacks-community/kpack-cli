@@ -95,6 +95,25 @@ Image Resource "some-image" patched (no change)
 			})
 		})
 
+		it("can change the service account", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					existingImage,
+				},
+				Args: []string{
+					"some-image",
+					"--service-account", "some-other-sa",
+				},
+				ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
+`,
+				ExpectPatches: []string{
+					`{"spec":{"serviceAccountName":"some-other-sa"}}`,
+				},
+			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
+		})
+
 		when("patching source", func() {
 			when("patching the sub path", func() {
 				it("can patch it with an empty string", func() {

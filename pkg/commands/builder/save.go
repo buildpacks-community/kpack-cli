@@ -69,6 +69,10 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --buildpack my-b
 					flags.store = defaultStore
 				}
 
+				if flags.serviceAccount == "" {
+					flags.serviceAccount = defaultServiceAccount
+				}
+
 				return create(ctx, name, flags, ch, cs, w)
 			} else if err != nil {
 				return err
@@ -84,6 +88,7 @@ kp builder save my-builder --tag my-registry.com/my-builder-tag --buildpack my-b
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use (default \"default\" for a create)")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'\n  repeat for each buildpack in order, or supply once with comma-separated list")
+	cmd.Flags().StringVar(&flags.serviceAccount, "service-account", "", "service account name to use")
 	commands.SetDryRunOutputFlags(cmd)
 	return cmd
 }

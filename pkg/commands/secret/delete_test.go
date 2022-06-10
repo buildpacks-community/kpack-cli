@@ -84,6 +84,52 @@ func testSecretDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					}.TestK8s(t, cmdFunc)
 				})
+
+				it("deletes the secret and removes it from the a custom service account", func() {
+					secretOne := &corev1.Secret{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      secretName,
+							Namespace: defaultNamespace,
+						},
+					}
+
+					serviceAccount := &corev1.ServiceAccount{
+						ObjectMeta: v1.ObjectMeta{
+							Name:      "some-sa",
+							Namespace: defaultNamespace,
+							Annotations: map[string]string{
+								secretcmds.ManagedSecretAnnotationKey: fmt.Sprintf(`{"%s":"%s", "foo":"bar"}`, secretName, secret.DockerhubUrl),
+							},
+						},
+						Secrets: []corev1.ObjectReference{
+							{Name: secretName},
+						},
+						ImagePullSecrets: []corev1.LocalObjectReference{
+							{Name: secretName},
+						},
+					}
+
+					testhelpers.CommandTest{
+						Objects: []runtime.Object{
+							secretOne,
+							serviceAccount,
+						},
+						Args: []string{secretName, "--service-account", "some-sa"},
+						ExpectedOutput: `Secret "some-secret" deleted
+`,
+						ExpectPatches: []string{
+							`{"imagePullSecrets":null,"metadata":{"annotations":{"kpack.io/managedSecret":"{\"foo\":\"bar\"}"}},"secrets":null}`,
+						},
+						ExpectDeletes: []clientgotesting.DeleteActionImpl{
+							{
+								ActionImpl: clientgotesting.ActionImpl{
+									Namespace: defaultNamespace,
+								},
+								Name: secretName,
+							},
+						},
+					}.TestK8s(t, cmdFunc)
+				})
 			})
 
 			when("the secret does not exist", func() {

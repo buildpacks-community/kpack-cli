@@ -43,6 +43,8 @@ func (f *Factory) UpdateImage(img *v1alpha2.Image) (*v1alpha2.Image, error) {
 
 	f.setBuilder(updatedImage)
 
+	f.setServiceAccount(updatedImage)
+
 	return updatedImage, nil
 }
 
@@ -295,5 +297,11 @@ func (f *Factory) setBuilder(image *v1alpha2.Image) {
 			Kind: v1alpha2.ClusterBuilderKind,
 			Name: f.ClusterBuilder,
 		}
+	}
+}
+
+func (f *Factory) setServiceAccount(image *v1alpha2.Image) {
+	if f.ServiceAccount != "" {
+		image.Spec.ServiceAccountName = f.ServiceAccount
 	}
 }

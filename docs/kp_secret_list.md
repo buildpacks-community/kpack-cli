@@ -1,12 +1,14 @@
 ## kp secret list
 
-List secrets
+List secrets attached to a service account
 
 ### Synopsis
 
-Prints a table of the most important information about secrets in the provided namespace.
+List secrets for a service account in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.
+
+The service account defaults to "default".
 
 ```
 kp secret list [flags]
@@ -22,8 +24,9 @@ kp secret list -n my-namespace
 ### Options
 
 ```
-  -h, --help               help for list
-  -n, --namespace string   kubernetes namespace
+  -h, --help                     help for list
+  -n, --namespace string         kubernetes namespace
+      --service-account string   service account to list secrets for (default "default")
 ```
 
 ### SEE ALSO

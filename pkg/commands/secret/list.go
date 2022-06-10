@@ -17,15 +17,18 @@ import (
 
 func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
-		namespace string
+		namespace      string
+		serviceAccount string
 	)
 
 	command := cobra.Command{
 		Use:   "list",
-		Short: "List secrets",
-		Long: `Prints a table of the most important information about secrets in the provided namespace.
+		Short: "List secrets attached to a service account",
+		Long: `List secrets for a service account in the provided namespace.
 
-The namespace defaults to the kubernetes current-context namespace.`,
+The namespace defaults to the kubernetes current-context namespace.
+
+The service account defaults to "default".`,
 		Example:      "kp secret list\nkp secret list -n my-namespace",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -34,13 +37,13 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(cmd.Context(), "default", metav1.GetOptions{})
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(cmd.Context(), serviceAccount, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
 			if len(serviceAccount.Secrets) == 0 && len(serviceAccount.ImagePullSecrets) == 0 {
-				return errors.Errorf("no secrets found in %q namespace", cs.Namespace)
+				return errors.Errorf("no secrets found in %q namespace for %q service account", cs.Namespace, serviceAccount.Name)
 			} else {
 				return displaySecretsTable(cmd, serviceAccount)
 			}
@@ -48,6 +51,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 	}
 
 	command.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
+	command.Flags().StringVar(&serviceAccount, "service-account", "default", "service account to list secrets for")
 
 	return &command
 }

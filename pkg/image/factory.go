@@ -51,6 +51,7 @@ type Factory struct {
 	DeleteEnv            []string
 	DeleteAdditionalTags []string
 	Printer              Printer
+	ServiceAccount       string
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error) {
@@ -76,6 +77,10 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 
 	builder := f.makeBuilder(namespace)
 
+	if f.ServiceAccount == "" {
+		f.ServiceAccount = "default"
+	}
+
 	return &v1alpha2.Image{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Image",
@@ -89,7 +94,7 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 			Tag:                tag,
 			AdditionalTags:     f.AdditionalTags,
 			Builder:            builder,
-			ServiceAccountName: "default",
+			ServiceAccountName: f.ServiceAccount,
 			Source:             source,
 			Build: &v1alpha2.ImageBuild{
 				Env: envVars,
