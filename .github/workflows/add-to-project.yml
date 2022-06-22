@@ -1,17 +1,20 @@
-name: Add issues to project
-
+name: Project automations
 on:
   issues:
     types:
       - opened
-
+      - reopened
 jobs:
-  add-to-project:
-    name: Add To GitHub Projects Beta
+  issue_opened_or_reopened:
+    name: issue_opened_or_reopened
     runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && (github.event.action == 'opened' || github.event.action == 'reopened')
     steps:
-      - name: Add To GitHub Projects Beta
-        uses: actions/add-to-project@v0.0.5
+      - name: Move issue to Awaiting Triage
+        uses: leonsteinhaeuser/project-beta-automations@v1.2.1
         with:
-          project-url: https://github.com/orgs/pivotal/projects/18
-          github-token: ${{ secrets.KPACK_BOT_PAT }}
+          gh_token: ${{ secrets.KPACK_BOT_PAT }}
+          organization: pivotal
+          project_id: 18
+          resource_node_id: ${{ github.event.issue.node_id }}
+          status_value: "Awaiting Triage"
