@@ -81,7 +81,7 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 		f.ServiceAccount = "default"
 	}
 
-	return &v1alpha2.Image{
+	image := &v1alpha2.Image{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Image",
 			APIVersion: v1alpha2.SchemeGroupVersion.String(),
@@ -99,13 +99,18 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 			Build: &v1alpha2.ImageBuild{
 				Env: envVars,
 			},
-			Cache: &v1alpha2.ImageCacheConfig{
-				Volume: &v1alpha2.ImagePersistentVolumeCache{
-					Size: cacheSize,
-				},
-			},
 		},
-	}, nil
+	}
+
+	if cacheSize != nil {
+		image.Spec.Cache = &v1alpha2.ImageCacheConfig{
+			Volume: &v1alpha2.ImagePersistentVolumeCache{
+				Size: cacheSize,
+			},
+		}
+	}
+
+	return image, nil
 }
 
 func (f *Factory) validateCreate(tag string) error {
