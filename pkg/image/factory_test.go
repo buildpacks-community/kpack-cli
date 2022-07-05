@@ -91,10 +91,10 @@ func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 			require.Equal(t, img.Spec.Cache.Volume.Size, &expectedCache)
 		})
 
-		it("defaults to nil", func() {
+		it("does not set cache volume when it is nil", func() {
 			img, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
 			require.NoError(t, err)
-			require.Nil(t, img.Spec.Cache.Volume.Size)
+			require.Nil(t, img.Spec.Cache)
 		})
 
 		it("errors with invalid cache size", func() {
