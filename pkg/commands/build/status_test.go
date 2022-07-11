@@ -77,7 +77,6 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
 
 		fakeFetcher := registryfakes.Fetcher{}
-		fakeFetcher.AddImage("repo.com/image-1:tag", registryfakes.NewFakeLabeledImage("io.buildpacks.build.metadata", "{\"bom\":{\"some\":\"metadata\"}}", "some-digest"))
 
 		fakeRegistryUtilProvider := &registryfakes.UtilProvider{
 			FakeFetcher: &fakeFetcher,
@@ -801,27 +800,6 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 						}.TestKpack(t, cmdFunc)
 					})
 				})
-			})
-		})
-
-		when("using the --bom flag", func() {
-			builds := testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, defaultNamespace))
-
-			it("prints the registry image bom only", func() {
-				testhelpers.CommandTest{
-					Objects:        builds,
-					Args:           []string{image, "-b", "1", "--bom"},
-					ExpectedOutput: "{\"some\":\"metadata\"}\n",
-				}.TestKpack(t, cmdFunc)
-			})
-
-			it("returns error when build is not successful", func() {
-				testhelpers.CommandTest{
-					Objects:             builds,
-					Args:                []string{image, "--bom"},
-					ExpectErr:           true,
-					ExpectedErrorOutput: "Error: build has failed or has not finished\n",
-				}.TestKpack(t, cmdFunc)
 			})
 		})
 	})
