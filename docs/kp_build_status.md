@@ -23,11 +23,9 @@ kp build status my-image -b 2 -n my-namespace
 ### Options
 
 ```
-  -b, --build string                   build number
-  -h, --help                           help for status
-  -n, --namespace string               kubernetes namespace
-      --registry-ca-cert-path string   add CA certificate for registry API (format: /tmp/ca.crt)
-      --registry-verify-certs          set whether to verify server's certificate chain and host name (default true)
+  -b, --build string       build number
+  -h, --help               help for status
+  -n, --namespace string   kubernetes namespace
 ```
 
 ### SEE ALSO
