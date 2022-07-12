@@ -32,7 +32,6 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 	var (
 		namespace   string
 		buildNumber string
-		tlsConfig   registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -73,7 +72,6 @@ The namespace defaults to the kubernetes current-context namespace.`,
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&buildNumber, "build", "b", "", "build number")
-	commands.SetTLSFlags(cmd, &tlsConfig)
 
 	return cmd
 }
