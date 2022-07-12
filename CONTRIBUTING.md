@@ -4,8 +4,8 @@
 
 To get started, ensure you have completed the following prerequisites for
 contributing to the project:
-1. Read and observe the [code of conduct](CODE_OF_CONDUCT.md).
-2. Sign the [CLA](#cla).
+1. Read and observe the [code of conduct](CODE-OF-CONDUCT.md).
+2. Sign the [CLA](#cla) when creating your first Pull Request.
 
 ### CLA
 
