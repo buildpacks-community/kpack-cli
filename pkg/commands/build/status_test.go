@@ -21,7 +21,6 @@ import (
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands/build"
-	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
 	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
@@ -76,12 +75,7 @@ bp-id-2         bp-version-2         mysupercoolsite2.com
 	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
 		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
 
-		fakeFetcher := registryfakes.Fetcher{}
-
-		fakeRegistryUtilProvider := &registryfakes.UtilProvider{
-			FakeFetcher: &fakeFetcher,
-		}
-		return build.NewStatusCommand(clientSetProvider, fakeRegistryUtilProvider)
+		return build.NewStatusCommand(clientSetProvider)
 	}
 
 	when("getting build status", func() {
