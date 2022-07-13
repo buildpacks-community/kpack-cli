@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pivotal/kpack/pkg/buildchange"
@@ -22,20 +21,12 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/build"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
 
-const (
-	buildMetadataKey = "io.buildpacks.build.metadata"
-	bomKey           = "bom"
-)
-
-func NewStatusCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider) *cobra.Command {
+func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace   string
 		buildNumber string
-		bom         bool
-		tlsConfig   registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -44,12 +35,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 		Long: `Prints detailed information about the status of a specific build of an image resource in the provided namespace.
 
 The build defaults to the latest build number.
-The namespace defaults to the kubernetes current-context namespace.
-
-When using the --bom flag, only the built image's bill of materials will be printed.
-Using the --bom flag will read metadata from the build's built image in the registry
-Therefore, you must have credentials to access the registry on your machine when using the --bom flag.
---registry-ca-cert-path and --registry-verify-certs are only used when using the --bom flag.`,
+The namespace defaults to the kubernetes current-context namespace.`,
 		Example:      "kp build status my-image\nkp build status my-image -b 2 -n my-namespace",
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
@@ -75,18 +61,12 @@ Therefore, you must have credentials to access the registry on your machine when
 					return err
 				}
 
-				if bom {
-					return displayBOM(authn.DefaultKeychain, cmd, bld, rup, tlsConfig)
-				} else {
-					return displayBuildStatus(cmd, bld)
-				}
+				return displayBuildStatus(cmd, bld)
 			}
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&buildNumber, "build", "b", "", "build number")
-	cmd.Flags().BoolVar(&bom, "bom", false, "only print the built image bill of materials")
-	commands.SetTLSFlags(cmd, &tlsConfig)
 
 	return cmd
 }
@@ -261,50 +241,4 @@ func reasonsAndChanges(changesJson string) (string, string, error) {
 	reasonsStr := strings.Join(reasons, ",")
 	changesStr := strings.TrimSuffix(sb.String(), "\n")
 	return reasonsStr, changesStr, nil
-}
-
-func displayBOM(keychain authn.Keychain, cmd *cobra.Command, bld v1alpha2.Build, rup registry.UtilProvider, tlsConfig registry.TLSConfig) error {
-	cond := bld.Status.GetCondition(corev1alpha1.ConditionSucceeded)
-	if cond == nil || !cond.IsTrue() {
-		return errors.Errorf("build has failed or has not finished")
-	}
-
-	h, err := commands.NewCommandHelper(cmd)
-	if err != nil {
-		return err
-	}
-
-	fetcher := rup.Fetcher(tlsConfig)
-
-	image, err := fetcher.Fetch(keychain, bld.Status.LatestImage)
-	if err != nil {
-		return err
-	}
-
-	c, err := image.ConfigFile()
-	if err != nil {
-		return err
-	}
-
-	bldMetadataStr, ok := c.Config.Labels[buildMetadataKey]
-	if !ok {
-		return errors.New("could not find cnb metadata on build image")
-	}
-
-	bldMetadata := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(bldMetadataStr), &bldMetadata); err != nil {
-		return err
-	}
-
-	bom, ok := bldMetadata[bomKey]
-	if !ok {
-		return errors.New("could not find bom on build image metadata")
-	}
-
-	output, err := json.Marshal(bom)
-	if err != nil {
-		return err
-	}
-
-	return h.Printlnf(string(output))
 }
