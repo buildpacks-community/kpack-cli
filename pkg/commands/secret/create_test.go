@@ -71,7 +71,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			registryUser           = "my-registry-user"
 			registryPassword       = "dummy-password"
 			secretName             = "my-registry-cred"
-			expectedRegistryConfig = fmt.Sprintf("{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}}", registry, registryUser, registryPassword)
+			expectedRegistryConfig = fmt.Sprintf("{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\",\"auth\":\"bXktcmVnaXN0cnktdXNlcjpkdW1teS1wYXNzd29yZA==\"}}}", registry, registryUser, registryPassword)
 		)
 
 		fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
@@ -114,7 +114,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				dockerhubId          = "my-dockerhub-id"
 				dockerPassword       = "dummy-password"
 				secretName           = "my-docker-cred"
-				expectedDockerConfig = fmt.Sprintf("{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"%s\",\"password\":\"%s\"}}}", dockerhubId, dockerPassword)
+				expectedDockerConfig = fmt.Sprintf(`{"auths":{"https://index.docker.io/v1/":{"username":"%s","password":"%s","auth":"bXktZG9ja2VyaHViLWlkOmR1bW15LXBhc3N3b3Jk"}}}`, dockerhubId, dockerPassword)
 			)
 
 			fetcher.passwords["DOCKER_PASSWORD"] = dockerPassword
@@ -154,7 +154,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				registryUser           = "my-registry-user"
 				registryPassword       = "dummy-password"
 				secretName             = "my-registry-cred"
-				expectedRegistryConfig = fmt.Sprintf("{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}}", registry, registryUser, registryPassword)
+				expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"%s","auth":"bXktcmVnaXN0cnktdXNlcjpkdW1teS1wYXNzd29yZA=="}}}`, registry, registryUser, registryPassword)
 			)
 
 			fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
@@ -192,7 +192,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			var (
 				gcrServiceAccountFile  = "./testdata/gcr-service-account.json"
 				secretName             = "my-gcr-cred"
-				expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"{\"some-key\":\"some-value\"}"}}}`, secret.GcrUrl, secret.GcrUser)
+				expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"{\"some-key\":\"some-value\"}","auth":"X2pzb25fa2V5Onsic29tZS1rZXkiOiJzb21lLXZhbHVlIn0="}}}`, secret.GcrUrl, secret.GcrUser)
 			)
 
 			fetcher.passwords[gcrServiceAccountFile] = `{"some-key":"some-value"}`
@@ -317,7 +317,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				dockerhubId          = "my-dockerhub-id"
 				dockerPassword       = "dummy-password"
 				secretName           = "my-docker-cred"
-				expectedDockerConfig = fmt.Sprintf("{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"%s\",\"password\":\"%s\"}}}", dockerhubId, dockerPassword)
+				expectedDockerConfig = fmt.Sprintf(`{"auths":{"https://index.docker.io/v1/":{"username":"%s","password":"%s","auth":"bXktZG9ja2VyaHViLWlkOmR1bW15LXBhc3N3b3Jk"}}}`, dockerhubId, dockerPassword)
 			)
 
 			fetcher.passwords["DOCKER_PASSWORD"] = dockerPassword
@@ -357,7 +357,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				registryUser           = "my-registry-user"
 				registryPassword       = "dummy-password"
 				secretName             = "my-registry-cred"
-				expectedRegistryConfig = fmt.Sprintf("{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}}", registry, registryUser, registryPassword)
+				expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"%s","auth":"bXktcmVnaXN0cnktdXNlcjpkdW1teS1wYXNzd29yZA=="}}}`, registry, registryUser, registryPassword)
 			)
 
 			fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
@@ -395,7 +395,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			var (
 				gcrServiceAccountFile  = "./testdata/gcr-service-account.json"
 				secretName             = "my-gcr-cred"
-				expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"{\"some-key\":\"some-value\"}"}}}`, secret.GcrUrl, secret.GcrUser)
+				expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"{\"some-key\":\"some-value\"}","auth":"X2pzb25fa2V5Onsic29tZS1rZXkiOiJzb21lLXZhbHVlIn0="}}}`, secret.GcrUrl, secret.GcrUser)
 			)
 
 			fetcher.passwords[gcrServiceAccountFile] = `{"some-key":"some-value"}`
@@ -519,7 +519,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			dockerhubId          = "my-dockerhub-id"
 			dockerPassword       = "dummy-password"
 			secretName           = "my-docker-cred"
-			expectedDockerConfig = fmt.Sprintf("{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"%s\",\"password\":\"%s\"}}}", dockerhubId, dockerPassword)
+			expectedDockerConfig = fmt.Sprintf(`{"auths":{"https://index.docker.io/v1/":{"username":"%s","password":"%s","auth":"bXktZG9ja2VyaHViLWlkOmR1bW15LXBhc3N3b3Jk"}}}`, dockerhubId, dockerPassword)
 		)
 
 		expectedDockerSecret := &corev1.Secret{
@@ -538,7 +538,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 		it("can output in yaml format", func() {
 			const resourceYAML = `apiVersion: v1
 data:
-  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIiwiYXV0aCI6ImJYa3RaRzlqYTJWeWFIVmlMV2xrT21SMWJXMTVMWEJoYzNOM2IzSmsifX19
 kind: Secret
 metadata:
   creationTimestamp: null
@@ -589,7 +589,7 @@ secrets:
         "creationTimestamp": null
     },
     "data": {
-        ".dockerconfigjson": "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ=="
+        ".dockerconfigjson": "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIiwiYXV0aCI6ImJYa3RaRzlqYTJWeWFIVmlMV2xrT21SMWJXMTVMWEJoYzNOM2IzSmsifX19"
     },
     "type": "kubernetes.io/dockerconfigjson"
 }
@@ -659,7 +659,7 @@ secrets:
 			it("does not create the secret and prints resource output", func() {
 				const resourceYAML = `apiVersion: v1
 data:
-  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIn19fQ==
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJteS1kb2NrZXJodWItaWQiLCJwYXNzd29yZCI6ImR1bW15LXBhc3N3b3JkIiwiYXV0aCI6ImJYa3RaRzlqYTJWeWFIVmlMV2xrT21SMWJXMTVMWEJoYzNOM2IzSmsifX19
 kind: Secret
 metadata:
   creationTimestamp: null
