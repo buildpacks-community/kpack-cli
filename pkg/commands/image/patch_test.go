@@ -74,6 +74,13 @@ func testPatchCommand(imageCommand func(clientSetProvider k8s.ClientSetProvider,
 							Value: "value2",
 						},
 					},
+					Services: v1alpha2.Services{
+						{
+							APIVersion: "v1",
+							Kind:       "SomeResource",
+							Name:       "some-binding",
+						},
+					},
 				},
 			},
 		}
@@ -342,6 +349,47 @@ Image Resource "some-image" patched
 			})
 		})
 
+		when("patching service bindings", func() {
+			it("can delete service bindings", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						existingImage,
+					},
+					Args: []string{
+						"some-image",
+						"--delete-service-binding", "SomeResource:v1:some-binding",
+					},
+					ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
+`,
+					ExpectPatches: []string{
+						`{"spec":{"build":{"services":null}}}`,
+					},
+				}.TestKpack(t, cmdFunc)
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+
+			it("can add new service bindings", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						existingImage,
+					},
+					Args: []string{
+						"some-image",
+						"-s", "SomeOtherResource:v1:some-other-binding",
+					},
+					ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
+`,
+					ExpectPatches: []string{
+						`{"spec":{"build":{"services":[{"apiVersion":"v1","kind":"SomeResource","name":"some-binding"},{"apiVersion":"v1","kind":"SomeOtherResource","name":"some-other-binding"}]}}}`,
+					},
+				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+		})
+
 		it("can patch cache size", func() {
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
@@ -406,6 +454,10 @@ spec:
     - name: key2
       value: value2
     resources: {}
+    services:
+    - apiVersion: v1
+      kind: SomeResource
+      name: some-binding
   builder:
     kind: ClusterBuilder
     name: some-ccb
@@ -459,6 +511,13 @@ status: {}
             "subPath": "some-path"
         },
         "build": {
+            "services": [
+                {
+                    "kind": "SomeResource",
+                    "name": "some-binding",
+                    "apiVersion": "v1"
+                }
+            ],
             "env": [
                 {
                     "name": "key1",
@@ -516,6 +575,10 @@ spec:
     - name: key2
       value: value2
     resources: {}
+    services:
+    - apiVersion: v1
+      kind: SomeResource
+      name: some-binding
   builder:
     kind: ClusterBuilder
     name: some-ccb
@@ -557,6 +620,7 @@ status: {}
 						"--local-path", "some-local-path",
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
+						"--service-binding", "SomeResource:v1:some-binding",
 						"--dry-run",
 						"--wait",
 					},
@@ -603,6 +667,10 @@ spec:
     - name: key2
       value: value2
     resources: {}
+    services:
+    - apiVersion: v1
+      kind: SomeResource
+      name: some-binding
   builder:
     kind: ClusterBuilder
     name: some-ccb
@@ -692,6 +760,10 @@ spec:
     - name: key2
       value: value2
     resources: {}
+    services:
+    - apiVersion: v1
+      kind: SomeResource
+      name: some-binding
   builder:
     kind: ClusterBuilder
     name: some-ccb

@@ -45,12 +45,17 @@ Therefore, you must have credentials to access the registry on your machine.
 
 Environment variables may be provided by using the "--env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
-For example, "--env key1=value1 --env key2=value2 ...".`,
+For example, "--env key1=value1 --env key2=value2 ...".
+
+Service bindings may be provided by using the "--service-binding" flag.
+For each service binding, supply the "--service-binding" flag followed by the <KIND>:<APIVERSION>:<NAME> or just <NAME> which will default the kind to "Secret".
+For example, "--service-binding my-secret-1 --service-binding Secret:v1:my-secret-2 --service-binding CustomProvisionedService:v1beta1:my-ps"`,
 		Example: `kp image create my-image --tag my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
 kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob
 kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code
 kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code --builder my-builder -n my-namespace
-kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple`,
+kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple
+kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --service-binding my-secret-1 --service-binding Secret:v1:my-secret-2 --service-binding CustomProvisionedService:v1beta1:my-ps`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -96,6 +101,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	cmd.Flags().StringVarP(&factory.Builder, "builder", "b", "", "builder name")
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables")
+	cmd.Flags().StringArrayVarP(&factory.ServiceBinding, "service-binding", "s", []string{}, "build time service bindings")
 	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size as a kubernetes quantity (default \"2G\")")
 	cmd.Flags().StringVar(&factory.ServiceAccount, "service-account", "default", "service account name to use")
 	cmd.Flags().BoolP("wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")

@@ -282,6 +282,27 @@ func (f *Factory) setBuild(image *v1alpha2.Image) error {
 		}
 	}
 
+	svcsToDelete, err := parseServiceBindings(f.DeleteServiceBinding)
+	if err != nil {
+		return err
+	}
+
+	for _, svc := range svcsToDelete {
+		for i, e := range image.Spec.Build.Services {
+			if e.Kind == svc.Kind && e.APIVersion == svc.APIVersion && e.Name == svc.Name {
+				image.Spec.Build.Services = append(image.Spec.Build.Services[:i], image.Spec.Build.Services[i+1:]...)
+				break
+			}
+		}
+	}
+
+	svcsToSave, err := parseServiceBindings(f.ServiceBinding)
+	if err != nil {
+		return err
+	}
+
+	image.Spec.Build.Services = append(image.Spec.Build.Services, svcsToSave...)
+
 	return nil
 }
 

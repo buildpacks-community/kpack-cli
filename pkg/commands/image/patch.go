@@ -43,13 +43,13 @@ The flags for this command determine how the build will retrieve source code:
 Local source code will be pushed to the same registry as the existing image resource tag.
 Therefore, you must have credentials to access the registry on your machine.
 
-Environment variables may be provided by using the "--env" flag.
+Environment variables may be provided by using the "--env" flag or deleted by using the "--delete-env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
-For example, "--env key1=value1 --env key2=value2 ...".
+For example, "--env key1=value1 --env key2=value2 --delete-env key3 --delete-env key3".
 
-Existing environment variables may be deleted by using the "--delete-env" flag.
-For each environment variable, supply the "--delete-env" flag followed by the variable name.
-For example, "--delete-env key1 --delete-env key2 ...".
+Service bindings may be provided by using the "--service-binding" flag or deleted by using the "--delete-service-binding" flag.
+For each service binding, supply the "--service-binding" flag followed by the <KIND>:<APIVERSION>:<NAME> or just <NAME> which will default the kind to "Secret".
+For example, "--service-binding my-secret-1 --service-binding CustomProvisionedService:v1beta1:my-ps" --delete-service-binding Secret:v1:my-secret-2
 
 The --cache-size flag can only be used to increase the size of the existing cache.
 `,
@@ -57,7 +57,8 @@ The --cache-size flag can only be used to increase the size of the existing cach
 kp image patch my-image --blob https://my-blob-host.com/my-blob
 kp image patch my-image --local-path /path/to/local/source/code
 kp image patch my-image --local-path /path/to/local/source/code --builder my-builder
-kp image patch my-image --env foo=bar --env color=red --delete-env apple --delete-env potato`,
+kp image patch my-image --env foo=bar --env color=red --delete-env apple --delete-env potato
+kp image patch my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --service-binding my-secret --service-binding CustomProvisionedService:v1:my-ps --delete-service-binding Secret:v1:my-secret-2`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -112,6 +113,8 @@ kp image patch my-image --env foo=bar --env color=red --delete-env apple --delet
 	cmd.Flags().StringVar(&factory.ClusterBuilder, "cluster-builder", "", "cluster builder name")
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables to add/replace")
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
+	cmd.Flags().StringArrayVarP(&factory.ServiceBinding, "service-binding", "s", []string{}, "build time service bindings to add/replace")
+	cmd.Flags().StringArrayVarP(&factory.DeleteServiceBinding, "delete-service-binding", "", []string{}, "build time service bindings to remove")
 	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size as a kubernetes quantity")
 	cmd.Flags().StringVar(&factory.ServiceAccount, "service-account", "", "service account name to use")
 	cmd.Flags().BoolP("wait", "w", false, "wait for image resource patch to be reconciled and tail resulting build logs")

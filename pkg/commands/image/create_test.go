@@ -95,6 +95,13 @@ func testCreateCommand(imageCommand func(clientSetProvider k8s.ClientSetProvider
 									Value: "some-val",
 								},
 							},
+							Services: v1alpha2.Services{
+								{
+									APIVersion: "v1",
+									Kind:       "SomeResource",
+									Name:       "some-binding",
+								},
+							},
 						},
 						Cache: &v1alpha2.ImageCacheConfig{
 							Volume: &v1alpha2.ImagePersistentVolumeCache{
@@ -116,6 +123,7 @@ func testCreateCommand(imageCommand func(clientSetProvider k8s.ClientSetProvider
 							"--git-revision", "some-git-rev",
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
+							"--service-binding", "SomeResource:v1:some-binding",
 							"--cache-size", "2G",
 							"-n", namespace,
 							"--registry-ca-cert-path", "some-cert-path",
@@ -147,6 +155,39 @@ Image Resource "some-image" created
 							"--git", "some-git-url",
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
+							"--service-binding", "SomeResource:v1:some-binding",
+							"--cache-size", "2G",
+							"-n", namespace,
+						},
+						ExpectedOutput: `Creating Image Resource...
+Image Resource "some-image" created
+`,
+						ExpectCreates: []runtime.Object{
+							expectedImage,
+						},
+					}.TestKpack(t, cmdFunc)
+				})
+
+				it("defaults the service binding kind to Secret", func() {
+					expectedImage.Spec.Build.Services = v1alpha2.Services{
+						{
+							Kind: "Secret",
+							Name: "some-secret",
+						},
+					}
+					require.NoError(t, setLastAppliedAnnotation(expectedImage))
+
+					testhelpers.CommandTest{
+						Args: []string{
+							"some-image",
+							"--tag", "some-registry.io/some-repo",
+							"--additional-tag", "some-registry.io/some-tag",
+							"--additional-tag", "some-registry.io/some-other-tag",
+							"--git", "some-git-url",
+							"--git-revision", "some-git-rev",
+							"--sub-path", "some-sub-path",
+							"--env", "some-key=some-val",
+							"--service-binding", "some-secret",
 							"--cache-size", "2G",
 							"-n", namespace,
 						},
@@ -214,6 +255,13 @@ Image Resource "some-image" created
 										Value: "some-val",
 									},
 								},
+								Services: v1alpha2.Services{
+									{
+										APIVersion: "v1",
+										Kind:       "SomeResource",
+										Name:       "some-binding",
+									},
+								},
 							},
 						},
 					}
@@ -227,6 +275,7 @@ Image Resource "some-image" created
 							"--git-revision", "some-git-rev",
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
+							"--service-binding", "SomeResource:v1:some-binding",
 						},
 						ExpectedOutput: `Creating Image Resource...
 Image Resource "some-image" created
@@ -291,6 +340,13 @@ Image Resource "some-image" created
 									Value: "some-val",
 								},
 							},
+							Services: v1alpha2.Services{
+								{
+									APIVersion: "v1",
+									Kind:       "SomeResource",
+									Name:       "some-binding",
+								},
+							},
 						},
 					},
 				}
@@ -303,6 +359,7 @@ Image Resource "some-image" created
 						"--local-path", "some-local-path",
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
+						"--service-binding", "SomeResource:v1:some-binding",
 					},
 					ExpectedOutput: `Creating Image Resource...
 Uploading to 'some-registry.io/some-repo-source'...
@@ -516,6 +573,13 @@ Image Resource "some-image" created
 									Value: "some-val",
 								},
 							},
+							Services: v1alpha2.Services{
+								{
+									APIVersion: "v1",
+									Kind:       "SomeResource",
+									Name:       "some-binding",
+								},
+							},
 						},
 					},
 				}
@@ -526,7 +590,7 @@ Image Resource "some-image" created
 kind: Image
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"services":[{"kind":"SomeResource","name":"some-binding","apiVersion":"v1"}],"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -536,6 +600,10 @@ spec:
     - name: some-key
       value: some-val
     resources: {}
+    services:
+    - apiVersion: v1
+      kind: SomeResource
+      name: some-binding
   builder:
     kind: ClusterBuilder
     name: default
@@ -557,6 +625,7 @@ status: {}
 							"--git-revision", "some-git-rev",
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
+							"--service-binding", "SomeResource:v1:some-binding",
 							"--output", "yaml",
 							"--wait",
 						},
@@ -580,7 +649,7 @@ status: {}
         "namespace": "some-default-namespace",
         "creationTimestamp": null,
         "annotations": {
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"Image\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"some-image\",\"namespace\":\"some-default-namespace\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry.io/some-repo\",\"builder\":{\"kind\":\"ClusterBuilder\",\"name\":\"default\"},\"serviceAccountName\":\"default\",\"source\":{\"git\":{\"url\":\"some-git-url\",\"revision\":\"some-git-rev\"},\"subPath\":\"some-sub-path\"},\"build\":{\"env\":[{\"name\":\"some-key\",\"value\":\"some-val\"}],\"resources\":{}}},\"status\":{}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"Image\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"some-image\",\"namespace\":\"some-default-namespace\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry.io/some-repo\",\"builder\":{\"kind\":\"ClusterBuilder\",\"name\":\"default\"},\"serviceAccountName\":\"default\",\"source\":{\"git\":{\"url\":\"some-git-url\",\"revision\":\"some-git-rev\"},\"subPath\":\"some-sub-path\"},\"build\":{\"services\":[{\"kind\":\"SomeResource\",\"name\":\"some-binding\",\"apiVersion\":\"v1\"}],\"env\":[{\"name\":\"some-key\",\"value\":\"some-val\"}],\"resources\":{}}},\"status\":{}}"
         }
     },
     "spec": {
@@ -598,6 +667,13 @@ status: {}
             "subPath": "some-sub-path"
         },
         "build": {
+            "services": [
+                {
+                    "kind": "SomeResource",
+                    "name": "some-binding",
+                    "apiVersion": "v1"
+                }
+            ],
             "env": [
                 {
                     "name": "some-key",
@@ -619,6 +695,7 @@ status: {}
 							"--git-revision", "some-git-rev",
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
+							"--service-binding", "SomeResource:v1:some-binding",
 							"--output", "json",
 							"--wait",
 						},
@@ -660,6 +737,7 @@ status: {}
 							"--git", "some-git-url",
 							"--git-revision", "some-git-rev",
 							"--sub-path", "some-sub-path",
+							"--service-binding", "SomeResource:v1:some-binding",
 							"--env", "some-key=some-val",
 							"--dry-run",
 							"--wait",
@@ -677,7 +755,7 @@ Image Resource "some-image" created (dry run)
 kind: Image
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"services":[{"kind":"SomeResource","name":"some-binding","apiVersion":"v1"}],"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -687,6 +765,10 @@ spec:
     - name: some-key
       value: some-val
     resources: {}
+    services:
+    - apiVersion: v1
+      kind: SomeResource
+      name: some-binding
   builder:
     kind: ClusterBuilder
     name: default
@@ -708,6 +790,7 @@ status: {}
 								"--git-revision", "some-git-rev",
 								"--sub-path", "some-sub-path",
 								"--env", "some-key=some-val",
+								"--service-binding", "SomeResource:v1:some-binding",
 								"--output", "yaml",
 								"--dry-run",
 								"--wait",
@@ -749,6 +832,7 @@ status: {}
 							"--local-path", "some-local-path",
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
+							"--service-binding", "SomeResource:v1:some-binding",
 							"--dry-run-with-image-upload",
 							"--wait",
 						},
@@ -767,7 +851,7 @@ Image Resource "some-image" created (dry run with image upload)
 kind: Image
 metadata:
   annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"services":[{"kind":"SomeResource","name":"some-binding","apiVersion":"v1"}],"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
   creationTimestamp: null
   name: some-image
   namespace: some-default-namespace
@@ -777,6 +861,10 @@ spec:
     - name: some-key
       value: some-val
     resources: {}
+    services:
+    - apiVersion: v1
+      kind: SomeResource
+      name: some-binding
   builder:
     kind: ClusterBuilder
     name: default
@@ -798,6 +886,7 @@ status: {}
 								"--git-revision", "some-git-rev",
 								"--sub-path", "some-sub-path",
 								"--env", "some-key=some-val",
+								"--service-binding", "SomeResource:v1:some-binding",
 								"--output", "yaml",
 								"--dry-run-with-image-upload",
 								"--wait",
@@ -847,6 +936,13 @@ status: {}
 									Value: "some-val",
 								},
 							},
+							Services: v1alpha2.Services{
+								{
+									APIVersion: "v1",
+									Kind:       "SomeResource",
+									Name:       "some-binding",
+								},
+							},
 						},
 					},
 				}
@@ -860,6 +956,7 @@ status: {}
 						"--git-revision", "some-git-rev",
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
+						"--service-binding", "SomeResource:v1:some-binding",
 					},
 					ExpectedOutput: `Creating Image Resource...
 Image Resource "some-image" created
