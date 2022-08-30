@@ -47,9 +47,11 @@ type Factory struct {
 	Builder              string
 	ClusterBuilder       string
 	Env                  []string
+	ServiceBinding       []string
 	CacheSize            string
 	DeleteEnv            []string
 	DeleteAdditionalTags []string
+	DeleteServiceBinding []string
 	Printer              Printer
 	ServiceAccount       string
 }
@@ -66,6 +68,11 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 	}
 
 	envVars, err := f.makeEnvVars()
+	if err != nil {
+		return nil, err
+	}
+
+	svcs, err := f.makeServiceBindings()
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +104,8 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 			ServiceAccountName: f.ServiceAccount,
 			Source:             source,
 			Build: &v1alpha2.ImageBuild{
-				Env: envVars,
+				Env:      envVars,
+				Services: svcs,
 			},
 		},
 	}
@@ -185,6 +193,10 @@ func (f *Factory) makeEnvVars() ([]corev1.EnvVar, error) {
 		})
 	}
 	return envVars, nil
+}
+
+func (f *Factory) makeServiceBindings() (v1alpha2.Services, error) {
+	return parseServiceBindings(f.ServiceBinding)
 }
 
 func (f *Factory) makeCacheSize() (*resource.Quantity, error) {
@@ -300,4 +312,26 @@ func (p paramSet) getExtraParamsError(keys ...string) error {
 	}
 	sort.Strings(v)
 	return errors.Errorf("extraneous parameters: %s", strings.Join(v, ", "))
+}
+
+func parseServiceBindings(services []string) (v1alpha2.Services, error) {
+	var svcs v1alpha2.Services
+	for _, e := range services {
+		parts := strings.Split(e, ":")
+		if len(parts) == 1 {
+			svcs = append(svcs, corev1.ObjectReference{
+				Kind: "Secret",
+				Name: parts[0],
+			})
+		} else if len(parts) == 3 {
+			svcs = append(svcs, corev1.ObjectReference{
+				Kind:       parts[0],
+				APIVersion: parts[1],
+				Name:       parts[2],
+			})
+		} else {
+			return nil, errors.Errorf("service bindings are improperly formatted")
+		}
+	}
+	return svcs, nil
 }

@@ -45,14 +45,20 @@ The flags for this command determine how the build will retrieve source code:
 Local source code will be pushed to the same registry provided for the image resource tag.
 Therefore, you must have credentials to access the registry on your machine.
 
-Environment variables may be provided by using the "--env" flag.
+Environment variables may be provided by using the "--env" flag or deleted by using the "--delete-env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
-For example, "--env key1=value1 --env key2=value2 ...".`,
+For example, "--env key1=value1 --env key2=value2 --delete-env key3".
+
+Service bindings may be provided by using the "--service-binding" flag or deleted by using the "--delete-service-binding" flag.
+For each service binding, supply the "--service-binding" flag followed by the <KIND>:<APIVERSION>:<NAME> or just <NAME> which will default the kind to "Secret".
+For example, "--service-binding my-secret-1 --service-binding CustomProvisionedService:v1beta1:my-ps --delete-service-binding Secret:v1:my-secret-2"
+`,
 		Example: `kp image create my-image --tag my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
 kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob
 kp image save my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code
 kp image save my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code --builder my-builder -n my-namespace
-kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple`,
+kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple --delete-env apple --delete-env potato
+kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --service-binding my-secret --service-binding CustomProvisionedService:v1:my-ps --delete-service-binding Secret:v1:my-secret-2`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -122,6 +128,8 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")
 	cmd.Flags().StringArrayVarP(&factory.Env, "env", "e", []string{}, "build time environment variables")
 	cmd.Flags().StringArrayVarP(&factory.DeleteEnv, "delete-env", "d", []string{}, "build time environment variables to remove")
+	cmd.Flags().StringArrayVarP(&factory.ServiceBinding, "service-binding", "s", []string{}, "build time service bindings to add/replace")
+	cmd.Flags().StringArrayVarP(&factory.DeleteServiceBinding, "delete-service-binding", "", []string{}, "build time service bindings to remove")
 	cmd.Flags().StringVar(&factory.ServiceAccount, "service-account", "", "service account name to use")
 	cmd.Flags().BoolP("wait", "w", false, "wait for image create to be reconciled and tail resulting build logs")
 	commands.SetImgUploadDryRunOutputFlags(cmd)
