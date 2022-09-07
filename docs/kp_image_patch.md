@@ -23,8 +23,8 @@ For each environment variable, supply the "--env" flag followed by the key value
 For example, "--env key1=value1 --env key2=value2 --delete-env key3 --delete-env key3".
 
 Service bindings may be provided by using the "--service-binding" flag or deleted by using the "--delete-service-binding" flag.
-For each service binding, supply the "--service-binding" flag followed by the <KIND>/<APIVERSION>:<NAME> or just <NAME> which will default the kind to "Secret".
-For example, "--service-binding my-secret-1 --service-binding CustomProvisionedService/v1beta1:my-ps" --delete-service-binding Secret/v1:my-secret-2
+For each service binding, supply the "--service-binding" flag followed by the <KIND>:<APIVERSION>:<NAME> or just <NAME> which will default the kind to "Secret".
+For example, "--service-binding my-secret-1 --service-binding CustomProvisionedService:v1beta1:my-ps" --delete-service-binding Secret:v1:my-secret-2
 
 The --cache-size flag can only be used to increase the size of the existing cache.
 
@@ -41,7 +41,7 @@ kp image patch my-image --blob https://my-blob-host.com/my-blob
 kp image patch my-image --local-path /path/to/local/source/code
 kp image patch my-image --local-path /path/to/local/source/code --builder my-builder
 kp image patch my-image --env foo=bar --env color=red --delete-env apple --delete-env potato
-kp image patch my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --service-binding my-secret --service-binding CustomProvisionedService/v1:my-ps --delete-service-binding my-secret-2
+kp image patch my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --service-binding my-secret --service-binding CustomProvisionedService:v1:my-ps --delete-service-binding Secret:v1:my-secret-2
 ```
 
 ### Options

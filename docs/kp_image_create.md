@@ -24,8 +24,8 @@ For each environment variable, supply the "--env" flag followed by the key value
 For example, "--env key1=value1 --env key2=value2 ...".
 
 Service bindings may be provided by using the "--service-binding" flag.
-For each service binding, supply the "--service-binding" flag followed by the <KIND>/<APIVERSION>:<NAME> or just <NAME> which will default the kind to "Secret".
-For example, "--service-binding my-secret-1 --service-binding Secret/v1:my-secret-2 --service-binding CustomProvisionedService/v1beta1:my-ps"
+For each service binding, supply the "--service-binding" flag followed by the <KIND>:<APIVERSION>:<NAME> or just <NAME> which will default the kind to "Secret".
+For example, "--service-binding my-secret-1 --service-binding Secret:v1:my-secret-2 --service-binding CustomProvisionedService:v1beta1:my-ps"
 
 ```
 kp image create <name> --tag <tag> [flags]
@@ -39,7 +39,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code
 kp image create my-image --tag my-registry.com/my-repo --local-path /path/to/local/source/code --builder my-builder -n my-namespace
 kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --env foo=bar --env color=red --env food=apple
-kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --service-binding my-secret-1 --service-binding Secret/v1:my-secret-2 --service-binding CustomProvisionedService/v1beta1:my-ps
+kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob --service-binding my-secret-1 --service-binding Secret:v1:my-secret-2 --service-binding CustomProvisionedService:v1beta1:my-ps
 ```
 
 ### Options
