@@ -30,7 +30,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 		require.NoError(t, err)
 		require.Equal(t, "test-name", s.Name)
 		require.Equal(t, "test-namespace", s.Namespace)
-		require.Equal(t, `{"auths":{"registry.io":{"username":"some-reg-user","password":"foo"}}}`, string(s.Data[".dockerconfigjson"]))
+		require.Equal(t, `{"auths":{"registry.io":{"username":"some-reg-user","password":"foo","auth":"c29tZS1yZWctdXNlcjpmb28="}}}`, string(s.Data[".dockerconfigjson"]))
 	})
 
 	when("no params are set", func() {
@@ -83,7 +83,7 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 			factory.RegistryUser = "some-reg-user"
 			s, _, err := factory.MakeSecret("test-name", "test-namespace")
 			require.NoError(t, err)
-			require.Equal(t, `{"auths":{"registry.io":{"username":"some-reg-user","password":"foo"}}}`, string(s.Data[".dockerconfigjson"]))
+			require.Equal(t, `{"auths":{"registry.io":{"username":"some-reg-user","password":"foo","auth":"c29tZS1yZWctdXNlcjpmb28="}}}`, string(s.Data[".dockerconfigjson"]))
 		})
 	})
 
