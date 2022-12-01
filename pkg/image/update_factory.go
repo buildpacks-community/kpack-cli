@@ -300,8 +300,20 @@ func (f *Factory) setBuild(image *v1alpha2.Image) error {
 	if err != nil {
 		return err
 	}
+	for _, svc := range svcsToSave {
+		exists := false
 
-	image.Spec.Build.Services = append(image.Spec.Build.Services, svcsToSave...)
+		for _, e := range image.Spec.Build.Services {
+			if e.Name == svc.Name && e.Kind == svc.Kind && e.APIVersion == svc.APIVersion {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			image.Spec.Build.Services = append(image.Spec.Build.Services, svcsToSave...)
+		}
+	}
 
 	return nil
 }
