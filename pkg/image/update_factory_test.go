@@ -54,6 +54,13 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 							Value: "",
 						},
 					},
+					Services: v1alpha2.Services{
+						{
+							Name:       "svc-binding",
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
+					},
 				},
 				AdditionalTags: []string{"some-other-tag"},
 			},
@@ -188,6 +195,16 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 				Name:  "BP_MAVEN_BUILD_ARGUMENTS",
 				Value: `"-Dmaven.test.skip=true -Pk8s package"`,
 			})
+
+			updatedImg, err := factory.UpdateImage(img)
+			require.NoError(t, err)
+			require.Equal(t, expectedImg, updatedImg)
+		})
+	})
+
+	when("a services var has the same value as the existing Image", func() {
+		it("handles the services var", func() {
+			factory.ServiceBinding = append(factory.ServiceBinding, "Secret:v1:svc-binding")
 
 			updatedImg, err := factory.UpdateImage(img)
 			require.NoError(t, err)
