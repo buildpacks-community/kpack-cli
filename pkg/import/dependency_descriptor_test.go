@@ -154,4 +154,15 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 			require.Equal(t, expectedBuilders, builders)
 		})
 	})
+
+	when("checking for deprecations of defaults", func() {
+		it("returns true if default stack is deprecated", func() {
+			desc.ClusterStacks[0].Deprecated = true
+			require.True(t, desc.IsDefaultStackDeprecated())
+		})
+		it("returns true if default builder is deprecated", func() {
+			desc.ClusterBuilders[0].Deprecated = true
+			require.True(t, desc.IsDefaultBuilderDeprecated())
+		})
+	})
 }

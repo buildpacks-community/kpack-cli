@@ -139,6 +139,11 @@ func (i *Importer) ImportDescriptor(ctx context.Context, keychain authn.Keychain
 		}
 	}
 
+	err = i.printDeprecationWarnings(descriptor)
+	if err != nil {
+		return nil, err
+	}
+
 	return objects, nil
 }
 
@@ -149,6 +154,11 @@ func (i *Importer) ImportDescriptorDryRun(ctx context.Context, keychain authn.Ke
 	}
 
 	_, objects, err := i.relocateDescriptor(ctx, keychain, kpConfig, i.timestampProvider.GetTimestamp(), descriptor)
+	if err != nil {
+		return nil, err
+	}
+
+	err = i.printDeprecationWarnings(descriptor)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +282,11 @@ func (i *Importer) constructClusterStore(ctx context.Context, keychain authn.Key
 }
 
 func (i *Importer) constructClusterStack(keychain authn.Keychain, kpConfig config.KpConfig, stack ClusterStack) (*v1alpha2.ClusterStack, error) {
-	if err := i.printer.PrintStatus("Importing ClusterStack '%s'...", stack.Name); err != nil {
+	deprecationString := ""
+	if stack.Deprecated {
+		deprecationString = "[DEPRECATED]"
+	}
+	if err := i.printer.PrintStatus("Importing ClusterStack '%s'...%s", stack.Name, deprecationString); err != nil {
 		return nil, err
 	}
 
@@ -285,7 +299,11 @@ func (i *Importer) constructClusterStack(keychain authn.Keychain, kpConfig confi
 }
 
 func (i *Importer) constructClusterBuilder(kpConfig config.KpConfig, builder ClusterBuilder) (*v1alpha2.ClusterBuilder, error) {
-	if err := i.printer.PrintStatus("Importing ClusterBuilder '%s'...", builder.Name); err != nil {
+	deprecationString := ""
+	if builder.Deprecated {
+		deprecationString = "[DEPRECATED]"
+	}
+	if err := i.printer.PrintStatus("Importing ClusterBuilder '%s'...%s", builder.Name, deprecationString); err != nil {
 		return nil, err
 	}
 
@@ -435,6 +453,21 @@ func (i *Importer) saveClusterBuilder(ctx context.Context, storeToGeneration, st
 	}
 
 	return i.waiter.Wait(ctx, builder, builderHasResolved(storeToGeneration[relocatedBuilder.Spec.Store.Name], stackToGeneration[relocatedBuilder.Spec.Stack.Name]))
+}
+
+func (i *Importer) printDeprecationWarnings(descriptor DependencyDescriptor) error {
+	if descriptor.IsDefaultStackDeprecated() {
+		if err := i.printer.PrintStatus("WARNING: Default ClusterStack is deprecated"); err != nil {
+			return err
+		}
+	}
+	if descriptor.IsDefaultBuilderDeprecated() {
+		if err := i.printer.PrintStatus("WARNING: Default ClusterBuilder is deprecated"); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func buildpackagesForSource(sources []Source) []string {
