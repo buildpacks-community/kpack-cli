@@ -41,6 +41,7 @@ type ClusterStack struct {
 	Name       string `yaml:"name" json:"name"`
 	BuildImage Source `yaml:"buildImage" json:"buildImage"`
 	RunImage   Source `yaml:"runImage" json:"runImage"`
+	Deprecated bool   `yaml:"deprecated" json:"deprecated"`
 }
 
 type ClusterBuilder struct {
@@ -48,6 +49,7 @@ type ClusterBuilder struct {
 	ClusterStack string                    `yaml:"clusterStack" json:"clusterStack"`
 	ClusterStore string                    `yaml:"clusterStore" json:"clusterStore"`
 	Order        []corev1alpha1.OrderEntry `yaml:"order" json:"order"`
+	Deprecated   bool                      `yaml:"deprecated" json:"deprecated"`
 }
 
 func (d DependencyDescriptor) Validate() error {
@@ -138,4 +140,24 @@ func (d DependencyDescriptor) GetClusterBuilders() []ClusterBuilder {
 		}
 	}
 	return d.ClusterBuilders
+}
+
+func (d DependencyDescriptor) IsDefaultBuilderDeprecated() bool {
+	for _, builder := range d.ClusterBuilders {
+		if builder.Name == d.DefaultClusterBuilder && builder.Deprecated {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (d DependencyDescriptor) IsDefaultStackDeprecated() bool {
+	for _, stack := range d.ClusterStacks {
+		if stack.Name == d.DefaultClusterStack && stack.Deprecated {
+			return true
+		}
+	}
+
+	return false
 }

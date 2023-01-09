@@ -62,156 +62,156 @@ func testImporter(t *testing.T, when spec.G, it spec.S) {
 				"image": "old/image",
 			},
 		}
-	)
-	when("importing dependencies", func() {
-		var (
-			expectedDefaultClusterStore   runtime.Object
-			expectedClusterStack          runtime.Object
-			expectedDefaultClusterStack   runtime.Object
-			expectedClusterBuilder        runtime.Object
-			expectedDefaultClusterBuilder runtime.Object
-		)
 
-		it.Before(func() {
-			expectedDefaultClusterStore = annotate(t, &v1alpha2.ClusterStore{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ClusterStore",
-					APIVersion: "kpack.io/v1alpha2",
+		expectedDefaultClusterStore   runtime.Object
+		expectedClusterStack          runtime.Object
+		expectedDefaultClusterStack   runtime.Object
+		expectedClusterBuilder        runtime.Object
+		expectedDefaultClusterBuilder runtime.Object
+	)
+
+	it.Before(func() {
+		expectedDefaultClusterStore = annotate(t, &v1alpha2.ClusterStore{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ClusterStore",
+				APIVersion: "kpack.io/v1alpha2",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+			Spec: v1alpha2.ClusterStoreSpec{
+				Sources: []corev1alpha1.StoreImage{
+					{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "default",
+				ServiceAccountRef: &corev1.ObjectReference{
+					Namespace: "some-namespace",
+					Name:      "some-serviceaccount",
 				},
-				Spec: v1alpha2.ClusterStoreSpec{
-					Sources: []corev1alpha1.StoreImage{
-						{Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", dotnetCoreDigest)},
+			},
+		}, kubectlAnnotation, timestampAnnotation)
+		expectedClusterStack = annotate(t, &v1alpha2.ClusterStack{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ClusterStack",
+				APIVersion: "kpack.io/v1alpha2",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "base",
+			},
+			Spec: v1alpha2.ClusterStackSpec{
+				Id: stackId,
+				BuildImage: v1alpha2.ClusterStackSpecImage{
+					Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+				},
+				RunImage: v1alpha2.ClusterStackSpecImage{
+					Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+				},
+				ServiceAccountRef: &corev1.ObjectReference{
+					Namespace: "some-namespace",
+					Name:      "some-serviceaccount",
+				},
+			},
+		}, timestampAnnotation)
+		expectedDefaultClusterStack = annotate(t, &v1alpha2.ClusterStack{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ClusterStack",
+				APIVersion: "kpack.io/v1alpha2",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+			Spec: v1alpha2.ClusterStackSpec{
+				Id: stackId,
+				BuildImage: v1alpha2.ClusterStackSpecImage{
+					Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+				},
+				RunImage: v1alpha2.ClusterStackSpecImage{
+					Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+				},
+				ServiceAccountRef: &corev1.ObjectReference{
+					Namespace: "some-namespace",
+					Name:      "some-serviceaccount",
+				},
+			},
+		}, timestampAnnotation)
+		expectedClusterBuilder = annotate(t, &v1alpha2.ClusterBuilder{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ClusterBuilder",
+				APIVersion: "kpack.io/v1alpha2",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "base",
+			},
+			Spec: v1alpha2.ClusterBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
+					Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
+					Stack: corev1.ObjectReference{
+						Kind: "ClusterStack",
+						Name: "base",
 					},
-					ServiceAccountRef: &corev1.ObjectReference{
-						Namespace: "some-namespace",
-						Name:      "some-serviceaccount",
+					Store: corev1.ObjectReference{
+						Kind: "ClusterStore",
+						Name: "default",
 					},
-				},
-			}, kubectlAnnotation, timestampAnnotation)
-			expectedClusterStack = annotate(t, &v1alpha2.ClusterStack{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ClusterStack",
-					APIVersion: "kpack.io/v1alpha2",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "base",
-				},
-				Spec: v1alpha2.ClusterStackSpec{
-					Id: stackId,
-					BuildImage: v1alpha2.ClusterStackSpecImage{
-						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-					},
-					RunImage: v1alpha2.ClusterStackSpecImage{
-						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-					},
-					ServiceAccountRef: &corev1.ObjectReference{
-						Namespace: "some-namespace",
-						Name:      "some-serviceaccount",
-					},
-				},
-			}, timestampAnnotation)
-			expectedDefaultClusterStack = annotate(t, &v1alpha2.ClusterStack{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ClusterStack",
-					APIVersion: "kpack.io/v1alpha2",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "default",
-				},
-				Spec: v1alpha2.ClusterStackSpec{
-					Id: stackId,
-					BuildImage: v1alpha2.ClusterStackSpecImage{
-						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
-					},
-					RunImage: v1alpha2.ClusterStackSpecImage{
-						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
-					},
-					ServiceAccountRef: &corev1.ObjectReference{
-						Namespace: "some-namespace",
-						Name:      "some-serviceaccount",
-					},
-				},
-			}, timestampAnnotation)
-			expectedClusterBuilder = annotate(t, &v1alpha2.ClusterBuilder{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ClusterBuilder",
-					APIVersion: "kpack.io/v1alpha2",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "base",
-				},
-				Spec: v1alpha2.ClusterBuilderSpec{
-					BuilderSpec: v1alpha2.BuilderSpec{
-						Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
-						Stack: corev1.ObjectReference{
-							Kind: "ClusterStack",
-							Name: "base",
-						},
-						Store: corev1.ObjectReference{
-							Kind: "ClusterStore",
-							Name: "default",
-						},
-						Order: []corev1alpha1.OrderEntry{
-							{
-								[]corev1alpha1.BuildpackRef{
-									{
-										BuildpackInfo: corev1alpha1.BuildpackInfo{
-											Id: "tanzu-buildpacks/dotnet-core",
-										},
-										Optional: false,
+					Order: []corev1alpha1.OrderEntry{
+						{
+							[]corev1alpha1.BuildpackRef{
+								{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id: "tanzu-buildpacks/dotnet-core",
 									},
+									Optional: false,
 								},
 							},
 						},
 					},
-					ServiceAccountRef: corev1.ObjectReference{
-						Namespace: "some-namespace",
-						Name:      "some-serviceaccount",
+				},
+				ServiceAccountRef: corev1.ObjectReference{
+					Namespace: "some-namespace",
+					Name:      "some-serviceaccount",
+				},
+			},
+		}, kubectlAnnotation, timestampAnnotation)
+		expectedDefaultClusterBuilder = annotate(t, &v1alpha2.ClusterBuilder{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ClusterBuilder",
+				APIVersion: "kpack.io/v1alpha2",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+			Spec: v1alpha2.ClusterBuilderSpec{
+				BuilderSpec: v1alpha2.BuilderSpec{
+					Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
+					Stack: corev1.ObjectReference{
+						Kind: "ClusterStack",
+						Name: "base",
 					},
-				},
-			}, kubectlAnnotation, timestampAnnotation)
-			expectedDefaultClusterBuilder = annotate(t, &v1alpha2.ClusterBuilder{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ClusterBuilder",
-					APIVersion: "kpack.io/v1alpha2",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "default",
-				},
-				Spec: v1alpha2.ClusterBuilderSpec{
-					BuilderSpec: v1alpha2.BuilderSpec{
-						Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
-						Stack: corev1.ObjectReference{
-							Kind: "ClusterStack",
-							Name: "base",
-						},
-						Store: corev1.ObjectReference{
-							Kind: "ClusterStore",
-							Name: "default",
-						},
-						Order: []corev1alpha1.OrderEntry{
-							{
-								[]corev1alpha1.BuildpackRef{
-									{
-										BuildpackInfo: corev1alpha1.BuildpackInfo{
-											Id: "tanzu-buildpacks/dotnet-core",
-										},
-										Optional: false,
+					Store: corev1.ObjectReference{
+						Kind: "ClusterStore",
+						Name: "default",
+					},
+					Order: []corev1alpha1.OrderEntry{
+						{
+							[]corev1alpha1.BuildpackRef{
+								{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id: "tanzu-buildpacks/dotnet-core",
 									},
+									Optional: false,
 								},
 							},
 						},
 					},
-					ServiceAccountRef: corev1.ObjectReference{
-						Namespace: "some-namespace",
-						Name:      "some-serviceaccount",
-					},
 				},
-			}, kubectlAnnotation, timestampAnnotation)
-		})
+				ServiceAccountRef: corev1.ObjectReference{
+					Namespace: "some-namespace",
+					Name:      "some-serviceaccount",
+				},
+			},
+		}, kubectlAnnotation, timestampAnnotation)
+	})
+
+	when("importing dependencies", func() {
 
 		it("can import on a new cluster", func() {
 			TestImport{
@@ -698,6 +698,100 @@ clusterBuilders:
 			}.TestImporter(t)
 		})
 	})
+
+	when("handling deprecations", func() {
+		var importer TestImport
+		it.Before(func() {
+			importer = TestImport{
+				Images: map[string]v1.Image{
+					"new-image.com/lifecycle":              fakes.NewFakeImage(lifecycleDigest),
+					"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), dotnetCoreDigest),
+					"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, runImageDigest),
+					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
+				},
+				Objects: []runtime.Object{
+					existingLifecycle,
+				},
+				ExpectCreates: []runtime.Object{
+					expectedDefaultClusterStore,
+					expectedClusterStack,
+					expectedDefaultClusterStack,
+					expectedClusterBuilder,
+					expectedDefaultClusterBuilder,
+				},
+				ExpectPatches: []string{
+					`{"data":{"image":"gcr.io/my-cool-repo@sha256:lifecycledigest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"0001-01-01 00:00:00 +0000 UTC"}}}`,
+				},
+				KpConfig: kpConfig,
+				DependencyDescriptor: `
+apiVersion: kp.kpack.io/v1alpha3
+kind: DependencyDescriptor
+defaultClusterBuilder: base
+defaultClusterStack: base
+lifecycle:
+  image: new-image.com/lifecycle
+clusterStores:
+- name: default
+  sources:
+  - image: new-image.com/buildpacks/dotnet-core
+clusterStacks:
+- name: base
+  deprecated: true
+  buildImage:
+    image: new-image.com/stacks/base/build
+  runImage:
+    image: new-image.com/stacks/base/run
+clusterBuilders:
+- name: base
+  deprecated: true
+  clusterStack: base
+  clusterStore: default
+  order:
+  - group:
+    - id: tanzu-buildpacks/dotnet-core
+`,
+			}
+		})
+
+		it("prints deprecation next to deprecated resources", func() {
+			writer := &bytes.Buffer{}
+			importer.Writer = writer
+
+			importer.TestImporter(t)
+			assert.Contains(t, writer.String(), "Importing ClusterStack 'base'...[DEPRECATED]")
+			assert.Contains(t, writer.String(), "Importing ClusterBuilder 'base'...[DEPRECATED]")
+		})
+		it("prints deprecation warning if defaults are deprecated", func() {
+			writer := &bytes.Buffer{}
+			importer.Writer = writer
+
+			importer.TestImporter(t)
+			assert.Contains(t, writer.String(), "WARNING: Default ClusterStack is deprecate")
+			assert.Contains(t, writer.String(), "WARNING: Default ClusterBuilder is deprecate")
+		})
+		it("prints deprecation next to deprecated resources during dry run", func() {
+			writer := &bytes.Buffer{}
+			importer.Writer = writer
+			importer.DryRun = true
+			importer.ExpectCreates = nil
+			importer.ExpectPatches = nil
+
+			importer.TestImporter(t)
+			assert.Contains(t, writer.String(), "Importing ClusterStack 'base'...[DEPRECATED]")
+			assert.Contains(t, writer.String(), "Importing ClusterBuilder 'base'...[DEPRECATED]")
+		})
+		it("prints deprecation warning if defaults are deprecated during dry run", func() {
+			writer := &bytes.Buffer{}
+			importer.Writer = writer
+			importer.DryRun = true
+			importer.ExpectCreates = nil
+			importer.ExpectPatches = nil
+
+			importer.TestImporter(t)
+			assert.Contains(t, writer.String(), "WARNING: Default ClusterStack is deprecate")
+			assert.Contains(t, writer.String(), "WARNING: Default ClusterBuilder is deprecate")
+		})
+	})
 }
 
 func annotate(t *testing.T, object k8s.Annotatable, f ...func(t *testing.T, object k8s.Annotatable) k8s.Annotatable) runtime.Object {
@@ -733,6 +827,7 @@ type TestImport struct {
 	Images               map[string]v1.Image
 	ExpectCreates        []runtime.Object
 	ExpectErr            error
+	Writer               io.Writer
 }
 
 func (i TestImport) TestImporter(t *testing.T) {
@@ -742,9 +837,14 @@ func (i TestImport) TestImporter(t *testing.T) {
 	client := kpackfakes.NewSimpleClientset(listers.BuildServiceObjects()...)
 	k8sClient := k8sfakes.NewSimpleClientset(listers.GetKubeObjects()...)
 
-	buffer := &bytes.Buffer{}
+	writer := i.Writer
+	if writer == nil {
+		writer = &bytes.Buffer{}
+	}
+	logger := testLogger{writer: writer}
+
 	var err error
-	importer := NewImporter(testLogger{writer: buffer}, k8sClient, client, &fakeFetcher{Images: i.Images}, &fakeRelocator{}, &fakeWaiter{}, &fakeTimestampProvider{ts: time.Time{}.String()})
+	importer := NewImporter(logger, k8sClient, client, &fakeFetcher{Images: i.Images}, &fakeRelocator{}, &fakeWaiter{}, &fakeTimestampProvider{ts: time.Time{}.String()})
 	if i.DryRun {
 		_, err = importer.ImportDescriptorDryRun(context.Background(), authn.NewMultiKeychain(), i.KpConfig, i.DependencyDescriptor)
 	} else {
