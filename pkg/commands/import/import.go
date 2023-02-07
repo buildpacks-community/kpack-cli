@@ -98,8 +98,16 @@ cat dependencies.yaml | kp import -f -`,
 			}
 
 			defaultKeychain := authn.DefaultKeychain
+			kc := authn.NewMultiKeychain(
+				defaultKeychain,
+				authn.NewKeychainFromHelper(
+					importpkg.NewCredHelper(
+						os.Getenv("REGISTRY_USER"),
+						os.Getenv("REGISTRY_PASSWORD"))),
+			)
+
 			if showChanges {
-				hasChanges, summary, err := importpkg.SummarizeChange(ctx, defaultKeychain, descriptor, kpConfig, importpkg.NewDefaultRelocatedImageProvider(imgFetcher), differ, cs)
+				hasChanges, summary, err := importpkg.SummarizeChange(ctx, kc, descriptor, kpConfig, importpkg.NewDefaultRelocatedImageProvider(imgFetcher), differ, cs)
 				if err != nil {
 					return err
 				}
@@ -125,7 +133,7 @@ cat dependencies.yaml | kp import -f -`,
 			if ch.IsDryRun() {
 				objs, err = importer.ImportDescriptorDryRun(
 					ctx,
-					authn.DefaultKeychain,
+					kc,
 					kpConfig,
 					rawDescriptor,
 				)
@@ -135,7 +143,7 @@ cat dependencies.yaml | kp import -f -`,
 			} else {
 				objs, err = importer.ImportDescriptor(
 					ctx,
-					authn.DefaultKeychain,
+					kc,
 					kpConfig,
 					rawDescriptor,
 				)
