@@ -42,6 +42,9 @@ func NewImportCommand(
 	const (
 		confirmMessage          = "Confirm with y:"
 		noChangesConfirmMessage = "Re-upload images with y:"
+		envVarRegistryUrl       = "REGISTRY_URL"
+		envVarRegistryUser      = "REGISTRY_USER"
+		envVarRegistryPassword  = "REGISTRY_PASSWORD"
 	)
 
 	confirmMsgMap := map[bool]string{
@@ -101,9 +104,7 @@ cat dependencies.yaml | kp import -f -`,
 			kc := authn.NewMultiKeychain(
 				defaultKeychain,
 				authn.NewKeychainFromHelper(
-					importpkg.NewCredHelper(
-						os.Getenv("REGISTRY_USER"),
-						os.Getenv("REGISTRY_PASSWORD"))),
+					importpkg.NewCredHelperFromEnvVars(envVarRegistryUrl, envVarRegistryUser, envVarRegistryPassword)),
 			)
 
 			if showChanges {
