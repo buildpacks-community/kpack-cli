@@ -102,9 +102,9 @@ cat dependencies.yaml | kp import -f -`,
 
 			defaultKeychain := authn.DefaultKeychain
 			kc := authn.NewMultiKeychain(
-				defaultKeychain,
 				authn.NewKeychainFromHelper(
 					importpkg.NewCredHelperFromEnvVars(envVarRegistryUrl, envVarRegistryUser, envVarRegistryPassword)),
+				defaultKeychain,
 			)
 
 			if showChanges {
