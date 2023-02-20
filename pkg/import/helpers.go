@@ -1,8 +1,9 @@
 package _import
 
 import (
+	"fmt"
 	"os"
-	"strconv"
+	"regexp"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pkg/errors"
@@ -13,18 +14,14 @@ type CredHelper struct {
 }
 
 func NewCredHelperFromEnvVars(serverURLEnvVar string, usernameEnvVar string, passwordEnvVar string) *CredHelper {
-	suffixes := [11]string{""}
-	for i := 0; i <= 9; i++ {
-		suffixes[i+1] = "_" + strconv.Itoa(i)
-	}
-
 	auths := map[string]authn.Basic{}
 
-	for _, suffix := range suffixes {
-		if serverUrl := os.Getenv(serverURLEnvVar + suffix); serverUrl != "" {
-			auths[serverUrl] = authn.Basic{
-				Username: os.Getenv(usernameEnvVar + suffix),
-				Password: os.Getenv(passwordEnvVar + suffix),
+	var registryRegex = regexp.MustCompile(fmt.Sprintf(`(%s(_\d+)?)=(.*)`, serverURLEnvVar))
+	for _, env := range os.Environ() {
+		if match := registryRegex.FindStringSubmatch(env); len(match) > 0 {
+			auths[match[3]] = authn.Basic{
+				Username: os.Getenv(usernameEnvVar + match[2]),
+				Password: os.Getenv(passwordEnvVar + match[2]),
 			}
 		}
 	}
