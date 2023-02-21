@@ -134,42 +134,4 @@ func testCredHelper(t *testing.T, when spec.G, it spec.S) {
 			require.Equal(t, "some-registry-password", registryPassword)
 		})
 	})
-
-	//when("many registry credentials are provided by default environment variables and Get is called", func() {
-	//	var credHelper *dockercreds.CredHelper
-	//
-	//	it.Before(func() {
-	//		setRegistryEnvVars(t)
-	//	})
-	//
-	//	it.After(func() {
-	//		unsetRegistryEnvVars(t)
-	//	})
-	//
-	//	it("returns username and password provided by environment variables", func() {
-	//		keychain := dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain
-	//		//
-	//		// TODO: test resolve
-	//		//	https://github.com/google/go-containerregistry/blob/1e09daa93eb1140eb36701bb8af57496866a56ff/pkg/authn/keychain_test.go#L312
-	//		//
-	//		//content := fmt.Sprintf(`{"auths": {"test.io": {"auth": %q}}}`, encode("foo", "bar"))
-	//		testRegistry, _ := name.NewRegistry("test.io", name.WeakValidation)
-	//		//credHelper = dockercreds.NewCredHelperFromEnvVars(envVarRegistryUrl, envVarRegistryUser, envVarRegistryPassword)
-	//		require.Equal(t, len(credHelper.Auths), len(getValuesUnderTest()))
-	//		keychain.Resolve(testRegistry)
-	//		registryUser, registryPassword, err := credHelper.Get(os.Getenv(envVarRegistryUrl + "_3"))
-	//		require.NoError(t, err)
-	//		require.Equal(t, "three-registry-user", registryUser)
-	//		require.Equal(t, "three-registry-password", registryPassword)
-	//		registryUser, registryPassword, err = credHelper.Get(os.Getenv(envVarRegistryUrl + "_111"))
-	//		require.NoError(t, err)
-	//		require.Equal(t, "one-hundred-eleven-registry-user", registryUser)
-	//		require.Equal(t, "one-hundred-eleven-registry-password", registryPassword)
-	//		registryUser, registryPassword, err = credHelper.Get(os.Getenv(envVarRegistryUrl))
-	//		require.NoError(t, err)
-	//		require.Equal(t, "some-registry-user", registryUser)
-	//		require.Equal(t, "some-registry-password", registryPassword)
-	//	})
-	//})
-
 }
