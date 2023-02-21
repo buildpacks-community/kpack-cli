@@ -37,7 +37,7 @@ func encode(user, pass string) string {
 
 func testKeychainHelper(t *testing.T, when spec.G, it spec.S) {
 
-	when("many username and password are provided by default environment variables and Resolve is called", func() {
+	when("a username and password is provided by default environment variables and Resolve is called", func() {
 		it.Before(func() {
 			require.NoError(t, os.Setenv(dockercreds.EnvVarRegistryUrl, "foo-registry.io"))
 			require.NoError(t, os.Setenv(dockercreds.EnvVarRegistryUser, "foo-registry-user"))
@@ -64,9 +64,10 @@ func testKeychainHelper(t *testing.T, when spec.G, it spec.S) {
 				Password: "foo-registry-password",
 			}
 
-			auth, _ := keychain.Resolve(resource)
-			cfg, _ := auth.Authorization()
-
+			auth, err := keychain.Resolve(resource)
+			require.NoError(t, err)
+			cfg, err := auth.Authorization()
+			require.NoError(t, err)
 			require.Equal(t, cfg.Username, expected.Username)
 			require.Equal(t, cfg.Password, expected.Password)
 		})
