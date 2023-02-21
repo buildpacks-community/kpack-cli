@@ -6,7 +6,6 @@ package clusterstack
 import (
 	"context"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -14,6 +13,7 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -76,7 +76,7 @@ func create(ctx context.Context, name, buildImageRef, runImageRef string, factor
 
 	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
-	stack, err := factory.MakeStack(authn.DefaultKeychain, name, buildImageRef, runImageRef, kpConfig)
+	stack, err := factory.MakeStack(dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain, name, buildImageRef, runImageRef, kpConfig)
 	if err != nil {
 		return err
 	}

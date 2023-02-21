@@ -16,6 +16,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 )
 
 const (
@@ -23,7 +25,7 @@ const (
 )
 
 var (
-	keychain = authn.DefaultKeychain
+	keychain = dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain
 )
 
 type SourceUploader interface {

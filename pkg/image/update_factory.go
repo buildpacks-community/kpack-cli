@@ -4,12 +4,13 @@
 package image
 
 import (
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 )
 
 func (f *Factory) UpdateImage(img *v1alpha2.Image) (*v1alpha2.Image, error) {
@@ -180,7 +181,7 @@ func (f *Factory) setSource(image *v1alpha2.Image) error {
 			return err
 		}
 
-		sourceRef, err := f.SourceUploader.Upload(authn.DefaultKeychain, ref.Context().Name()+"-source", f.LocalPath)
+		sourceRef, err := f.SourceUploader.Upload(dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain, ref.Context().Name()+"-source", f.LocalPath)
 		if err != nil {
 			return err
 		}

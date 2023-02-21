@@ -8,13 +8,13 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
@@ -42,9 +42,6 @@ func NewImportCommand(
 	const (
 		confirmMessage          = "Confirm with y:"
 		noChangesConfirmMessage = "Re-upload images with y:"
-		envVarRegistryUrl       = "REGISTRY_URL"
-		envVarRegistryUser      = "REGISTRY_USER"
-		envVarRegistryPassword  = "REGISTRY_PASSWORD"
 	)
 
 	confirmMsgMap := map[bool]string{
@@ -100,15 +97,10 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			defaultKeychain := authn.DefaultKeychain
-			kc := authn.NewMultiKeychain(
-				authn.NewKeychainFromHelper(
-					importpkg.NewCredHelperFromEnvVars(envVarRegistryUrl, envVarRegistryUser, envVarRegistryPassword)),
-				defaultKeychain,
-			)
+			keychain := dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain
 
 			if showChanges {
-				hasChanges, summary, err := importpkg.SummarizeChange(ctx, kc, descriptor, kpConfig, importpkg.NewDefaultRelocatedImageProvider(imgFetcher), differ, cs)
+				hasChanges, summary, err := importpkg.SummarizeChange(ctx, keychain, descriptor, kpConfig, importpkg.NewDefaultRelocatedImageProvider(imgFetcher), differ, cs)
 				if err != nil {
 					return err
 				}
@@ -134,7 +126,7 @@ cat dependencies.yaml | kp import -f -`,
 			if ch.IsDryRun() {
 				objs, err = importer.ImportDescriptorDryRun(
 					ctx,
-					kc,
+					keychain,
 					kpConfig,
 					rawDescriptor,
 				)
@@ -144,7 +136,7 @@ cat dependencies.yaml | kp import -f -`,
 			} else {
 				objs, err = importer.ImportDescriptor(
 					ctx,
-					kc,
+					keychain,
 					kpConfig,
 					rawDescriptor,
 				)

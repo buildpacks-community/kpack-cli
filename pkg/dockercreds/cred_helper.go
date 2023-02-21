@@ -1,4 +1,4 @@
-package _import
+package dockercreds
 
 import (
 	"fmt"

@@ -6,7 +6,6 @@ package clusterstore
 import (
 	"context"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -14,6 +13,7 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -74,7 +74,7 @@ func create(ctx context.Context, name string, buildpackages []string, factory *c
 
 	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
-	newStore, err := factory.MakeStore(authn.DefaultKeychain, name, kpConfig, buildpackages...)
+	newStore, err := factory.MakeStore(dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain, name, kpConfig, buildpackages...)
 	if err != nil {
 		return err
 	}

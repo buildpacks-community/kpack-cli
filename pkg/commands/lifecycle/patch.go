@@ -6,10 +6,10 @@ package lifecycle
 import (
 	"fmt"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/lifecycle"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
@@ -65,7 +65,7 @@ The default repository is read from the "default.repository" key of the "kp-conf
 				TLSConfig:    tlsCfg,
 			}
 
-			configMap, err := lifecycle.UpdateImage(cmd.Context(), authn.DefaultKeychain, image, cfg)
+			configMap, err := lifecycle.UpdateImage(cmd.Context(), dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain, image, cfg)
 			if err != nil {
 				return err
 			}

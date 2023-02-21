@@ -6,7 +6,6 @@ package clusterstore
 import (
 	"context"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -18,6 +17,7 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -85,7 +85,7 @@ func update(ctx context.Context, store *v1alpha2.ClusterStore, buildpackages []s
 
 	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
-	updatedStore, err := factory.AddToStore(authn.DefaultKeychain, store, kpConfig, buildpackages...)
+	updatedStore, err := factory.AddToStore(dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain, store, kpConfig, buildpackages...)
 	if err != nil {
 		return err
 	}
