@@ -4,7 +4,6 @@
 package clusterstack
 
 import (
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -31,6 +31,8 @@ func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilPr
 The run and build images will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
 Additionally, your cluster must have read access to the registry.
+
+Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md
 
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 The default service account used is read from the "default.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.
@@ -63,7 +65,7 @@ kp clusterstack save my-stack --build-image ../path/to/build.tar --run-image ../
 				return err
 			}
 
-			return patch(ctx, authn.DefaultKeychain, cStack, buildImageRef, runImageRef, factory, ch, cs, w)
+			return patch(ctx, dockercreds.DefaultKeychain, cStack, buildImageRef, runImageRef, factory, ch, cs, w)
 		},
 	}
 	cmd.Flags().StringVarP(&buildImageRef, "build-image", "b", "", "build image tag or local tar file path")

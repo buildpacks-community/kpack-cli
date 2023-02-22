@@ -8,13 +8,13 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
@@ -55,7 +55,9 @@ func NewImportCommand(
 		Long: `This operation will create or update clusterstores, clusterstacks, and clusterbuilders defined in the dependency descriptor.
 
 kp import will always attempt to upload the stack, store, and builder images, even if the resources have not changed.
-This can be used as a way to repair resources when registry images have been unexpectedly removed.`,
+This can be used as a way to repair resources when registry images have been unexpectedly removed.
+
+Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md`,
 		Example: `kp import -f dependencies.yaml
 cat dependencies.yaml | kp import -f -`,
 		SilenceUsage: true,
@@ -97,9 +99,10 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			defaultKeychain := authn.DefaultKeychain
+			keychain := dockercreds.DefaultKeychain
+
 			if showChanges {
-				hasChanges, summary, err := importpkg.SummarizeChange(ctx, defaultKeychain, descriptor, kpConfig, importpkg.NewDefaultRelocatedImageProvider(imgFetcher), differ, cs)
+				hasChanges, summary, err := importpkg.SummarizeChange(ctx, keychain, descriptor, kpConfig, importpkg.NewDefaultRelocatedImageProvider(imgFetcher), differ, cs)
 				if err != nil {
 					return err
 				}
@@ -125,7 +128,7 @@ cat dependencies.yaml | kp import -f -`,
 			if ch.IsDryRun() {
 				objs, err = importer.ImportDescriptorDryRun(
 					ctx,
-					authn.DefaultKeychain,
+					keychain,
 					kpConfig,
 					rawDescriptor,
 				)
@@ -135,7 +138,7 @@ cat dependencies.yaml | kp import -f -`,
 			} else {
 				objs, err = importer.ImportDescriptor(
 					ctx,
-					authn.DefaultKeychain,
+					keychain,
 					kpConfig,
 					rawDescriptor,
 				)

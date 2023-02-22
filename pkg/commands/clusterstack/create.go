@@ -6,7 +6,6 @@ package clusterstack
 import (
 	"context"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -14,6 +13,7 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -33,6 +33,8 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 The run and build images will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
 Additionally, your cluster must have read access to the registry.
+
+Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md
 
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 The default service account used is read from the "default.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.
@@ -76,7 +78,7 @@ func create(ctx context.Context, name, buildImageRef, runImageRef string, factor
 
 	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
-	stack, err := factory.MakeStack(authn.DefaultKeychain, name, buildImageRef, runImageRef, kpConfig)
+	stack, err := factory.MakeStack(dockercreds.DefaultKeychain, name, buildImageRef, runImageRef, kpConfig)
 	if err != nil {
 		return err
 	}

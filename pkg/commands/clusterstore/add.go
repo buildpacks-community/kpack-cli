@@ -6,7 +6,6 @@ package clusterstore
 import (
 	"context"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -18,6 +17,7 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 )
@@ -35,6 +35,8 @@ func NewAddCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilPro
 
 Buildpackages will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
+
+Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md
 
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
@@ -85,7 +87,7 @@ func update(ctx context.Context, store *v1alpha2.ClusterStore, buildpackages []s
 
 	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
-	updatedStore, err := factory.AddToStore(authn.DefaultKeychain, store, kpConfig, buildpackages...)
+	updatedStore, err := factory.AddToStore(dockercreds.DefaultKeychain, store, kpConfig, buildpackages...)
 	if err != nil {
 		return err
 	}

@@ -6,10 +6,10 @@ package lifecycle
 import (
 	"fmt"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/lifecycle"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
@@ -29,6 +29,8 @@ func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 
 The Lifecycle image will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
+
+Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md
 
 The default repository is read from the "default.repository" key of the "kp-config" ConfigMap within "kpack" namespace.
 `,
@@ -65,7 +67,7 @@ The default repository is read from the "default.repository" key of the "kp-conf
 				TLSConfig:    tlsCfg,
 			}
 
-			configMap, err := lifecycle.UpdateImage(cmd.Context(), authn.DefaultKeychain, image, cfg)
+			configMap, err := lifecycle.UpdateImage(cmd.Context(), dockercreds.DefaultKeychain, image, cfg)
 			if err != nil {
 				return err
 			}
