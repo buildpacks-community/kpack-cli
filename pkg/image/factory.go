@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	keychain = dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain
+	keychain = dockercreds.DefaultKeychain
 )
 
 type SourceUploader interface {

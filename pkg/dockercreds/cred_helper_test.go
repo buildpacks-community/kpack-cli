@@ -15,9 +15,11 @@ func TestCredHelper(t *testing.T) {
 	spec.Run(t, "TestCredHelper", testCredHelper)
 }
 
-const envVarRegistryUrl = "REGISTRY_URL_TEST_VAR"
-const envVarRegistryUser = "REGISTRY_USER_TEST_VAR"
-const envVarRegistryPassword = "REGISTRY_PASSWORD_TEST_VAR"
+const (
+	envVarRegistryUrl      = "KP_REGISTRY_HOSTNAME_TEST_VAR"
+	envVarRegistryUser     = "KP_REGISTRY_USERNAME_TEST_VAR"
+	envVarRegistryPassword = "KP_REGISTRY_PASSWORD_TEST_VAR"
+)
 
 type registryVariable struct {
 	URLName       string
@@ -63,22 +65,6 @@ func digitToWord() map[int]string {
 	}
 }
 
-func setRegistryEnvVars(t *testing.T) {
-	for _, val := range getValuesUnderTest() {
-		require.NoError(t, os.Setenv(val.URLName, val.URLValue))
-		require.NoError(t, os.Setenv(val.UserName, val.UserValue))
-		require.NoError(t, os.Setenv(val.PasswordName, val.PasswordValue))
-	}
-}
-
-func unsetRegistryEnvVars(t *testing.T) {
-	for _, val := range getValuesUnderTest() {
-		require.NoError(t, os.Unsetenv(val.URLName))
-		require.NoError(t, os.Unsetenv(val.UserName))
-		require.NoError(t, os.Unsetenv(val.PasswordName))
-	}
-}
-
 func testCredHelper(t *testing.T, when spec.G, it spec.S) {
 
 	when("one registry credential is provided by environment variables and Get is called", func() {
@@ -110,11 +96,19 @@ func testCredHelper(t *testing.T, when spec.G, it spec.S) {
 		var credHelper *dockercreds.CredHelper
 
 		it.Before(func() {
-			setRegistryEnvVars(t)
+			for _, val := range getValuesUnderTest() {
+				require.NoError(t, os.Setenv(val.URLName, val.URLValue))
+				require.NoError(t, os.Setenv(val.UserName, val.UserValue))
+				require.NoError(t, os.Setenv(val.PasswordName, val.PasswordValue))
+			}
 		})
 
 		it.After(func() {
-			unsetRegistryEnvVars(t)
+			for _, val := range getValuesUnderTest() {
+				require.NoError(t, os.Unsetenv(val.URLName))
+				require.NoError(t, os.Unsetenv(val.UserName))
+				require.NoError(t, os.Unsetenv(val.PasswordName))
+			}
 		})
 
 		it("returns username and password provided by environment variables", func() {

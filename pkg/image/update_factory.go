@@ -181,7 +181,7 @@ func (f *Factory) setSource(image *v1alpha2.Image) error {
 			return err
 		}
 
-		sourceRef, err := f.SourceUploader.Upload(dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain, ref.Context().Name()+"-source", f.LocalPath)
+		sourceRef, err := f.SourceUploader.Upload(dockercreds.DefaultKeychain, ref.Context().Name()+"-source", f.LocalPath)
 		if err != nil {
 			return err
 		}

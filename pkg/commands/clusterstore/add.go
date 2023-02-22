@@ -36,6 +36,8 @@ func NewAddCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilPro
 Buildpackages will be uploaded to the default repository.
 Therefore, you must have credentials to access the registry on your machine.
 
+Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md
+
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
 		Example: `kp clusterstore add my-store -b my-registry.com/my-buildpackage
@@ -85,7 +87,7 @@ func update(ctx context.Context, store *v1alpha2.ClusterStore, buildpackages []s
 
 	kpConfig := config.NewKpConfigProvider(cs.K8sClient).GetKpConfig(ctx)
 
-	updatedStore, err := factory.AddToStore(dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain, store, kpConfig, buildpackages...)
+	updatedStore, err := factory.AddToStore(dockercreds.DefaultKeychain, store, kpConfig, buildpackages...)
 	if err != nil {
 		return err
 	}

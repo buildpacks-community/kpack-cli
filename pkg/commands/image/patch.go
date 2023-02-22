@@ -52,6 +52,8 @@ For each service binding, supply the "--service-binding" flag followed by the <K
 For example, "--service-binding my-secret-1 --service-binding CustomProvisionedService:v1beta1:my-ps" --delete-service-binding Secret:v1:my-secret-2
 
 The --cache-size flag can only be used to increase the size of the existing cache.
+
+Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md
 `,
 		Example: `kp image patch my-image --git-revision my-other-branch
 kp image patch my-image --blob https://my-blob-host.com/my-blob

@@ -55,7 +55,9 @@ func NewImportCommand(
 		Long: `This operation will create or update clusterstores, clusterstacks, and clusterbuilders defined in the dependency descriptor.
 
 kp import will always attempt to upload the stack, store, and builder images, even if the resources have not changed.
-This can be used as a way to repair resources when registry images have been unexpectedly removed.`,
+This can be used as a way to repair resources when registry images have been unexpectedly removed.
+
+Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md`,
 		Example: `kp import -f dependencies.yaml
 cat dependencies.yaml | kp import -f -`,
 		SilenceUsage: true,
@@ -97,7 +99,7 @@ cat dependencies.yaml | kp import -f -`,
 				return err
 			}
 
-			keychain := dockercreds.NewKeychainFromDefaultEnvVarsWithDefault().Keychain
+			keychain := dockercreds.DefaultKeychain
 
 			if showChanges {
 				hasChanges, summary, err := importpkg.SummarizeChange(ctx, keychain, descriptor, kpConfig, importpkg.NewDefaultRelocatedImageProvider(imgFetcher), differ, cs)

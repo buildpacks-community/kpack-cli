@@ -13,7 +13,19 @@ type CredHelper struct {
 	Auths map[string]authn.Basic
 }
 
-func NewCredHelperFromEnvVars(serverURLEnvVar string, usernameEnvVar string, passwordEnvVar string) *CredHelper {
+const (
+	EnvVarRegistryUrl      = "KP_REGISTRY_HOSTNAME"
+	EnvVarRegistryUser     = "KP_REGISTRY_USERNAME"
+	EnvVarRegistryPassword = "KP_REGISTRY_PASSWORD"
+)
+
+var (
+	DefaultKeychain authn.Keychain = authn.NewMultiKeychain(authn.NewKeychainFromHelper(
+		newCredHelperFromEnvVars(EnvVarRegistryUrl, EnvVarRegistryUser, EnvVarRegistryPassword)),
+		authn.DefaultKeychain)
+)
+
+func newCredHelperFromEnvVars(serverURLEnvVar string, usernameEnvVar string, passwordEnvVar string) *CredHelper {
 	auths := map[string]authn.Basic{}
 
 	var registryRegex = regexp.MustCompile(fmt.Sprintf(`(%s(_\d+)?)=(.*)`, serverURLEnvVar))
