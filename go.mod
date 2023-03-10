@@ -13,7 +13,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.6.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
 	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0
 	k8s.io/api v0.23.9
