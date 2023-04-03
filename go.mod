@@ -14,7 +14,7 @@ require (
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.2
-	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
+	golang.org/x/crypto v0.7.0
 	golang.org/x/sync v0.1.0
 	k8s.io/api v0.23.9
 	k8s.io/apimachinery v0.23.9
