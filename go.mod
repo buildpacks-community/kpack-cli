@@ -12,7 +12,7 @@ require (
 	github.com/pivotal/kpack v0.7.2-0.20221116191244-c85dbbeea834
 	github.com/pkg/errors v0.9.1
 	github.com/sclevine/spec v1.4.0
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.8.0
 	golang.org/x/sync v0.1.0
