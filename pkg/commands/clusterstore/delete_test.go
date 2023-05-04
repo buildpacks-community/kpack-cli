@@ -51,7 +51,7 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Name: storeName,
 				},
 				Spec: v1alpha2.ClusterStoreSpec{
-					Sources: []corev1alpha1.StoreImage{
+					Sources: []corev1alpha1.ImageSource{
 						{
 							Image: "some/imageInStore",
 						},
@@ -134,7 +134,7 @@ func testClusterStoreDeleteCommand(t *testing.T, when spec.G, it spec.S) {
 					Name: storeName,
 				},
 				Spec: v1alpha2.ClusterStoreSpec{
-					Sources: []corev1alpha1.StoreImage{
+					Sources: []corev1alpha1.ImageSource{
 						{
 							Image: "some/imageInStore",
 						},

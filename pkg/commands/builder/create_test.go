@@ -65,21 +65,25 @@ func testCreateCommand(builderCommand func(clientSetProvider k8s.ClientSetProvid
 							Name: "some-store",
 							Kind: v1alpha2.ClusterStoreKind,
 						},
-						Order: []corev1alpha1.OrderEntry{
+						Order: []v1alpha2.BuilderOrderEntry{
 							{
-								Group: []corev1alpha1.BuildpackRef{
+								Group: []v1alpha2.BuilderBuildpackRef{
 									{
-										BuildpackInfo: corev1alpha1.BuildpackInfo{
-											Id: "org.cloudfoundry.nodejs",
+										BuildpackRef: corev1alpha1.BuildpackRef{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "org.cloudfoundry.nodejs",
+											},
 										},
 									},
 								},
 							},
 							{
-								Group: []corev1alpha1.BuildpackRef{
+								Group: []v1alpha2.BuilderBuildpackRef{
 									{
-										BuildpackInfo: corev1alpha1.BuildpackInfo{
-											Id: "org.cloudfoundry.go",
+										BuildpackRef: corev1alpha1.BuildpackRef{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "org.cloudfoundry.go",
+											},
 										},
 									},
 								},
@@ -338,24 +342,30 @@ status:
 
 		when("buildpack flag is used", func() {
 			it("creates a builder using the buildpack flag", func() {
-				expectedBuilder.Spec.Order = []corev1alpha1.OrderEntry{
+				expectedBuilder.Spec.Order = []v1alpha2.BuilderOrderEntry{
 					{
-						Group: []corev1alpha1.BuildpackRef{
+						Group: []v1alpha2.BuilderBuildpackRef{
 							{
-								BuildpackInfo: corev1alpha1.BuildpackInfo{
-									Id: "org.cloudfoundry.go",
+								BuildpackRef: corev1alpha1.BuildpackRef{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id: "org.cloudfoundry.go",
+									},
 								},
 							},
 							{
-								BuildpackInfo: corev1alpha1.BuildpackInfo{
-									Id:      "org.cloudfoundry.nodejs",
-									Version: "1",
+								BuildpackRef: corev1alpha1.BuildpackRef{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id:      "org.cloudfoundry.nodejs",
+										Version: "1",
+									},
 								},
 							},
 							{
-								BuildpackInfo: corev1alpha1.BuildpackInfo{
-									Id:      "org.cloudfoundry.ruby",
-									Version: "1.2.3",
+								BuildpackRef: corev1alpha1.BuildpackRef{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id:      "org.cloudfoundry.ruby",
+										Version: "1.2.3",
+									},
 								},
 							},
 						},

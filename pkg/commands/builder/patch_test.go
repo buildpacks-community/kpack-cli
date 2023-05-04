@@ -53,21 +53,25 @@ func testPatchCommand(builderCommand func(clientSetProvider k8s.ClientSetProvide
 							Name: "some-store",
 							Kind: v1alpha2.ClusterStoreKind,
 						},
-						Order: []corev1alpha1.OrderEntry{
+						Order: []v1alpha2.BuilderOrderEntry{
 							{
-								Group: []corev1alpha1.BuildpackRef{
+								Group: []v1alpha2.BuilderBuildpackRef{
 									{
-										BuildpackInfo: corev1alpha1.BuildpackInfo{
-											Id: "org.cloudfoundry.nodejs",
+										BuildpackRef: corev1alpha1.BuildpackRef{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "org.cloudfoundry.nodejs",
+											},
 										},
 									},
 								},
 							},
 							{
-								Group: []corev1alpha1.BuildpackRef{
+								Group: []v1alpha2.BuilderBuildpackRef{
 									{
-										BuildpackInfo: corev1alpha1.BuildpackInfo{
-											Id: "org.cloudfoundry.go",
+										BuildpackRef: corev1alpha1.BuildpackRef{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "org.cloudfoundry.go",
+											},
 										},
 									},
 								},

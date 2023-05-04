@@ -6,6 +6,7 @@ package _import_test
 import (
 	"testing"
 
+	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
@@ -47,15 +48,17 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 				Name:         "some-cb",
 				ClusterStack: "some-stack",
 				ClusterStore: "some-store",
-				Order: []corev1alpha1.OrderEntry{
+				Order: []v1alpha2.BuilderOrderEntry{
 					{
-						Group: []corev1alpha1.BuildpackRef{
+						Group: []v1alpha2.BuilderBuildpackRef{
 							{
-								BuildpackInfo: corev1alpha1.BuildpackInfo{
-									Id:      "some-buildpack",
-									Version: "1.2.3",
+								BuildpackRef: corev1alpha1.BuildpackRef{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id:      "some-buildpack",
+										Version: "1.2.3",
+									},
+									Optional: false,
 								},
-								Optional: false,
 							},
 						},
 					},
@@ -148,8 +151,44 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 		it("returns the cluster builders and the default cluster builder", func() {
 			builders := desc.GetClusterBuilders()
 			expectedBuilders := []importpkg.ClusterBuilder{
-				{Name: "some-cb", ClusterStack: "some-stack", ClusterStore: "some-store", Order: []corev1alpha1.OrderEntry{{Group: []corev1alpha1.BuildpackRef{{BuildpackInfo: corev1alpha1.BuildpackInfo{Id: "some-buildpack", Version: "1.2.3"}, Optional: false}}}}},
-				{Name: "default", ClusterStack: "some-stack", ClusterStore: "some-store", Order: []corev1alpha1.OrderEntry{{Group: []corev1alpha1.BuildpackRef{{BuildpackInfo: corev1alpha1.BuildpackInfo{Id: "some-buildpack", Version: "1.2.3"}, Optional: false}}}}},
+				{
+					Name:         "some-cb",
+					ClusterStack: "some-stack",
+					ClusterStore: "some-store",
+					Order: []v1alpha2.BuilderOrderEntry{
+						{
+							Group: []v1alpha2.BuilderBuildpackRef{
+								{
+									BuildpackRef: corev1alpha1.BuildpackRef{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
+											Id: "some-buildpack", Version: "1.2.3",
+										},
+										Optional: false,
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Name:         "default",
+					ClusterStack: "some-stack",
+					ClusterStore: "some-store",
+					Order: []v1alpha2.BuilderOrderEntry{
+						{
+							Group: []v1alpha2.BuilderBuildpackRef{
+								{
+									BuildpackRef: corev1alpha1.BuildpackRef{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
+											Id: "some-buildpack", Version: "1.2.3",
+										},
+										Optional: false,
+									},
+								},
+							},
+						},
+					},
+				},
 			}
 			require.Equal(t, expectedBuilders, builders)
 		})

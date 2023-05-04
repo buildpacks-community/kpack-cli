@@ -46,7 +46,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			Name: storeName,
 		},
 		Spec: v1alpha2.ClusterStoreSpec{
-			Sources: []corev1alpha1.StoreImage{
+			Sources: []corev1alpha1.ImageSource{
 				{
 					Image: image1InStore,
 				},
@@ -56,13 +56,13 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 			},
 		},
 		Status: v1alpha2.ClusterStoreStatus{
-			Buildpacks: []corev1alpha1.StoreBuildpack{
+			Buildpacks: []corev1alpha1.BuildpackStatus{
 				{
 					BuildpackInfo: corev1alpha1.BuildpackInfo{
 						Id:      "some-buildpackage",
 						Version: "1.2.3",
 					},
-					StoreImage: corev1alpha1.StoreImage{
+					StoreImage: corev1alpha1.ImageSource{
 						Image: image1InStore,
 					},
 				},
@@ -71,7 +71,7 @@ func testClusterStoreRemoveCommand(t *testing.T, when spec.G, it spec.S) {
 						Id:      "another-buildpackage",
 						Version: "4.5.6",
 					},
-					StoreImage: corev1alpha1.StoreImage{
+					StoreImage: corev1alpha1.ImageSource{
 						Image: image2InStore,
 					},
 				},

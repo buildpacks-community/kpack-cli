@@ -37,7 +37,7 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 				Name: storeName,
 			},
 			Status: v1alpha2.ClusterStoreStatus{
-				Buildpacks: []corev1alpha1.StoreBuildpack{
+				Buildpacks: []corev1alpha1.BuildpackStatus{
 					{
 						BuildpackInfo: corev1alpha1.BuildpackInfo{
 							Id:      "meta",
@@ -48,7 +48,7 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 							Version:  "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
-						StoreImage: corev1alpha1.StoreImage{
+						StoreImage: corev1alpha1.ImageSource{
 							Image: "some-meta-image",
 						},
 						Homepage: "meta-homepage",
@@ -76,7 +76,7 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 							Version:  "1",
 							Homepage: "meta-1-buildpackage-homepage",
 						},
-						StoreImage: corev1alpha1.StoreImage{
+						StoreImage: corev1alpha1.ImageSource{
 							Image: "some-meta-image",
 						},
 						Homepage: "nested-buildpack-homepage",
@@ -91,7 +91,7 @@ func testStatusCommand(t *testing.T, when spec.G, it spec.S) {
 							Version:  "3",
 							Homepage: "simple-3-buildpackage-homepage",
 						},
-						StoreImage: corev1alpha1.StoreImage{
+						StoreImage: corev1alpha1.ImageSource{
 							Image: "simple-buildpackage",
 						},
 						Homepage: "simple-buildpack-homepage",
