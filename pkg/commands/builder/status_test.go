@@ -332,6 +332,26 @@ Reason:    this builder is not ready for the purpose of a test
 						Homepage: "https://github.com/paketo-buildpacks/go",
 					},
 				},
+				Order: []corev1alpha1.OrderEntry{
+					{
+						Group: []corev1alpha1.BuildpackRef{
+							{
+								BuildpackInfo: corev1alpha1.BuildpackInfo{
+									Id: "org.cloudfoundry.nodejs",
+								},
+							},
+						},
+					},
+					{
+						Group: []corev1alpha1.BuildpackRef{
+							{
+								BuildpackInfo: corev1alpha1.BuildpackInfo{
+									Id: "org.cloudfoundry.go",
+								},
+							},
+						},
+					},
+				},
 				Stack: corev1alpha1.BuildStack{
 					RunImage: "gcr.io/paketo-buildpacks/run@sha256:iweuryaksdjhf9203847098234",
 					ID:       "io.buildpacks.stacks.centos",
@@ -457,16 +477,6 @@ Reason:    this builder is not ready for the purpose of a test
 
 			when("the builder exists", func() {
 				when("the builder is ready", func() {
-					when("the order is not in the builder status", func() {
-						it("shows the build status falling back to spec.order", func() {
-							testhelpers.CommandTest{
-								Objects:        []runtime.Object{readyDefaultBuilder},
-								Args:           []string{"test-builder-1"},
-								ExpectedOutput: expectedReadyOutputUsingSpecOrder,
-							}.TestKpack(t, cmdFunc)
-						})
-
-					})
 					when("the order is in the builder status", func() {
 						it("shows the build status using status.order", func() {
 							readyDefaultBuilder.Status.Order = []corev1alpha1.OrderEntry{

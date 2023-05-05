@@ -79,3 +79,20 @@ func CreateDetectionOrderRow(ref corev1alpha1.BuildpackRef) (string, string) {
 
 	return data, optional
 }
+
+func CoreOrderEntryToBuildOrderEntry(order []corev1alpha1.OrderEntry) []buildv1alpha2.BuilderOrderEntry {
+	res := make([]buildv1alpha2.BuilderOrderEntry, len(order))
+	for i, entry := range order {
+		group := make([]buildv1alpha2.BuilderBuildpackRef, len(entry.Group))
+		for j, ref := range entry.Group {
+			group[j] = buildv1alpha2.BuilderBuildpackRef{
+				BuildpackRef: ref,
+			}
+		}
+
+		res[i] = buildv1alpha2.BuilderOrderEntry{
+			Group: group,
+		}
+	}
+	return res
+}

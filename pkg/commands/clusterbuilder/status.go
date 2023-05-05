@@ -132,12 +132,7 @@ func printBuilderReadyStatus(bldr *v1alpha2.ClusterBuilder, writer io.Writer) er
 		return nil
 	}
 
-	order := bldr.Status.Order
-	if len(order) == 0 {
-		order = bldr.Spec.Order
-	}
-
-	for i, entry := range order {
+	for i, entry := range bldr.Status.Order {
 		err := orderTableWriter.AddRow(fmt.Sprintf("Group #%d", i+1), "")
 		if err != nil {
 			return err
