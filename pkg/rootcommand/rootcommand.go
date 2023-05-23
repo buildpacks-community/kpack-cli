@@ -13,6 +13,7 @@ import (
 	buildercmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/builder"
 	buildpackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/buildpack"
 	clusterbuildercmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuilder"
+	clusterbuildpackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuildpack"
 	clusterstackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstack"
 	clusterstorecmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
 	configcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/config"
@@ -49,6 +50,7 @@ Learn more about kpack @ https://github.com/pivotal/kpack`,
 		getBuildpackCommand(clientSetProvider),
 		getSecretCommand(clientSetProvider),
 		getClusterBuilderCommand(clientSetProvider),
+		getClusterBuildpackCommand(clientSetProvider),
 		getBuilderCommand(clientSetProvider),
 		getStackCommand(clientSetProvider),
 		getStoreCommand(clientSetProvider),
@@ -140,6 +142,23 @@ func getClusterBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Co
 		clusterbuildercmds.NewListCommand(clientSetProvider),
 		clusterbuildercmds.NewStatusCommand(clientSetProvider),
 		clusterbuildercmds.NewDeleteCommand(clientSetProvider),
+	)
+	return clusterBuilderRootCmd
+}
+
+func getClusterBuildpackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	clusterBuilderRootCmd := &cobra.Command{
+		Use:     "clusterbuildpack",
+		Short:   "ClusterBuildpack Commands",
+		Aliases: []string{"clusterbuildpacks", "clstrbps", "clstrbp", "cbps", "cbp"},
+	}
+	clusterBuilderRootCmd.AddCommand(
+		clusterbuildpackcmds.NewCreateCommand(clientSetProvider, commands.NewResourceWaiter),
+		clusterbuildpackcmds.NewPatchCommand(clientSetProvider, commands.NewResourceWaiter),
+		clusterbuildpackcmds.NewSaveCommand(clientSetProvider, commands.NewResourceWaiter),
+		clusterbuildpackcmds.NewListCommand(clientSetProvider),
+		clusterbuildpackcmds.NewStatusCommand(clientSetProvider),
+		clusterbuildpackcmds.NewDeleteCommand(clientSetProvider),
 	)
 	return clusterBuilderRootCmd
 }
