@@ -11,6 +11,7 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	buildcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/build"
 	buildercmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/builder"
+	buildpackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/buildpack"
 	clusterbuildercmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuilder"
 	clusterstackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstack"
 	clusterstorecmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
@@ -45,6 +46,7 @@ Learn more about kpack @ https://github.com/pivotal/kpack`,
 		getVersionCommand(),
 		getImageCommand(clientSetProvider),
 		getBuildCommand(clientSetProvider),
+		getBuildpackCommand(clientSetProvider),
 		getSecretCommand(clientSetProvider),
 		getClusterBuilderCommand(clientSetProvider),
 		getBuilderCommand(clientSetProvider),
@@ -155,6 +157,23 @@ func getBuilderCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		buildercmds.NewListCommand(clientSetProvider),
 		buildercmds.NewDeleteCommand(clientSetProvider),
 		buildercmds.NewStatusCommand(clientSetProvider),
+	)
+	return builderRootCmd
+}
+
+func getBuildpackCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	builderRootCmd := &cobra.Command{
+		Use:     "buildpack",
+		Short:   "Buildpack Commands",
+		Aliases: []string{"buildpacks", "bp", "bps"},
+	}
+	builderRootCmd.AddCommand(
+		buildpackcmds.NewCreateCommand(clientSetProvider, commands.NewResourceWaiter),
+		buildpackcmds.NewPatchCommand(clientSetProvider, commands.NewResourceWaiter),
+		buildpackcmds.NewSaveCommand(clientSetProvider, commands.NewResourceWaiter),
+		buildpackcmds.NewListCommand(clientSetProvider),
+		buildpackcmds.NewDeleteCommand(clientSetProvider),
+		buildpackcmds.NewStatusCommand(clientSetProvider),
 	)
 	return builderRootCmd
 }
