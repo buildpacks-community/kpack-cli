@@ -21,8 +21,16 @@ func (c *kpackV1alpha1CompatClient) Builders(namespace string) v1alpha2.BuilderI
 	return newBuilders(c, namespace)
 }
 
+func (c *kpackV1alpha1CompatClient) Buildpacks(namespace string) v1alpha2.BuildpackInterface {
+	return newBuildpacks(c, namespace)
+}
+
 func (c *kpackV1alpha1CompatClient) ClusterBuilders() v1alpha2.ClusterBuilderInterface {
 	return newClusterBuilders(c)
+}
+
+func (c *kpackV1alpha1CompatClient) ClusterBuildpacks() v1alpha2.ClusterBuildpackInterface {
+	return newClusterBuildpacks(c)
 }
 
 func (c *kpackV1alpha1CompatClient) ClusterStacks() v1alpha2.ClusterStackInterface {

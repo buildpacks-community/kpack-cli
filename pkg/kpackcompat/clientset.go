@@ -1,11 +1,12 @@
 package kpackcompat
 
 import (
+	"errors"
+
 	"github.com/pivotal/kpack/pkg/apis/build"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned/typed/build/v1alpha2"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 
@@ -16,6 +17,10 @@ import (
 
 const (
 	kpackGroupVersionV1alpha2 = build.GroupName + "/v1alpha2"
+)
+
+var (
+	ErrV1alpha2Required = errors.New("kpack version too low")
 )
 
 type ClientSetWrapper struct {
@@ -50,11 +55,12 @@ func NewForConfig(c *rest.Config) (versioned.Interface, error) {
 		return nil, err
 	}
 
-	if groupVersion == kpackGroupVersionV1alpha2 {
+	switch groupVersion {
+	case kpackGroupVersionV1alpha2:
 		return realClientSet, nil
+	default:
+		return &ClientSetWrapper{kpackClientSet: realClientSet}, nil
 	}
-
-	return &ClientSetWrapper{kpackClientSet: realClientSet}, nil
 }
 
 func getKpackPreferredGroupVersion(groups *metav1.APIGroupList) (string, error) {
