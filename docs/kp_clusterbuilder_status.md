@@ -13,7 +13,7 @@ kp clusterbuilder status <name> [flags]
 ### Examples
 
 ```
-kp cb status my-builder
+kp clusterbuilder status my-builder
 ```
 
 ### Options

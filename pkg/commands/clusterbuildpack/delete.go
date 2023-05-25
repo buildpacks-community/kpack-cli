@@ -18,7 +18,7 @@ func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Use:     "delete <name>",
 		Short:   "Delete a buildpack",
 		Long:    `Delete a buildpack from the cluster.`,
-		Example: "kp cbp delete my-buildpack",
+		Example: "kp clusterbuildpack delete my-buildpack",
 		Args:    commands.ExactArgsWithUsage(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cs, err := clientSetProvider.GetClientSet("")

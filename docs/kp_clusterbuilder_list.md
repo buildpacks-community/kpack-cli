@@ -13,7 +13,7 @@ kp clusterbuilder list [flags]
 ### Examples
 
 ```
-kp cb list
+kp clusterbuilder list
 ```
 
 ### Options

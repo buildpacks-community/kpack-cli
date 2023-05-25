@@ -24,7 +24,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Use:          "status <name>",
 		Short:        "Display cluster builder status",
 		Long:         `Prints detailed information about the status of a specific cluster builder.`,
-		Example:      "kp cb status my-builder",
+		Example:      "kp clusterbuilder status my-builder",
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

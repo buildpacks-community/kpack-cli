@@ -21,10 +21,10 @@ kp clusterbuilder create <name> [flags]
 ### Examples
 
 ```
-kp cb create my-builder --order /path/to/order.yaml --stack tiny --store my-store
-kp cb create my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
-kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
-kp cb create my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
+kp clusterbuilder create my-builder --order /path/to/order.yaml --stack tiny --store my-store
+kp clusterbuilder create my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
+kp clusterbuilder create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
+kp clusterbuilder create my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
 ```
 
 ### Options

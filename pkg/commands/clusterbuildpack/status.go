@@ -27,7 +27,7 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Prints detailed information about the status of a specific buildpack in the provided namespace.
 
 The namespace defaults to the kubernetes current-context namespace.`,
-		Example:      "kp buildpack status my-buildpack\nkp buildpack status -n my-namespace other-buildpack",
+		Example:      "kp clusterbuildpack status my-buildpack",
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -13,7 +13,7 @@ kp clusterbuilder delete <name> [flags]
 ### Examples
 
 ```
-kp cb delete my-builder
+kp clusterbuilder delete my-builder
 ```
 
 ### Options

@@ -25,7 +25,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dyn
 		Use:          "patch <name>",
 		Short:        "Patch an existing cluster buildpack configuration",
 		Long:         "Patch an existing cluster buildpack configuration by providing command line arguments.",
-		Example:      "kp cbp patch my-buildpack --image gcr.io/paketo-buildpacks/java",
+		Example:      "kp clusterbuildpack patch my-buildpack --image gcr.io/paketo-buildpacks/java",
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

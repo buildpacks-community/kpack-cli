@@ -16,9 +16,9 @@ kp clusterbuildpack create <name> --image <image> [flags]
 ### Examples
 
 ```
-kp cbp create my-cluster-buildpack --image gcr.io/paketo-buildpacks/java
-kp cbp buildpack create my-cluster-buildpack --image gcr.io/paketo-buildpacks/java:8.9.0
-kp cbp buildpack create my-cluster-buildpack --image gcr.io/paketo-buildpacks/java@sha256:fc1c6fba46b582f63b13490b89e50e93c95ce08142a8737f4a6b70c826c995de
+kp clusterbuildpack create my-cluster-buildpack --image gcr.io/paketo-buildpacks/java
+kp clusterbuildpack create my-cluster-buildpack --image gcr.io/paketo-buildpacks/java:8.9.0
+kp clusterbuildpack create my-cluster-buildpack --image gcr.io/paketo-buildpacks/java@sha256:fc1c6fba46b582f63b13490b89e50e93c95ce08142a8737f4a6b70c826c995de
 
 ```
 

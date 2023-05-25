@@ -15,8 +15,7 @@ kp clusterbuildpack status <name> [flags]
 ### Examples
 
 ```
-kp buildpack status my-buildpack
-kp buildpack status -n my-namespace other-buildpack
+kp clusterbuildpack status my-buildpack
 ```
 
 ### Options

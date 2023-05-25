@@ -17,7 +17,7 @@ kp clusterbuildpack save <name> [flags]
 ### Examples
 
 ```
-kp cbp save my-buildpack --image gcr.io/paketo-buildpacks/java
+kp clusterbuildpack save my-buildpack --image gcr.io/paketo-buildpacks/java
 ```
 
 ### Options

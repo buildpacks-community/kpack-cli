@@ -16,9 +16,9 @@ kp clusterbuilder patch <name> [flags]
 ### Examples
 
 ```
-kp cb patch my-builder --order /path/to/order.yaml --stack tiny --store my-store
-kp cb patch my-builder --order /path/to/order.yaml
-kp cb patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
+kp clusterbuilder patch my-builder --order /path/to/order.yaml --stack tiny --store my-store
+kp clusterbuilder patch my-builder --order /path/to/order.yaml
+kp clusterbuilder patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
 ```
 
 ### Options
