@@ -63,7 +63,7 @@ func testAddCommand(clusterStackCommand func(clientSetProvider k8s.ClientSetProv
 					Namespace: "some-namespace",
 					Name:      "some-serviceaccount",
 				},
-				Sources: []corev1alpha1.StoreImage{
+				Sources: []corev1alpha1.ImageSource{
 					{Image: "default-registry.io/default-repo/old-buildpack-id@sha256:old-buildpack-digest"},
 				},
 			},

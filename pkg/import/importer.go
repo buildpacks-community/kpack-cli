@@ -445,7 +445,7 @@ func buildpackagesForSource(sources []Source) []string {
 	return buildpackages
 }
 
-func createBuildpackageSuperset(firstStore, secondStore *v1alpha2.ClusterStore) []corev1alpha1.StoreImage {
+func createBuildpackageSuperset(firstStore, secondStore *v1alpha2.ClusterStore) []corev1alpha1.ImageSource {
 	result := firstStore.Spec.Sources
 
 	for _, source := range secondStore.Spec.Sources {
@@ -457,7 +457,7 @@ func createBuildpackageSuperset(firstStore, secondStore *v1alpha2.ClusterStore) 
 	return result
 }
 
-func sourcesContainsSourceImage(sources []corev1alpha1.StoreImage, sourceImage corev1alpha1.StoreImage) bool {
+func sourcesContainsSourceImage(sources []corev1alpha1.ImageSource, sourceImage corev1alpha1.ImageSource) bool {
 	for _, source := range sources {
 		if source == sourceImage {
 			return true

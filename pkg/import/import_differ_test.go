@@ -53,7 +53,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 				Name: "some-store",
 			},
 			Spec: v1alpha2.ClusterStoreSpec{
-				Sources: []corev1alpha1.StoreImage{
+				Sources: []corev1alpha1.ImageSource{
 					{Image: "some-old-buildpackage"},
 					{Image: "some-same-buildpackage"},
 					{Image: "some-extra-buildpackage"},
@@ -88,7 +88,7 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("returns no diff with no new buildpackages", func() {
-			oldStore.Spec.Sources = []corev1alpha1.StoreImage{
+			oldStore.Spec.Sources = []corev1alpha1.ImageSource{
 				{Image: "some-new-buildpackage"},
 				{Image: "some-extra-buildpackage"},
 			}
@@ -160,7 +160,19 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 						Stack: corev1.ObjectReference{
 							Name: "some-stack",
 						},
-						Order: []corev1alpha1.OrderEntry{{Group: []corev1alpha1.BuildpackRef{{BuildpackInfo: corev1alpha1.BuildpackInfo{Id: "some-buildpack"}}}}},
+						Order: []v1alpha2.BuilderOrderEntry{
+							{
+								Group: []v1alpha2.BuilderBuildpackRef{
+									{
+										BuildpackRef: corev1alpha1.BuildpackRef{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "some-buildpack",
+											},
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			}
@@ -168,7 +180,19 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 				Name:         "some-builder",
 				ClusterStore: "some-new-store",
 				ClusterStack: "some-new-stack",
-				Order:        []corev1alpha1.OrderEntry{{Group: []corev1alpha1.BuildpackRef{{BuildpackInfo: corev1alpha1.BuildpackInfo{Id: "some-new-buildpack"}}}}},
+				Order: []v1alpha2.BuilderOrderEntry{
+					{
+						Group: []v1alpha2.BuilderBuildpackRef{
+							{
+								BuildpackRef: corev1alpha1.BuildpackRef{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id: "some-new-buildpack",
+									},
+								},
+							},
+						},
+					},
+				},
 			}
 
 			diff, err := importDiffer.DiffClusterBuilder(oldBuilder, newBuilder)
@@ -179,7 +203,19 @@ func testImportDiffer(t *testing.T, when spec.G, it spec.S) {
 				Name:         "some-builder",
 				ClusterStore: "some-store",
 				ClusterStack: "some-stack",
-				Order:        []corev1alpha1.OrderEntry{{Group: []corev1alpha1.BuildpackRef{{BuildpackInfo: corev1alpha1.BuildpackInfo{Id: "some-buildpack"}}}}},
+				Order: []v1alpha2.BuilderOrderEntry{
+					{
+						Group: []v1alpha2.BuilderBuildpackRef{
+							{
+								BuildpackRef: corev1alpha1.BuildpackRef{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id: "some-buildpack",
+									},
+								},
+							},
+						},
+					},
+				},
 			}
 			require.Equal(t, expectedArg0, diffArg0)
 			require.Equal(t, newBuilder, diffArg1)

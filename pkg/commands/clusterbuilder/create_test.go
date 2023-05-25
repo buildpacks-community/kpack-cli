@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
@@ -50,7 +49,7 @@ func testCreateCommand(clusterBuilderCommand func(clientSetProvider k8s.ClientSe
 					Kind:       v1alpha2.ClusterBuilderKind,
 					APIVersion: "kpack.io/v1alpha2",
 				},
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-builder",
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"some-stack"},"store":{"kind":"ClusterStore","name":"some-store"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`,
@@ -67,21 +66,25 @@ func testCreateCommand(clusterBuilderCommand func(clientSetProvider k8s.ClientSe
 							Name: "some-store",
 							Kind: v1alpha2.ClusterStoreKind,
 						},
-						Order: []corev1alpha1.OrderEntry{
+						Order: []v1alpha2.BuilderOrderEntry{
 							{
-								Group: []corev1alpha1.BuildpackRef{
+								Group: []v1alpha2.BuilderBuildpackRef{
 									{
-										BuildpackInfo: corev1alpha1.BuildpackInfo{
-											Id: "org.cloudfoundry.nodejs",
+										BuildpackRef: corev1alpha1.BuildpackRef{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "org.cloudfoundry.nodejs",
+											},
 										},
 									},
 								},
 							},
 							{
-								Group: []corev1alpha1.BuildpackRef{
+								Group: []v1alpha2.BuilderBuildpackRef{
 									{
-										BuildpackInfo: corev1alpha1.BuildpackInfo{
-											Id: "org.cloudfoundry.go",
+										BuildpackRef: corev1alpha1.BuildpackRef{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "org.cloudfoundry.go",
+											},
 										},
 									},
 								},
@@ -379,24 +382,30 @@ status:
 		when("buildpack flag is used", func() {
 			it("creates a builder using the buildpack flag", func() {
 
-				expectedBuilder.Spec.Order = []corev1alpha1.OrderEntry{
+				expectedBuilder.Spec.Order = []v1alpha2.BuilderOrderEntry{
 					{
-						Group: []corev1alpha1.BuildpackRef{
+						Group: []v1alpha2.BuilderBuildpackRef{
 							{
-								BuildpackInfo: corev1alpha1.BuildpackInfo{
-									Id: "org.cloudfoundry.go",
+								BuildpackRef: corev1alpha1.BuildpackRef{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id: "org.cloudfoundry.go",
+									},
 								},
 							},
 							{
-								BuildpackInfo: corev1alpha1.BuildpackInfo{
-									Id:      "org.cloudfoundry.nodejs",
-									Version: "1",
+								BuildpackRef: corev1alpha1.BuildpackRef{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id:      "org.cloudfoundry.nodejs",
+										Version: "1",
+									},
 								},
 							},
 							{
-								BuildpackInfo: corev1alpha1.BuildpackInfo{
-									Id:      "org.cloudfoundry.ruby",
-									Version: "1.2.3",
+								BuildpackRef: corev1alpha1.BuildpackRef{
+									BuildpackInfo: corev1alpha1.BuildpackInfo{
+										Id:      "org.cloudfoundry.ruby",
+										Version: "1.2.3",
+									},
 								},
 							},
 						},

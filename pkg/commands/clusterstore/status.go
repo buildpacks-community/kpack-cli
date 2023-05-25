@@ -109,8 +109,8 @@ func displayBuildpackagesDetailed(out io.Writer, s *v1alpha2.ClusterStore) error
 		return err
 	}
 
-	buildpackages := map[string]corev1alpha1.StoreBuildpack{}
-	buildpackageBps := map[string][]corev1alpha1.StoreBuildpack{}
+	buildpackages := map[string]corev1alpha1.BuildpackStatus{}
+	buildpackageBps := map[string][]corev1alpha1.BuildpackStatus{}
 
 	for _, b := range s.Status.Buildpacks {
 		if b.Buildpackage.Id == "" && b.Buildpackage.Version == "" {
@@ -159,7 +159,7 @@ func getBuildpackageInfos(store *v1alpha2.ClusterStore) []buildpackageInfo {
 	return buildpackageInfos
 }
 
-func displayBuildpacks(out io.Writer, buildpackage map[string]corev1alpha1.StoreBuildpack, buildpacks map[string][]corev1alpha1.StoreBuildpack) error {
+func displayBuildpacks(out io.Writer, buildpackage map[string]corev1alpha1.BuildpackStatus, buildpacks map[string][]corev1alpha1.BuildpackStatus) error {
 	var keys []string
 	for k := range buildpackage {
 		keys = append(keys, k)

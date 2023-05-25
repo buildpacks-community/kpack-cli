@@ -5,6 +5,7 @@ package _import
 
 import (
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	"github.com/vmware-tanzu/kpack-cli/pkg/builder"
 )
 
 const APIVersionV1 = "kp.kpack.io/v1alpha1"
@@ -39,7 +40,7 @@ func (d1 DependencyDescriptorV1) ToNextVersion() DependencyDescriptor {
 			Name:         cb.Name,
 			ClusterStack: cb.Stack,
 			ClusterStore: cb.Store,
-			Order:        cb.Order,
+			Order:        builder.CoreOrderEntryToBuildOrderEntry(cb.Order),
 		})
 	}
 	return d

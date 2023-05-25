@@ -77,7 +77,7 @@ func testCreateCommand(clusterStackCommand func(clientSetProvider k8s.ClientSetP
 						Namespace: "some-namespace",
 						Name:      "some-serviceaccount",
 					},
-					Sources: []corev1alpha1.StoreImage{
+					Sources: []corev1alpha1.ImageSource{
 						{Image: "default-registry.io/default-repo@sha256:buildpack-digest"},
 						{Image: "default-registry.io/default-repo@sha256:37d646bec2453ab05fe57288ede904dfd12f988dbc964e3e764c41c1bd3b58bf"},
 					},

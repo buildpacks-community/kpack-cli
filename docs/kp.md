@@ -20,7 +20,9 @@ Learn more about kpack @ https://github.com/pivotal/kpack
 
 * [kp build](kp_build.md)	 - Build Commands
 * [kp builder](kp_builder.md)	 - Builder Commands
+* [kp buildpack](kp_buildpack.md)	 - Buildpack Commands
 * [kp clusterbuilder](kp_clusterbuilder.md)	 - ClusterBuilder Commands
+* [kp clusterbuildpack](kp_clusterbuildpack.md)	 - ClusterBuildpack Commands
 * [kp clusterstack](kp_clusterstack.md)	 - ClusterStack Commands
 * [kp clusterstore](kp_clusterstore.md)	 - ClusterStore Commands
 * [kp completion](kp_completion.md)	 - Generate completion script

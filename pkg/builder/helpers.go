@@ -11,10 +11,11 @@ import (
 	"regexp"
 
 	"github.com/ghodss/yaml"
+	buildv1alpha2 "github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 )
 
-func ReadOrder(path string) ([]corev1alpha1.OrderEntry, error) {
+func ReadOrder(path string) ([]buildv1alpha2.BuilderOrderEntry, error) {
 	var (
 		file io.ReadCloser
 		err  error
@@ -35,12 +36,12 @@ func ReadOrder(path string) ([]corev1alpha1.OrderEntry, error) {
 		return nil, err
 	}
 
-	var order []corev1alpha1.OrderEntry
+	var order []buildv1alpha2.BuilderOrderEntry
 	return order, yaml.Unmarshal(buf, &order)
 }
 
-func CreateOrder(buildpacks []string) []corev1alpha1.OrderEntry {
-	group := make([]corev1alpha1.BuildpackRef, 0)
+func CreateOrder(buildpacks []string) []buildv1alpha2.BuilderOrderEntry {
+	group := make([]buildv1alpha2.BuilderBuildpackRef, 0)
 
 	// this regular expression splits out buildpack id and version
 	var re = regexp.MustCompile(`(?m)^([^@]+)[@]?(.*)`)
@@ -51,15 +52,17 @@ func CreateOrder(buildpacks []string) []corev1alpha1.OrderEntry {
 		id := submatch[1]
 		version := submatch[2]
 
-		group = append(group, corev1alpha1.BuildpackRef{
-			BuildpackInfo: corev1alpha1.BuildpackInfo{
-				Id:      id,
-				Version: version,
+		group = append(group, buildv1alpha2.BuilderBuildpackRef{
+			BuildpackRef: corev1alpha1.BuildpackRef{
+				BuildpackInfo: corev1alpha1.BuildpackInfo{
+					Id:      id,
+					Version: version,
+				},
 			},
 		})
 	}
 
-	return []corev1alpha1.OrderEntry{{Group: group}}
+	return []buildv1alpha2.BuilderOrderEntry{{Group: group}}
 }
 
 func CreateDetectionOrderRow(ref corev1alpha1.BuildpackRef) (string, string) {
@@ -75,4 +78,21 @@ func CreateDetectionOrderRow(ref corev1alpha1.BuildpackRef) (string, string) {
 	}
 
 	return data, optional
+}
+
+func CoreOrderEntryToBuildOrderEntry(order []corev1alpha1.OrderEntry) []buildv1alpha2.BuilderOrderEntry {
+	res := make([]buildv1alpha2.BuilderOrderEntry, len(order))
+	for i, entry := range order {
+		group := make([]buildv1alpha2.BuilderBuildpackRef, len(entry.Group))
+		for j, ref := range entry.Group {
+			group[j] = buildv1alpha2.BuilderBuildpackRef{
+				BuildpackRef: ref,
+			}
+		}
+
+		res[i] = buildv1alpha2.BuilderOrderEntry{
+			Group: group,
+		}
+	}
+	return res
 }

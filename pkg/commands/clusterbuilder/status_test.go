@@ -102,21 +102,25 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []corev1alpha1.OrderEntry{
+					Order: []v1alpha2.BuilderOrderEntry{
 						{
-							Group: []corev1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuilderBuildpackRef{
 								{
-									BuildpackInfo: corev1alpha1.BuildpackInfo{
-										Id: "org.cloudfoundry.nodejs",
+									BuildpackRef: corev1alpha1.BuildpackRef{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
+											Id: "org.cloudfoundry.nodejs",
+										},
 									},
 								},
 							},
 						},
 						{
-							Group: []corev1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuilderBuildpackRef{
 								{
-									BuildpackInfo: corev1alpha1.BuildpackInfo{
-										Id: "org.cloudfoundry.go",
+									BuildpackRef: corev1alpha1.BuildpackRef{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
+											Id: "org.cloudfoundry.go",
+										},
 									},
 								},
 							},
@@ -175,21 +179,25 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []corev1alpha1.OrderEntry{
+					Order: []v1alpha2.BuilderOrderEntry{
 						{
-							Group: []corev1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuilderBuildpackRef{
 								{
-									BuildpackInfo: corev1alpha1.BuildpackInfo{
-										Id: "org.cloudfoundry.nodejs",
+									BuildpackRef: corev1alpha1.BuildpackRef{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
+											Id: "org.cloudfoundry.nodejs",
+										},
 									},
 								},
 							},
 						},
 						{
-							Group: []corev1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuilderBuildpackRef{
 								{
-									BuildpackInfo: corev1alpha1.BuildpackInfo{
-										Id: "org.cloudfoundry.go",
+									BuildpackRef: corev1alpha1.BuildpackRef{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
+											Id: "org.cloudfoundry.go",
+										},
 									},
 								},
 							},
@@ -232,21 +240,25 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					Order: []corev1alpha1.OrderEntry{
+					Order: []v1alpha2.BuilderOrderEntry{
 						{
-							Group: []corev1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuilderBuildpackRef{
 								{
-									BuildpackInfo: corev1alpha1.BuildpackInfo{
-										Id: "org.cloudfoundry.nodejs",
+									BuildpackRef: corev1alpha1.BuildpackRef{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
+											Id: "org.cloudfoundry.nodejs",
+										},
 									},
 								},
 							},
 						},
 						{
-							Group: []corev1alpha1.BuildpackRef{
+							Group: []v1alpha2.BuilderBuildpackRef{
 								{
-									BuildpackInfo: corev1alpha1.BuildpackInfo{
-										Id: "org.cloudfoundry.go",
+									BuildpackRef: corev1alpha1.BuildpackRef{
+										BuildpackInfo: corev1alpha1.BuildpackInfo{
+											Id: "org.cloudfoundry.go",
+										},
 									},
 								},
 							},
@@ -270,15 +282,6 @@ Reason:    this builder is not ready for the purpose of a test
 	when("getting clusterbuilder status", func() {
 		when("the clusterbuilder exists", func() {
 			when("the builder is ready", func() {
-				when("the order is not in the builder status", func() {
-					it("shows the build status falling back to spec.order", func() {
-						testhelpers.CommandTest{
-							Objects:        []runtime.Object{readyClusterBuilder},
-							Args:           []string{"test-builder-1"},
-							ExpectedOutput: expectedReadyOutputUsingSpecOrder,
-						}.TestKpack(t, cmdFunc)
-					})
-				})
 				when("the order is in the builder status", func() {
 					it("shows the build status using status.order", func() {
 						readyClusterBuilder.Status.Order = []corev1alpha1.OrderEntry{
