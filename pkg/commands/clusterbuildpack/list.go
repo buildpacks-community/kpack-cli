@@ -22,7 +22,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short: "List available cluster buildpacks",
 		Long: `Prints a table of the most important information about the available cluster buildpacks in the provided namespace.
 `,
-		Example:      "kp cbp list",
+		Example:      "kp clusterbuildpack list",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cs, err := clientSetProvider.GetClientSet("")

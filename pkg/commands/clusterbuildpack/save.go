@@ -26,7 +26,7 @@ The cluster buildpack will be created only if it does not exist, otherwise it wi
 
 No defaults will be assumed for patches.
 `,
-		Example:      "kp cbp save my-buildpack --image gcr.io/paketo-buildpacks/java",
+		Example:      "kp clusterbuildpack save my-buildpack --image gcr.io/paketo-buildpacks/java",
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

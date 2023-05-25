@@ -32,10 +32,10 @@ The default repository is read from the "default.repository" key in the "kp-conf
 
 No defaults will be assumed for patches.
 `,
-		Example: `kp cb save my-builder --order /path/to/order.yaml --stack tiny --store my-store
-kp cb save my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
-kp cb save my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
-kp cb save my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
+		Example: `kp clusterbuilder save my-builder --order /path/to/order.yaml --stack tiny --store my-store
+kp clusterbuilder save my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
+kp clusterbuilder save my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
+kp clusterbuilder save my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

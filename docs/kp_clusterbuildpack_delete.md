@@ -13,7 +13,7 @@ kp clusterbuildpack delete <name> [flags]
 ### Examples
 
 ```
-kp cbp delete my-buildpack
+kp clusterbuildpack delete my-buildpack
 ```
 
 ### Options

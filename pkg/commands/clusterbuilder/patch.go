@@ -30,9 +30,9 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dyn
 
 A buildpack order must be provided with either the path to an order yaml or via the --buildpack flag.
 Multiple buildpacks provided via the --buildpack flag will be added to the same order group.`,
-		Example: `kp cb patch my-builder --order /path/to/order.yaml --stack tiny --store my-store
-kp cb patch my-builder --order /path/to/order.yaml
-kp cb patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
+		Example: `kp clusterbuilder patch my-builder --order /path/to/order.yaml --stack tiny --store my-store
+kp clusterbuilder patch my-builder --order /path/to/order.yaml
+kp clusterbuilder patch my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

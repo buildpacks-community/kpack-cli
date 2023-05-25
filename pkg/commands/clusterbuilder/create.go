@@ -42,10 +42,10 @@ Multiple buildpacks provided via the --buildpack flag will be added to the same 
 Tag when not specified, defaults to a combination of the default repository and specified builder name.
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
-		Example: `kp cb create my-builder --order /path/to/order.yaml --stack tiny --store my-store
-kp cb create my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
-kp cb create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
-kp cb create my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
+		Example: `kp clusterbuilder create my-builder --order /path/to/order.yaml --stack tiny --store my-store
+kp clusterbuilder create my-builder --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1
+kp clusterbuilder create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
+kp clusterbuilder create my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

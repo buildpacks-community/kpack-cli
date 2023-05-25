@@ -14,7 +14,7 @@ kp clusterbuildpack list [flags]
 ### Examples
 
 ```
-kp cbp list
+kp clusterbuildpack list
 ```
 
 ### Options

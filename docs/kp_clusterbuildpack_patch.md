@@ -13,7 +13,7 @@ kp clusterbuildpack patch <name> [flags]
 ### Examples
 
 ```
-kp cbp patch my-buildpack --image gcr.io/paketo-buildpacks/java
+kp clusterbuildpack patch my-buildpack --image gcr.io/paketo-buildpacks/java
 ```
 
 ### Options
