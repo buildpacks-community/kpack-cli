@@ -7,7 +7,7 @@ require (
 	github.com/evanphx/json-patch v4.12.0+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.5.9
-	github.com/google/go-containerregistry v0.14.1-0.20230409045903-ed5c185df419
+	github.com/google/go-containerregistry v0.15.2
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
 	github.com/pivotal/kpack v0.11.0
 	github.com/pkg/errors v0.9.1
@@ -24,7 +24,7 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.19.0 // indirect
+	cloud.google.com/go/compute v1.19.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.7.1-0.20200907061046-05415f1de66d // indirect
 	contrib.go.opencensus.io/exporter/prometheus v0.4.0 // indirect
@@ -49,9 +49,9 @@ require (
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/cli v23.0.4+incompatible // indirect
+	github.com/docker/cli v23.0.5+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/docker v23.0.4+incompatible // indirect
+	github.com/docker/docker v23.0.5+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -89,7 +89,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
+	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.15.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
