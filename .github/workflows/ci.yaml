@@ -1,0 +1,129 @@
+name: ci
+
+on:
+  push:
+    branches:
+    - main
+    - release/**
+  pull_request:
+    branches:
+    - release/**
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version-file: 'go.mod'
+
+    - name: Run tests
+      run: go test -v ./pkg/...
+
+    - name: Report coverage
+      uses: codecov/codecov-action@v3.1.2
+
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      image: ${{ steps.build.outputs.image }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version-file: 'go.mod'
+    - name: Extract version
+      shell: bash
+      run: |
+        [[ $GITHUB_REF =~ ^refs\/heads\/release\/(.*)$ ]] && version=${BASH_REMATCH[1]} || version=${{ github.sha }}
+        echo "VERSION=${version}" >> $GITHUB_ENV
+    - name: Build
+      id: build
+      run: |
+        mkdir kp-binaries
+        
+        build() {
+          OS=$1
+          ARCH=$2
+          echo "Building for $OS-$ARCH"
+          GOOS=$OS CGO_ENABLED=0 GOARCH=$ARCH go build \
+          -ldflags "-X 'github.com/vmware-tanzu/kpack-cli/pkg/rootcommand.Version=${{ env.VERSION }}' -X 'github.com/vmware-tanzu/kpack-cli/pkg/rootcommand.CommitSHA=$(git rev-parse --short HEAD)'" \
+          -o kp-binaries/kp-$OS-$ARCH-${{ env.VERSION }} \
+          ./cmd/kp
+        }
+        
+        build darwin amd64
+        build darwin arm64
+        build linux amd64
+        build linux arm64
+        build windows amd64
+
+    - name: Upload binaries
+      uses: actions/upload-artifact@v3
+      with:
+        name: kp-binaries
+        path: kp-binaries/
+
+  release:
+    needs:
+      - unit
+      - build
+    if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Validate release version
+      run: |
+        echo "GITHUB_REF=${GITHUB_REF}"
+        [[ $GITHUB_REF =~ ^refs\/heads\/release\/(.*)$ ]] && version=${BASH_REMATCH[1]}
+        if [[ -z "${version}" ]]; then
+          echo "ERROR: version not detected."
+          exit 1
+        fi
+        echo "VERSION=${version}" >> $GITHUB_ENV
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version-file: 'go.mod'
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Generate sha256sum
+      id: sha256
+      run: |
+        mkdir checksums
+        for binary in kp-binaries/*; do
+          name=$(basename $binary)
+          shasum -a 256 $binary > "checksums/${name}.sha256"
+        done
+
+    - name: Create Draft Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: kp v${{ env.VERSION }}
+        tag_name: v${{ env.VERSION }}
+        target_commitish: ${{ github.sha }}
+        token: ${{ secrets.RELEASE_TOKEN }}
+        draft: true
+        prerelease: true
+        generate_release_notes: true
+        files: |
+          kp-binaries/*
+          checksums/*

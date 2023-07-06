@@ -6,7 +6,6 @@ import (
 
 	"github.com/pivotal/kpack/pkg/logs"
 	"github.com/spf13/cobra"
-	"github.com/vmware-tanzu/kpack-cli/pkg/kpackcompat"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	buildcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/build"
@@ -23,6 +22,7 @@ import (
 	secretcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/secret"
 	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/vmware-tanzu/kpack-cli/pkg/kpackcompat"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
 	"github.com/vmware-tanzu/kpack-cli/pkg/secret"
 )
