@@ -39,23 +39,24 @@ type Printer interface {
 }
 
 type Factory struct {
-	SourceUploader       SourceUploader
-	AdditionalTags       []string
-	GitRepo              string
-	GitRevision          string
-	Blob                 string
-	LocalPath            string
-	SubPath              *string
-	Builder              string
-	ClusterBuilder       string
-	Env                  []string
-	ServiceBinding       []string
-	CacheSize            string
-	DeleteEnv            []string
-	DeleteAdditionalTags []string
-	DeleteServiceBinding []string
-	Printer              Printer
-	ServiceAccount       string
+	SourceUploader            SourceUploader
+	AdditionalTags            []string
+	GitRepo                   string
+	GitRevision               string
+	Blob                      string
+	LocalPath                 string
+	LocalPathDestinationImage string
+	SubPath                   *string
+	Builder                   string
+	ClusterBuilder            string
+	Env                       []string
+	ServiceBinding            []string
+	CacheSize                 string
+	DeleteEnv                 []string
+	DeleteAdditionalTags      []string
+	DeleteServiceBinding      []string
+	Printer                   Printer
+	ServiceAccount            string
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error) {
@@ -247,12 +248,19 @@ func (f *Factory) makeSource(tag string) (corev1alpha1.SourceConfig, error) {
 			SubPath: subPath,
 		}, nil
 	} else {
-		ref, err := name.ParseReference(tag)
+		sourceImageDest := ""
+		if f.LocalPathDestinationImage != "" {
+			sourceImageDest = f.LocalPathDestinationImage
+		} else {
+			sourceImageDest = tag + "-source"
+		}
+
+		ref, err := name.ParseReference(sourceImageDest)
 		if err != nil {
 			return corev1alpha1.SourceConfig{}, err
 		}
 
-		imgRepo := ref.Context().Name() + "-source"
+		imgRepo := ref.Context().Name()
 		if err = f.Printer.PrintStatus("Uploading to '%s'...", imgRepo); err != nil {
 			return corev1alpha1.SourceConfig{}, err
 		}

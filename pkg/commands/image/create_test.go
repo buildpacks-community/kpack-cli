@@ -901,10 +901,8 @@ status: {}
 			})
 		})
 
-		when("cache size is not provided", func() {
-			it("does not set an empty field on the image", func() {
-				//note: this is to allow for defaults to be set by kpack webhook
-
+		when("local-source and local—path-destination-image is provided", func() {
+			it("sets the repository source path on the image", func() {
 				expectedImage := &v1alpha2.Image{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Image",
@@ -923,9 +921,8 @@ status: {}
 						},
 						ServiceAccountName: "default",
 						Source: corev1alpha1.SourceConfig{
-							Git: &corev1alpha1.Git{
-								URL:      "some-git-url",
-								Revision: "some-git-rev",
+							Registry: &corev1alpha1.Registry{
+								Image: "some-registry.io/some-repo-testing:source-id",
 							},
 							SubPath: "some-sub-path",
 						},
@@ -946,19 +943,21 @@ status: {}
 						},
 					},
 				}
-
 				require.NoError(t, setLastAppliedAnnotation(expectedImage))
+
 				testhelpers.CommandTest{
 					Args: []string{
 						"some-image",
 						"--tag", "some-registry.io/some-repo",
-						"--git", "some-git-url",
-						"--git-revision", "some-git-rev",
+						"--local-path", "some-local-path",
+						"--local-path-destination-image", "some-registry.io/some-repo-testing",
 						"--sub-path", "some-sub-path",
 						"--env", "some-key=some-val",
 						"--service-binding", "SomeResource:v1:some-binding",
 					},
 					ExpectedOutput: `Creating Image Resource...
+Uploading to 'some-registry.io/some-repo-testing'...
+	Uploading 'some-registry.io/some-repo-testing:source-id'
 Image Resource "some-image" created
 `,
 					ExpectCreates: []runtime.Object{
