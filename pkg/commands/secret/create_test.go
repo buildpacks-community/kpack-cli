@@ -150,6 +150,46 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 
 		when("creating a generic registry secret", func() {
 			var (
+				registry               = "https://index.docker.io/v1/"
+				registryUser           = "my-registry-user"
+				registryPassword       = "dummy-password"
+				secretName             = "my-registry-cred"
+				expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"%s","auth":"bXktcmVnaXN0cnktdXNlcjpkdW1teS1wYXNzd29yZA=="}}}`, registry, registryUser, registryPassword)
+			)
+
+			fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
+
+			it("creates a secret with the correct annotations for the registry in the provided namespace and updates the default service account", func() {
+				expectedDockerSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: namespace,
+					},
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultNamespacedServiceAccount,
+					},
+					Args: []string{secretName, "--registry", registry, "--registry-user", registryUser, "-n", namespace},
+					ExpectedOutput: `Secret "my-registry-cred" created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedDockerSecret,
+					},
+					ExpectPatches: []string{
+						`{"imagePullSecrets":[{"name":"my-registry-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-registry-cred\":\"https://index.docker.io/v1/\"}"}},"secrets":[{"name":"my-registry-cred"}]}`,
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+
+		when("creating a generic registry secret", func() {
+			var (
 				registry               = "my-registry.io"
 				registryUser           = "my-registry-user"
 				registryPassword       = "dummy-password"
