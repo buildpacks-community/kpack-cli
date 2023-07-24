@@ -19,6 +19,8 @@ The flags for this command determine how the build will retrieve source code:
   "--local-path" to use source code from the local machine
 
 Local source code will be pushed to the same registry provided for the image resource tag.
+--local-path-destination-image can be used to specify the repository of the source code image.
+If not specified, the source code image will be pushed to the <image-tag-repo>-source repo.
 Therefore, you must have credentials to access the registry on your machine.
 
 Environment variables may be provided by using the "--env" flag or deleted by using the "--delete-env" flag.
@@ -70,6 +72,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
       --git-revision string                  git revision such as commit, tag, or branch (default "main")
   -h, --help                                 help for save
       --local-path string                    path to local source code
+      --local-path-destination-image         registry location of local source image
   -n, --namespace string                     kubernetes namespace
       --output string                        print Kubernetes resources in the specified format; supported formats are: yaml, json.
                                                The output can be used with the "kubectl apply -f" command. To allow this, the command
