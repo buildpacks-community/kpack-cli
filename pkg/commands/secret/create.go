@@ -125,7 +125,7 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				return err
 			}
 
-			return ch.PrintResult("Secret %q created", secret.Name)
+			return ch.PrintResult("Secret %q created for registry %s", secret.Name, target)
 		},
 	}
 

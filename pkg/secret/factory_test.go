@@ -77,6 +77,16 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
+	when("registry uses full path", func() {
+		it("uses only the registry domain", func() {
+			factory.Registry = "registry.io/my-repo"
+			factory.RegistryUser = "some-reg-user"
+			s, _, err := factory.MakeSecret("test-name", "test-namespace")
+			require.NoError(t, err)
+			require.Equal(t, `{"auths":{"registry.io":{"username":"some-reg-user","password":"foo","auth":"c29tZS1yZWctdXNlcjpmb28="}}}`, string(s.Data[".dockerconfigjson"]))
+		})
+	})
+
 	when("sub params are mixed with registry", func() {
 		it("returns an error message", func() {
 			factory.Registry = "some-registry"
