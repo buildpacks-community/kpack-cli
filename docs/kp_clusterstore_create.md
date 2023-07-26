@@ -13,7 +13,7 @@ Env vars can be used for registry auth as described in https://github.com/vmware
 
 This clusterstore will be created only if it does not exist.
 The default repository is read from the "default.repository" key in the "kp-config" ConfigMap within "kpack" namespace.
-The default service account used is read from the "default.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.
+The default service account used is read from the "default.repository.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.
 
 
 ```
