@@ -4,6 +4,7 @@
 package secret_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/sclevine/spec"
@@ -99,23 +100,19 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 
 	when("sub params are mixed with git", func() {
 		it("returns an error message", func() {
-			it("returns an error message", func() {
-				factory.GitUrl = "some-git"
-				factory.RegistryUser = "some-reg-user"
-				factory.GitUser = "some-git-user"
-				_, _, err := factory.MakeSecret("test-name", "test-namespace")
-				require.EqualError(t, err, "extraneous parameters: registry-user")
-			})
+			factory.GitUrl = "some-git"
+			factory.RegistryUser = "some-reg-user"
+			factory.GitUser = "some-git-user"
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
+			require.EqualError(t, err, "extraneous parameters: registry-user")
 		})
 	})
 
 	when("neither git basic auth nor git ssh are provided", func() {
 		it("returns an error message", func() {
-			it("returns an error message", func() {
-				factory.GitUrl = "some-git"
-				_, _, err := factory.MakeSecret("test-name", "test-namespace")
-				require.EqualError(t, err, "missing parameter git-user or git-ssh-key")
-			})
+			factory.GitUrl = "some-git"
+			_, _, err := factory.MakeSecret("test-name", "test-namespace")
+			require.EqualError(t, err, "missing parameter git-user or git-ssh-key")
 		})
 	})
 
@@ -130,20 +127,88 @@ func testSecretFactory(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("using git basic auth", func() {
-		it("validates that the git url begins with http:// or https://", func() {
-			factory.GitUrl = "some-git"
-			factory.GitUser = "some-git-user"
-			_, _, err := factory.MakeSecret("test-name", "test-namespace")
-			require.EqualError(t, err, "must provide a valid git url for basic auth (ex. https://github.com)")
+		it("validates that the git url is correct", func() {
+			validGitUrls := []string{
+				"https://github.com",
+				"http://github.com",
+				"https://github.enterprise:1234",
+				"http://github.enterprise:134",
+				"https://domain.com",
+				"http://domain.com",
+				"github.com",
+				"bitbucket.org",
+			}
+			for _, testUrl := range validGitUrls {
+				factory.GitUrl = testUrl
+				factory.GitUser = "some-git-user"
+				s, _, err := factory.MakeSecret("test-name", "test-namespace")
+				require.NotNilf(t, s, "factory.GitUrl = \"%s\" secret should not be nil", factory.GitUrl)
+				require.NoError(t, err, fmt.Sprintf("factory.GitUrl = \"%s\" should not have errors", factory.GitUrl))
+			}
+		})
+
+		it("validates that the git url is correct", func() {
+			invalidGitUrls := []string{
+				"some-git",
+				"https://some-git.com/test",
+				"https://some-git.com/",
+				"https://domain.com/stash/csm/blabla/project.git",
+				"http://github.enterprise:13444456",
+			}
+			for _, testUrl := range invalidGitUrls {
+				factory.GitUrl = testUrl
+				factory.GitUser = "some-git-user"
+				s, _, err := factory.MakeSecret("test-name", "test-namespace")
+				require.Nilf(t, s, "factory.GitUrl = \"%s\" secret should be nil", factory.GitUrl)
+				require.EqualError(t, err, "must provide a valid git url without the repository path for basic auth (ex. https://github.com)")
+			}
 		})
 	})
 
 	when("using git ssh keys", func() {
-		it("validates that the git url begins with git@", func() {
-			factory.GitUrl = "some-git"
-			factory.GitSshKeyFile = "some-ssh-key"
-			_, _, err := factory.MakeSecret("test-name", "test-namespace")
-			require.EqualError(t, err, "must provide a valid git url for SSH (ex. git@github.com)")
+		it("creates a secret when a valid ssh git url is passed", func() {
+			validGitSshUrls := []string{
+				"git@github.com",
+				"user@domain.com",
+				"test@github.com",
+				"domain.com",
+				"ssh://git@github.com:123",
+				"ssh://git@github.com",
+			}
+			for _, testUrl := range validGitSshUrls {
+				factory.GitUrl = testUrl
+				factory.GitSshKeyFile = "./testdata/some-ssh-key.pem"
+				s, _, err := factory.MakeSecret("test-name", "test-namespace")
+				require.NotNilf(t, s, "factory.GitUrl = \"%s\" secret should not be nil", factory.GitUrl)
+				require.NoError(t, err, fmt.Sprintf("factory.GitUrl = \"%s\" should not have errors", factory.GitUrl))
+			}
+		})
+
+		it("prints an error when the git url is not valid", func() {
+			invalidGitSshUrls := []string{
+				"some-git",
+				"git@github.com:owner",
+				"git@github.com:owner/repo",
+				"git@github.com:443/user/repo.git",
+				"git@github.com:user/repo.git",
+				"git@github.com:buildpacks-community/kpack-cli.git",
+				"ssh://git@ssh.github.com:443/YOUR-USERNAME/YOUR-REPOSITORY.git",
+				"git@github.com/abc.git",
+				"git@github.com:user/repo.git",
+				"ssh://git@example.com/path/to/repo.git",
+				"ssh://user@bitbucket.org/group/my-repo.git",
+				"git@custom-git-server.local:myrepo.git",
+				"git@gitlab.com:username/project.git",
+				"git@github.com:44335678",
+			}
+			for _, testUrl := range invalidGitSshUrls {
+				factory.GitUrl = testUrl
+				factory.GitUrl = "some-git"
+				factory.GitSshKeyFile = "./testdata/some-ssh-key.pem"
+				s, _, err := factory.MakeSecret("test-name", "test-namespace")
+				require.Nilf(t, s, "factory.GitUrl = \"%s\" secret should be nil", factory.GitUrl)
+				require.EqualError(t, err, "must provide a valid git url for SSH (ex. git@github.com)")
+			}
 		})
 	})
 }
