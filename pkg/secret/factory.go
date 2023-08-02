@@ -198,7 +198,7 @@ func (f *Factory) makeRegistrySecret(secretName string, namespace string) (*core
 	registry := f.Registry
 	// Handle path in registry
 	if strings.ContainsRune(registry, '/') {
-		if strings.Contains(registry, "https://index.docker.io") {
+		if strings.Contains(registry, "index.docker.io") {
 			registry = DockerhubUrl
 		} else {
 			r, err := name.NewRepository(registry, name.WeakValidation)
