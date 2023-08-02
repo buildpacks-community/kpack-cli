@@ -101,7 +101,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 	cmd.Flags().StringVar(&factory.GitRevision, "git-revision", "", "git revision such as commit, tag, or branch (default \"main\")")
 	cmd.Flags().StringVar(&factory.Blob, "blob", "", "source code blob url")
 	cmd.Flags().StringVar(&factory.LocalPath, "local-path", "", "path to local source code")
-	cmd.Flags().StringVar(&factory.LocalPathDestinationImage, "local-path-destination-image", "", "registry location of local source image")
+	cmd.Flags().StringVar(&factory.LocalPathDestinationImage, "local-path-destination-image", "", "registry location of where the local source code will be uploaded to")
 	cmd.Flags().StringVar(&subPath, "sub-path", "", "build code at the sub path located within the source code directory")
 	cmd.Flags().StringVarP(&factory.Builder, "builder", "b", "", "builder name")
 	cmd.Flags().StringVarP(&factory.ClusterBuilder, "cluster-builder", "c", "", "cluster builder name")

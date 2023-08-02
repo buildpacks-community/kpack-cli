@@ -71,7 +71,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
       --git string                            git repository url
       --git-revision string                   git revision such as commit, tag, or branch (default "main")
   -h, --help                                  help for save
-      --local-path string                     path to local source code
+      --local-path string                     registry location of where the local source code will be uploaded to
       --local-path-destination-image string   registry location of source image
   -n, --namespace string                      kubernetes namespace
       --output string                         print Kubernetes resources in the specified format; supported formats are: yaml, json.
