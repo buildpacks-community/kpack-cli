@@ -5,6 +5,7 @@ package image_test
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
@@ -586,36 +587,10 @@ Image Resource "some-image" created
 
 				it("can output in yaml format and does not wait", func() {
 					require.NoError(t, setLastAppliedAnnotation(expectedImage))
-					const resourceYAML = `apiVersion: kpack.io/v1alpha2
-kind: Image
-metadata:
-  annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"services":[{"kind":"SomeResource","name":"some-binding","apiVersion":"v1"}],"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
-  creationTimestamp: null
-  name: some-image
-  namespace: some-default-namespace
-spec:
-  build:
-    env:
-    - name: some-key
-      value: some-val
-    resources: {}
-    services:
-    - apiVersion: v1
-      kind: SomeResource
-      name: some-binding
-  builder:
-    kind: ClusterBuilder
-    name: default
-  serviceAccountName: default
-  source:
-    git:
-      revision: some-git-rev
-      url: some-git-url
-    subPath: some-sub-path
-  tag: some-registry.io/some-repo
-status: {}
-`
+					resourceYAML, err := getTestFile("./testdata/test-image.yaml")
+					if err != nil {
+						t.Fatalf("unable to convert test file to string: %v", err)
+					}
 
 					testhelpers.CommandTest{
 						Args: []string{
@@ -641,51 +616,10 @@ status: {}
 
 				it("can output in json format and does not wait", func() {
 					require.NoError(t, setLastAppliedAnnotation(expectedImage))
-					const resourceJSON = `{
-    "kind": "Image",
-    "apiVersion": "kpack.io/v1alpha2",
-    "metadata": {
-        "name": "some-image",
-        "namespace": "some-default-namespace",
-        "creationTimestamp": null,
-        "annotations": {
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"Image\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"some-image\",\"namespace\":\"some-default-namespace\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"some-registry.io/some-repo\",\"builder\":{\"kind\":\"ClusterBuilder\",\"name\":\"default\"},\"serviceAccountName\":\"default\",\"source\":{\"git\":{\"url\":\"some-git-url\",\"revision\":\"some-git-rev\"},\"subPath\":\"some-sub-path\"},\"build\":{\"services\":[{\"kind\":\"SomeResource\",\"name\":\"some-binding\",\"apiVersion\":\"v1\"}],\"env\":[{\"name\":\"some-key\",\"value\":\"some-val\"}],\"resources\":{}}},\"status\":{}}"
-        }
-    },
-    "spec": {
-        "tag": "some-registry.io/some-repo",
-        "builder": {
-            "kind": "ClusterBuilder",
-            "name": "default"
-        },
-        "serviceAccountName": "default",
-        "source": {
-            "git": {
-                "url": "some-git-url",
-                "revision": "some-git-rev"
-            },
-            "subPath": "some-sub-path"
-        },
-        "build": {
-            "services": [
-                {
-                    "kind": "SomeResource",
-                    "name": "some-binding",
-                    "apiVersion": "v1"
-                }
-            ],
-            "env": [
-                {
-                    "name": "some-key",
-                    "value": "some-val"
-                }
-            ],
-            "resources": {}
-        }
-    },
-    "status": {}
-}
-`
+					resourceJSON, err := getTestFile("./testdata/test-image.json")
+					if err != nil {
+						t.Fatalf("unable to convert test file to string: %v", err)
+					}
 
 					testhelpers.CommandTest{
 						Args: []string{
@@ -751,36 +685,10 @@ Image Resource "some-image" created (dry run)
 
 				when("output flag is used", func() {
 					it("does not create an image and prints the resource output", func() {
-						const resourceYAML = `apiVersion: kpack.io/v1alpha2
-kind: Image
-metadata:
-  annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"services":[{"kind":"SomeResource","name":"some-binding","apiVersion":"v1"}],"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
-  creationTimestamp: null
-  name: some-image
-  namespace: some-default-namespace
-spec:
-  build:
-    env:
-    - name: some-key
-      value: some-val
-    resources: {}
-    services:
-    - apiVersion: v1
-      kind: SomeResource
-      name: some-binding
-  builder:
-    kind: ClusterBuilder
-    name: default
-  serviceAccountName: default
-  source:
-    git:
-      revision: some-git-rev
-      url: some-git-url
-    subPath: some-sub-path
-  tag: some-registry.io/some-repo
-status: {}
-`
+						resourceYAML, err := getTestFile("./testdata/test-image.yaml")
+						if err != nil {
+							t.Fatalf("unable to convert test file to string: %v", err)
+						}
 
 						testhelpers.CommandTest{
 							Args: []string{
@@ -847,36 +755,10 @@ Image Resource "some-image" created (dry run with image upload)
 
 				when("output flag is used", func() {
 					it("does not create an image and prints the resource output", func() {
-						const resourceYAML = `apiVersion: kpack.io/v1alpha2
-kind: Image
-metadata:
-  annotations:
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"Image","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"some-image","namespace":"some-default-namespace","creationTimestamp":null},"spec":{"tag":"some-registry.io/some-repo","builder":{"kind":"ClusterBuilder","name":"default"},"serviceAccountName":"default","source":{"git":{"url":"some-git-url","revision":"some-git-rev"},"subPath":"some-sub-path"},"build":{"services":[{"kind":"SomeResource","name":"some-binding","apiVersion":"v1"}],"env":[{"name":"some-key","value":"some-val"}],"resources":{}}},"status":{}}'
-  creationTimestamp: null
-  name: some-image
-  namespace: some-default-namespace
-spec:
-  build:
-    env:
-    - name: some-key
-      value: some-val
-    resources: {}
-    services:
-    - apiVersion: v1
-      kind: SomeResource
-      name: some-binding
-  builder:
-    kind: ClusterBuilder
-    name: default
-  serviceAccountName: default
-  source:
-    git:
-      revision: some-git-rev
-      url: some-git-url
-    subPath: some-sub-path
-  tag: some-registry.io/some-repo
-status: {}
-`
+						resourceYAML, err := getTestFile("./testdata/test-image.yaml")
+						if err != nil {
+							t.Fatalf("unable to convert test file to string: %v", err)
+						}
 
 						testhelpers.CommandTest{
 							Args: []string{
@@ -970,4 +852,12 @@ Image Resource "some-image" created
 			})
 		})
 	}
+}
+
+func getTestFile(testfile string) (string, error) {
+	b, err := os.ReadFile(testfile)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
