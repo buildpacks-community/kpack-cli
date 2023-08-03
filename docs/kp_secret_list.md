@@ -6,6 +6,8 @@ List secrets attached to a service account
 
 List secrets for a service account in the provided namespace.
 
+A secret attached to a service account that does not exist in the specified namespace will be listed as AVAILABLE "false".
+
 The namespace defaults to the kubernetes current-context namespace.
 
 The service account defaults to "default".

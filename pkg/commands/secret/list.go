@@ -5,6 +5,7 @@ package secret
 
 import (
 	"sort"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -26,6 +27,8 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Short: "List secrets attached to a service account",
 		Long: `List secrets for a service account in the provided namespace.
 
+A secret attached to a service account that does not exist in the specified namespace will be listed as AVAILABLE "false".
+
 The namespace defaults to the kubernetes current-context namespace.
 
 The service account defaults to "default".`,
@@ -45,7 +48,7 @@ The service account defaults to "default".`,
 			if len(serviceAccount.Secrets) == 0 && len(serviceAccount.ImagePullSecrets) == 0 {
 				return errors.Errorf("no secrets found in %q namespace for %q service account", cs.Namespace, serviceAccount.Name)
 			} else {
-				return displaySecretsTable(cmd, serviceAccount)
+				return displaySecretsTable(cmd, serviceAccount, cs)
 			}
 		},
 	}
@@ -56,7 +59,7 @@ The service account defaults to "default".`,
 	return &command
 }
 
-func displaySecretsTable(cmd *cobra.Command, sa *corev1.ServiceAccount) error {
+func displaySecretsTable(cmd *cobra.Command, sa *corev1.ServiceAccount, cs k8s.ClientSet) error {
 	managedSecrets, err := readManagedSecrets(sa)
 	if err != nil {
 		return err
@@ -76,13 +79,15 @@ func displaySecretsTable(cmd *cobra.Command, sa *corev1.ServiceAccount) error {
 	}
 	sort.Strings(secretNames)
 
-	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "TARGET")
+	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "TARGET", "AVAILABLE")
 	if err != nil {
 		return err
 	}
 
 	for _, name := range secretNames {
-		err := writer.AddRow(name, managedSecrets[name])
+		_, err := cs.K8sClient.CoreV1().Secrets(cs.Namespace).Get(cmd.Context(), name, metav1.GetOptions{})
+		secretIsAvailable := err == nil
+		err = writer.AddRow(name, managedSecrets[name], strconv.FormatBool(secretIsAvailable))
 		if err != nil {
 			return err
 		}
