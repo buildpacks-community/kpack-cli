@@ -84,6 +84,30 @@ func testBuildListCommand(t *testing.T, when spec.G, it spec.S) {
 			})
 		})
 
+		when("in all the namespaces", func() {
+
+			when("there are builds", func() {
+				it("lists the builds", func() {
+					testhelpers.CommandTest{
+						Objects:        testhelpers.BuildsToRuntimeObjs(testhelpers.MakeTestBuilds(image, "")),
+						Args:           []string{"-A"},
+						ExpectedOutput: expectedOutput,
+					}.TestKpack(t, cmdFunc)
+				})
+			})
+
+			when("there are no builds", func() {
+				it("prints an appropriate message", func() {
+					testhelpers.CommandTest{
+						Args:                []string{"-A"},
+						ExpectErr:           true,
+						ExpectedErrorOutput: "Error: no builds found\n",
+					}.TestKpack(t, cmdFunc)
+				})
+			})
+		})
+
+
 		when("an image is specified", func() {
 			const expectedOutput = `BUILD    STATUS      BUILT IMAGE             REASON     IMAGE RESOURCE
 1        SUCCESS     repo.com/image-1:tag    CONFIG     test-image
