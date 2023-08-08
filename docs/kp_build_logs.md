@@ -9,6 +9,8 @@ Tails logs from the containers of a specific build of an image resource in the p
 The build defaults to the latest build number.
 The namespace defaults to the kubernetes current-context namespace.
 
+Use the flag --timestamps to include the timestamps for the logs
+
 ```
 kp build logs <image-name> [flags]
 ```
@@ -26,6 +28,7 @@ kp build logs my-image -b 2 -n my-namespace
   -b, --build string       build number
   -h, --help               help for logs
   -n, --namespace string   kubernetes namespace
+  -t, --timestamps         show log timestamps
 ```
 
 ### SEE ALSO

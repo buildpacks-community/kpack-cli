@@ -30,7 +30,9 @@ func NewLogsCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 		Long: `Tails logs from the containers of a specific build of an image resource in the provided namespace.
 
 The build defaults to the latest build number.
-The namespace defaults to the kubernetes current-context namespace.`,
+The namespace defaults to the kubernetes current-context namespace.
+
+Use the flag --timestamps to include the timestamps for the logs`,
 		Example:      "kp build logs my-image\nkp build logs my-image -b 2 -n my-namespace",
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
@@ -50,17 +52,18 @@ The namespace defaults to the kubernetes current-context namespace.`,
 			if len(buildList.Items) == 0 {
 				return errors.New("no builds found")
 			} else {
+				ch, err := commands.NewCommandHelper(cmd)
 				sort.Slice(buildList.Items, build.Sort(buildList.Items))
 				bld, err := findBuild(buildList, buildNumber)
 				if err != nil {
 					return err
 				}
-				return logs.NewBuildLogsClient(cs.K8sClient).Tail(context.Background(), cmd.OutOrStdout(), args[0], bld.Labels[v1alpha2.BuildNumberLabel], cs.Namespace)
+				return logs.NewBuildLogsClient(cs.K8sClient).Tail(context.Background(), cmd.OutOrStdout(), args[0], bld.Labels[v1alpha2.BuildNumberLabel], cs.Namespace, ch.ShowTimestamp())
 			}
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&buildNumber, "build", "b", "", "build number")
-
+	cmd.Flags().BoolP("timestamps", "t", false, "show log timestamps")
 	return cmd
 }

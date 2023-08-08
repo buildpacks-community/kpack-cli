@@ -26,6 +26,7 @@ type CommandHelper struct {
 	dryRunImgUpload bool
 	output          bool
 	wait            bool
+	timestamps      bool
 
 	outWriter  io.Writer
 	errWriter  io.Writer
@@ -39,6 +40,7 @@ const (
 	DryRunImgUploadFlag = "dry-run-with-image-upload"
 	OutputFlag          = "output"
 	WaitFlag            = "wait"
+	TimestampsFlag      = "timestamps"
 )
 
 func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
@@ -62,6 +64,11 @@ func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
 		return nil, err
 	}
 
+	timestamps, err := GetBoolFlag(TimestampsFlag, cmd)
+	if err != nil {
+		return nil, err
+	}
+
 	var objPrinter k8s.ObjectPrinter
 
 	outputResource := len(output) > 0
@@ -77,6 +84,7 @@ func NewCommandHelper(cmd *cobra.Command) (*CommandHelper, error) {
 		dryRunImgUpload: dryRunImgUpload,
 		output:          outputResource,
 		wait:            wait,
+		timestamps:      timestamps,
 		outWriter:       cmd.OutOrStdout(),
 		errWriter:       cmd.ErrOrStderr(),
 		objPrinter:      objPrinter,
@@ -102,6 +110,10 @@ func (ch CommandHelper) CanChangeState() bool {
 
 func (ch CommandHelper) ShouldWait() bool {
 	return ch.wait && !ch.IsDryRun() && !ch.output
+}
+
+func (ch CommandHelper) ShowTimestamp() bool {
+	return ch.timestamps
 }
 
 func (ch CommandHelper) PrintObjs(objs []runtime.Object) error {
