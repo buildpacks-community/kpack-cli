@@ -5,12 +5,12 @@ package secret
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"github.com/google/go-containerregistry/pkg/name"
+	"os"
 	"sort"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -161,7 +161,7 @@ func (f *Factory) makeDockerhubSecret(name, namespace string) (*corev1.Secret, s
 }
 
 func (f *Factory) makeGcrSecret(name string, namespace string) (*corev1.Secret, string, error) {
-	password, err := ioutil.ReadFile(f.GcrServiceAccountFile)
+	password, err := os.ReadFile(f.GcrServiceAccountFile)
 	if err != nil {
 		return nil, "", err
 	}
@@ -195,18 +195,22 @@ func (f *Factory) makeRegistrySecret(secretName string, namespace string) (*core
 		return nil, "", err
 	}
 
-	reg := f.Registry
+	registry := f.Registry
 	// Handle path in registry
-	if strings.ContainsRune(reg, '/') {
-		r, err := name.NewRepository(reg, name.WeakValidation)
-		if err != nil {
-			return nil, "", err
+	if strings.ContainsRune(registry, '/') {
+		if strings.Contains(registry, "index.docker.io") {
+			registry = DockerhubUrl
+		} else {
+			r, err := name.NewRepository(registry, name.WeakValidation)
+			if err != nil {
+				return nil, "", err
+			}
+			registry = r.RegistryStr()
 		}
-		reg = r.RegistryStr()
 	}
 
 	configJson := DockerConfigJson{Auths: DockerCredentials{
-		reg: authn.AuthConfig{
+		registry: authn.AuthConfig{
 			Username: f.RegistryUser,
 			Password: password,
 		},
@@ -229,7 +233,7 @@ func (f *Factory) makeRegistrySecret(secretName string, namespace string) (*core
 }
 
 func (f *Factory) makeGitSshSecret(name string, namespace string) (*corev1.Secret, string, error) {
-	password, err := ioutil.ReadFile(f.GitSshKeyFile)
+	password, err := os.ReadFile(f.GitSshKeyFile)
 	if err != nil {
 		return nil, "", err
 	}

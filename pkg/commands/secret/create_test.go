@@ -96,7 +96,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--registry-user", registryUser,
 				"--service-account", "some-sa",
 				"-n", namespace},
-			ExpectedOutput: `Secret "my-registry-cred" created
+			ExpectedOutput: `Secret "my-registry-cred" created for my-registry.io
 `,
 			ExpectCreates: []runtime.Object{
 				expectedRegistrySecret,
@@ -136,13 +136,53 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						defaultNamespacedServiceAccount,
 					},
 					Args: []string{secretName, "--dockerhub", dockerhubId, "-n", namespace},
-					ExpectedOutput: `Secret "my-docker-cred" created
+					ExpectedOutput: `Secret "my-docker-cred" created for https://index.docker.io/v1/
 `,
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
 					},
 					ExpectPatches: []string{
 						`{"imagePullSecrets":[{"name":"my-docker-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-docker-cred\":\"https://index.docker.io/v1/\"}"}},"secrets":[{"name":"my-docker-cred"}]}`,
+					},
+				}.TestK8s(t, cmdFunc)
+			})
+		})
+
+		when("creating a generic registry secret", func() {
+			var (
+				registry               = "https://index.docker.io/v1/"
+				registryUser           = "my-registry-user"
+				registryPassword       = "dummy-password"
+				secretName             = "my-registry-cred"
+				expectedRegistryConfig = fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"%s","auth":"bXktcmVnaXN0cnktdXNlcjpkdW1teS1wYXNzd29yZA=="}}}`, registry, registryUser, registryPassword)
+			)
+
+			fetcher.passwords["REGISTRY_PASSWORD"] = registryPassword
+
+			it("creates a secret with the correct annotations for the registry in the provided namespace and updates the default service account", func() {
+				expectedDockerSecret := &corev1.Secret{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      secretName,
+						Namespace: namespace,
+					},
+					Data: map[string][]byte{
+						corev1.DockerConfigJsonKey: []byte(expectedRegistryConfig),
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+				}
+
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						defaultNamespacedServiceAccount,
+					},
+					Args: []string{secretName, "--registry", registry, "--registry-user", registryUser, "-n", namespace},
+					ExpectedOutput: `Secret "my-registry-cred" created for https://index.docker.io/v1/
+`,
+					ExpectCreates: []runtime.Object{
+						expectedDockerSecret,
+					},
+					ExpectPatches: []string{
+						`{"imagePullSecrets":[{"name":"my-registry-cred"}],"metadata":{"annotations":{"kpack.io/managedSecret":"{\"my-registry-cred\":\"https://index.docker.io/v1/\"}"}},"secrets":[{"name":"my-registry-cred"}]}`,
 					},
 				}.TestK8s(t, cmdFunc)
 			})
@@ -176,7 +216,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						defaultNamespacedServiceAccount,
 					},
 					Args: []string{secretName, "--registry", registry, "--registry-user", registryUser, "-n", namespace},
-					ExpectedOutput: `Secret "my-registry-cred" created
+					ExpectedOutput: `Secret "my-registry-cred" created for my-registry.io
 `,
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
@@ -214,7 +254,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						defaultNamespacedServiceAccount,
 					},
 					Args: []string{secretName, "--gcr", gcrServiceAccountFile, "-n", namespace},
-					ExpectedOutput: `Secret "my-gcr-cred" created
+					ExpectedOutput: `Secret "my-gcr-cred" created for gcr.io
 `,
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
@@ -255,7 +295,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						defaultNamespacedServiceAccount,
 					},
 					Args: []string{secretName, "--git-url", gitRepo, "--git-ssh-key", gitSshFile, "-n", namespace},
-					ExpectedOutput: `Secret "my-git-ssh-cred" created
+					ExpectedOutput: `Secret "my-git-ssh-cred" created for git@github.com
 `,
 					ExpectCreates: []runtime.Object{
 						expectedGitSecret,
@@ -298,7 +338,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						defaultNamespacedServiceAccount,
 					},
 					Args: []string{secretName, "--git-url", gitRepo, "--git-user", gitUser, "-n", namespace},
-					ExpectedOutput: `Secret "my-git-basic-cred" created
+					ExpectedOutput: `Secret "my-git-basic-cred" created for https://github.com
 `,
 					ExpectCreates: []runtime.Object{
 						expectedGitSecret,
@@ -339,7 +379,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						defaultServiceAccount,
 					},
 					Args: []string{secretName, "--dockerhub", dockerhubId},
-					ExpectedOutput: `Secret "my-docker-cred" created
+					ExpectedOutput: `Secret "my-docker-cred" created for https://index.docker.io/v1/
 `,
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
@@ -379,7 +419,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						defaultServiceAccount,
 					},
 					Args: []string{secretName, "--registry", registry, "--registry-user", registryUser},
-					ExpectedOutput: `Secret "my-registry-cred" created
+					ExpectedOutput: `Secret "my-registry-cred" created for my-registry.io
 `,
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
@@ -417,7 +457,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						defaultServiceAccount,
 					},
 					Args: []string{secretName, "--gcr", gcrServiceAccountFile},
-					ExpectedOutput: `Secret "my-gcr-cred" created
+					ExpectedOutput: `Secret "my-gcr-cred" created for gcr.io
 `,
 					ExpectCreates: []runtime.Object{
 						expectedDockerSecret,
@@ -458,7 +498,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						defaultServiceAccount,
 					},
 					Args: []string{secretName, "--git-url", gitRepo, "--git-ssh-key", gitSshFile},
-					ExpectedOutput: `Secret "my-git-ssh-cred" created
+					ExpectedOutput: `Secret "my-git-ssh-cred" created for git@github.com
 `,
 					ExpectCreates: []runtime.Object{
 						expectedGitSecret,
@@ -501,7 +541,7 @@ func testSecretCreateCommand(t *testing.T, when spec.G, it spec.S) {
 						defaultServiceAccount,
 					},
 					Args: []string{secretName, "--git-url", gitRepo, "--git-user", gitUser},
-					ExpectedOutput: `Secret "my-git-basic-cred" created
+					ExpectedOutput: `Secret "my-git-basic-cred" created for https://github.com
 `,
 					ExpectCreates: []runtime.Object{
 						expectedGitSecret,
@@ -650,7 +690,7 @@ secrets:
 					"--dockerhub", "my-dockerhub-id",
 					"--dry-run",
 				},
-				ExpectedOutput: `Secret "my-docker-cred" created (dry run)
+				ExpectedOutput: `Secret "my-docker-cred" created for https://index.docker.io/v1/ (dry run)
 `,
 			}.TestK8s(t, cmdFunc)
 		})
