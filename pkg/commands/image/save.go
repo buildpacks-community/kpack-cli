@@ -43,6 +43,8 @@ The flags for this command determine how the build will retrieve source code:
   "--local-path" to use source code from the local machine
 
 Local source code will be pushed to the same registry provided for the image resource tag.
+--local-path-destination-image can be used to specify the repository of the source code image.
+If not specified, the source code image will be pushed to the <image-tag-repo>-source repo.
 Therefore, you must have credentials to access the registry on your machine.
 
 Environment variables may be provided by using the "--env" flag or deleted by using the "--delete-env" flag.
@@ -124,6 +126,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 	cmd.Flags().StringVar(&factory.GitRevision, "git-revision", "", "git revision such as commit, tag, or branch (default \"main\")")
 	cmd.Flags().StringVar(&factory.Blob, "blob", "", "source code blob url")
 	cmd.Flags().StringVar(&factory.LocalPath, "local-path", "", "path to local source code")
+	cmd.Flags().StringVar(&factory.LocalPathDestinationImage, "local-path-destination-image", "", "registry location of where the local source code will be uploaded to (default \"<image-tag-repo>-source\")")
 	cmd.Flags().StringVar(&subPath, "sub-path", "", "build code at the sub path located within the source code directory")
 	cmd.Flags().StringVar(&factory.CacheSize, "cache-size", "", "cache size as a kubernetes quantity (default \"2G\")")
 	cmd.Flags().StringVarP(&factory.Builder, "builder", "b", "", "builder name")

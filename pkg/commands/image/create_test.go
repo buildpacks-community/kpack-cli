@@ -373,6 +373,71 @@ Image Resource "some-image" created
 
 				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
+			it("sets the repository source path on the image", func() {
+				expectedImage := &v1alpha2.Image{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Image",
+						APIVersion: "kpack.io/v1alpha2",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "some-image",
+						Namespace:   defaultNamespace,
+						Annotations: map[string]string{},
+					},
+					Spec: v1alpha2.ImageSpec{
+						Tag: "some-registry.io/some-repo",
+						Builder: corev1.ObjectReference{
+							Kind: v1alpha2.ClusterBuilderKind,
+							Name: "default",
+						},
+						ServiceAccountName: "default",
+						Source: corev1alpha1.SourceConfig{
+							Registry: &corev1alpha1.Registry{
+								Image: "some-registry.io/some-repo-testing:source-id",
+							},
+							SubPath: "some-sub-path",
+						},
+						Build: &v1alpha2.ImageBuild{
+							Env: []corev1.EnvVar{
+								{
+									Name:  "some-key",
+									Value: "some-val",
+								},
+							},
+							Services: v1alpha2.Services{
+								{
+									APIVersion: "v1",
+									Kind:       "SomeResource",
+									Name:       "some-binding",
+								},
+							},
+						},
+					},
+				}
+				require.NoError(t, setLastAppliedAnnotation(expectedImage))
+
+				testhelpers.CommandTest{
+					Args: []string{
+						"some-image",
+						"--tag", "some-registry.io/some-repo",
+						"--local-path", "some-local-path",
+						"--local-path-destination-image", "some-registry.io/some-repo-testing",
+						"--sub-path", "some-sub-path",
+						"--env", "some-key=some-val",
+						"--service-binding", "SomeResource:v1:some-binding",
+					},
+					ExpectedOutput: `Creating Image Resource...
+Uploading to 'some-registry.io/some-repo-testing'...
+	Uploading 'some-registry.io/some-repo-testing:source-id'
+Image Resource "some-image" created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedImage,
+					},
+				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
 		})
 
 		when("the image uses a non-default builder", func() {
@@ -898,75 +963,6 @@ status: {}
 						assert.Len(t, fakeImageWaiter.Calls, 0)
 					})
 				})
-			})
-		})
-
-		when("cache size is not provided", func() {
-			it("does not set an empty field on the image", func() {
-				//note: this is to allow for defaults to be set by kpack webhook
-
-				expectedImage := &v1alpha2.Image{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "Image",
-						APIVersion: "kpack.io/v1alpha2",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        "some-image",
-						Namespace:   defaultNamespace,
-						Annotations: map[string]string{},
-					},
-					Spec: v1alpha2.ImageSpec{
-						Tag: "some-registry.io/some-repo",
-						Builder: corev1.ObjectReference{
-							Kind: v1alpha2.ClusterBuilderKind,
-							Name: "default",
-						},
-						ServiceAccountName: "default",
-						Source: corev1alpha1.SourceConfig{
-							Git: &corev1alpha1.Git{
-								URL:      "some-git-url",
-								Revision: "some-git-rev",
-							},
-							SubPath: "some-sub-path",
-						},
-						Build: &v1alpha2.ImageBuild{
-							Env: []corev1.EnvVar{
-								{
-									Name:  "some-key",
-									Value: "some-val",
-								},
-							},
-							Services: v1alpha2.Services{
-								{
-									APIVersion: "v1",
-									Kind:       "SomeResource",
-									Name:       "some-binding",
-								},
-							},
-						},
-					},
-				}
-
-				require.NoError(t, setLastAppliedAnnotation(expectedImage))
-				testhelpers.CommandTest{
-					Args: []string{
-						"some-image",
-						"--tag", "some-registry.io/some-repo",
-						"--git", "some-git-url",
-						"--git-revision", "some-git-rev",
-						"--sub-path", "some-sub-path",
-						"--env", "some-key=some-val",
-						"--service-binding", "SomeResource:v1:some-binding",
-					},
-					ExpectedOutput: `Creating Image Resource...
-Image Resource "some-image" created
-`,
-					ExpectCreates: []runtime.Object{
-						expectedImage,
-					},
-				}.TestKpack(t, cmdFunc)
-
-				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 		})
 	}

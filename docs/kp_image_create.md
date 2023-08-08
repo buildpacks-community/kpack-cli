@@ -16,6 +16,8 @@ The flags for this command determine how the build will retrieve source code:
   "--local-path" to use source code from the local machine
 
 Local source code will be pushed to the same registry provided for the image resource tag.
+--local-path-destination-image can be used to specify the repository of the source code image.
+If not specified, the source code image will be pushed to the <image-tag-repo>-source repo.
 Therefore, you must have credentials to access the registry on your machine.
 --registry-ca-cert-path and --registry-verify-certs are only used for local source type.
 
@@ -47,35 +49,36 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
 ### Options
 
 ```
-      --additional-tag stringArray     additional tags to push the OCI image to
-      --blob string                    source code blob url
-  -b, --builder string                 builder name
-      --cache-size string              cache size as a kubernetes quantity (default "2G")
-  -c, --cluster-builder string         cluster builder name
-      --dry-run                        perform validation with no side-effects; no objects are sent to the server.
-                                         The --dry-run flag can be used in combination with the --output flag to
-                                         view the Kubernetes resource(s) without sending anything to the server.
-      --dry-run-with-image-upload      similar to --dry-run, but with container image uploads allowed.
-                                         This flag is provided as a convenience for kp commands that can output Kubernetes
-                                         resource with generated container image references. A "kubectl apply -f" of the
-                                         resource from --output without image uploads will result in a reconcile failure.
-  -e, --env stringArray                build time environment variables
-      --git string                     git repository url
-      --git-revision string            git revision such as commit, tag, or branch (default "main")
-  -h, --help                           help for create
-      --local-path string              path to local source code
-  -n, --namespace string               kubernetes namespace
-      --output string                  print Kubernetes resources in the specified format; supported formats are: yaml, json.
-                                         The output can be used with the "kubectl apply -f" command. To allow this, the command
-                                         updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
-                                         The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
-      --registry-ca-cert-path string   add CA certificate for registry API (format: /tmp/ca.crt)
-      --registry-verify-certs          set whether to verify server's certificate chain and host name (default true)
-      --service-account string         service account name to use (default "default")
-  -s, --service-binding stringArray    build time service bindings
-      --sub-path string                build code at the sub path located within the source code directory
-  -t, --tag string                     registry location where the OCI image will be created
-  -w, --wait                           wait for image create to be reconciled and tail resulting build logs
+      --additional-tag stringArray            additional tags to push the OCI image to
+      --blob string                           source code blob url
+  -b, --builder string                        builder name
+      --cache-size string                     cache size as a kubernetes quantity (default "2G")
+  -c, --cluster-builder string                cluster builder name
+      --dry-run                               perform validation with no side-effects; no objects are sent to the server.
+                                                The --dry-run flag can be used in combination with the --output flag to
+                                                view the Kubernetes resource(s) without sending anything to the server.
+      --dry-run-with-image-upload             similar to --dry-run, but with container image uploads allowed.
+                                                This flag is provided as a convenience for kp commands that can output Kubernetes
+                                                resource with generated container image references. A "kubectl apply -f" of the
+                                                resource from --output without image uploads will result in a reconcile failure.
+  -e, --env stringArray                       build time environment variables
+      --git string                            git repository url
+      --git-revision string                   git revision such as commit, tag, or branch (default "main")
+  -h, --help                                  help for create
+      --local-path string                     path to local source code
+      --local-path-destination-image string   registry location of where the local source code will be uploaded to (default "<image-tag-repo>-source")
+  -n, --namespace string                      kubernetes namespace
+      --output string                         print Kubernetes resources in the specified format; supported formats are: yaml, json.
+                                                The output can be used with the "kubectl apply -f" command. To allow this, the command
+                                                updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
+                                                The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
+      --registry-ca-cert-path string          add CA certificate for registry API (format: /tmp/ca.crt)
+      --registry-verify-certs                 set whether to verify server's certificate chain and host name (default true)
+      --service-account string                service account name to use (default "default")
+  -s, --service-binding stringArray           build time service bindings
+      --sub-path string                       build code at the sub path located within the source code directory
+  -t, --tag string                            registry location where the OCI image will be created
+  -w, --wait                                  wait for image create to be reconciled and tail resulting build logs
 ```
 
 ### SEE ALSO

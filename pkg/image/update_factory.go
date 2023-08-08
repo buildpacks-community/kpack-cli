@@ -176,12 +176,18 @@ func (f *Factory) setSource(image *v1alpha2.Image) error {
 		image.Spec.Source.Registry = nil
 		image.Spec.Source.Blob = &corev1alpha1.Blob{URL: f.Blob}
 	} else if f.LocalPath != "" {
-		ref, err := name.ParseReference(image.Spec.Tag)
-		if err != nil {
-			return err
+		sourceImageDest := ""
+		if f.LocalPathDestinationImage != "" {
+			sourceImageDest = f.LocalPathDestinationImage
+		} else {
+			ref, err := name.ParseReference(image.Spec.Tag)
+			if err != nil {
+				return err
+			}
+			sourceImageDest = ref.Context().Name() + "-source"
 		}
 
-		sourceRef, err := f.SourceUploader.Upload(dockercreds.DefaultKeychain, ref.Context().Name()+"-source", f.LocalPath)
+		sourceRef, err := f.SourceUploader.Upload(dockercreds.DefaultKeychain, sourceImageDest, f.LocalPath)
 		if err != nil {
 			return err
 		}
