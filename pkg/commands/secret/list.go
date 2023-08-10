@@ -44,11 +44,15 @@ The service account defaults to "default".`,
 			if err != nil {
 				return err
 			}
+			secretsList, err := cs.K8sClient.CoreV1().Secrets(cs.Namespace).List(cmd.Context(), metav1.ListOptions{})
+			if err != nil {
+				return err
+			}
 
 			if len(serviceAccount.Secrets) == 0 && len(serviceAccount.ImagePullSecrets) == 0 {
 				return errors.Errorf("no secrets found in %q namespace for %q service account", cs.Namespace, serviceAccount.Name)
 			} else {
-				return displaySecretsTable(cmd, serviceAccount, cs)
+				return displaySecretsTable(cmd, serviceAccount, secretsList)
 			}
 		},
 	}
@@ -59,12 +63,35 @@ The service account defaults to "default".`,
 	return &command
 }
 
-func displaySecretsTable(cmd *cobra.Command, sa *corev1.ServiceAccount, cs k8s.ClientSet) error {
-	managedSecrets, err := readManagedSecrets(sa)
+func displaySecretsTable(cmd *cobra.Command, sa *corev1.ServiceAccount, secretsList *corev1.SecretList) error {
+	secretNames, err := getServiceAccountSecretsInfo(sa, secretsList)
+	if err != nil {
+		return errors.WithMessage(err, "could not retrieve secrets information from service account.")
+	}
+	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "TARGET", "AVAILABLE")
 	if err != nil {
 		return err
 	}
 
+	for _, secret := range secretNames {
+		err = writer.AddRow(secret.name, secret.target, strconv.FormatBool(secret.isAvailable))
+		if err != nil {
+			return err
+		}
+	}
+
+	return writer.Write()
+}
+
+func getServiceAccountSecretsInfo(sa *corev1.ServiceAccount, secretsList *corev1.SecretList) ([]struct {
+	name        string
+	target      string
+	isAvailable bool
+}, error) {
+	managedSecrets, err := readManagedSecrets(sa)
+	if err != nil {
+		return nil, err
+	}
 	secretNameSet := map[string]interface{}{}
 	for _, item := range append(sa.Secrets) {
 		secretNameSet[item.Name] = nil
@@ -73,25 +100,27 @@ func displaySecretsTable(cmd *cobra.Command, sa *corev1.ServiceAccount, cs k8s.C
 		secretNameSet[item.Name] = nil
 	}
 
-	var secretNames []string
+	var secretNames []struct {
+		name        string
+		target      string
+		isAvailable bool
+	}
 	for name := range secretNameSet {
-		secretNames = append(secretNames, name)
-	}
-	sort.Strings(secretNames)
-
-	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "NAME", "TARGET", "AVAILABLE")
-	if err != nil {
-		return err
-	}
-
-	for _, name := range secretNames {
-		_, err := cs.K8sClient.CoreV1().Secrets(cs.Namespace).Get(cmd.Context(), name, metav1.GetOptions{})
-		secretIsAvailable := err == nil
-		err = writer.AddRow(name, managedSecrets[name], strconv.FormatBool(secretIsAvailable))
-		if err != nil {
-			return err
+		found := false
+		for _, secret := range secretsList.Items {
+			if secret.Name == name {
+				found = true
+				break
+			}
 		}
+		secretNames = append(secretNames, struct {
+			name        string
+			target      string
+			isAvailable bool
+		}{name, managedSecrets[name], found})
 	}
-
-	return writer.Write()
+	sort.Slice(secretNames, func(i, j int) bool {
+		return secretNames[i].name < secretNames[j].name
+	})
+	return secretNames, nil
 }
