@@ -18,11 +18,13 @@ kp build list [image-resource-name] [flags]
 kp build list
 kp build list my-image
 kp build list my-image -n my-namespace
+kp build list -A
 ```
 
 ### Options
 
 ```
+  -A, --all-namespaces     Return objects found in all namespaces
   -h, --help               help for list
   -n, --namespace string   kubernetes namespace
 ```
