@@ -19,6 +19,7 @@ import (
 func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	var (
 		namespace string
+		allNamespaces bool
 	)
 
 	cmd := &cobra.Command{
@@ -28,7 +29,7 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 The namespace defaults to the kubernetes current-context namespace.`,
 
-		Example:      "kp build list\nkp build list my-image\nkp build list my-image -n my-namespace",
+		Example:      "kp build list\nkp build list my-image\nkp build list my-image -n my-namespace\nkp build list -A",
 		Args:         commands.OptionalArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -43,7 +44,15 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				opts.LabelSelector = v1alpha2.ImageLabel + "=" + args[0]
 			}
 
-			buildList, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).List(cmd.Context(), opts)
+			var buildNamespace string
+
+			if allNamespaces {
+				buildNamespace = ""
+			} else {
+				buildNamespace = cs.Namespace
+			}
+
+			buildList, err := cs.KpackClient.KpackV1alpha2().Builds(buildNamespace).List(cmd.Context(), opts)
 			if err != nil {
 				return err
 			}
@@ -57,6 +66,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
+	cmd.Flags().BoolVarP(&allNamespaces, "all-namespaces", "A", false, "Return objects found in all namespaces")
 
 	return cmd
 }
