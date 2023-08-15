@@ -31,7 +31,7 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dy
 		Short: "Create a cluster buildpack",
 		Long: `Create a cluster buildpack by providing command line arguments.
 
-The default service account used is read from the "default.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.
+The default service account used is read from the "default.repository.serviceaccount" key in the "kp-config" ConfigMap within "kpack" namespace.
 `,
 		Example: `kp clusterbuildpack create my-cluster-buildpack --image gcr.io/paketo-buildpacks/java
 kp clusterbuildpack create my-cluster-buildpack --image gcr.io/paketo-buildpacks/java:8.9.0
