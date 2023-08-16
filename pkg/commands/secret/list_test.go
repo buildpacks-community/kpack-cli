@@ -61,10 +61,10 @@ func testSecretListCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					}
 
-					const expectedOutput = `NAME            TARGET
-secret-one      https://index.docker.io/v1/
-secret-three    
-secret-two      some-git-url
+					const expectedOutput = `NAME            TARGET                         AVAILABLE
+secret-one      https://index.docker.io/v1/    false
+secret-three                                   false
+secret-two      some-git-url                   false
 
 `
 
@@ -105,10 +105,10 @@ secret-two      some-git-url
 						},
 					}
 
-					const expectedOutput = `NAME            TARGET
-secret-one      https://index.docker.io/v1/
-secret-three    
-secret-two      some-git-url
+					const expectedOutput = `NAME            TARGET                         AVAILABLE
+secret-one      https://index.docker.io/v1/    false
+secret-three                                   false
+secret-two      some-git-url                   false
 
 `
 
@@ -173,10 +173,10 @@ secret-two      some-git-url
 						},
 					}
 
-					const expectedOutput = `NAME            TARGET
-secret-one      https://index.docker.io/v1/
-secret-three    
-secret-two      some-git-url
+					const expectedOutput = `NAME            TARGET                         AVAILABLE
+secret-one      https://index.docker.io/v1/    false
+secret-three                                   false
+secret-two      some-git-url                   false
 
 `
 
