@@ -67,9 +67,9 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				if err != nil {
 					return err
 				}
-				build_id := builds.Labels["image.kpack.io/buildNumber"]
+				buildNumber := builds.Labels["image.kpack.io/buildNumber"]
 
-				_, err = fmt.Fprintf(cmd.OutOrStderr(), "Triggered build for Image Resource %q with Build ID %s\n", args[0],build_id)
+				_, err = fmt.Fprintf(cmd.OutOrStderr(), "Triggered build for Image Resource %q with Build Number %s\n", args[0],buildNumber)
 				return err
 			}
 		},
