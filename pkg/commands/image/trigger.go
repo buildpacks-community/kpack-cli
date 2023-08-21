@@ -63,12 +63,13 @@ The namespace defaults to the kubernetes current-context namespace.`,
 					return err
 				}
 
-				_, err = cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).Patch(ctx, original.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+				builds, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).Patch(ctx, original.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 				if err != nil {
 					return err
 				}
+				build_id := builds.Labels["image.kpack.io/buildNumber"]
 
-				_, err = fmt.Fprintf(cmd.OutOrStderr(), "Triggered build for Image Resource %q\n", args[0])
+				_, err = fmt.Fprintf(cmd.OutOrStderr(), "Triggered build for Image Resource %q with Build ID %s\n", args[0],build_id)
 				return err
 			}
 		},

@@ -42,7 +42,7 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 
 				err := cmd.Execute()
 				require.NoError(t, err)
-				require.Equal(t, "Triggered build for Image Resource \"some-image\"\n", out.String())
+				require.Equal(t, "Triggered build for Image Resource \"some-image\" with Build ID 3\n", out.String())
 
 				actions, err := testhelpers.ActionRecorderList{clientSet}.ActionsByVerb()
 				require.NoError(t, err)
@@ -87,7 +87,7 @@ func testImageTrigger(t *testing.T, when spec.G, it spec.S) {
 
 				err := cmd.Execute()
 				require.NoError(t, err)
-				require.Equal(t, "Triggered build for Image Resource \"some-image\"\n", out.String())
+				require.Equal(t, "Triggered build for Image Resource \"some-image\" with Build ID 3\n", out.String())
 
 				actions, err := testhelpers.ActionRecorderList{clientSet}.ActionsByVerb()
 				require.NoError(t, err)
