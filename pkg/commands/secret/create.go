@@ -82,6 +82,12 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 
 			ctx := cmd.Context()
 
+			// First check that service account is available before secret is created
+			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(ctx, serviceAccount, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
 			if !ch.IsDryRun() {
 				secret, err = cs.K8sClient.CoreV1().Secrets(cs.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 				if err != nil {
@@ -90,11 +96,6 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 			}
 
 			if err = ch.PrintObj(secret); err != nil {
-				return err
-			}
-
-			serviceAccount, err := cs.K8sClient.CoreV1().ServiceAccounts(cs.Namespace).Get(ctx, serviceAccount, metav1.GetOptions{})
-			if err != nil {
 				return err
 			}
 
