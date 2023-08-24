@@ -40,7 +40,7 @@ jobs:
       run: go test -v ./pkg/...
 
     - name: Report coverage
-      uses: codecov/codecov-action@v3.1.2
+      uses: codecov/codecov-action@v3.1.4
 
   build:
     runs-on: ubuntu-latest
