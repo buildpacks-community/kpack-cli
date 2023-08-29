@@ -68,6 +68,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
                                                 resource with generated container image references. A "kubectl apply -f" of the
                                                 resource from --output without image uploads will result in a reconcile failure.
   -e, --env stringArray                       build time environment variables
+      --failed-build-history-limit string     set the failedBuildHistoryLimit
       --git string                            git repository url
       --git-revision string                   git revision such as commit, tag, or branch (default "main")
   -h, --help                                  help for save
@@ -83,6 +84,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
       --service-account string                service account name to use
   -s, --service-binding stringArray           build time service bindings to add/replace
       --sub-path string                       build code at the sub path located within the source code directory
+      --success-build-history-limit string    set the successBuildHistoryLimit
   -t, --tag string                            registry location where the image will be created
   -w, --wait                                  wait for image create to be reconciled and tail resulting build logs
 ```
