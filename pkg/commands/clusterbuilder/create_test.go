@@ -129,10 +129,10 @@ func testCreateCommand(clusterBuilderCommand func(clientSetProvider k8s.ClientSe
 			require.Len(t, fakeWaiter.WaitCalls, 1)
 		})
 
-		it("creates a ClusterBuilder with the default stack", func() {
+		it("creates a ClusterBuilder with the default stack and without store", func() {
 			expectedBuilder.Spec.Stack.Name = "default"
-			expectedBuilder.Spec.Store.Name = "default"
-			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{"kind":"ClusterStore","name":"default"},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			expectedBuilder.Spec.Store = corev1.ObjectReference{}
+			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"test-builder","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-test-builder","stack":{"kind":"ClusterStack","name":"default"},"store":{},"order":[{"group":[{"id":"org.cloudfoundry.nodejs"}]},{"group":[{"id":"org.cloudfoundry.go"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{

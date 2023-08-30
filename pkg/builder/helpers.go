@@ -6,7 +6,6 @@ package builder
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"regexp"
 
@@ -31,7 +30,7 @@ func ReadOrder(path string) ([]buildv1alpha2.BuilderOrderEntry, error) {
 	}
 	defer file.Close()
 
-	buf, err := ioutil.ReadAll(file)
+	buf, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
