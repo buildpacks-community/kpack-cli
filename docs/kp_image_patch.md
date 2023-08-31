@@ -65,7 +65,7 @@ kp image patch my-image --tag my-registry.com/my-repo --blob https://my-blob-hos
                                                resource with generated container image references. A "kubectl apply -f" of the
                                                resource from --output without image uploads will result in a reconcile failure.
   -e, --env stringArray                      build time environment variables to add/replace
-      --failed-build-history-limit string    set the failedBuildHistoryLimit
+      --failed-build-history-limit string    number of failed builds to keep, leave empty to use cluster default
       --git string                           git repository url
       --git-revision string                  git revision such as commit, tag, or branch (default "main")
   -h, --help                                 help for patch
@@ -80,7 +80,7 @@ kp image patch my-image --tag my-registry.com/my-repo --blob https://my-blob-hos
       --service-account string               service account name to use
   -s, --service-binding stringArray          build time service bindings to add/replace
       --sub-path string                      build code at the sub path located within the source code directory
-      --success-build-history-limit string   set the successBuildHistoryLimit
+      --success-build-history-limit string   number of successful builds to keep, leave empty to use cluster default
   -w, --wait                                 wait for image resource patch to be reconciled and tail resulting build logs
 ```
 

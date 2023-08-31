@@ -124,20 +124,13 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 		}
 	}
 
-	if f.SuccessBuildHistoryLimit != "" {
-		successBuildHistoryLimit, err := strconv.ParseInt(f.SuccessBuildHistoryLimit, 10, 64)
-		if successBuildHistoryLimit < 1 || err != nil {
-			return nil, errors.New("must provide a valid success-build-history-limit > 0")
-		}
-		image.Spec.SuccessBuildHistoryLimit = &successBuildHistoryLimit
+	image.Spec.SuccessBuildHistoryLimit, err = f.makeBuildHistoryLimit(f.SuccessBuildHistoryLimit)
+	if err != nil {
+		return nil, err
 	}
-
-	if f.FailedBuildHistoryLimit != "" {
-		failedBuildHistoryLimit, err := strconv.ParseInt(f.FailedBuildHistoryLimit, 10, 64)
-		if failedBuildHistoryLimit < 1 || err != nil {
-			return nil, errors.New("must provide a valid failed-build-history-limit > 0")
-		}
-		image.Spec.FailedBuildHistoryLimit = &failedBuildHistoryLimit
+	image.Spec.FailedBuildHistoryLimit, err = f.makeBuildHistoryLimit(f.FailedBuildHistoryLimit)
+	if err != nil {
+		return nil, err
 	}
 
 	return image, nil
@@ -249,7 +242,7 @@ func (f *Factory) makeBuildHistoryLimit(buildHistoryLimit string) (*int64, error
 
 	value, err := strconv.ParseInt(buildHistoryLimit, 10, 64)
 	if err != nil || value < 1 {
-		return nil, errors.New("must provide a valid build history limit >1")
+		return nil, errors.New("must provide a valid build history limit > 0")
 	}
 
 	return &value, nil

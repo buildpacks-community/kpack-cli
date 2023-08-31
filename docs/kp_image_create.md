@@ -62,7 +62,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
                                                 resource with generated container image references. A "kubectl apply -f" of the
                                                 resource from --output without image uploads will result in a reconcile failure.
   -e, --env stringArray                       build time environment variables
-      --failed-build-history-limit string     set the failedBuildHistoryLimit
+      --failed-build-history-limit string     number of failed builds to keep, leave empty to use cluster default
       --git string                            git repository url
       --git-revision string                   git revision such as commit, tag, or branch (default "main")
   -h, --help                                  help for create
@@ -78,7 +78,7 @@ kp image create my-image --tag my-registry.com/my-repo --blob https://my-blob-ho
       --service-account string                service account name to use (default "default")
   -s, --service-binding stringArray           build time service bindings
       --sub-path string                       build code at the sub path located within the source code directory
-      --success-build-history-limit string    set the successBuildHistoryLimit
+      --success-build-history-limit string    number of successful builds to keep, leave empty to use cluster default
   -t, --tag string                            registry location where the OCI image will be created
   -w, --wait                                  wait for image create to be reconciled and tail resulting build logs
 ```
