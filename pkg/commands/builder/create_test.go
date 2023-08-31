@@ -146,10 +146,10 @@ func testCreateCommand(builderCommand func(clientSetProvider k8s.ClientSetProvid
 			require.Len(t, fakeWaiter.WaitCalls, 1)
 		})
 
-		it("creates a Builder with the default namespace, store, and stack", func() {
+		it("creates a Builder with the default namespace and stack, store is not set", func() {
 			expectedBuilder.Namespace = defaultNamespace
 			expectedBuilder.Spec.Stack.Name = "default"
-			expectedBuilder.Spec.Store.Name = "default"
+			expectedBuilder.Spec.Store = corev1.ObjectReference{}
 			require.NoError(t, setLastAppliedAnnotation(expectedBuilder))
 
 			testhelpers.CommandTest{

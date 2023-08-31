@@ -42,7 +42,7 @@ kp clusterbuilder create my-builder --tag my-registry.com/my-builder-tag --build
                               updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
                               The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
   -s, --stack string        stack resource to use (default "default")
-      --store string        buildpack store to use (default "default")
+      --store string        buildpack store to use
   -t, --tag string          registry location where the builder will be created
 ```
 

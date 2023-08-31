@@ -20,7 +20,6 @@ import (
 
 const (
 	defaultStack          = "default"
-	defaultStore          = "default"
 	defaultServiceAccount = "default"
 )
 
@@ -66,7 +65,7 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --buildpack my
 	cmd.Flags().StringVarP(&flags.tag, "tag", "t", "", "registry location where the builder will be created")
 	cmd.Flags().StringVarP(&flags.namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVarP(&flags.stack, "stack", "s", defaultStack, "stack resource to use")
-	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
+	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'\n  repeat for each buildpack in order, or supply once with comma-separated list")
 	cmd.Flags().StringVar(&flags.serviceAccount, "service-account", defaultServiceAccount, "service account name to use")
@@ -103,10 +102,6 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 					Name: flags.stack,
 					Kind: v1alpha2.ClusterStackKind,
 				},
-				Store: corev1.ObjectReference{
-					Name: flags.store,
-					Kind: v1alpha2.ClusterStoreKind,
-				},
 			},
 			ServiceAccountName: flags.serviceAccount,
 		},
@@ -118,6 +113,13 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 
 	if len(flags.buildpacks) > 0 {
 		bldr.Spec.Order = builder.CreateOrder(flags.buildpacks)
+	}
+
+	if flags.store != "" {
+		bldr.Spec.Store = corev1.ObjectReference{
+			Name: flags.store,
+			Kind: v1alpha2.ClusterStoreKind,
+		}
 	}
 
 	if flags.order != "" {

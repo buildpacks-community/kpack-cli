@@ -22,7 +22,6 @@ import (
 const (
 	apiVersion   = "kpack.io/v1alpha2"
 	defaultStack = "default"
-	defaultStore = "default"
 )
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
@@ -68,7 +67,7 @@ kp clusterbuilder create my-builder --tag my-registry.com/my-builder-tag --build
 
 	cmd.Flags().StringVarP(&flags.tag, "tag", "t", "", "registry location where the builder will be created")
 	cmd.Flags().StringVarP(&flags.stack, "stack", "s", defaultStack, "stack resource to use")
-	cmd.Flags().StringVar(&flags.store, "store", defaultStore, "buildpack store to use")
+	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'\n  repeat for each buildpack in order, or supply once with comma-separated list")
 	commands.SetDryRunOutputFlags(cmd)
@@ -111,10 +110,6 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 					Name: flags.stack,
 					Kind: v1alpha2.ClusterStackKind,
 				},
-				Store: corev1.ObjectReference{
-					Name: flags.store,
-					Kind: v1alpha2.ClusterStoreKind,
-				},
 			},
 			ServiceAccountRef: kpConfig.ServiceAccount(),
 		},
@@ -126,6 +121,13 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 
 	if len(flags.buildpacks) > 0 {
 		cb.Spec.Order = builder.CreateOrder(flags.buildpacks)
+	}
+
+	if flags.store != "" {
+		cb.Spec.Store = corev1.ObjectReference{
+			Name: flags.store,
+			Kind: v1alpha2.ClusterStoreKind,
+		}
 	}
 
 	var err error

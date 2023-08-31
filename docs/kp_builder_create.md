@@ -41,7 +41,7 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --buildpack my
                                    The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
       --service-account string   service account name to use (default "default")
   -s, --stack string             stack resource to use (default "default")
-      --store string             buildpack store to use (default "default")
+      --store string             buildpack store to use
   -t, --tag string               registry location where the builder will be created
 ```
 
