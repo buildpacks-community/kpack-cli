@@ -121,6 +121,26 @@ Image Resource "some-image" patched
 			assert.Len(t, fakeImageWaiter.Calls, 0)
 		})
 
+		it("can patch the SuccessBuildHistoryLimit and FailedBuildHistoryLimit", func() {
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{
+					existingImage,
+				},
+				Args: []string{
+					"some-image",
+					"--success-build-history-limit", "5",
+					"--failed-build-history-limit", "2",
+				},
+				ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
+`,
+				ExpectPatches: []string{
+					`{"spec":{"failedBuildHistoryLimit":2,"successBuildHistoryLimit":5}}`,
+				},
+			}.TestKpack(t, cmdFunc)
+			assert.Len(t, fakeImageWaiter.Calls, 0)
+		})
+
 		when("patching source", func() {
 			when("patching the sub path", func() {
 				it("can patch it with an empty string", func() {

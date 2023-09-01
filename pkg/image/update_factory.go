@@ -45,6 +45,10 @@ func (f *Factory) UpdateImage(img *v1alpha2.Image) (*v1alpha2.Image, error) {
 	f.setBuilder(updatedImage)
 
 	f.setServiceAccount(updatedImage)
+	err = f.setBuildHistoryLimit(updatedImage)
+	if err != nil {
+		return nil, err
+	}
 
 	return updatedImage, nil
 }
@@ -344,4 +348,22 @@ func (f *Factory) setServiceAccount(image *v1alpha2.Image) {
 	if f.ServiceAccount != "" {
 		image.Spec.ServiceAccountName = f.ServiceAccount
 	}
+}
+
+func (f *Factory) setBuildHistoryLimit(image *v1alpha2.Image) error {
+	var err error
+	if f.SuccessBuildHistoryLimit != "" {
+		image.Spec.SuccessBuildHistoryLimit, err = f.makeBuildHistoryLimit(f.SuccessBuildHistoryLimit)
+		if err != nil {
+			return err
+		}
+	}
+
+	if f.FailedBuildHistoryLimit != "" {
+		image.Spec.FailedBuildHistoryLimit, err = f.makeBuildHistoryLimit(f.FailedBuildHistoryLimit)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -6,7 +6,10 @@ package image_test
 import (
 	"encoding/json"
 	"os"
+	"strconv"
 	"testing"
+
+	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
@@ -24,7 +27,6 @@ import (
 	imgcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/image"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
 	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
-	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
 	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
@@ -46,7 +48,6 @@ func testCreateCommand(imageCommand func(clientSetProvider k8s.ClientSetProvider
 		const defaultNamespace = "some-default-namespace"
 
 		registryUtilProvider := registryfakes.UtilProvider{}
-
 		fakeImageWaiter := &cmdFakes.FakeImageWaiter{}
 
 		cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
@@ -309,6 +310,100 @@ Image Resource "some-image" created
 			})
 		})
 
+		when("build history limits are provided", func() {
+			when("the image config is valid", func() {
+				it("creates the image with build history limits", func() {
+					buildHistoryLimit := int64(5)
+					defaultBuildHistoryLimit := &buildHistoryLimit
+
+					expectedImage := &v1alpha2.Image{
+						TypeMeta: metav1.TypeMeta{
+							Kind:       "Image",
+							APIVersion: "kpack.io/v1alpha2",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:        "some-image",
+							Namespace:   defaultNamespace,
+							Annotations: map[string]string{},
+						},
+						Spec: v1alpha2.ImageSpec{
+							Tag: "some-registry.io/some-repo",
+							Builder: corev1.ObjectReference{
+								Kind: v1alpha2.ClusterBuilderKind,
+								Name: "default",
+							},
+							ServiceAccountName: "default",
+							Source: corev1alpha1.SourceConfig{
+								Git: &corev1alpha1.Git{
+									URL:      "some-git-url",
+									Revision: "some-git-rev",
+								},
+								SubPath: "some-sub-path",
+							},
+							SuccessBuildHistoryLimit: defaultBuildHistoryLimit,
+							FailedBuildHistoryLimit:  defaultBuildHistoryLimit,
+							Build: &v1alpha2.ImageBuild{
+								Env: []corev1.EnvVar{
+									{
+										Name:  "some-key",
+										Value: "some-val",
+									},
+								},
+								Services: v1alpha2.Services{
+									{
+										APIVersion: "v1",
+										Kind:       "SomeResource",
+										Name:       "some-binding",
+									},
+								},
+							},
+						},
+					}
+
+					require.NoError(t, setLastAppliedAnnotation(expectedImage))
+					testhelpers.CommandTest{
+						Args: []string{
+							"some-image",
+							"--tag", "some-registry.io/some-repo",
+							"--git", "some-git-url",
+							"--git-revision", "some-git-rev",
+							"--sub-path", "some-sub-path",
+							"--env", "some-key=some-val",
+							"--success-build-history-limit", "5",
+							"--failed-build-history-limit", "5",
+							"--service-binding", "SomeResource:v1:some-binding",
+						},
+						ExpectedOutput: `Creating Image Resource...
+Image Resource "some-image" created
+`,
+						ExpectCreates: []runtime.Object{
+							expectedImage,
+						},
+					}.TestKpack(t, cmdFunc)
+
+					assert.Len(t, fakeImageWaiter.Calls, 0)
+				})
+			})
+
+			when("the image config is invalid", func() {
+				it("returns an error", func() {
+					testhelpers.CommandTest{
+						Args: []string{
+							"some-image",
+							"--tag", "some-registry.io/some-repo",
+							"--blob", "some-blob",
+							"--git", "some-git-url",
+						},
+						ExpectErr:           true,
+						ExpectedOutput:      "Creating Image Resource...\n",
+						ExpectedErrorOutput: "Error: image source must be one of git, blob, or local-path\n",
+					}.TestKpack(t, cmdFunc)
+
+					assert.Len(t, fakeImageWaiter.Calls, 0)
+				})
+			})
+		})
+
 		when("the image uses local source code", func() {
 			it("uploads the source image and creates the image config", func() {
 				expectedImage := &v1alpha2.Image{
@@ -443,6 +538,9 @@ Image Resource "some-image" created
 
 		when("the image uses a non-default builder", func() {
 			it("uploads the source image and creates the image config", func() {
+				buildHistoryLimit := int64(10)
+				defaultBuildHistoryLimit := &buildHistoryLimit
+
 				expectedImage := &v1alpha2.Image{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Image",
@@ -466,7 +564,9 @@ Image Resource "some-image" created
 								URL: "some-blob",
 							},
 						},
-						Build: &v1alpha2.ImageBuild{},
+						Build:                    &v1alpha2.ImageBuild{},
+						SuccessBuildHistoryLimit: defaultBuildHistoryLimit,
+						FailedBuildHistoryLimit:  defaultBuildHistoryLimit,
 					},
 				}
 				require.NoError(t, setLastAppliedAnnotation(expectedImage))
@@ -477,6 +577,8 @@ Image Resource "some-image" created
 						"--tag", "some-registry.io/some-repo",
 						"--blob", "some-blob",
 						"--builder", "some-builder",
+						"--success-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
+						"--failed-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
 					},
 					ExpectedOutput: `Creating Image Resource...
 Image Resource "some-image" created
@@ -492,6 +594,9 @@ Image Resource "some-image" created
 
 		when("the image uses a non-default cluster builder", func() {
 			it("uploads the source image and creates the image config", func() {
+				buildHistoryLimit := int64(5)
+				defaultBuildHistoryLimit := &buildHistoryLimit
+
 				expectedImage := &v1alpha2.Image{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Image",
@@ -514,7 +619,9 @@ Image Resource "some-image" created
 								URL: "some-blob",
 							},
 						},
-						Build: &v1alpha2.ImageBuild{},
+						Build:                    &v1alpha2.ImageBuild{},
+						SuccessBuildHistoryLimit: defaultBuildHistoryLimit,
+						FailedBuildHistoryLimit:  defaultBuildHistoryLimit,
 					},
 				}
 				require.NoError(t, setLastAppliedAnnotation(expectedImage))
@@ -525,6 +632,8 @@ Image Resource "some-image" created
 						"--tag", "some-registry.io/some-repo",
 						"--blob", "some-blob",
 						"--cluster-builder", "some-builder",
+						"--success-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
+						"--failed-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
 					},
 					ExpectedOutput: `Creating Image Resource...
 Image Resource "some-image" created
@@ -608,6 +717,9 @@ Image Resource "some-image" created
 			})
 
 			when("the image config is valid", func() {
+				buildHistoryLimit := int64(10)
+				defaultBuildHistoryLimit := &buildHistoryLimit
+
 				expectedImage := &v1alpha2.Image{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Image",
@@ -632,6 +744,8 @@ Image Resource "some-image" created
 							},
 							SubPath: "some-sub-path",
 						},
+						FailedBuildHistoryLimit:  defaultBuildHistoryLimit,
+						SuccessBuildHistoryLimit: defaultBuildHistoryLimit,
 						Build: &v1alpha2.ImageBuild{
 							Env: []corev1.EnvVar{
 								{
@@ -666,6 +780,8 @@ Image Resource "some-image" created
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
 							"--service-binding", "SomeResource:v1:some-binding",
+							"--success-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
+							"--failed-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
 							"--output", "yaml",
 							"--wait",
 						},
@@ -680,6 +796,8 @@ Image Resource "some-image" created
 				})
 
 				it("can output in json format and does not wait", func() {
+					buildHistoryLimit := int64(10)
+
 					require.NoError(t, setLastAppliedAnnotation(expectedImage))
 					resourceJSON, err := getTestFile("./testdata/test-image.json")
 					if err != nil {
@@ -695,6 +813,8 @@ Image Resource "some-image" created
 							"--sub-path", "some-sub-path",
 							"--env", "some-key=some-val",
 							"--service-binding", "SomeResource:v1:some-binding",
+							"--success-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
+							"--failed-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
 							"--output", "json",
 							"--wait",
 						},
@@ -729,6 +849,7 @@ Image Resource "some-image" created
 
 			when("the image config is valid", func() {
 				it("does not creates an image and prints result message with dry run indicated", func() {
+					buildHistoryLimit := int64(10)
 					testhelpers.CommandTest{
 						Args: []string{
 							"some-image",
@@ -738,6 +859,8 @@ Image Resource "some-image" created
 							"--sub-path", "some-sub-path",
 							"--service-binding", "SomeResource:v1:some-binding",
 							"--env", "some-key=some-val",
+							"--success-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
+							"--failed-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
 							"--dry-run",
 							"--wait",
 						},
@@ -754,6 +877,7 @@ Image Resource "some-image" created (dry run)
 						if err != nil {
 							t.Fatalf("unable to convert test file to string: %v", err)
 						}
+						buildHistoryLimit := int64(10)
 
 						testhelpers.CommandTest{
 							Args: []string{
@@ -764,6 +888,8 @@ Image Resource "some-image" created (dry run)
 								"--sub-path", "some-sub-path",
 								"--env", "some-key=some-val",
 								"--service-binding", "SomeResource:v1:some-binding",
+								"--success-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
+								"--failed-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
 								"--output", "yaml",
 								"--dry-run",
 								"--wait",
@@ -824,6 +950,7 @@ Image Resource "some-image" created (dry run with image upload)
 						if err != nil {
 							t.Fatalf("unable to convert test file to string: %v", err)
 						}
+						buildHistoryLimit := int64(10)
 
 						testhelpers.CommandTest{
 							Args: []string{
@@ -834,6 +961,8 @@ Image Resource "some-image" created (dry run with image upload)
 								"--sub-path", "some-sub-path",
 								"--env", "some-key=some-val",
 								"--service-binding", "SomeResource:v1:some-binding",
+								"--success-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
+								"--failed-build-history-limit", strconv.FormatInt(buildHistoryLimit, 10),
 								"--output", "yaml",
 								"--dry-run-with-image-upload",
 								"--wait",
@@ -845,6 +974,75 @@ Image Resource "some-image" created (dry run with image upload)
 						assert.Len(t, fakeImageWaiter.Calls, 0)
 					})
 				})
+			})
+		})
+
+		when("cache size is not provided", func() {
+			it("does not set an empty field on the image", func() {
+				// note: this is to allow for defaults to be set by kpack webhook
+
+				expectedImage := &v1alpha2.Image{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Image",
+						APIVersion: "kpack.io/v1alpha2",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "some-image",
+						Namespace:   defaultNamespace,
+						Annotations: map[string]string{},
+					},
+					Spec: v1alpha2.ImageSpec{
+						Tag: "some-registry.io/some-repo",
+						Builder: corev1.ObjectReference{
+							Kind: v1alpha2.ClusterBuilderKind,
+							Name: "default",
+						},
+						ServiceAccountName: "default",
+						Source: corev1alpha1.SourceConfig{
+							Git: &corev1alpha1.Git{
+								URL:      "some-git-url",
+								Revision: "some-git-rev",
+							},
+							SubPath: "some-sub-path",
+						},
+						Build: &v1alpha2.ImageBuild{
+							Env: []corev1.EnvVar{
+								{
+									Name:  "some-key",
+									Value: "some-val",
+								},
+							},
+							Services: v1alpha2.Services{
+								{
+									APIVersion: "v1",
+									Kind:       "SomeResource",
+									Name:       "some-binding",
+								},
+							},
+						},
+					},
+				}
+
+				require.NoError(t, setLastAppliedAnnotation(expectedImage))
+				testhelpers.CommandTest{
+					Args: []string{
+						"some-image",
+						"--tag", "some-registry.io/some-repo",
+						"--git", "some-git-url",
+						"--git-revision", "some-git-rev",
+						"--sub-path", "some-sub-path",
+						"--env", "some-key=some-val",
+						"--service-binding", "SomeResource:v1:some-binding",
+					},
+					ExpectedOutput: `Creating Image Resource...
+Image Resource "some-image" created
+`,
+					ExpectCreates: []runtime.Object{
+						expectedImage,
+					},
+				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
 		})
 	}

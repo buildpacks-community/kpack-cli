@@ -80,6 +80,16 @@ func testImageFactory(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
+	when("an invalid build history limit is provided", func() {
+		it("returns an error message", func() {
+			factory.SuccessBuildHistoryLimit = "-1"
+			factory.FailedBuildHistoryLimit = "10"
+			factory.Blob = "some-blob"
+			_, err := factory.MakeImage("test-name", "test-namespace", "test-registry.io/test-image")
+			require.EqualError(t, err, "must provide a valid build history limit > 0")
+		})
+	})
+
 	when("cache size", func() {
 		factory.Blob = "some-blob"
 

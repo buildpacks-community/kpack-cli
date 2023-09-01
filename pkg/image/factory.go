@@ -6,6 +6,7 @@ package image
 import (
 	"io"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -52,6 +53,8 @@ type Factory struct {
 	Env                       []string
 	ServiceBinding            []string
 	CacheSize                 string
+	SuccessBuildHistoryLimit  string
+	FailedBuildHistoryLimit   string
 	DeleteEnv                 []string
 	DeleteAdditionalTags      []string
 	DeleteServiceBinding      []string
@@ -119,6 +122,15 @@ func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error
 				Size: cacheSize,
 			},
 		}
+	}
+
+	image.Spec.SuccessBuildHistoryLimit, err = f.makeBuildHistoryLimit(f.SuccessBuildHistoryLimit)
+	if err != nil {
+		return nil, err
+	}
+	image.Spec.FailedBuildHistoryLimit, err = f.makeBuildHistoryLimit(f.FailedBuildHistoryLimit)
+	if err != nil {
+		return nil, err
 	}
 
 	return image, nil
@@ -221,6 +233,19 @@ func (f *Factory) getCacheSize() (*resource.Quantity, error) {
 	}
 
 	return &c, nil
+}
+
+func (f *Factory) makeBuildHistoryLimit(buildHistoryLimit string) (*int64, error) {
+	if buildHistoryLimit == "" {
+		return nil, nil
+	}
+
+	value, err := strconv.ParseInt(buildHistoryLimit, 10, 64)
+	if err != nil || value < 1 {
+		return nil, errors.New("must provide a valid build history limit > 0")
+	}
+
+	return &value, nil
 }
 
 func (f *Factory) makeSource(tag string) (corev1alpha1.SourceConfig, error) {
