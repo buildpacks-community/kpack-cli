@@ -52,7 +52,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 ### Options
 
 ```
-      --additional-tag stringArray            additional tags to push the OCI image to
+      --additional-tag stringArray            adds additional tags to push the OCI image to
       --blob string                           source code blob url
   -b, --builder string                        builder name
       --cache-size string                     cache size as a kubernetes quantity (default "2G")
@@ -80,6 +80,7 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
                                                 The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
       --registry-ca-cert-path string          add CA certificate for registry API (format: /tmp/ca.crt)
       --registry-verify-certs                 set whether to verify server's certificate chain and host name (default true)
+      --replace-additional-tag stringArray    replaces all additional tags to push the OCI image to
       --service-account string                service account name to use
   -s, --service-binding stringArray           build time service bindings to add/replace
       --sub-path string                       build code at the sub path located within the source code directory

@@ -43,6 +43,11 @@ The flags for this command determine how the build will retrieve source code:
 Local source code will be pushed to the same registry as the existing image resource tag.
 Therefore, you must have credentials to access the registry on your machine.
 
+All tags found under Image.spec.additionalTags will be added to your built OCI image.
+To append to the list of tags that will be added to a built image, use the "additional-tag" flag.
+To remove a tag from the list of tags that will be added to a built image, use the "delete-additional-tag".
+To replace the entire list of tags, use the "replace-additional-tag".
+
 Environment variables may be provided by using the "--env" flag or deleted by using the "--delete-env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
 For example, "--env key1=value1 --env key2=value2 --delete-env key3 --delete-env key3".
@@ -103,7 +108,8 @@ kp image patch my-image --tag my-registry.com/my-repo --blob https://my-blob-hos
 			return nil
 		},
 	}
-	cmd.Flags().StringArrayVar(&factory.AdditionalTags, "additional-tag", []string{}, "additional tags to push the OCI image to")
+	cmd.Flags().StringArrayVar(&factory.AdditionalTags, "additional-tag", []string{}, "adds additional tags to push the OCI image to")
+	cmd.Flags().StringArrayVar(&factory.ReplaceAdditionalTags, "replace-additional-tag", []string{}, "replaces all additional tags to push the OCI image to")
 	cmd.Flags().StringArrayVar(&factory.DeleteAdditionalTags, "delete-additional-tag", []string{}, "additional tags to remove")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVar(&factory.GitRepo, "git", "", "git repository url")

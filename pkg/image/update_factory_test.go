@@ -179,6 +179,24 @@ func testPatchFactory(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
+	when("ReplaceAdditionalTag and DeleteAdditionalTags used together", func() {
+		it("returns an error message", func() {
+			factory.DeleteAdditionalTags = []string{"bar"}
+			factory.ReplaceAdditionalTags = []string{"foo"}
+			_, err := factory.UpdateImage(img)
+			require.EqualError(t, err, "replace-additional-tag is not compatible with additional-tag and delete-additional-tag flag")
+		})
+	})
+
+	when("ReplaceAdditionalTag and AdditionalTags used together", func() {
+		it("returns an error message", func() {
+			factory.AdditionalTags = []string{"foo"}
+			factory.ReplaceAdditionalTags = []string{"bar"}
+			_, err := factory.UpdateImage(img)
+			require.EqualError(t, err, "replace-additional-tag is not compatible with additional-tag and delete-additional-tag flag")
+		})
+	})
+
 	when("the image.spec.build is nil", func() {
 		it("does not panic", func() {
 			img.Spec.Build = nil

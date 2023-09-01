@@ -57,6 +57,7 @@ type Factory struct {
 	DeleteServiceBinding      []string
 	Printer                   Printer
 	ServiceAccount            string
+	ReplaceAdditionalTags     []string
 }
 
 func (f *Factory) MakeImage(name, namespace, tag string) (*v1alpha2.Image, error) {
