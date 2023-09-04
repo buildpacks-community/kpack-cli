@@ -37,6 +37,12 @@ Stack Ref:
 Store Ref:     
   Name:       test-store
   Kind:       ClusterStore
+ClusterBuildpack Ref:
+  Name:       test-clusterbuildpack
+  Kind:		  ClusterBuildpack
+Buildpack Ref:
+  Name:		  test-buildpack
+  Kind:       Buildpack
 
 BUILDPACK ID               VERSION    HOMEPAGE
 org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
@@ -61,6 +67,12 @@ Stack Ref:
 Store Ref:     
   Name:       test-store
   Kind:       ClusterStore
+ClusterBuildpack Ref:
+  Name:       test-clusterbuildpack
+  Kind:		  ClusterBuildpack
+Buildpack Ref:
+  Name:		  test-buildpack
+  Kind:       Buildpack
 
 BUILDPACK ID               VERSION    HOMEPAGE
 org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
@@ -103,6 +115,14 @@ Reason:    this builder is not ready for the purpose of a test
 					Store: corev1.ObjectReference{
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
+					},
+					ClusterBuildpack: corev1.ObjectReference{
+						Name: "test-clusterbuildpack",
+						Kind: v1alpha2.ClusterBuildpackKind,
+					},
+					Buildpack: corev1.ObjectReference{
+						Name: "test-buildpack",
+						Kind: v1alpha2.BuildpackKind,
 					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
@@ -178,6 +198,14 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
+					ClusterBuildpack: corev1.ObjectReference{
+						Name: "test-clusterbuildpack",
+						Kind: v1alpha2.ClusterBuildpackKind,
+					},
+					Buildpack: corev1.ObjectReference{
+						Name: "test-buildpack",
+						Kind: v1alpha2.BuildpackKind,
+					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
 							Group: []v1alpha2.BuilderBuildpackRef{
@@ -236,6 +264,14 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
+					ClusterBuildpack: corev1.ObjectReference{
+						Name: "test-clusterbuildpack",
+						Kind: v1alpha2.ClusterBuildpackKind,
+					},
+					Buildpack: corev1.ObjectReference{
+						Name: "test-buildpack",
+						Kind: v1alpha2.BuildpackKind,
+					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
 							Group: []v1alpha2.BuilderBuildpackRef{
@@ -284,6 +320,14 @@ Reason:    this builder is not ready for the purpose of a test
 					Store: corev1.ObjectReference{
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
+					},
+					ClusterBuildpack: corev1.ObjectReference{
+						Name: "test-clusterbuildpack",
+						Kind: v1alpha2.ClusterBuildpackKind,
+					},
+					Buildpack: corev1.ObjectReference{
+						Name: "test-buildpack",
+						Kind: v1alpha2.BuildpackKind,
 					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
@@ -379,6 +423,14 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
+					ClusterBuildpack: corev1.ObjectReference{
+						Name: "test-clusterbuildpack",
+						Kind: v1alpha2.ClusterBuildpackKind,
+					},
+					Buildpack: corev1.ObjectReference{
+						Name: "test-buildpack",
+						Kind: v1alpha2.BuildpackKind,
+					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
 							Group: []v1alpha2.BuilderBuildpackRef{
@@ -436,6 +488,14 @@ Reason:    this builder is not ready for the purpose of a test
 					Store: corev1.ObjectReference{
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
+					},
+					ClusterBuildpack: corev1.ObjectReference{
+						Name: "test-clusterbuildpack",
+						Kind: v1alpha2.ClusterBuildpackKind,
+					},
+					Buildpack: corev1.ObjectReference{
+						Name: "test-buildpack",
+						Kind: v1alpha2.BuildpackKind,
 					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{

@@ -43,7 +43,18 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			return displayBuilderStatus(bldr, cmd.OutOrStdout())
+			cbpList, err := cs.KpackClient.KpackV1alpha2().ClusterBuildpacks(cs.Namespace).List(cmd.Context(), args[0], metav1.ListOptions{})
+			if err != nil {
+				return err
+			}
+
+			bpList, err := cs.KpackClient.KpackV1alpha2().Buildpacks(cs.Namespace).List(cmd.Context(), args[0], metav1.ListOptions{})
+			if err != nil {
+				return err
+			}
+
+
+			return displayBuilderStatus(bldr, cbpList, bpList, cmd.OutOrStdout())
 		},
 	}
 
@@ -52,10 +63,10 @@ The namespace defaults to the kubernetes current-context namespace.`,
 	return cmd
 }
 
-func displayBuilderStatus(bldr *v1alpha2.Builder, writer io.Writer) error {
+func displayBuilderStatus(bldr *v1alpha2.Builder, cbpList *v1alpha2.ClusterBuildpackList, bpList *v1alpha2.BuildpackList, writer io.Writer) error {
 	if cond := bldr.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
 		if cond.Status == corev1.ConditionTrue {
-			return printBuilderReadyStatus(bldr, writer)
+			return printBuilderReadyStatus(bldr, cbpList, bpList, writer)
 		} else {
 			return printBuilderNotReadyStatus(bldr, writer)
 		}
@@ -85,7 +96,7 @@ func printBuilderNotReadyStatus(bldr *v1alpha2.Builder, writer io.Writer) error 
 	)
 }
 
-func printBuilderReadyStatus(bldr *v1alpha2.Builder, writer io.Writer) error {
+func printBuilderReadyStatus(bldr *v1alpha2.Builder, cbpList *v1alpha2.ClusterBuildpackList, bpList *v1alpha2.BuildpackList, writer io.Writer) error {
 	statusWriter := commands.NewStatusWriter(writer)
 
 	err := statusWriter.AddBlock(
@@ -111,6 +122,29 @@ func printBuilderReadyStatus(bldr *v1alpha2.Builder, writer io.Writer) error {
 	if err != nil {
 		return err
 	}
+
+	for _, cbp := range cbpList.Items {
+		err := writer.AddBlock(
+			"ClusterBuildpack Ref", " ",
+			"  Name", cbp.Spec.ClusterBuildpack.Name,
+			"  Kind", cbp.Spec.ClusterBuildpack.Kind,
+		)
+	if err != nil {
+		return err
+		}	
+	}
+
+	for _, bp := range bpList.Items {
+		err := writer.AddBlock(
+			"Buildpack Ref", " ",
+			"  Name", bp.Spec.Buildpack.Name,
+			"  Kind", bp.Spec.Buildpack.Kind,
+		)
+	if err != nil {
+		return err
+		}	
+	}
+
 
 	bpTableWriter, err := commands.NewTableWriter(writer, "buildpack id", "version", "homepage")
 	if err != nil {
