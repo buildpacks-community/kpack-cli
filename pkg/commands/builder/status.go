@@ -43,12 +43,12 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			cbpList, err := cs.KpackClient.KpackV1alpha2().ClusterBuildpacks(cs.Namespace).List(cmd.Context(), args[0], metav1.ListOptions{})
+			cbpList, err := cs.KpackClient.KpackV1alpha2().ClusterBuildpacks().List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
 
-			bpList, err := cs.KpackClient.KpackV1alpha2().Buildpacks(cs.Namespace).List(cmd.Context(), args[0], metav1.ListOptions{})
+			bpList, err := cs.KpackClient.KpackV1alpha2().Buildpacks(cs.Namespace).List(cmd.Context(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
@@ -124,10 +124,10 @@ func printBuilderReadyStatus(bldr *v1alpha2.Builder, cbpList *v1alpha2.ClusterBu
 	}
 
 	for _, cbp := range cbpList.Items {
-		err := writer.AddBlock(
+		err := statusWriter.AddBlock(
 			"ClusterBuildpack Ref", " ",
-			"  Name", cbp.Spec.ClusterBuildpack.Name,
-			"  Kind", cbp.Spec.ClusterBuildpack.Kind,
+			"  Name", cbp.Name,
+			"  Kind", cbp.Kind,
 		)
 	if err != nil {
 		return err
@@ -135,10 +135,10 @@ func printBuilderReadyStatus(bldr *v1alpha2.Builder, cbpList *v1alpha2.ClusterBu
 	}
 
 	for _, bp := range bpList.Items {
-		err := writer.AddBlock(
+		err := statusWriter.AddBlock(
 			"Buildpack Ref", " ",
-			"  Name", bp.Spec.Buildpack.Name,
-			"  Kind", bp.Spec.Buildpack.Kind,
+			"  Name", bp.Name,
+			"  Kind", bp.Kind,
 		)
 	if err != nil {
 		return err

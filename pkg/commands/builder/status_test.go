@@ -16,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands/builder"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuildpack"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/buildpack"
 	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
 )
 
@@ -37,12 +39,6 @@ Stack Ref:
 Store Ref:     
   Name:       test-store
   Kind:       ClusterStore
-ClusterBuildpack Ref:
-  Name:       test-clusterbuildpack
-  Kind:		  ClusterBuildpack
-Buildpack Ref:
-  Name:		  test-buildpack
-  Kind:       Buildpack
 
 BUILDPACK ID               VERSION    HOMEPAGE
 org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
@@ -67,12 +63,6 @@ Stack Ref:
 Store Ref:     
   Name:       test-store
   Kind:       ClusterStore
-ClusterBuildpack Ref:
-  Name:       test-clusterbuildpack
-  Kind:		  ClusterBuildpack
-Buildpack Ref:
-  Name:		  test-buildpack
-  Kind:       Buildpack
 
 BUILDPACK ID               VERSION    HOMEPAGE
 org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
@@ -115,14 +105,6 @@ Reason:    this builder is not ready for the purpose of a test
 					Store: corev1.ObjectReference{
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
-					},
-					ClusterBuildpack: corev1.ObjectReference{
-						Name: "test-clusterbuildpack",
-						Kind: v1alpha2.ClusterBuildpackKind,
-					},
-					Buildpack: corev1.ObjectReference{
-						Name: "test-buildpack",
-						Kind: v1alpha2.BuildpackKind,
 					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
@@ -198,14 +180,6 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					ClusterBuildpack: corev1.ObjectReference{
-						Name: "test-clusterbuildpack",
-						Kind: v1alpha2.ClusterBuildpackKind,
-					},
-					Buildpack: corev1.ObjectReference{
-						Name: "test-buildpack",
-						Kind: v1alpha2.BuildpackKind,
-					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
 							Group: []v1alpha2.BuilderBuildpackRef{
@@ -264,14 +238,6 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					ClusterBuildpack: corev1.ObjectReference{
-						Name: "test-clusterbuildpack",
-						Kind: v1alpha2.ClusterBuildpackKind,
-					},
-					Buildpack: corev1.ObjectReference{
-						Name: "test-buildpack",
-						Kind: v1alpha2.BuildpackKind,
-					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
 							Group: []v1alpha2.BuilderBuildpackRef{
@@ -320,14 +286,6 @@ Reason:    this builder is not ready for the purpose of a test
 					Store: corev1.ObjectReference{
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
-					},
-					ClusterBuildpack: corev1.ObjectReference{
-						Name: "test-clusterbuildpack",
-						Kind: v1alpha2.ClusterBuildpackKind,
-					},
-					Buildpack: corev1.ObjectReference{
-						Name: "test-buildpack",
-						Kind: v1alpha2.BuildpackKind,
 					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
@@ -423,14 +381,6 @@ Reason:    this builder is not ready for the purpose of a test
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
 					},
-					ClusterBuildpack: corev1.ObjectReference{
-						Name: "test-clusterbuildpack",
-						Kind: v1alpha2.ClusterBuildpackKind,
-					},
-					Buildpack: corev1.ObjectReference{
-						Name: "test-buildpack",
-						Kind: v1alpha2.BuildpackKind,
-					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
 							Group: []v1alpha2.BuilderBuildpackRef{
@@ -488,14 +438,6 @@ Reason:    this builder is not ready for the purpose of a test
 					Store: corev1.ObjectReference{
 						Name: "test-store",
 						Kind: v1alpha2.ClusterStoreKind,
-					},
-					ClusterBuildpack: corev1.ObjectReference{
-						Name: "test-clusterbuildpack",
-						Kind: v1alpha2.ClusterBuildpackKind,
-					},
-					Buildpack: corev1.ObjectReference{
-						Name: "test-buildpack",
-						Kind: v1alpha2.BuildpackKind,
 					},
 					Order: []v1alpha2.BuilderOrderEntry{
 						{
@@ -649,4 +591,150 @@ Reason:    this builder is not ready for the purpose of a test
 			})
 		})
 	})
+}
+
+func TestClusterBuildpackStatusCommand(t *testing.T) {
+	spec.Run(t, "TestClusterBuildpackStatusCommand", testClusterBuildpackStatusCommand)
+}
+
+func testClusterBuildpackStatusCommand(t *testing.T, when spec.G, it spec.S) {
+	const (
+		defaultNamespace    = "some-default-namespace"
+		expectedReadyOutput = `Status:    Ready
+Source:    some-registry.com/test-buildpack-1
+
+BUILDPACK ID               VERSION    HOMEPAGE
+org.cloudfoundry.nodejs    0.2.1      
+
+`
+	)
+
+	var (
+		readyDefaultClusterBuildpack = &v1alpha2.ClusterBuildpack{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       v1alpha2.ClusterBuildpackKind,
+				APIVersion: "kpack.io/v1alpha2",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-buildpack-1",
+			},
+			Spec: v1alpha2.ClusterBuildpackSpec{
+				ImageSource: corev1alpha1.ImageSource{
+					Image: "some-registry.com/test-buildpack-1",
+				},
+			},
+			Status: v1alpha2.ClusterBuildpackStatus{
+				Status: corev1alpha1.Status{
+					Conditions: []corev1alpha1.Condition{
+						{
+							Type:   corev1alpha1.ConditionReady,
+							Status: corev1.ConditionTrue,
+						},
+					},
+				},
+				Buildpacks: []corev1alpha1.BuildpackStatus{
+					{
+						BuildpackInfo: corev1alpha1.BuildpackInfo{
+							Id:      "org.cloudfoundry.nodejs",
+							Version: "0.2.1",
+						},
+					},
+				},
+			},
+		}
+	)
+
+	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
+		clientSetProvider := testhelpers.GetFakeKpackClusterProvider(clientSet)
+		return clusterbuildpack.NewStatusCommand(clientSetProvider)
+	}
+
+	when("getting buildpack status", func() {
+		when("the buildpack exists", func() {
+			when("the buildpack is ready", func() {
+				it("shows the build status using status.order", func() {
+					testhelpers.CommandTest{
+						Objects:        []runtime.Object{readyDefaultClusterBuildpack},
+						Args:           []string{"test-buildpack-1"},
+						ExpectedOutput: expectedReadyOutput,
+					}.TestKpack(t, cmdFunc)
+				})
+			})
+		})
+	})
+}
+
+func TestBuildpackStatusCommand(t *testing.T) {
+	spec.Run(t, "TestBuildpackStatusCommand", testBuildpackStatusCommand)
+}
+
+func testBuildpackStatusCommand(t *testing.T, when spec.G, it spec.S) {
+	const (
+		defaultNamespace    = "some-default-namespace"
+		expectedReadyOutput = `Status:    Ready
+Source:    some-registry.com/test-buildpack-1
+
+BUILDPACK ID               VERSION    HOMEPAGE
+org.cloudfoundry.nodejs    0.2.1      
+
+`
+	)
+
+	var (
+		readyDefaultBuildpack = &v1alpha2.Buildpack{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       v1alpha2.BuildpackKind,
+				APIVersion: "kpack.io/v1alpha2",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-buildpack-1",
+				Namespace: defaultNamespace,
+			},
+			Spec: v1alpha2.BuildpackSpec{
+				ServiceAccountName: "default",
+				ImageSource: corev1alpha1.ImageSource{
+					Image: "some-registry.com/test-buildpack-1",
+				},
+			},
+			Status: v1alpha2.BuildpackStatus{
+				Status: corev1alpha1.Status{
+					Conditions: []corev1alpha1.Condition{
+						{
+							Type:   corev1alpha1.ConditionReady,
+							Status: corev1.ConditionTrue,
+						},
+					},
+				},
+				Buildpacks: []corev1alpha1.BuildpackStatus{
+					{
+						BuildpackInfo: corev1alpha1.BuildpackInfo{
+							Id:      "org.cloudfoundry.nodejs",
+							Version: "0.2.1",
+						},
+					},
+				},
+			},
+		}
+	)
+
+	cmdFunc := func(clientSet *fake.Clientset) *cobra.Command {
+		clientSetProvider := testhelpers.GetFakeKpackProvider(clientSet, defaultNamespace)
+		return buildpack.NewStatusCommand(clientSetProvider)
+	}
+
+	when("getting buildpack status", func() {
+		when("in the default namespace", func() {
+			when("the buildpack exists", func() {
+				when("the buildpack is ready", func() {
+					it("shows the build status using status.order", func() {
+						testhelpers.CommandTest{
+							Objects:        []runtime.Object{readyDefaultBuildpack},
+							Args:           []string{"test-buildpack-1"},
+							ExpectedOutput: expectedReadyOutput,
+						}.TestKpack(t, cmdFunc)
+					})
+				})
+		  })
+	})
+  })
 }
