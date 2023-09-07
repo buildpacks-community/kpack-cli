@@ -1,0 +1,91 @@
+name: update homebrew
+
+on:
+  release:
+    types:
+      - released
+
+jobs:
+  update-tap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse release version
+        run: |
+          echo "GITHUB_REF=${GITHUB_REF}"
+          [[ $GITHUB_REF =~ ^refs\/tags\/v(.*)$ ]] && version=${BASH_REMATCH[1]}
+          if [[ -z "${version}" ]]; then
+            echo "ERROR: version not detected."
+            exit 1
+          fi
+          echo "VERSION=${version}" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v4
+        with:
+          repository: buildpacks-community/homebrew-kpack-cli
+          path: homebrew-kpack-cli
+          token: ${{ secrets.KP_HOMEBREW_GITHUB_TOKEN }}
+
+      - name: Download checksums
+        id: checksums
+        run: |
+          linux_amd64_url="https://github.com/buildpacks-community/kpack-cli/releases/download/v${{ env.VERSION }}/kp-linux-amd64-${{ env.VERSION }}.sha256"
+          echo "linux_amd64=$(curl -sSL "$linux_amd64_url" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+
+          linux_arm64_url="https://github.com/buildpacks-community/kpack-cli/releases/download/v${{ env.VERSION }}/kp-linux-arm64-${{ env.VERSION }}.sha256"
+          echo "linux_arm64=$(curl -sSL "$linux_arm64_url" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+
+          darwin_amd64_url="https://github.com/buildpacks-community/kpack-cli/releases/download/v${{ env.VERSION }}/kp-darwin-amd64-${{ env.VERSION }}.sha256"
+          echo "darwin_amd64=$(curl -sSL "$darwin_amd64_url" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+
+          darwin_arm64_url="https://github.com/buildpacks-community/kpack-cli/releases/download/v${{ env.VERSION }}/kp-darwin-arm64-${{ env.VERSION }}.sha256"
+          echo "darwin_arm64=$(curl -sSL "$darwin_arm64_url" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+
+      - name: Update kp.rb
+        run: |
+          cd homebrew-kpack-cli
+
+          cat <<EOF > kp.rb
+          class Kp < Formula
+            desc "A command line interface for interacting with kpack."
+            homepage "https://github.com/buildpacks-community/kpack-cli"
+            version "${{ env.VERSION }}"
+            license "Apache-2.0"
+
+            if OS.mac?
+              if Hardware::CPU.intel?
+                url "https://github.com/buildpacks-community/kpack-cli/releases/download/v${{ env.VERSION }}/kp-darwin-amd64-${{ env.VERSION }}"
+                sha256 "${{ steps.checksums.outputs.darwin_amd64 }}"
+              elsif Hardware::CPU.arm?
+                url "https://github.com/buildpacks-community/kpack-cli/releases/download/v${{ env.VERSION }}/kp-darwin-arm64-${{ env.VERSION }}"
+                sha256 "${{ steps.checksums.outputs.darwin_arm64 }}"
+              end
+            elsif OS.linux?
+              if Hardware::CPU.intel?
+                url "https://github.com/buildpacks-community/kpack-cli/releases/download/v${{ env.VERSION }}/kp-linux-amd64-${{ env.VERSION }}"
+                sha256 "${{ steps.checksums.outputs.linux_amd64 }}"
+              elsif Hardware::CPU.arm?
+                url "https://github.com/buildpacks-community/kpack-cli/releases/download/v${{ env.VERSION }}/kp-linux-arm64-${{ env.VERSION }}"
+                sha256 "${{ steps.checksums.outputs.linux_arm64 }}"
+              end
+            end
+
+            def install
+              bin.install stable.url.split("/")[-1] => "kp"
+            end
+
+            test do
+              system "#{bin}/kp", "version"
+            end
+          end
+          EOF
+
+      - run: cat homebrew-kpack-cli/kp.rb
+      - name: Commit changes
+        run: |
+          git config --global user.email "<>"
+          git config --global user.name "kpack-bot"
+
+          cd homebrew-kpack-cli
+          git add kp.rb
+          git commit -m "Update Kpack CLI to ${{ env.VERSION }}"
+          git push
