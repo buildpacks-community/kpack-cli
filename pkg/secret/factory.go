@@ -5,10 +5,12 @@ package secret
 
 import (
 	"encoding/json"
-	"github.com/google/go-containerregistry/pkg/name"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/google/go-containerregistry/pkg/name"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pkg/errors"
@@ -22,6 +24,9 @@ const (
 	GcrUser       = "_json_key"
 	GitAnnotation = "kpack.io/git"
 )
+
+var gitHttpUrlRegex = regexp.MustCompile(`^(?:https?://)?(?:[a-zA-Z0-9\-\.])+\.(?:\w+)(:(?:\d){3,5})?$`)
+var gitSshRegex = regexp.MustCompile(`^((?:ssh://)?(?:[A-Za-z0-9])+@(?:[A-Za-z0-9+.-])+\.(?:\w+)(:(?:\d){3,5})?)$|^(?:[A-Za-z0-9][A-Za-z0-9+.-]+)\.(?:[A-Za-z0-9]+)$`)
 
 type CredentialFetcher interface {
 	FetchPassword(envVar, prompt string) (string, error)
@@ -105,11 +110,11 @@ func (f *Factory) validate() error {
 		}
 	}
 
-	if f.GitUser != "" && !(strings.HasPrefix(f.GitUrl, "http://") || strings.HasPrefix(f.GitUrl, "https://")) {
-		return errors.Errorf("must provide a valid git url for basic auth (ex. https://github.com)")
+	if f.GitUser != "" && !gitHttpUrlRegex.MatchString(f.GitUrl) {
+		return errors.Errorf("must provide a valid git url without the repository path for basic auth (ex. https://github.com)")
 	}
 
-	if f.GitSshKeyFile != "" && !strings.HasPrefix(f.GitUrl, "git@") {
+	if f.GitSshKeyFile != "" && !gitSshRegex.MatchString(f.GitUrl) {
 		return errors.Errorf("must provide a valid git url for SSH (ex. git@github.com)")
 	}
 
