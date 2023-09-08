@@ -15,6 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -81,13 +83,19 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				Status: conditionReady(corev1.ConditionFalse, generation-1),
 			}
 
+			builderObj := &v1alpha2.Builder{
+				TypeMeta:   resourceToWatch.TypeMeta,
+				ObjectMeta: resourceToWatch.ObjectMeta,
+				Status:     v1alpha2.BuilderStatus{Status: conditionReady(corev1.ConditionTrue, generation)},
+			}
+
+			content, err := runtime.DefaultUnstructuredConverter.ToUnstructured(builderObj)
+			if err != nil {
+				panic(err)
+			}
 			watcher.addEvent(watch.Event{
-				Type: watch.Modified,
-				Object: &v1alpha2.Builder{
-					TypeMeta:   resourceToWatch.TypeMeta,
-					ObjectMeta: resourceToWatch.ObjectMeta,
-					Status:     v1alpha2.BuilderStatus{Status: conditionReady(corev1.ConditionTrue, generation)},
-				},
+				Type:   watch.Modified,
+				Object: &unstructured.Unstructured{Object: content},
 			})
 
 			require.NoError(t, waiter.Wait(context.Background(), resourceToWatch))
@@ -99,17 +107,55 @@ func testWaiter(t *testing.T, when spec.G, it spec.S) {
 				Status: conditionReady(corev1.ConditionFalse, generation-1),
 			}
 
+			builderObj := &v1alpha2.Builder{
+				TypeMeta:   resourceToWatch.TypeMeta,
+				ObjectMeta: resourceToWatch.ObjectMeta,
+				Status:     v1alpha2.BuilderStatus{Status: conditionReady(corev1.ConditionTrue, generation)},
+			}
+
+			content, err := runtime.DefaultUnstructuredConverter.ToUnstructured(builderObj)
+			if err != nil {
+				panic(err)
+			}
 			watcher.addEvent(watch.Event{
-				Type: watch.Modified,
-				Object: &v1alpha2.Builder{
-					TypeMeta:   resourceToWatch.TypeMeta,
-					ObjectMeta: resourceToWatch.ObjectMeta,
-					Status:     v1alpha2.BuilderStatus{Status: conditionReady(corev1.ConditionTrue, generation)},
-				},
+				Type:   watch.Modified,
+				Object: &unstructured.Unstructured{Object: content},
 			})
 
 			require.NoError(t, waiter.Wait(context.Background(), resourceToWatch, fakeConditionChecker.conditionCheck))
 			require.True(t, fakeConditionChecker.called)
+		})
+
+		it("recovers from too old resource version error", func() {
+			watcher.addEvent(watch.Event{
+				Type: watch.Error,
+				Object: &v1.Status{
+					TypeMeta: v1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Status",
+					},
+					Status:  "Failure",
+					Message: "too old resource version: 23358 (23360)",
+					Reason:  "Expired",
+					Code:    410,
+				},
+			})
+
+			builderObj := &v1alpha2.Builder{
+				TypeMeta:   resourceToWatch.TypeMeta,
+				ObjectMeta: resourceToWatch.ObjectMeta,
+				Status:     v1alpha2.BuilderStatus{Status: conditionReady(corev1.ConditionTrue, generation)},
+			}
+			content, err := runtime.DefaultUnstructuredConverter.ToUnstructured(builderObj)
+			if err != nil {
+				panic(err)
+			}
+			watcher.addEvent(watch.Event{
+				Type:   watch.Modified,
+				Object: &unstructured.Unstructured{Object: content},
+			})
+
+			require.NoError(t, waiter.Wait(context.Background(), resourceToWatch))
 		})
 	})
 }
@@ -121,7 +167,6 @@ type fakeConditionChecker struct {
 func (cc *fakeConditionChecker) conditionCheck(_ watch.Event) (bool, error) {
 	cc.called = true
 	return true, nil
-
 }
 
 func conditionReady(status corev1.ConditionStatus, generation int64) corev1alpha1.Status {
@@ -159,10 +204,6 @@ func (t *TestWatcher) watchReactor(action clientgotesting.Action) (handled bool,
 	}
 
 	watchAction := action.(clientgotesting.WatchAction)
-	if watchAction.GetWatchRestrictions().ResourceVersion != t.expectedResource.GetObjectMeta().GetResourceVersion() {
-		return true, nil, errors.New("expected watch on resource version")
-	}
-
 	if watchAction.GetNamespace() != t.expectedResource.GetObjectMeta().GetNamespace() {
 		return true, nil, errors.New("expected watch on namespace")
 	}
