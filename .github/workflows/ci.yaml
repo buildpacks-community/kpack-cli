@@ -5,9 +5,8 @@ on:
     branches:
     - main
     - release/**
-  pull_request:
-    branches:
-    - release/**
+    tags:
+    - v[0-9]+.[0-9]+.[0-9]+-?**
 
 defaults:
   run:
@@ -57,13 +56,13 @@ jobs:
     - name: Extract version
       shell: bash
       run: |
-        [[ $GITHUB_REF =~ ^refs\/heads\/release\/(.*)$ ]] && version=${BASH_REMATCH[1]} || version=${{ github.sha }}
+        [[ $GITHUB_REF =~ ^refs\/tags\/v(.*)$ ]] && version=${BASH_REMATCH[1]} || version=${{ github.sha }}
         echo "VERSION=${version}" >> $GITHUB_ENV
     - name: Build
       id: build
       run: |
         mkdir kp-binaries
-        
+
         build() {
           OS=$1
           ARCH=$2
@@ -73,7 +72,7 @@ jobs:
           -o kp-binaries/kp-$OS-$ARCH-${{ env.VERSION }} \
           ./cmd/kp
         }
-        
+
         build darwin amd64
         build darwin arm64
         build linux amd64
@@ -90,7 +89,7 @@ jobs:
     needs:
       - unit
       - build
-    if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -99,17 +98,12 @@ jobs:
     - name: Validate release version
       run: |
         echo "GITHUB_REF=${GITHUB_REF}"
-        [[ $GITHUB_REF =~ ^refs\/heads\/release\/(.*)$ ]] && version=${BASH_REMATCH[1]}
+        [[ $GITHUB_REF =~ ^refs\/tags\/v(.*)$ ]] && version=${BASH_REMATCH[1]}
         if [[ -z "${version}" ]]; then
           echo "ERROR: version not detected."
           exit 1
         fi
         echo "VERSION=${version}" >> $GITHUB_ENV
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version-file: 'go.mod'
 
     - name: Download artifacts
       uses: actions/download-artifact@v3
