@@ -127,6 +127,10 @@ func (f *Factory) validateEnvVars(img *v1alpha2.Image) error {
 }
 
 func (f *Factory) validateAdditionalTags(img *v1alpha2.Image) error {
+	if len(f.ReplaceAdditionalTags) != 0 && (len(f.DeleteAdditionalTags) != 0 || len(f.AdditionalTags) != 0) {
+		return errors.Errorf("replace-additional-tag is not compatible with additional-tag and delete-additional-tag flag")
+	}
+
 	for _, deleteTag := range f.DeleteAdditionalTags {
 		found := false
 
@@ -235,21 +239,25 @@ func (f *Factory) setCacheSize(image *v1alpha2.Image) error {
 }
 
 func (f *Factory) setAdditionalTags(image *v1alpha2.Image) {
-	for _, additionalTagToDelete := range f.DeleteAdditionalTags {
-		for i, at := range image.Spec.AdditionalTags {
-			if at == additionalTagToDelete {
-				image.Spec.AdditionalTags = append(image.Spec.AdditionalTags[:i], image.Spec.AdditionalTags[i+1:]...)
-				break
+	if len(f.ReplaceAdditionalTags) != 0 {
+		image.Spec.AdditionalTags = f.ReplaceAdditionalTags
+	} else {
+		for _, additionalTagToDelete := range f.DeleteAdditionalTags {
+			for i, at := range image.Spec.AdditionalTags {
+				if at == additionalTagToDelete {
+					image.Spec.AdditionalTags = append(image.Spec.AdditionalTags[:i], image.Spec.AdditionalTags[i+1:]...)
+					break
+				}
 			}
 		}
-	}
 
-	for _, additionalTag := range f.AdditionalTags {
-		if tagExists(additionalTag, image.Spec.AdditionalTags) {
-			continue
+		for _, additionalTag := range f.AdditionalTags {
+			if tagExists(additionalTag, image.Spec.AdditionalTags) {
+				continue
+			}
+
+			image.Spec.AdditionalTags = append(image.Spec.AdditionalTags, additionalTag)
 		}
-
-		image.Spec.AdditionalTags = append(image.Spec.AdditionalTags, additionalTag)
 	}
 }
 

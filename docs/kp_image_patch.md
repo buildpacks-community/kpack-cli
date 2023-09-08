@@ -18,6 +18,11 @@ The flags for this command determine how the build will retrieve source code:
 Local source code will be pushed to the same registry as the existing image resource tag.
 Therefore, you must have credentials to access the registry on your machine.
 
+All tags found under Image.spec.additionalTags will be added to your built OCI image.
+To append to the list of tags that will be added to a built image, use the "additional-tag" flag.
+To remove a tag from the list of tags that will be added to a built image, use the "delete-additional-tag".
+To replace the entire list of tags, use the "replace-additional-tag".
+
 Environment variables may be provided by using the "--env" flag or deleted by using the "--delete-env" flag.
 For each environment variable, supply the "--env" flag followed by the key value pair.
 For example, "--env key1=value1 --env key2=value2 --delete-env key3 --delete-env key3".
@@ -49,7 +54,7 @@ kp image patch my-image --tag my-registry.com/my-repo --blob https://my-blob-hos
 ### Options
 
 ```
-      --additional-tag stringArray           additional tags to push the OCI image to
+      --additional-tag stringArray           adds additional tags to push the OCI image to
       --blob string                          source code blob url
       --builder string                       builder name
       --cache-size string                    cache size as a kubernetes quantity
@@ -77,6 +82,7 @@ kp image patch my-image --tag my-registry.com/my-repo --blob https://my-blob-hos
                                                The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
       --registry-ca-cert-path string         add CA certificate for registry API (format: /tmp/ca.crt)
       --registry-verify-certs                set whether to verify server's certificate chain and host name (default true)
+      --replace-additional-tag stringArray   replaces all additional tags to push the OCI image to
       --service-account string               service account name to use
   -s, --service-binding stringArray          build time service bindings to add/replace
       --sub-path string                      build code at the sub path located within the source code directory

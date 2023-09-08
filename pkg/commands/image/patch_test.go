@@ -307,6 +307,47 @@ Image Resource "some-image" patched
 
 				assert.Len(t, fakeImageWaiter.Calls, 0)
 			})
+
+			it("add and delete additional tags is compatible", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						existingImage,
+					},
+					Args: []string{
+						"some-image",
+						"--additional-tag", "test-new-tag",
+						"--delete-additional-tag", "some-other-tag",
+					},
+					ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
+`,
+					ExpectPatches: []string{
+						`{"spec":{"additionalTags":["test-new-tag"]}}`,
+					},
+				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
+
+			it("replace additional tags", func() {
+				testhelpers.CommandTest{
+					Objects: []runtime.Object{
+						existingImage,
+					},
+					Args: []string{
+						"some-image",
+						"--replace-additional-tag", "replace-this-tag",
+					},
+					ExpectedOutput: `Patching Image Resource...
+Image Resource "some-image" patched
+`,
+					ExpectPatches: []string{
+						`{"spec":{"additionalTags":["replace-this-tag"]}}`,
+					},
+				}.TestKpack(t, cmdFunc)
+
+				assert.Len(t, fakeImageWaiter.Calls, 0)
+			})
 		})
 
 		when("patching env vars", func() {

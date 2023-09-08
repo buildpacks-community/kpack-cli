@@ -119,7 +119,8 @@ kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host
 		},
 	}
 	cmd.Flags().StringVarP(&tag, "tag", "t", "", "registry location where the image will be created")
-	cmd.Flags().StringArrayVar(&factory.AdditionalTags, "additional-tag", []string{}, "additional tags to push the OCI image to")
+	cmd.Flags().StringArrayVar(&factory.AdditionalTags, "additional-tag", []string{}, "adds additional tags to push the OCI image to")
+	cmd.Flags().StringArrayVar(&factory.ReplaceAdditionalTags, "replace-additional-tag", []string{}, "replaces all additional tags to push the OCI image to")
 	cmd.Flags().StringArrayVar(&factory.DeleteAdditionalTags, "delete-additional-tag", []string{}, "additional tags to remove")
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
 	cmd.Flags().StringVar(&factory.GitRepo, "git", "", "git repository url")
