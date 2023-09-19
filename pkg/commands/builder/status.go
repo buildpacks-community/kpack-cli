@@ -43,18 +43,7 @@ The namespace defaults to the kubernetes current-context namespace.`,
 				return err
 			}
 
-			cbpList, err := cs.KpackClient.KpackV1alpha2().ClusterBuildpacks().List(cmd.Context(), metav1.ListOptions{})
-			if err != nil {
-				return err
-			}
-
-			bpList, err := cs.KpackClient.KpackV1alpha2().Buildpacks(cs.Namespace).List(cmd.Context(), metav1.ListOptions{})
-			if err != nil {
-				return err
-			}
-
-
-			return displayBuilderStatus(bldr, cbpList, bpList, cmd.OutOrStdout())
+			return displayBuilderStatus(bldr, cmd.OutOrStdout())
 		},
 	}
 
@@ -63,10 +52,10 @@ The namespace defaults to the kubernetes current-context namespace.`,
 	return cmd
 }
 
-func displayBuilderStatus(bldr *v1alpha2.Builder, cbpList *v1alpha2.ClusterBuildpackList, bpList *v1alpha2.BuildpackList, writer io.Writer) error {
+func displayBuilderStatus(bldr *v1alpha2.Builder, writer io.Writer) error {
 	if cond := bldr.Status.GetCondition(corev1alpha1.ConditionReady); cond != nil {
 		if cond.Status == corev1.ConditionTrue {
-			return printBuilderReadyStatus(bldr, cbpList, bpList, writer)
+			return printBuilderReadyStatus(bldr, writer)
 		} else {
 			return printBuilderNotReadyStatus(bldr, writer)
 		}
@@ -96,7 +85,7 @@ func printBuilderNotReadyStatus(bldr *v1alpha2.Builder, writer io.Writer) error 
 	)
 }
 
-func printBuilderReadyStatus(bldr *v1alpha2.Builder, cbpList *v1alpha2.ClusterBuildpackList, bpList *v1alpha2.BuildpackList, writer io.Writer) error {
+func printBuilderReadyStatus(bldr *v1alpha2.Builder, writer io.Writer) error {
 	statusWriter := commands.NewStatusWriter(writer)
 
 	err := statusWriter.AddBlock(
@@ -123,29 +112,6 @@ func printBuilderReadyStatus(bldr *v1alpha2.Builder, cbpList *v1alpha2.ClusterBu
 		return err
 	}
 
-	for _, cbp := range cbpList.Items {
-		err := statusWriter.AddBlock(
-			"ClusterBuildpack Ref", " ",
-			"  Name", cbp.Name,
-			"  Kind", cbp.Kind,
-		)
-	if err != nil {
-		return err
-		}	
-	}
-
-	for _, bp := range bpList.Items {
-		err := statusWriter.AddBlock(
-			"Buildpack Ref", " ",
-			"  Name", bp.Name,
-			"  Kind", bp.Kind,
-		)
-	if err != nil {
-		return err
-		}	
-	}
-
-
 	bpTableWriter, err := commands.NewTableWriter(writer, "buildpack id", "version", "homepage")
 	if err != nil {
 		return nil
@@ -169,21 +135,21 @@ func printBuilderReadyStatus(bldr *v1alpha2.Builder, cbpList *v1alpha2.ClusterBu
 	}
 
 	cpTableWriter, err := commands.NewTableWriter(writer, "BuildpackName", "     BuildpackKind")
-	if err != nil {
-		return nil
-	}
-
-  for _, entry := range bldr.Spec.Order {
-	  for _, ref := range entry.Group {
-		  if ref.ObjectReference.Name != "" && ref.ObjectReference.Kind != "" {
-		  err := cpTableWriter.AddRow(ref.ObjectReference.Name, ref.ObjectReference.Kind)
 	  if err != nil {
-		  return err
+	  	return nil
 	  }
-  }
-   }
-   cpTableWriter.Write()
-  }
+
+	for _, entry := range bldr.Spec.Order {
+		for _, ref := range entry.Group {
+			if ref.ObjectReference.Name != "" && ref.ObjectReference.Kind != "" {
+			err := cpTableWriter.AddRow(ref.ObjectReference.Name, ref.ObjectReference.Kind)
+		if err != nil {
+			return err
+		}
+	}
+	 }
+	 cpTableWriter.Write()
+	}
 
 	orderTableWriter, err := commands.NewTableWriter(writer, "Detection Order", "")
 	if err != nil {
