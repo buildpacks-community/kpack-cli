@@ -168,6 +168,23 @@ func printBuilderReadyStatus(bldr *v1alpha2.Builder, cbpList *v1alpha2.ClusterBu
 		return err
 	}
 
+	cpTableWriter, err := commands.NewTableWriter(writer, "BuildpackName", "     BuildpackKind")
+	if err != nil {
+		return nil
+	}
+
+  for _, entry := range bldr.Spec.Order {
+	  for _, ref := range entry.Group {
+		  if ref.ObjectReference.Name != "" && ref.ObjectReference.Kind != "" {
+		  err := cpTableWriter.AddRow(ref.ObjectReference.Name, ref.ObjectReference.Kind)
+	  if err != nil {
+		  return err
+	  }
+  }
+   }
+   cpTableWriter.Write()
+  }
+
 	orderTableWriter, err := commands.NewTableWriter(writer, "Detection Order", "")
 	if err != nil {
 		return nil
