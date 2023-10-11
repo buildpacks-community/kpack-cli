@@ -5,6 +5,7 @@ package buildpack
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
@@ -90,7 +91,9 @@ func patch(ctx context.Context, bp *v1alpha2.Buildpack, flags CommandFlags, ch *
 		}
 	}
 
-	if err = ch.PrintObj(updatedBp); err != nil {
+	updatedBpArray := []runtime.Object{updatedBp}
+
+	if err = ch.PrintObjs(updatedBpArray); err != nil {
 		return err
 	}
 

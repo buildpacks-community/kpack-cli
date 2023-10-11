@@ -4,6 +4,7 @@
 package secret
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -95,7 +96,9 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				}
 			}
 
-			if err = ch.PrintObj(secret); err != nil {
+			secretArray := []runtime.Object{secret}
+
+			if err = ch.PrintObjs(secretArray); err != nil {
 				return err
 			}
 
@@ -122,7 +125,9 @@ kp secret create my-git-cred --git-url https://github.com --git-user my-git-user
 				}
 			}
 
-			if err = ch.PrintObj(updatedSA); err != nil {
+			updatedSAArray := []runtime.Object{updatedSA}
+
+			if err = ch.PrintObjs(updatedSAArray); err != nil {
 				return err
 			}
 

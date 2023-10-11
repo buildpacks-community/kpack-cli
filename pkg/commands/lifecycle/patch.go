@@ -5,6 +5,7 @@ package lifecycle
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/spf13/cobra"
 
@@ -72,7 +73,9 @@ The default repository is read from the "default.repository" key of the "kp-conf
 				return err
 			}
 
-			if err := ch.PrintObj(configMap); err != nil {
+			configMapArray := []runtime.Object{configMap}
+
+			if err := ch.PrintObjs(configMapArray); err != nil {
 				return err
 			}
 

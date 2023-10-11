@@ -6,6 +6,7 @@ package image
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
@@ -156,7 +157,9 @@ func patch(ctx context.Context, img *v1alpha2.Image, factory *image.Factory, ch 
 		}
 	}
 
-	if err = ch.PrintObj(updatedImage); err != nil {
+	updatedImageArray := []runtime.Object{updatedImage}
+
+	if err = ch.PrintObjs(updatedImageArray); err != nil {
 		return hasPatch, nil, err
 	}
 

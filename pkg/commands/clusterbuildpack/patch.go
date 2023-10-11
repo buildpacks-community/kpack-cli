@@ -5,6 +5,7 @@ package clusterbuildpack
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
@@ -79,7 +80,9 @@ func patch(ctx context.Context, cbp *v1alpha2.ClusterBuildpack, flags CommandFla
 		}
 	}
 
-	if err = ch.PrintObj(updatedCbp); err != nil {
+	updatedCbpArray := []runtime.Object{updatedCbp}
+
+	if err = ch.PrintObjs(updatedCbpArray); err != nil {
 		return err
 	}
 

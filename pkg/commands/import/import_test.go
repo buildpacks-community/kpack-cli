@@ -786,122 +786,117 @@ Importing ClusterBuilder 'default'...
 		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
 
 		when("yaml format", func() {
-			const resourceYAML = `apiVersion: v1
-data:
-  image: default-registry.io/default-repo@sha256:lifecycle-image-digest
-kind: ConfigMap
-metadata:
-  annotations:
-    kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-  creationTimestamp: null
-  name: lifecycle-image
-  namespace: kpack
----
-apiVersion: kpack.io/v1alpha2
-kind: ClusterStore
-metadata:
-  annotations:
-    kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{}}'
-  creationTimestamp: null
-  name: store-name
-spec:
-  serviceAccountRef:
-    name: some-serviceaccount
-    namespace: some-namespace
-  sources:
-  - image: default-registry.io/default-repo@sha256:buildpack-image-digest
-status: {}
----
-apiVersion: kpack.io/v1alpha2
-kind: ClusterStack
-metadata:
-  annotations:
-    kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-  creationTimestamp: null
-  name: stack-name
-spec:
-  buildImage:
-    image: default-registry.io/default-repo@sha256:build-image-digest
-  id: stack-id
-  runImage:
-    image: default-registry.io/default-repo@sha256:build-image-digest
-  serviceAccountRef:
-    name: some-serviceaccount
-    namespace: some-namespace
-status:
-  buildImage: {}
-  runImage: {}
----
-apiVersion: kpack.io/v1alpha2
-kind: ClusterStack
-metadata:
-  annotations:
-    kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-  creationTimestamp: null
-  name: default
-spec:
-  buildImage:
-    image: default-registry.io/default-repo@sha256:build-image-digest
-  id: stack-id
-  runImage:
-    image: default-registry.io/default-repo@sha256:build-image-digest
-  serviceAccountRef:
-    name: some-serviceaccount
-    namespace: some-namespace
-status:
-  buildImage: {}
-  runImage: {}
----
-apiVersion: kpack.io/v1alpha2
-kind: ClusterBuilder
-metadata:
-  annotations:
-    kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}'
-  creationTimestamp: null
-  name: clusterbuilder-name
-spec:
-  order:
-  - group:
-    - id: buildpack-id
-  serviceAccountRef:
-    name: some-serviceaccount
-    namespace: some-namespace
-  stack:
-    kind: ClusterStack
-    name: stack-name
-  store:
-    kind: ClusterStore
+			const resourceYAML = `- apiVersion: v1
+  data:
+    image: default-registry.io/default-repo@sha256:lifecycle-image-digest
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
+    creationTimestamp: null
+    name: lifecycle-image
+    namespace: kpack
+- apiVersion: kpack.io/v1alpha2
+  kind: ClusterStore
+  metadata:
+    annotations:
+      kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
+      kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterStore","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"store-name","creationTimestamp":null},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{}}'
+    creationTimestamp: null
     name: store-name
-  tag: default-registry.io/default-repo:clusterbuilder-clusterbuilder-name
-status:
-  stack: {}
----
-apiVersion: kpack.io/v1alpha2
-kind: ClusterBuilder
-metadata:
-  annotations:
-    kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}'
-  creationTimestamp: null
-  name: default
-spec:
-  order:
-  - group:
-    - id: buildpack-id
-  serviceAccountRef:
-    name: some-serviceaccount
-    namespace: some-namespace
-  stack:
-    kind: ClusterStack
+  spec:
+    serviceAccountRef:
+      name: some-serviceaccount
+      namespace: some-namespace
+    sources:
+    - image: default-registry.io/default-repo@sha256:buildpack-image-digest
+  status: {}
+- apiVersion: kpack.io/v1alpha2
+  kind: ClusterStack
+  metadata:
+    annotations:
+      kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
+    creationTimestamp: null
     name: stack-name
-  store:
-    kind: ClusterStore
-    name: store-name
-  tag: default-registry.io/default-repo:clusterbuilder-default
-status:
-  stack: {}
+  spec:
+    buildImage:
+      image: default-registry.io/default-repo@sha256:build-image-digest
+    id: stack-id
+    runImage:
+      image: default-registry.io/default-repo@sha256:build-image-digest
+    serviceAccountRef:
+      name: some-serviceaccount
+      namespace: some-namespace
+  status:
+    buildImage: {}
+    runImage: {}
+- apiVersion: kpack.io/v1alpha2
+  kind: ClusterStack
+  metadata:
+    annotations:
+      kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
+    creationTimestamp: null
+    name: default
+  spec:
+    buildImage:
+      image: default-registry.io/default-repo@sha256:build-image-digest
+    id: stack-id
+    runImage:
+      image: default-registry.io/default-repo@sha256:build-image-digest
+    serviceAccountRef:
+      name: some-serviceaccount
+      namespace: some-namespace
+  status:
+    buildImage: {}
+    runImage: {}
+- apiVersion: kpack.io/v1alpha2
+  kind: ClusterBuilder
+  metadata:
+    annotations:
+      kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
+      kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    creationTimestamp: null
+    name: clusterbuilder-name
+  spec:
+    order:
+    - group:
+      - id: buildpack-id
+    serviceAccountRef:
+      name: some-serviceaccount
+      namespace: some-namespace
+    stack:
+      kind: ClusterStack
+      name: stack-name
+    store:
+      kind: ClusterStore
+      name: store-name
+    tag: default-registry.io/default-repo:clusterbuilder-clusterbuilder-name
+  status:
+    stack: {}
+- apiVersion: kpack.io/v1alpha2
+  kind: ClusterBuilder
+  metadata:
+    annotations:
+      kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
+      kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    creationTimestamp: null
+    name: default
+  spec:
+    order:
+    - group:
+      - id: buildpack-id
+    serviceAccountRef:
+      name: some-serviceaccount
+      namespace: some-namespace
+    stack:
+      kind: ClusterStack
+      name: stack-name
+    store:
+      kind: ClusterStore
+      name: store-name
+    tag: default-registry.io/default-repo:clusterbuilder-default
+  status:
+    stack: {}
 `
 
 			it("can output yaml", func() {
@@ -999,7 +994,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
 		})
 
 		it("can output in json format", func() {
-			const resourceJSON = `{
+			const resourceJSON = `[{
     "kind": "ConfigMap",
     "apiVersion": "v1",
     "metadata": {
@@ -1013,8 +1008,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
     "data": {
         "image": "default-registry.io/default-repo@sha256:lifecycle-image-digest"
     }
-}
-{
+},{
     "kind": "ClusterStore",
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
@@ -1037,8 +1031,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
         }
     },
     "status": {}
-}
-{
+},{
     "kind": "ClusterStack",
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
@@ -1065,8 +1058,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
         "buildImage": {},
         "runImage": {}
     }
-}
-{
+},{
     "kind": "ClusterStack",
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
@@ -1093,8 +1085,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
         "buildImage": {},
         "runImage": {}
     }
-}
-{
+},{
     "kind": "ClusterBuilder",
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
@@ -1132,8 +1123,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
     "status": {
         "stack": {}
     }
-}
-{
+},{
     "kind": "ClusterBuilder",
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
@@ -1171,7 +1161,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
     "status": {
         "stack": {}
     }
-}
+}]
 `
 
 			testhelpers.CommandTest{

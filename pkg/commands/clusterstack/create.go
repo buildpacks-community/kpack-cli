@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstack"
@@ -93,7 +94,9 @@ func create(ctx context.Context, name, buildImageRef, runImageRef string, factor
 		}
 	}
 
-	if err = ch.PrintObj(stack); err != nil {
+	stackArray := []runtime.Object{stack}
+
+	if err = ch.PrintObjs(stackArray); err != nil {
 		return err
 	}
 

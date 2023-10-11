@@ -13,6 +13,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -117,19 +118,21 @@ func (ch CommandHelper) ShowTimestamp() bool {
 }
 
 func (ch CommandHelper) PrintObjs(objs []runtime.Object) error {
+	if !ch.output {
+		return nil
+	}
 	for _, obj := range objs {
-		if err := ch.PrintObj(obj); err != nil {
-			return err
-		}
+		ch.checkKind(obj)
+	}
+	err := ch.objPrinter.PrintObject(objs, ch.outWriter)
+
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func (ch CommandHelper) PrintObj(obj runtime.Object) error {
-	if !ch.output {
-		return nil
-	}
-
+func (ch CommandHelper) checkKind(obj runtime.Object) error {
 	oGVK := obj.GetObjectKind().GroupVersionKind()
 	if oGVK.Version == "" || oGVK.Kind == "" {
 		nGVK, ok := ch.typeToGVK[reflect.TypeOf(obj)]
@@ -138,9 +141,7 @@ func (ch CommandHelper) PrintObj(obj runtime.Object) error {
 		}
 		obj.GetObjectKind().SetGroupVersionKind(nGVK)
 	}
-	err := ch.objPrinter.PrintObject(obj, ch.outWriter)
-	obj.GetObjectKind().SetGroupVersionKind(oGVK)
-	return err
+	return nil
 }
 
 func (ch CommandHelper) PrintChangeResult(change bool, format string, args ...interface{}) error {

@@ -2,6 +2,7 @@ package buildpack
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	buildv1alpha2 "github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
@@ -101,7 +102,9 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 		}
 	}
 
-	err = ch.PrintObj(bp)
+	bpArray := []runtime.Object{bp}
+
+	err = ch.PrintObjs(bpArray)
 	if err != nil {
 		return err
 	}

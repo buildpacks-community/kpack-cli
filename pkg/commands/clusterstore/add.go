@@ -5,13 +5,14 @@ package clusterstore
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
@@ -108,7 +109,9 @@ func update(ctx context.Context, store *v1alpha2.ClusterStore, buildpackages []s
 		}
 	}
 
-	if err = ch.PrintObj(updatedStore); err != nil {
+	updatedStoreArray := []runtime.Object{updatedStore}
+
+	if err = ch.PrintObjs(updatedStoreArray); err != nil {
 		return err
 	}
 
