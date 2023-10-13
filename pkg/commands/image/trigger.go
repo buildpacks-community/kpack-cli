@@ -6,6 +6,7 @@ package image
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
@@ -63,13 +64,14 @@ The namespace defaults to the kubernetes current-context namespace.`,
 					return err
 				}
 
-				builds, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).Patch(ctx, original.Name, types.MergePatchType, patch, metav1.PatchOptions{})
+				_, err = cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).Patch(ctx, original.Name, types.MergePatchType, patch, metav1.PatchOptions{})
 				if err != nil {
 					return err
 				}
-				buildNumber := builds.Labels[v1alpha2.BuildNumberLabel]
 
-				_, err = fmt.Fprintf(cmd.OutOrStderr(), "Triggered build for Image Resource %q with Build Number %s\n", args[0], buildNumber)
+				previousBuildNumber, _ := strconv.Atoi(patched.Labels[v1alpha2.BuildNumberLabel])
+
+				_, err = fmt.Fprintf(cmd.OutOrStderr(), "Triggered build for Image Resource %q with Build Number %d\n", args[0], previousBuildNumber+1)
 				return err
 			}
 		},
