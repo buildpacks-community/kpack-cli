@@ -9,7 +9,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-containerregistry v0.16.1
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
-	github.com/pivotal/kpack v0.12.1
+	github.com/pivotal/kpack v0.12.2
 	github.com/pkg/errors v0.9.1
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/cobra v1.7.0
