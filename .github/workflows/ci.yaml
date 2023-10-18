@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -48,7 +48,7 @@ jobs:
       image: ${{ steps.build.outputs.image }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
@@ -79,6 +79,8 @@ jobs:
         build linux arm64
         build windows amd64
 
+        mv kp-binaries/kp-windows-amd64-${{ env.VERSION }} kp-binaries/kp-windows-amd64-${{ env.VERSION }}.exe
+
     - name: Upload binaries
       uses: actions/upload-artifact@v3
       with:
@@ -93,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Validate release version
       run: |
