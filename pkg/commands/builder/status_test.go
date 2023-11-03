@@ -43,7 +43,7 @@ org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodej
 org.cloudfoundry.go        v0.0.3     https://github.com/paketo-buildpacks/go
 
 
-BUILDPACKNAME         BUILDPACKKIND
+BUILDPACK NAME         BUILDPACK KIND
 
 
 sample-buildpack    Buildpack
@@ -73,7 +73,7 @@ org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodej
 org.cloudfoundry.go        v0.0.3     https://github.com/paketo-buildpacks/go
 
 
-BUILDPACKNAME         BUILDPACKKIND
+BUILDPACK NAME         BUILDPACK KIND
 
 
 sample-buildpack    Buildpack

@@ -42,7 +42,7 @@ org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodej
 org.cloudfoundry.go        v0.0.3     https://github.com/paketo-buildpacks/go
 
 
-CLUSTERBUILDPACKNAME         CLUSTERBUILDPACKKIND
+CLUSTERBUILDPACK NAME         CLUSTERBUILDPACK KIND
 
 
 sample-cluster-buildpack    ClusterBuildpack
@@ -71,7 +71,7 @@ org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodej
 org.cloudfoundry.go        v0.0.3     https://github.com/paketo-buildpacks/go
 
 
-CLUSTERBUILDPACKNAME         CLUSTERBUILDPACKKIND
+CLUSTERBUILDPACK NAME         CLUSTERBUILDPACK KIND
 
 
 sample-cluster-buildpack    ClusterBuildpack
