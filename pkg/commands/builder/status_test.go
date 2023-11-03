@@ -43,6 +43,11 @@ org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodej
 org.cloudfoundry.go        v0.0.3     https://github.com/paketo-buildpacks/go
 
 
+BUILDPACK NAME         BUILDPACK KIND
+
+
+sample-buildpack    Buildpack
+
 DETECTION ORDER              
 Group #1                     
   org.cloudfoundry.nodejs    
@@ -50,6 +55,7 @@ Group #2
   org.cloudfoundry.go        
 
 `
+
 		expectedReadyOutputUsingStatusOrder = `Status:       Ready
 Image:        some-registry.com/test-builder-1:tag
 Stack ID:     io.buildpacks.stacks.centos
@@ -66,6 +72,11 @@ BUILDPACK ID               VERSION    HOMEPAGE
 org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
 org.cloudfoundry.go        v0.0.3     https://github.com/paketo-buildpacks/go
 
+
+BUILDPACK NAME         BUILDPACK KIND
+
+
+sample-buildpack    Buildpack
 
 DETECTION ORDER                    
 Group #1                           
@@ -126,7 +137,17 @@ Reason:    this builder is not ready for the purpose of a test
 									},
 								},
 							},
-						},
+						},	
+						{
+							Group: []v1alpha2.BuilderBuildpackRef{
+								{
+									ObjectReference: corev1.ObjectReference{
+										Name: "sample-buildpack",
+										Kind: "Buildpack",
+									},
+								},
+							},
+						},																	
 					},
 				},
 			},
@@ -158,6 +179,7 @@ Reason:    this builder is not ready for the purpose of a test
 				LatestImage: "some-registry.com/test-builder-1:tag",
 			},
 		}
+
 		notReadyDefaultBuilder = &v1alpha2.Builder{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       v1alpha2.BuilderKind,
@@ -308,6 +330,16 @@ Reason:    this builder is not ready for the purpose of a test
 								},
 							},
 						},
+						{
+							Group: []v1alpha2.BuilderBuildpackRef{
+								{
+									ObjectReference: corev1.ObjectReference{
+										Name: "sample-buildpack",
+										Kind: "Buildpack",
+									},
+								},
+							},
+						},											
 					},
 				},
 			},
@@ -500,6 +532,7 @@ Reason:    this builder is not ready for the purpose of a test
 										},
 									},
 								},
+								
 							}
 
 							testhelpers.CommandTest{
@@ -510,7 +543,7 @@ Reason:    this builder is not ready for the purpose of a test
 						})
 
 					})
-				})
+				})			
 
 				when("the builder is not ready", func() {
 					it("shows the build status of not ready builder", func() {

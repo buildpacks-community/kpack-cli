@@ -42,6 +42,11 @@ org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodej
 org.cloudfoundry.go        v0.0.3     https://github.com/paketo-buildpacks/go
 
 
+CLUSTERBUILDPACK NAME         CLUSTERBUILDPACK KIND
+
+
+sample-cluster-buildpack    ClusterBuildpack
+
 DETECTION ORDER              
 Group #1                     
   org.cloudfoundry.nodejs    
@@ -65,6 +70,11 @@ BUILDPACK ID               VERSION    HOMEPAGE
 org.cloudfoundry.nodejs    v0.2.1     https://github.com/paketo-buildpacks/nodejs
 org.cloudfoundry.go        v0.0.3     https://github.com/paketo-buildpacks/go
 
+
+CLUSTERBUILDPACK NAME         CLUSTERBUILDPACK KIND
+
+
+sample-cluster-buildpack    ClusterBuildpack
 
 DETECTION ORDER                    
 Group #1                           
@@ -121,6 +131,16 @@ Reason:    this builder is not ready for the purpose of a test
 										BuildpackInfo: corev1alpha1.BuildpackInfo{
 											Id: "org.cloudfoundry.go",
 										},
+									},
+								},
+							},
+						},
+						{
+							Group: []v1alpha2.BuilderBuildpackRef{
+								{
+									ObjectReference: corev1.ObjectReference{
+										Name: "sample-cluster-buildpack",
+										Kind: "ClusterBuildpack",
 									},
 								},
 							},
