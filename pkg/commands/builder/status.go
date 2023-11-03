@@ -134,21 +134,21 @@ func printBuilderReadyStatus(bldr *v1alpha2.Builder, writer io.Writer) error {
 		return err
 	}
 
-	cpTableWriter, err := commands.NewTableWriter(writer, "BuildpackName", "     BuildpackKind")
-	  if err != nil {
-	  	return nil
-	  }
+	cpTableWriter, err := commands.NewTableWriter(writer, "Buildpack Name", "     Buildpack Kind")
+	if err != nil {
+		return nil
+	}
 
 	for _, entry := range bldr.Spec.Order {
 		for _, ref := range entry.Group {
 			if ref.ObjectReference.Name != "" && ref.ObjectReference.Kind != "" {
-			err := cpTableWriter.AddRow(ref.ObjectReference.Name, ref.ObjectReference.Kind)
-		if err != nil {
-			return err
+				err := cpTableWriter.AddRow(ref.ObjectReference.Name, ref.ObjectReference.Kind)
+				if err != nil {
+					return err
+				}
+			}
 		}
-	}
-	 }
-	 cpTableWriter.Write()
+		cpTableWriter.Write()
 	}
 
 	orderTableWriter, err := commands.NewTableWriter(writer, "Detection Order", "")
