@@ -6,6 +6,7 @@ package builder
 import (
 	"context"
 	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
@@ -145,9 +146,8 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 		}
 	}
 
-	bldrArray := []runtime.Object{bldr}
+	err = ch.PrintObjs([]runtime.Object{bldr})
 
-	err = ch.PrintObjs(bldrArray)
 	if err != nil {
 		return err
 	}

@@ -122,7 +122,11 @@ func (ch CommandHelper) PrintObjs(objs []runtime.Object) error {
 		return nil
 	}
 	for _, obj := range objs {
-		ch.checkKind(obj)
+		err := ch.checkKind(obj)
+
+		if err != nil {
+			return err
+		}
 	}
 	err := ch.objPrinter.PrintObject(objs, ch.outWriter)
 
