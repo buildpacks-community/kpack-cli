@@ -82,7 +82,7 @@ jobs:
         mv kp-binaries/kp-windows-amd64-${{ env.VERSION }} kp-binaries/kp-windows-amd64-${{ env.VERSION }}.exe
 
     - name: Upload binaries
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: kp-binaries
         path: kp-binaries/
