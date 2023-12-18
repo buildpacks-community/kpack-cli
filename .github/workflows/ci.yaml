@@ -108,7 +108,7 @@ jobs:
         echo "VERSION=${version}" >> $GITHUB_ENV
 
     - name: Download artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
 
     - name: Generate sha256sum
       id: sha256
