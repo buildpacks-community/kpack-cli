@@ -5,7 +5,6 @@ package _import
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -170,7 +169,7 @@ func readDescriptor(cmd *cobra.Command, filename string) (string, error) {
 	)
 
 	if filename == "-" {
-		reader = ioutil.NopCloser(cmd.InOrStdin())
+		reader = io.NopCloser(cmd.InOrStdin())
 	} else {
 		reader, err = os.Open(filename)
 		if err != nil {
@@ -179,7 +178,7 @@ func readDescriptor(cmd *cobra.Command, filename string) (string, error) {
 	}
 	defer reader.Close()
 
-	buf, err := ioutil.ReadAll(reader)
+	buf, err := io.ReadAll(reader)
 	if err != nil {
 		return "", err
 	}

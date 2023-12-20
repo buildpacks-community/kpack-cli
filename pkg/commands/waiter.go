@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/tools/cache"
 	watchTools "k8s.io/client-go/tools/watch"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/apis/duck"
@@ -59,18 +60,24 @@ func (w *Waiter) wait(ctx context.Context, ob runtime.Object, condition watchToo
 		return err
 	}
 
+	refable, ok := ob.(kmeta.OwnerRefable)
+	if !ok {
+		return errors.New("unexpected type")
+	}
+
+	listerWatcherOne := newWatchOneWatcher(ctx, refable, w.dynamicClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), w.timeout)
+	defer cancel()
+
 	if !done {
-		refable, ok := ob.(kmeta.OwnerRefable)
-		if !ok {
-			return errors.New("unexpected type")
-		}
-
-		rv := refable.GetObjectMeta().GetResourceVersion()
-		watchOne := newWatchOneWatcher(ctx, refable, w.dynamicClient)
-
-		ctx, cancel := context.WithTimeout(context.Background(), w.timeout)
-		defer cancel()
-		e, err = watchTools.Until(ctx, rv, watchOne, filterErrors(cfs)...)
+		e, err = watchTools.UntilWithSync(ctx,
+			&listerWatcherOne,
+			&unstructured.Unstructured{},
+			func(store cache.Store) (bool, error) {
+				return false, nil
+			},
+			filterErrors(cfs)...)
 		if err != nil {
 			return err
 		}
@@ -156,6 +163,11 @@ func newWatchOneWatcher(ctx context.Context, object kmeta.OwnerRefable, client d
 func (w watchOneWatcher) Watch(options metav1.ListOptions) (watch.Interface, error) {
 	options.FieldSelector = fmt.Sprintf("metadata.name=%s", w.name)
 	return w.dynamicClient.Resource(w.gvr).Namespace(w.namespace).Watch(w.ctx, options)
+}
+
+func (w watchOneWatcher) List(options metav1.ListOptions) (runtime.Object, error) {
+	options.FieldSelector = fmt.Sprintf("metadata.name=%s", w.name)
+	return w.dynamicClient.Resource(w.gvr).Namespace(w.namespace).List(w.ctx, options)
 }
 
 func filterErrors(conditions []watchTools.ConditionFunc) []watchTools.ConditionFunc {
