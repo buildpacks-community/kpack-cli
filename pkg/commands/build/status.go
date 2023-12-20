@@ -30,13 +30,18 @@ func NewStatusCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "status <image-name>",
-		Short: "Display status for an image resource build",
-		Long: `Prints detailed information about the status of a specific build of an image resource in the provided namespace.
+		Use:   "status <image-name|build-name>",
+		Short: "Display status for an image resource or for a build resource",
+		Long: `Prints detailed information about the status of a specific build of an image resource or build resource in the provided namespace.
+
+By default command will assume user provided an Image name and will attempt to find builds associated with that Image.
+If no builds are found matching the Image name, It will assume the provided argument was a Build name.
 
 The build defaults to the latest build number.
 The namespace defaults to the kubernetes current-context namespace.`,
-		Example:      "kp build status my-image\nkp build status my-image -b 2 -n my-namespace",
+		Example: `kp build status my-image
+kp build status my-image -b 2 -n my-namespace
+kp build status my-build-name -n my-namespace`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -53,16 +58,19 @@ The namespace defaults to the kubernetes current-context namespace.`,
 			}
 
 			if len(buildList.Items) == 0 {
-				return errors.New("no builds found")
-			} else {
-				sort.Slice(buildList.Items, build.Sort(buildList.Items))
-				bld, err := findBuild(buildList, buildNumber)
+				build, err := cs.KpackClient.KpackV1alpha2().Builds(cs.Namespace).Get(cmd.Context(), args[0], metav1.GetOptions{})
 				if err != nil {
 					return err
 				}
-
-				return displayBuildStatus(cmd, bld)
+				return displayBuildStatus(cmd, *build)
 			}
+
+			sort.Slice(buildList.Items, build.Sort(buildList.Items))
+			bld, err := findBuild(buildList, buildNumber)
+			if err != nil {
+				return err
+			}
+			return displayBuildStatus(cmd, bld)
 		},
 	}
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "kubernetes namespace")
@@ -106,6 +114,7 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha2.Build) error {
 
 	statusItems := []string{
 		"Image", bld.Status.LatestImage,
+		"Build Name", bld.Name,
 		"Status", getStatus(bld),
 		"Reason", reason,
 	}
@@ -141,6 +150,14 @@ func displayBuildStatus(cmd *cobra.Command, bld v1alpha2.Build) error {
 		"",
 		"Builder", bld.Spec.Builder.Image,
 		"Run Image", bld.Status.Stack.RunImage,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = statusWriter.AddBlock(
+		"",
+		"Build Name", bld.Name,
 	)
 	if err != nil {
 		return err
