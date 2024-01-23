@@ -6,11 +6,11 @@ package clusterbuilder
 import (
 	"context"
 	"fmt"
-
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/builder"
@@ -153,7 +153,9 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 		}
 	}
 
-	err = ch.PrintObj(cb)
+	cbArray := []runtime.Object{cb}
+
+	err = ch.PrintObjs(cbArray)
 	if err != nil {
 		return err
 	}

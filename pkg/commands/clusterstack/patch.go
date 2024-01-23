@@ -6,6 +6,7 @@ package clusterstack
 import (
 	"context"
 	"io"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -116,7 +117,9 @@ func patch(ctx context.Context, keychain authn.Keychain, stack *v1alpha2.Cluster
 		}
 	}
 
-	if err = ch.PrintObj(updatedStack); err != nil {
+	updatedStackArray := []runtime.Object{updatedStack}
+
+	if err = ch.PrintObjs(updatedStackArray); err != nil {
 		return err
 	}
 

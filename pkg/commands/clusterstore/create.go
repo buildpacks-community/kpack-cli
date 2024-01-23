@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
@@ -91,7 +92,9 @@ func create(ctx context.Context, name string, buildpackages []string, factory *c
 		}
 	}
 
-	if err = ch.PrintObj(newStore); err != nil {
+	newStoreArray := []runtime.Object{newStore}
+
+	if err = ch.PrintObjs(newStoreArray); err != nil {
 		return err
 	}
 

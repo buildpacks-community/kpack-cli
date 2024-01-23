@@ -9,6 +9,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
 	"github.com/vmware-tanzu/kpack-cli/pkg/image"
@@ -139,7 +140,9 @@ func create(ctx context.Context, name, tag string, factory *image.Factory, ch *c
 		}
 	}
 
-	err = ch.PrintObj(img)
+	imgArray := []runtime.Object{img}
+
+	err = ch.PrintObjs(imgArray)
 	if err != nil {
 		return nil, err
 	}

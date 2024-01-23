@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
@@ -19,7 +20,7 @@ const (
 )
 
 type ObjectPrinter interface {
-	PrintObject(obj runtime.Object, w io.Writer) error
+	PrintObject(obj []runtime.Object, w io.Writer) error
 }
 
 func NewObjectPrinter(format string) (ObjectPrinter, error) {
@@ -37,43 +38,69 @@ type YAMLObjectPrinter struct {
 	printCount int
 }
 
-func (y *YAMLObjectPrinter) PrintObject(obj runtime.Object, w io.Writer) error {
-	data, err := json.Marshal(obj)
-	if err != nil {
-		return err
-	}
-	data, err = yaml.JSONToYAML(data)
-	if err != nil {
-		return err
-	}
+func (y *YAMLObjectPrinter) PrintObject(objs []runtime.Object, w io.Writer) error {
+	var data []byte
+	var err error
 
-	y.printCount++
-	if y.printCount > 1 {
-		_, err := w.Write([]byte("---\n"))
+	for _, obj := range objs {
+		data, err = json.Marshal(obj)
 		if err != nil {
 			return err
 		}
+		data, err = yaml.JSONToYAML(data)
+		if err != nil {
+			return err
+		}
+
+		y.printCount++
+
+		if y.printCount > 1 {
+			_, err := w.Write([]byte("---\n"))
+			if err != nil {
+				return err
+			}
+		}
+
+		_, err = w.Write(data)
 	}
 
-	_, err = w.Write(data)
 	return err
 }
 
 type JSONObjectPrinter struct{}
 
-func (j JSONObjectPrinter) PrintObject(obj runtime.Object, w io.Writer) error {
-	data, err := json.Marshal(obj)
-	if err != nil {
-		return err
+func (j JSONObjectPrinter) PrintObject(objs []runtime.Object, w io.Writer) error {
+	base := new(bytes.Buffer)
+
+	if len(objs) > 1 {
+		base.WriteRune('[')
 	}
 
-	var buf bytes.Buffer
-	err = json.Indent(&buf, data, "", "    ")
-	if err != nil {
-		return err
-	}
-	buf.WriteRune('\n')
+	for _, obj := range objs {
+		data, err := json.Marshal(obj)
+		if err != nil {
+			return err
+		}
 
-	_, err = w.Write(buf.Bytes())
+		var buf bytes.Buffer
+		err = json.Indent(&buf, data, "", "    ")
+		if err != nil {
+			return err
+		}
+		for _, jsonByte := range buf.Bytes() {
+			base.WriteByte(jsonByte)
+		}
+
+		if len(objs) > 1 {
+			base.WriteRune(',')
+		}
+	}
+	if len(objs) > 1 {
+		base.WriteRune(']')
+	}
+	base.WriteRune('\n')
+
+	sanitized := strings.Replace(base.String(), "},]", "}]", -1)
+	_, err := w.Write([]byte(sanitized))
 	return err
 }

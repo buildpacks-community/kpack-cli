@@ -999,7 +999,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
 		})
 
 		it("can output in json format", func() {
-			const resourceJSON = `{
+			const resourceJSON = `[{
     "kind": "ConfigMap",
     "apiVersion": "v1",
     "metadata": {
@@ -1013,8 +1013,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
     "data": {
         "image": "default-registry.io/default-repo@sha256:lifecycle-image-digest"
     }
-}
-{
+},{
     "kind": "ClusterStore",
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
@@ -1037,8 +1036,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
         }
     },
     "status": {}
-}
-{
+},{
     "kind": "ClusterStack",
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
@@ -1065,8 +1063,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
         "buildImage": {},
         "runImage": {}
     }
-}
-{
+},{
     "kind": "ClusterStack",
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
@@ -1093,8 +1090,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
         "buildImage": {},
         "runImage": {}
     }
-}
-{
+},{
     "kind": "ClusterBuilder",
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
@@ -1132,8 +1128,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
     "status": {
         "stack": {}
     }
-}
-{
+},{
     "kind": "ClusterBuilder",
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
@@ -1171,7 +1166,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
     "status": {
         "stack": {}
     }
-}
+}]
 `
 
 			testhelpers.CommandTest{

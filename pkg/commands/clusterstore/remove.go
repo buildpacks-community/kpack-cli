@@ -9,6 +9,7 @@ import (
 	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
@@ -77,7 +78,9 @@ kp clusterstore remove my-store -b buildpackage@1.0.0 -b other-buildpackage@2.0.
 				}
 			}
 
-			if err = ch.PrintObj(updatedStore); err != nil {
+			updatedStoreArray := []runtime.Object{updatedStore}
+
+			if err = ch.PrintObjs(updatedStoreArray); err != nil {
 				return err
 			}
 
