@@ -1,0 +1,23 @@
+name: Renovate
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+
+jobs:
+  renovate_main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v40.0.2
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+        env:
+          RENOVATE_REPOSITORIES: "buildpacks-community/kpack-cli"
+          RENOVATE_PLATFORM: github
+          RENOVATE_PRUNE_STALE_BRANCHES: false
+          RENOVATE_PR_HOURLY_LIMIT: 10
+          LOG_LEVEL: DEBUG
+          RENOVATE_ADD_LABELS: dependencies
