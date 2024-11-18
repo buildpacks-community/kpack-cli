@@ -5,7 +5,7 @@
 `amd64` and `arm64` binaries for both Linux and OSX can be installed through [Homebrew](https://github.com/buildpacks-community/homebrew-kpack-cli)
 
 ```
-brew tap vmware-tanzu/kpack-cli
+brew tap buildpacks-community/kpack-cli
 brew install kp
 ```
 
