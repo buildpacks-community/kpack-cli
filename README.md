@@ -9,7 +9,7 @@ brew tap vmware-tanzu/kpack-cli
 brew install kp
 ```
 
-You can also download the binary directly from [releases](https://github.com/vmware-tanzu/kpack-cli/releases)
+You can also download the binary directly from [releases](https://github.com/buildpacks-community/kpack-cli/releases)
 
 ## Contributing
 
