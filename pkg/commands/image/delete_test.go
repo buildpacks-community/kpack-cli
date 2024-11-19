@@ -14,8 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands/image"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands/image"
+	"github.com/buildpacks-community/kpack-cli/pkg/testhelpers"
 )
 
 func TestImageDeleteCommand(t *testing.T) {

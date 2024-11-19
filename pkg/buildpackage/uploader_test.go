@@ -13,7 +13,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry/fakes"
 )
 
 func TestBuildpackageUploader(t *testing.T) {

@@ -29,7 +29,7 @@ Service bindings may be provided by using the "--service-binding" flag.
 For each service binding, supply the "--service-binding" flag followed by the <KIND>:<APIVERSION>:<NAME> or just <NAME> which will default the kind to "Secret".
 For example, "--service-binding my-secret-1 --service-binding Secret:v1:my-secret-2 --service-binding CustomProvisionedService:v1beta1:my-ps
 
-Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md"
+Env vars can be used for registry auth as described in https://github.com/buildpacks-community/kpack-cli/blob/main/docs/auth.md"
 
 ```
 kp image create <name> --tag <tag> [flags]

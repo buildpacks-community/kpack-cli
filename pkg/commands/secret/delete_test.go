@@ -15,9 +15,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 
-	secretcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/secret"
-	"github.com/vmware-tanzu/kpack-cli/pkg/secret"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	secretcmds "github.com/buildpacks-community/kpack-cli/pkg/commands/secret"
+	"github.com/buildpacks-community/kpack-cli/pkg/secret"
+	"github.com/buildpacks-community/kpack-cli/pkg/testhelpers"
 )
 
 func TestSecretDeleteCommand(t *testing.T) {

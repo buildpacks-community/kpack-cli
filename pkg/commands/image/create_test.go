@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"testing"
 
-	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	registryfakes "github.com/buildpacks-community/kpack-cli/pkg/registry/fakes"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
@@ -23,11 +23,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	cmdFakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
-	imgcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/image"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	cmdFakes "github.com/buildpacks-community/kpack-cli/pkg/commands/fakes"
+	imgcmds "github.com/buildpacks-community/kpack-cli/pkg/commands/image"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
+	"github.com/buildpacks-community/kpack-cli/pkg/testhelpers"
 )
 
 func TestImageCreateCommand(t *testing.T) {

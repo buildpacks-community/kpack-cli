@@ -8,9 +8,9 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/config"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
-	"github.com/vmware-tanzu/kpack-cli/pkg/stackimage"
+	"github.com/buildpacks-community/kpack-cli/pkg/config"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
+	"github.com/buildpacks-community/kpack-cli/pkg/stackimage"
 )
 
 type Uploader interface {

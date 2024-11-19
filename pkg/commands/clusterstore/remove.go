@@ -6,15 +6,15 @@ package clusterstore
 import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/vmware-tanzu/kpack-cli/pkg/clusterstore"
+	"github.com/buildpacks-community/kpack-cli/pkg/clusterstore"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
 )
 
 func NewRemoveCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {

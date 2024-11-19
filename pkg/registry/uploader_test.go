@@ -10,8 +10,8 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry/fakes"
 )
 
 func TestUploader(t *testing.T) {

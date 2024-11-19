@@ -8,7 +8,7 @@ import (
 
 	"github.com/sclevine/spec"
 
-	cbcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuilder"
+	cbcmds "github.com/buildpacks-community/kpack-cli/pkg/commands/clusterbuilder"
 )
 
 func TestClusterBuilderSaveCommand(t *testing.T) {

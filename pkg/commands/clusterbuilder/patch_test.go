@@ -12,16 +12,16 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	cbcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuilder"
-	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	cbcmds "github.com/buildpacks-community/kpack-cli/pkg/commands/clusterbuilder"
+	commandsfakes "github.com/buildpacks-community/kpack-cli/pkg/commands/fakes"
+	"github.com/buildpacks-community/kpack-cli/pkg/testhelpers"
 )
 
 func TestClusterBuilderPatchCommand(t *testing.T) {

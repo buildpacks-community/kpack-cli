@@ -8,7 +8,7 @@ import (
 
 	"github.com/sclevine/spec"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands/buildpack"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands/buildpack"
 )
 
 func TestBuildpackSaveCommand(t *testing.T) {

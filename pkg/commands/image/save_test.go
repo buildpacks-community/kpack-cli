@@ -8,7 +8,7 @@ import (
 
 	"github.com/sclevine/spec"
 
-	imgcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/image"
+	imgcmds "github.com/buildpacks-community/kpack-cli/pkg/commands/image"
 )
 
 func TestImageSaveCommand(t *testing.T) {

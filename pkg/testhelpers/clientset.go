@@ -7,7 +7,7 @@ import (
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
 )
 
 type FakeClientSetProvider struct {

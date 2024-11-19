@@ -15,8 +15,8 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands/clusterstore"
+	"github.com/buildpacks-community/kpack-cli/pkg/testhelpers"
 )
 
 func TestClusterStoreListCommand(t *testing.T) {

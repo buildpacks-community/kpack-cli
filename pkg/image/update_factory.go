@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
+	"github.com/buildpacks-community/kpack-cli/pkg/dockercreds"
 )
 
 func (f *Factory) UpdateImage(img *v1alpha2.Image) (*v1alpha2.Image, error) {

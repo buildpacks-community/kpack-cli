@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/rootcommand"
+	"github.com/buildpacks-community/kpack-cli/pkg/rootcommand"
 )
 
 func main() {

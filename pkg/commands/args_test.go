@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
 )
 
 func TestExactArgsWithUsage(t *testing.T) {

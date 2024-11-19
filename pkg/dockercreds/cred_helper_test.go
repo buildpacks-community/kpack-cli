@@ -8,7 +8,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
+	"github.com/buildpacks-community/kpack-cli/pkg/dockercreds"
 )
 
 func TestCredHelper(t *testing.T) {

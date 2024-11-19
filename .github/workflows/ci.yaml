@@ -68,7 +68,7 @@ jobs:
           ARCH=$2
           echo "Building for $OS-$ARCH"
           GOOS=$OS CGO_ENABLED=0 GOARCH=$ARCH go build \
-          -ldflags "-X 'github.com/vmware-tanzu/kpack-cli/pkg/rootcommand.Version=${{ env.VERSION }}' -X 'github.com/vmware-tanzu/kpack-cli/pkg/rootcommand.CommitSHA=$(git rev-parse --short HEAD)'" \
+          -ldflags "-X 'github.com/buildpacks-community/kpack-cli/pkg/rootcommand.Version=${{ env.VERSION }}' -X 'github.com/buildpacks-community/kpack-cli/pkg/rootcommand.CommitSHA=$(git rev-parse --short HEAD)'" \
           -o kp-binaries/kp-$OS-$ARCH-${{ env.VERSION }} \
           ./cmd/kp
         }

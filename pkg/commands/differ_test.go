@@ -9,7 +9,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
 )
 
 func TestDiffer(t *testing.T) {

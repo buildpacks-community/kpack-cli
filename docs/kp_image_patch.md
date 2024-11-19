@@ -33,7 +33,7 @@ For example, "--service-binding my-secret-1 --service-binding CustomProvisionedS
 
 The --cache-size flag can only be used to increase the size of the existing cache.
 
-Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md
+Env vars can be used for registry auth as described in https://github.com/buildpacks-community/kpack-cli/blob/main/docs/auth.md
 
 
 ```

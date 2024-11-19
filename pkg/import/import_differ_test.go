@@ -14,13 +14,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
-	"github.com/vmware-tanzu/kpack-cli/pkg/config"
-	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands/fakes"
+	"github.com/buildpacks-community/kpack-cli/pkg/config"
+	importpkg "github.com/buildpacks-community/kpack-cli/pkg/import"
 
 	"github.com/sclevine/spec"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
 )
 
 func TestImportDiffer(t *testing.T) {

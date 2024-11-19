@@ -12,8 +12,8 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands/image"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands/image"
+	"github.com/buildpacks-community/kpack-cli/pkg/testhelpers"
 )
 
 func TestImageTrigger(t *testing.T) {

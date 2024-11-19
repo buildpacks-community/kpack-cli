@@ -12,7 +12,7 @@ import (
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/config"
+	"github.com/buildpacks-community/kpack-cli/pkg/config"
 )
 
 type RelocatedImageProvider interface {
