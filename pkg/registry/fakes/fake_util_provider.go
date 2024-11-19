@@ -6,7 +6,7 @@ package fakes
 import (
 	"io"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
 )
 
 type UtilProvider struct {

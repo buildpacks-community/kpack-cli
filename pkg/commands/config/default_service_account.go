@@ -4,9 +4,9 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	"github.com/vmware-tanzu/kpack-cli/pkg/config"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/config"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
 )
 
 func NewDefaultServiceAccountCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {

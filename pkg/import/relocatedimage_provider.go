@@ -6,8 +6,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/config"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
+	"github.com/buildpacks-community/kpack-cli/pkg/config"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
 )
 
 type DefaultRelocatedImageProvider struct {

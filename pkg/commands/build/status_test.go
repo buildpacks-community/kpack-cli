@@ -19,9 +19,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands/build"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands/build"
+	"github.com/buildpacks-community/kpack-cli/pkg/testhelpers"
 )
 
 func TestBuildStatusCommand(t *testing.T) {

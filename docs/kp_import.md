@@ -9,7 +9,7 @@ This operation will create or update clusterstores, clusterstacks, and clusterbu
 kp import will always attempt to upload the stack, store, and builder images, even if the resources have not changed.
 This can be used as a way to repair resources when registry images have been unexpectedly removed.
 
-Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md
+Env vars can be used for registry auth as described in https://github.com/buildpacks-community/kpack-cli/blob/main/docs/auth.md
 
 ```
 kp import -f <filename> [flags]

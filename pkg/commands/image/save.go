@@ -4,16 +4,16 @@
 package image
 
 import (
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/image"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/image"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
 )
 
 func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilProvider, newImageWaiter func(k8s.ClientSet) ImageWaiter) *cobra.Command {
@@ -55,7 +55,7 @@ Service bindings may be provided by using the "--service-binding" flag or delete
 For each service binding, supply the "--service-binding" flag followed by the <KIND>:<APIVERSION>:<NAME> or just <NAME> which will default the kind to "Secret".
 For example, "--service-binding my-secret-1 --service-binding CustomProvisionedService:v1beta1:my-ps --delete-service-binding Secret:v1:my-secret-2"
 
-Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md
+Env vars can be used for registry auth as described in https://github.com/buildpacks-community/kpack-cli/blob/main/docs/auth.md
 `,
 		Example: `kp image create my-image --tag my-registry.com/my-repo --git https://my-repo.com/my-app.git --git-revision my-branch
 kp image save my-image --tag my-registry.com/my-repo --blob https://my-blob-host.com/my-blob

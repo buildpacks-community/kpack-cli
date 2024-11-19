@@ -8,7 +8,7 @@ import (
 
 	"github.com/sclevine/spec"
 
-	buildercmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/builder"
+	buildercmds "github.com/buildpacks-community/kpack-cli/pkg/commands/builder"
 )
 
 func TestBuilderSaveCommand(t *testing.T) {

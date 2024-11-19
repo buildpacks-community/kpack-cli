@@ -6,7 +6,7 @@ import (
 	kpackfakes "github.com/pivotal/kpack/pkg/client/clientset/versioned/fake"
 	"github.com/sclevine/spec"
 	"github.com/spf13/cobra"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	"github.com/buildpacks-community/kpack-cli/pkg/testhelpers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

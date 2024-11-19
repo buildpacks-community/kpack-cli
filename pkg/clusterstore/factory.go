@@ -13,10 +13,10 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/buildpackage"
-	"github.com/vmware-tanzu/kpack-cli/pkg/config"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
+	"github.com/buildpacks-community/kpack-cli/pkg/buildpackage"
+	"github.com/buildpacks-community/kpack-cli/pkg/config"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
 )
 
 type BuildpackageUploader interface {

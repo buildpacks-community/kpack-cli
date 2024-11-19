@@ -10,7 +10,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
 
-	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
+	importpkg "github.com/buildpacks-community/kpack-cli/pkg/import"
 )
 
 func TestDescriptorV1(t *testing.T) {

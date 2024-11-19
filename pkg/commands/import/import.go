@@ -11,12 +11,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	"github.com/vmware-tanzu/kpack-cli/pkg/config"
-	"github.com/vmware-tanzu/kpack-cli/pkg/dockercreds"
-	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/config"
+	"github.com/buildpacks-community/kpack-cli/pkg/dockercreds"
+	importpkg "github.com/buildpacks-community/kpack-cli/pkg/import"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
 )
 
 type ConfirmationProvider interface {
@@ -56,7 +56,7 @@ func NewImportCommand(
 kp import will always attempt to upload the stack, store, and builder images, even if the resources have not changed.
 This can be used as a way to repair resources when registry images have been unexpectedly removed.
 
-Env vars can be used for registry auth as described in https://github.com/vmware-tanzu/kpack-cli/blob/main/docs/auth.md`,
+Env vars can be used for registry auth as described in https://github.com/buildpacks-community/kpack-cli/blob/main/docs/auth.md`,
 		Example: `kp import -f dependencies.yaml
 cat dependencies.yaml | kp import -f -`,
 		SilenceUsage: true,

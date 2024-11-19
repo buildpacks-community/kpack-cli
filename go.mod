@@ -1,4 +1,4 @@
-module github.com/vmware-tanzu/kpack-cli
+module github.com/buildpacks-community/kpack-cli
 
 go 1.20
 
