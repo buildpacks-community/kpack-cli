@@ -1,4 +1,4 @@
-# kp cli to interact with [kpack](https://github.com/pivotal/kpack)
+# kp cli to interact with [kpack](https://github.com/buildpacks-community/kpack)
 
 ## Installation
 

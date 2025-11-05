@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/kpackcompat"
+	"github.com/buildpacks-community/kpack-cli/pkg/kpackcompat"
 )
 
 type ClientSet struct {

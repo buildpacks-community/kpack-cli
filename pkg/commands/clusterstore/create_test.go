@@ -18,13 +18,13 @@ import (
 	"k8s.io/client-go/dynamic"
 	k8sfakes "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	storecmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
-	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
-	registryfakes "github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	storecmds "github.com/buildpacks-community/kpack-cli/pkg/commands/clusterstore"
+	commandsfakes "github.com/buildpacks-community/kpack-cli/pkg/commands/fakes"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
+	registryfakes "github.com/buildpacks-community/kpack-cli/pkg/registry/fakes"
+	"github.com/buildpacks-community/kpack-cli/pkg/testhelpers"
 )
 
 func TestClusterStoreCreateCommand(t *testing.T) {

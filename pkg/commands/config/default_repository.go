@@ -3,9 +3,9 @@ package config
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	"github.com/vmware-tanzu/kpack-cli/pkg/config"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/config"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
 )
 
 func NewDefaultRepositoryCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {

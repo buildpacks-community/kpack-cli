@@ -17,11 +17,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	buildercmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/builder"
-	commandsfakes "github.com/vmware-tanzu/kpack-cli/pkg/commands/fakes"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
-	"github.com/vmware-tanzu/kpack-cli/pkg/testhelpers"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	buildercmds "github.com/buildpacks-community/kpack-cli/pkg/commands/builder"
+	commandsfakes "github.com/buildpacks-community/kpack-cli/pkg/commands/fakes"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/testhelpers"
 )
 
 func TestBuilderPatchCommand(t *testing.T) {

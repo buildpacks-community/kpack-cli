@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/kpackcompat"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry"
+	"github.com/buildpacks-community/kpack-cli/pkg/kpackcompat"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
 )
 
 const (

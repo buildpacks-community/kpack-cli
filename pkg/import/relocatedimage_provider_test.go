@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/config"
-	"github.com/vmware-tanzu/kpack-cli/pkg/registry/fakes"
+	"github.com/buildpacks-community/kpack-cli/pkg/config"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry/fakes"
 )
 
 func TestRelocatedImageProvider(t *testing.T) {
