@@ -1,6 +1,6 @@
 module github.com/buildpacks-community/kpack-cli
 
-go 1.24.0
+go 1.24.10
 
 require (
 	github.com/aryann/difflib v0.0.0-20170710044230-e206f873d14a
