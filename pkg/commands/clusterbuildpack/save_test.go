@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/sclevine/spec"
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuildpack"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands/clusterbuildpack"
 )
 
 func TestClusterBuildpackSaveCommand(t *testing.T) {

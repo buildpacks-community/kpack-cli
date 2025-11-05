@@ -8,7 +8,7 @@ import (
 
 	"github.com/sclevine/spec"
 
-	clusterstackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstack"
+	clusterstackcmds "github.com/buildpacks-community/kpack-cli/pkg/commands/clusterstack"
 )
 
 func TestSaveCommand(t *testing.T) {

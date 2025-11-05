@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/sclevine/spec"
-	storecmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
+	storecmds "github.com/buildpacks-community/kpack-cli/pkg/commands/clusterstore"
 )
 
 func TestClusterStoreSaveCommand(t *testing.T) {

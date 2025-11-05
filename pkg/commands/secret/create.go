@@ -12,9 +12,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
-	"github.com/vmware-tanzu/kpack-cli/pkg/secret"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/secret"
 )
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, secretFactory *secret.Factory) *cobra.Command {

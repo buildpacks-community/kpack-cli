@@ -1,6 +1,6 @@
-module github.com/vmware-tanzu/kpack-cli
+module github.com/buildpacks-community/kpack-cli
 
-go 1.20
+go 1.24.0
 
 require (
 	github.com/aryann/difflib v0.0.0-20170710044230-e206f873d14a

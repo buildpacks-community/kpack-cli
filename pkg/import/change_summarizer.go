@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/config"
-	buildk8s "github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/config"
+	buildk8s "github.com/buildpacks-community/kpack-cli/pkg/k8s"
 )
 
 func SummarizeChange(

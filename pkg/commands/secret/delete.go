@@ -11,8 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands"
-	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
 )
 
 func NewDeleteCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
