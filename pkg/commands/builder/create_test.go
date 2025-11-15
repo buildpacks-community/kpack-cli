@@ -401,7 +401,7 @@ status:
 							"--buildpack", "some-buildpack-name",
 						},
 						ExpectErr: true,
-						ExpectedErrorOutput: `Error: cannot use --order and --buildpack together
+						ExpectedErrorOutput: `Error: only one of --order, --buildpack, or --order-from can be specified
 `,
 					}.TestKpack(t, cmdFunc)
 				})
