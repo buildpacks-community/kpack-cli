@@ -17,7 +17,9 @@ import (
 
 	"github.com/buildpacks-community/kpack-cli/pkg/builder"
 	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/dockercreds"
 	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
 )
 
 const (
@@ -27,7 +29,8 @@ const (
 
 func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
-		flags CommandFlags
+		flags     CommandFlags
+		tlsConfig registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -36,12 +39,13 @@ func NewCreateCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dy
 		Long: `Create a builder by providing command line arguments.
 The builder will be created only if it does not exist in the provided namespace.
 
-A buildpack order must be provided with either the path to an order yaml or via the --buildpack flag.
-Multiple buildpacks provided via the --buildpack flag will be added to the same order group. 
+A buildpack order must be provided with either the path to an order yaml, via the --buildpack flag, or extracted from a builder image using --order-from.
+Multiple buildpacks provided via the --buildpack flag will be added to the same order group.
 
 The namespace defaults to the kubernetes current-context namespace.`,
 		Example: `kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml --stack tiny --store my-store
 kp builder create my-builder --tag my-registry.com/my-builder-tag --order /path/to/order.yaml
+kp builder create my-builder --tag my-registry.com/my-builder-tag --order-from paketobuildpacks/builder-jammy-base --stack tiny --store my-store
 kp builder create my-builder --tag my-registry.com/my-builder-tag --buildpack my-buildpack-id --buildpack my-other-buildpack@1.0.1`,
 		Args:         commands.ExactArgsWithUsage(1),
 		SilenceUsage: true,
@@ -60,7 +64,8 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --buildpack my
 			flags.namespace = cs.Namespace
 
 			ctx := cmd.Context()
-			return create(ctx, name, flags, ch, cs, newWaiter(cs.DynamicClient))
+			fetcher := registry.NewDefaultFetcher(tlsConfig)
+			return create(ctx, name, flags, ch, cs, fetcher, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -70,8 +75,10 @@ kp builder create my-builder --tag my-registry.com/my-builder-tag --buildpack my
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'\n  repeat for each buildpack in order, or supply once with comma-separated list")
+	cmd.Flags().StringVar(&flags.orderFrom, "order-from", "", "builder image to extract buildpack order from")
 	cmd.Flags().StringVar(&flags.serviceAccount, "service-account", defaultServiceAccount, "service account name to use")
 	commands.SetDryRunOutputFlags(cmd)
+	commands.SetTLSFlags(cmd, &tlsConfig)
 	_ = cmd.MarkFlagRequired("tag")
 	return cmd
 }
@@ -83,10 +90,11 @@ type CommandFlags struct {
 	store          string
 	order          string
 	buildpacks     []string
+	orderFrom      string
 	serviceAccount string
 }
 
-func create(ctx context.Context, name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) (err error) {
+func create(ctx context.Context, name string, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, fetcher builder.Fetcher, w commands.ResourceWaiter) (err error) {
 	bldr := &v1alpha2.Builder{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       v1alpha2.BuilderKind,
@@ -109,25 +117,41 @@ func create(ctx context.Context, name string, flags CommandFlags, ch *commands.C
 		},
 	}
 
-	if len(flags.buildpacks) > 0 && flags.order != "" {
-		return fmt.Errorf("cannot use --order and --buildpack together")
+	// Validate that only one order source is provided
+	orderSourceCount := 0
+	if len(flags.buildpacks) > 0 {
+		orderSourceCount++
+	}
+	if flags.order != "" {
+		orderSourceCount++
+	}
+	if flags.orderFrom != "" {
+		orderSourceCount++
+	}
+	if orderSourceCount > 1 {
+		return fmt.Errorf("only one of --order, --buildpack, or --order-from can be specified")
 	}
 
+	// Set the order based on the provided flag
 	if len(flags.buildpacks) > 0 {
 		bldr.Spec.Order = builder.CreateOrder(flags.buildpacks)
+	} else if flags.order != "" {
+		bldr.Spec.Order, err = builder.ReadOrder(flags.order)
+		if err != nil {
+			return err
+		}
+	} else if flags.orderFrom != "" {
+		keychain := dockercreds.DefaultKeychain
+		bldr.Spec.Order, err = builder.ReadOrderFromImage(keychain, fetcher, flags.orderFrom)
+		if err != nil {
+			return err
+		}
 	}
 
 	if flags.store != "" {
 		bldr.Spec.Store = corev1.ObjectReference{
 			Name: flags.store,
 			Kind: v1alpha2.ClusterStoreKind,
-		}
-	}
-
-	if flags.order != "" {
-		bldr.Spec.Order, err = builder.ReadOrder(flags.order)
-		if err != nil {
-			return err
 		}
 	}
 

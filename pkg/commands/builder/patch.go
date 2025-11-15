@@ -16,12 +16,15 @@ import (
 
 	"github.com/buildpacks-community/kpack-cli/pkg/builder"
 	"github.com/buildpacks-community/kpack-cli/pkg/commands"
+	"github.com/buildpacks-community/kpack-cli/pkg/dockercreds"
 	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
 )
 
 func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
-		flags CommandFlags
+		flags     CommandFlags
+		tlsConfig registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -59,7 +62,8 @@ kp builder patch my-builder --buildpack my-buildpack-id --buildpack my-other-bui
 				return err
 			}
 
-			return patch(ctx, cb, flags, ch, cs, newWaiter(cs.DynamicClient))
+			fetcher := registry.NewDefaultFetcher(tlsConfig)
+			return patch(ctx, cb, flags, ch, cs, fetcher, newWaiter(cs.DynamicClient))
 		},
 	}
 
@@ -69,12 +73,14 @@ kp builder patch my-builder --buildpack my-buildpack-id --buildpack my-other-bui
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'\n  repeat for each buildpack in order, or supply once with comma-separated list")
+	cmd.Flags().StringVar(&flags.orderFrom, "order-from", "", "builder image to extract buildpack order from")
 	cmd.Flags().StringVar(&flags.serviceAccount, "service-account", "", "service account name to use")
 	commands.SetDryRunOutputFlags(cmd)
+	commands.SetTLSFlags(cmd, &tlsConfig)
 	return cmd
 }
 
-func patch(ctx context.Context, bldr *v1alpha2.Builder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, w commands.ResourceWaiter) error {
+func patch(ctx context.Context, bldr *v1alpha2.Builder, flags CommandFlags, ch *commands.CommandHelper, cs k8s.ClientSet, fetcher builder.Fetcher, w commands.ResourceWaiter) error {
 	updatedBldr := bldr.DeepCopy()
 
 	if flags.tag != "" {
@@ -93,10 +99,23 @@ func patch(ctx context.Context, bldr *v1alpha2.Builder, flags CommandFlags, ch *
 		updatedBldr.Spec.ServiceAccountName = flags.serviceAccount
 	}
 
-	if len(flags.buildpacks) > 0 && flags.order != "" {
-		return fmt.Errorf("cannot use --order and --buildpack together")
+	// Validate that only one order source is provided
+	orderSourceCount := 0
+	if len(flags.buildpacks) > 0 {
+		orderSourceCount++
+	}
+	if flags.order != "" {
+		orderSourceCount++
+	}
+	if flags.orderFrom != "" {
+		orderSourceCount++
+	}
+	if orderSourceCount > 1 {
+		return fmt.Errorf("only one of --order, --buildpack, or --order-from can be specified")
 	}
 
+	// Set the order based on the provided flag
+	var err error
 	if flags.order != "" {
 		orderEntries, err := builder.ReadOrder(flags.order)
 		if err != nil {
@@ -104,10 +123,14 @@ func patch(ctx context.Context, bldr *v1alpha2.Builder, flags CommandFlags, ch *
 		}
 
 		updatedBldr.Spec.Order = orderEntries
-	}
-
-	if len(flags.buildpacks) > 0 {
+	} else if len(flags.buildpacks) > 0 {
 		updatedBldr.Spec.Order = builder.CreateOrder(flags.buildpacks)
+	} else if flags.orderFrom != "" {
+		keychain := dockercreds.DefaultKeychain
+		updatedBldr.Spec.Order, err = builder.ReadOrderFromImage(keychain, fetcher, flags.orderFrom)
+		if err != nil {
+			return err
+		}
 	}
 
 	patch, err := k8s.CreatePatch(bldr, updatedBldr)
