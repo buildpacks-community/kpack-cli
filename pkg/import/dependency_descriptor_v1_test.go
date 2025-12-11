@@ -4,13 +4,12 @@
 package _import_test
 
 import (
+	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 	"testing"
 
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
-
-	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 )
 
 func TestDescriptorV1(t *testing.T) {

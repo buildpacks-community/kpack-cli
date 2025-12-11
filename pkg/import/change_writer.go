@@ -12,7 +12,6 @@ import (
 
 	"github.com/vmware-tanzu/kpack-cli/pkg/config"
 	buildk8s "github.com/vmware-tanzu/kpack-cli/pkg/k8s"
-	"github.com/vmware-tanzu/kpack-cli/pkg/lifecycle"
 )
 
 type changeWriter interface {
@@ -20,26 +19,26 @@ type changeWriter interface {
 	writeChange(header string)
 }
 
-func writeLifecycleChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, newLifecycle Lifecycle, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
-	if newLifecycle.Image != "" {
-		oldImg, err := lifecycle.GetImage(ctx, cs.K8sClient)
-		if err != nil {
-			return err
-		}
-
-		diff, err := differ.DiffLifecycle(keychain, kpConfig, oldImg, newLifecycle.Image)
-		if err != nil {
-			return err
-		}
-
-		if err = cw.writeDiff(diff); err != nil {
-			return err
-		}
-	}
-
-	cw.writeChange("Lifecycle")
-	return nil
-}
+// func writeLifecycleChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, newLifecycle Lifecycle, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
+// 	if newLifecycle.Image != "" {
+// 		oldImg, err := lifecycle.GetImage(ctx, cs.K8sClient)
+// 		if err != nil {
+// 			return err
+// 		}
+//
+// 		diff, err := differ.DiffLifecycle(keychain, kpConfig, oldImg, newLifecycle.Image)
+// 		if err != nil {
+// 			return err
+// 		}
+//
+// 		if err = cw.writeDiff(diff); err != nil {
+// 			return err
+// 		}
+// 	}
+//
+// 	cw.writeChange("Lifecycle")
+// 	return nil
+// }
 
 func writeClusterStoresChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, stores []ClusterStore, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
 	for _, store := range stores {

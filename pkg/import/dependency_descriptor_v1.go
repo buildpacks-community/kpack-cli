@@ -27,8 +27,8 @@ type ClusterBuilderV1 struct {
 	Order []corev1alpha1.OrderEntry `yaml:"order"`
 }
 
-func (d1 DependencyDescriptorV1) ToNextVersion() DependencyDescriptor {
-	var d DependencyDescriptor
+func (d1 DependencyDescriptorV1) ToNextVersion() DependencyDescriptorV3 {
+	var d DependencyDescriptorV3
 	d.APIVersion = d1.APIVersion
 	d.Kind = d1.Kind
 	d.DefaultClusterStack = d1.DefaultStack

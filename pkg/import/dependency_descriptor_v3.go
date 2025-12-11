@@ -9,25 +9,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-const CurrentAPIVersion = "kp.kpack.io/v1alpha4"
-
-type API struct {
-	Version string `yaml:"apiVersion" json:"apiVersion"`
-}
-
-type DependencyDescriptor struct {
-	APIVersion            string             `yaml:"apiVersion" json:"apiVersion"`
-	Kind                  string             `yaml:"kind" json:"kind"`
-	DefaultClusterStack   string             `yaml:"defaultClusterStack" json:"defaultClusterStack"`
-	DefaultClusterBuilder string             `yaml:"defaultClusterBuilder" json:"defaultClusterBuilder"`
-	Lifecycle             Lifecycle          `yaml:"lifecycle" json:"lifecycle"`
-	ClusterBuildpacks     []ClusterBuildpack `yaml:"clusterBuildpacks" json:"clusterBuildpackss"`
-	ClusterStacks         []ClusterStack     `yaml:"clusterStacks" json:"clusterStacks"`
-	ClusterBuilders       []ClusterBuilder   `yaml:"clusterBuilders" json:"clusterBuilders"`
-}
-
-type Source struct {
-	Image string `yaml:"image"`
+type DependencyDescriptorV3 struct {
+	APIVersion            string           `yaml:"apiVersion" json:"apiVersion"`
+	Kind                  string           `yaml:"kind" json:"kind"`
+	DefaultClusterStack   string           `yaml:"defaultClusterStack" json:"defaultClusterStack"`
+	DefaultClusterBuilder string           `yaml:"defaultClusterBuilder" json:"defaultClusterBuilder"`
+	Lifecycle             Lifecycle        `yaml:"lifecycle" json:"lifecycle"`
+	ClusterStores         []ClusterStore   `yaml:"clusterStores" json:"clusterStores"`
+	ClusterStacks         []ClusterStack   `yaml:"clusterStacks" json:"clusterStacks"`
+	ClusterBuilders       []ClusterBuilder `yaml:"clusterBuilders" json:"clusterBuilders"`
 }
 
 type Lifecycle Source
@@ -35,19 +25,6 @@ type Lifecycle Source
 type ClusterStore struct {
 	Name    string   `yaml:"name" json:"name"`
 	Sources []Source `yaml:"sources" json:"sources"`
-}
-
-type ClusterStack struct {
-	Name       string `yaml:"name" json:"name"`
-	BuildImage Source `yaml:"buildImage" json:"buildImage"`
-	RunImage   Source `yaml:"runImage" json:"runImage"`
-}
-
-type ClusterBuilder struct {
-	Name         string                       `yaml:"name" json:"name"`
-	ClusterStack string                       `yaml:"clusterStack" json:"clusterStack"`
-	ClusterStore string                       `yaml:"clusterStore" json:"clusterStore"`
-	Order        []v1alpha2.BuilderOrderEntry `yaml:"order" json:"order"`
 }
 
 func (d DependencyDescriptorV3) Validate() error {

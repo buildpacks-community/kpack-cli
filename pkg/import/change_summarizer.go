@@ -17,7 +17,7 @@ import (
 func SummarizeChange(
 	ctx context.Context,
 	keychain authn.Keychain,
-	desc DependencyDescriptor,
+	desc DependencyDescriptorV3,
 	kpConfig config.KpConfig,
 	relocatedImageProvider RelocatedImageProvider,
 	differ Differ, cs buildk8s.ClientSet) (hasChanges bool, changes string, err error) {
@@ -28,10 +28,10 @@ func SummarizeChange(
 		RelocatedImageProvider: relocatedImageProvider,
 	}
 
-	err = writeLifecycleChange(ctx, keychain, kpConfig, desc.Lifecycle, iDiffer, cs, &summarizer)
-	if err != nil {
-		return
-	}
+	// err = writeLifecycleChange(ctx, keychain, kpConfig, desc.Lifecycle, iDiffer, cs, &summarizer)
+	// if err != nil {
+	// 	return
+	// }
 
 	err = writeClusterStoresChange(ctx, keychain, kpConfig, desc.ClusterStores, iDiffer, cs, &summarizer)
 	if err != nil {
