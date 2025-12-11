@@ -4,14 +4,13 @@
 package _import_test
 
 import (
+	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 	"testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/require"
-
-	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 )
 
 func TestDescriptor(t *testing.T) {
@@ -19,7 +18,7 @@ func TestDescriptor(t *testing.T) {
 }
 
 func testDescriptor(t *testing.T, when spec.G, it spec.S) {
-	desc := importpkg.DependencyDescriptor{
+	desc := importpkg.DependencyDescriptorV3{
 		DefaultClusterStack:   "some-stack",
 		DefaultClusterBuilder: "some-cb",
 		ClusterStores: []importpkg.ClusterStore{

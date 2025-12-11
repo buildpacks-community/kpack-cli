@@ -13,12 +13,12 @@ import (
 	buildpackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/buildpack"
 	clusterbuildercmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuilder"
 	clusterbuildpackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterbuildpack"
+	"github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterlifecycle"
 	clusterstackcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstack"
 	clusterstorecmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/clusterstore"
 	configcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/config"
 	imgcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/image"
 	importcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/import"
-	"github.com/vmware-tanzu/kpack-cli/pkg/commands/lifecycle"
 	secretcmds "github.com/vmware-tanzu/kpack-cli/pkg/commands/secret"
 	importpkg "github.com/vmware-tanzu/kpack-cli/pkg/import"
 	"github.com/vmware-tanzu/kpack-cli/pkg/k8s"
@@ -235,11 +235,16 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 
 func getLifecycleCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	lifecycleRootCommand := &cobra.Command{
-		Use:   "lifecycle",
-		Short: "Lifecycle Commands",
+		Use:   "clusterlifecycle",
+		Short: "ClusterLifecycle Commands",
 	}
 	lifecycleRootCommand.AddCommand(
-		lifecycle.NewUpdateCommand(clientSetProvider, registry.DefaultUtilProvider{}),
+		clusterlifecycle.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterlifecycle.NewPatchCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterlifecycle.NewSaveCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterlifecycle.NewListCommand(clientSetProvider),
+		clusterlifecycle.NewStatusCommand(clientSetProvider),
+		clusterlifecycle.NewDeleteCommand(clientSetProvider),
 	)
 	return lifecycleRootCommand
 }

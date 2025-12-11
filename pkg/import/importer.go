@@ -67,30 +67,30 @@ func NewImporter(printer Printer, k8sClient kubernetes.Interface, client version
 	}
 }
 
-func (i *Importer) ReadDescriptor(rawDescriptor string) (DependencyDescriptor, error) {
+func (i *Importer) ReadDescriptor(rawDescriptor string) (DependencyDescriptorV3, error) {
 	var api API
 	if err := yaml.Unmarshal([]byte(rawDescriptor), &api); err != nil {
-		return DependencyDescriptor{}, err
+		return DependencyDescriptorV3{}, err
 	}
 
-	var descriptor DependencyDescriptor
+	var descriptor DependencyDescriptorV3
 	switch api.Version {
 	case APIVersionV1:
 		var d1 DependencyDescriptorV1
 		if err := yaml.Unmarshal([]byte(rawDescriptor), &d1); err != nil {
-			return DependencyDescriptor{}, err
+			return DependencyDescriptorV3{}, err
 		}
 		descriptor = d1.ToNextVersion()
 	case CurrentAPIVersion:
 		if err := yaml.Unmarshal([]byte(rawDescriptor), &descriptor); err != nil {
-			return DependencyDescriptor{}, err
+			return DependencyDescriptorV3{}, err
 		}
 	default:
-		return DependencyDescriptor{}, errors.Errorf("did not find expected apiVersion, must be one of: %s", []string{APIVersionV1, CurrentAPIVersion})
+		return DependencyDescriptorV3{}, errors.Errorf("did not find expected apiVersion, must be one of: %s", []string{APIVersionV1, CurrentAPIVersion})
 	}
 
 	if err := descriptor.Validate(); err != nil {
-		return DependencyDescriptor{}, err
+		return DependencyDescriptorV3{}, err
 	}
 
 	return descriptor, nil
@@ -156,7 +156,7 @@ func (i *Importer) ImportDescriptorDryRun(ctx context.Context, keychain authn.Ke
 	return objects, nil
 }
 
-func (i *Importer) relocateDescriptor(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, ts string, descriptor DependencyDescriptor) (relocatedDescriptor, []runtime.Object, error) {
+func (i *Importer) relocateDescriptor(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, ts string, descriptor DependencyDescriptorV3) (relocatedDescriptor, []runtime.Object, error) {
 	var (
 		updatedLifecycle *corev1.ConfigMap
 		err              error
