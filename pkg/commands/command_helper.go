@@ -244,13 +244,14 @@ func getTypeToGVKLookup() map[reflect.Type]schema.GroupVersionKind {
 	buildGV := schema.GroupVersion{Group: build.GroupName, Version: kpackcompat.LatestKpackAPIVersion}
 
 	return map[reflect.Type]schema.GroupVersionKind{
-		reflect.TypeOf(&v1.Secret{}):               v1GV.WithKind("Secret"),
-		reflect.TypeOf(&v1.ServiceAccount{}):       v1GV.WithKind("ServiceAccount"),
-		reflect.TypeOf(&v1.ConfigMap{}):            v1GV.WithKind("ConfigMap"),
-		reflect.TypeOf(&v1alpha2.Image{}):          buildGV.WithKind("Image"),
-		reflect.TypeOf(&v1alpha2.Builder{}):        buildGV.WithKind(v1alpha2.BuilderKind),
-		reflect.TypeOf(&v1alpha2.ClusterStack{}):   buildGV.WithKind(v1alpha2.ClusterStackKind),
-		reflect.TypeOf(&v1alpha2.ClusterStore{}):   buildGV.WithKind(v1alpha2.ClusterStoreKind),
-		reflect.TypeOf(&v1alpha2.ClusterBuilder{}): buildGV.WithKind(v1alpha2.ClusterBuilderKind),
+		reflect.TypeOf(&v1.Secret{}):                 v1GV.WithKind("Secret"),
+		reflect.TypeOf(&v1.ServiceAccount{}):         v1GV.WithKind("ServiceAccount"),
+		reflect.TypeOf(&v1.ConfigMap{}):              v1GV.WithKind("ConfigMap"),
+		reflect.TypeOf(&v1alpha2.Image{}):            buildGV.WithKind("Image"),
+		reflect.TypeOf(&v1alpha2.Builder{}):          buildGV.WithKind(v1alpha2.BuilderKind),
+		reflect.TypeOf(&v1alpha2.ClusterStack{}):     buildGV.WithKind(v1alpha2.ClusterStackKind),
+		reflect.TypeOf(&v1alpha2.ClusterStore{}):     buildGV.WithKind(v1alpha2.ClusterStoreKind),
+		reflect.TypeOf(&v1alpha2.ClusterBuilder{}):   buildGV.WithKind(v1alpha2.ClusterBuilderKind),
+		reflect.TypeOf(&v1alpha2.ClusterLifecycle{}): buildGV.WithKind(v1alpha2.ClusterLifecycleKind),
 	}
 }
