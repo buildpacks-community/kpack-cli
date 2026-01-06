@@ -202,6 +202,7 @@ metadata:
   name: test-builder
   namespace: some-namespace
 spec:
+  lifecycle: {}
   order:
   - group:
     - id: org.cloudfoundry.test-bp
@@ -216,6 +217,16 @@ spec:
     name: some-other-store
   tag: some-other-tag
 status:
+  lifecycle:
+    api: {}
+    apis:
+      buildpack:
+        deprecated: null
+        supported: null
+      platform:
+        deprecated: null
+        supported: null
+    image: {}
   stack: {}
 `
 
@@ -254,6 +265,7 @@ status:
             "kind": "ClusterStack",
             "name": "some-other-stack"
         },
+        "lifecycle": {},
         "store": {
             "kind": "ClusterStore",
             "name": "some-other-store"
@@ -277,7 +289,21 @@ status:
         "serviceAccountName": "default"
     },
     "status": {
-        "stack": {}
+        "stack": {},
+        "lifecycle": {
+            "image": {},
+            "api": {},
+            "apis": {
+                "buildpack": {
+                    "deprecated": null,
+                    "supported": null
+                },
+                "platform": {
+                    "deprecated": null,
+                    "supported": null
+                }
+            }
+        }
     }
 }
 `
@@ -311,6 +337,7 @@ metadata:
   name: test-builder
   namespace: some-namespace
 spec:
+  lifecycle: {}
   order:
   - group:
     - id: org.cloudfoundry.nodejs
@@ -325,6 +352,16 @@ spec:
     name: some-store
   tag: some-registry.com/test-builder
 status:
+  lifecycle:
+    api: {}
+    apis:
+      buildpack:
+        deprecated: null
+        supported: null
+      platform:
+        deprecated: null
+        supported: null
+    image: {}
   stack: {}
 `
 
@@ -390,6 +427,7 @@ metadata:
   name: test-builder
   namespace: some-namespace
 spec:
+  lifecycle: {}
   order:
   - group:
     - id: org.cloudfoundry.test-bp
@@ -404,6 +442,16 @@ spec:
     name: some-other-store
   tag: some-other-tag
 status:
+  lifecycle:
+    api: {}
+    apis:
+      buildpack:
+        deprecated: null
+        supported: null
+      platform:
+        deprecated: null
+        supported: null
+    image: {}
   stack: {}
 `
 

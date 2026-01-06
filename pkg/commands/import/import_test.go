@@ -250,8 +250,8 @@ func testImportCommand(t *testing.T, when spec.G, it spec.S) {
 
 	when("there are no stores, stacks, or cbs", func() {
 		it("creates stores, stacks, and cbs defined in the dependency descriptor", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
 
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
@@ -296,8 +296,8 @@ Imported resources
 		})
 
 		it("creates stores, stacks, and cbs defined in the dependency descriptor provided by stdin", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
 
 			descriptor, err := ioutil.ReadFile("./testdata/deps.yaml")
 			require.NoError(t, err)
@@ -346,8 +346,8 @@ Imported resources
 		})
 
 		it("creates stores, stacks, and cbs defined in the dependency descriptor for version 1", func() {
-			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
+			defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
 
 			testhelpers.CommandTest{
 				Objects: []runtime.Object{
@@ -385,8 +385,8 @@ Imported resources
 
 		when("the show changes flag is used", func() {
 			it("shows a summary of changes for each resource", func() {
-				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
+				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
 
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
@@ -451,8 +451,8 @@ Imported resources
 			})
 
 			it("skips confirmation when the force flag is used", func() {
-				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
+				defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
 
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
@@ -546,8 +546,8 @@ Imported resources
 			fakeDiffer.DiffResult = ""
 
 			it("updates the import timestamp and uses descriptive confirm message", func() {
-				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
+				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
 
 				stack.Spec.BuildImage.Image = "some-uploaded-build-image@build-image-digest"
 				stack.Spec.RunImage.Image = "some-uploaded-run-image@build-image-digest"
@@ -589,8 +589,8 @@ Imported resources
 						`{"data":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}}}`,
 						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}}}`,
 						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}},"spec":{"buildImage":{"image":"default-registry.io/default-repo@sha256:build-image-digest"},"runImage":{"image":"default-registry.io/default-repo@sha256:build-image-digest"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}}}`,
+						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"lifecycle\":{},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{},\"lifecycle\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}}"}}}`,
+						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"lifecycle\":{},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{},\"lifecycle\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}}"}}}`,
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 				require.Len(t, fakeWaiter.WaitCalls, 5)
@@ -608,8 +608,8 @@ Imported resources
 
 				expectedLifecycleImageConfig.Annotations = map[string]string{importTimestampKey: newTimestamp}
 				expectedStore.Annotations = map[string]string{importTimestampKey: newTimestamp}
-				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+				expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
+				expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
 
 				testhelpers.CommandTest{
 					Objects: []runtime.Object{
@@ -644,8 +644,8 @@ Imported resources
 					ExpectPatches: []string{
 						`{"data":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}}}`,
 						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}}}`,
+						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"lifecycle\":{},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{},\"lifecycle\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}}"}}}`,
+						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"lifecycle\":{},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{},\"lifecycle\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}}"}}}`,
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -708,8 +708,8 @@ Imported resources
 				},
 			}
 
-			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"another-buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-			expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"another-buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+			expectedBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"another-buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
+			expectedDefaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"another-buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
 
 			it("creates stores, stacks, and cbs defined in the dependency descriptor and updates the timestamp", func() {
 				testhelpers.CommandTest{
@@ -743,11 +743,11 @@ Importing ClusterBuilder 'default'...
 Imported resources
 `,
 					ExpectPatches: []string{
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"another-buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}},"spec":{"order":[{"group":[{"id":"another-buildpack-id"}]}]}}`,
+						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"lifecycle\":{},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"another-buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{},\"lifecycle\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}}"}},"spec":{"order":[{"group":[{"id":"another-buildpack-id"}]}]}}`,
 						`{"data":{"image":"default-registry.io/default-repo@sha256:another-lifecycle-image-digest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}}}`,
 						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}},"spec":{"sources":[{"image":"default-registry.io/default-repo@sha256:buildpack-image-digest"},{"image":"default-registry.io/default-repo@sha256:another-buildpack-image-digest"}]}}`,
 						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp"}},"spec":{"buildImage":{"image":"default-registry.io/default-repo@sha256:another-build-image-digest"},"id":"another-stack-id","runImage":{"image":"default-registry.io/default-repo@sha256:another-run-image-digest"}}}`,
-						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"another-buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"}},"spec":{"order":[{"group":[{"id":"another-buildpack-id"}]}]}}`,
+						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"new-timestamp","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"lifecycle\":{},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"another-buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{},\"lifecycle\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}}"}},"spec":{"order":[{"group":[{"id":"another-buildpack-id"}]}]}}`,
 					},
 				}.TestK8sAndKpack(t, cmdFunc)
 			})
@@ -782,8 +782,8 @@ Importing ClusterBuilder 'clusterbuilder-name'...
 Importing ClusterBuilder 'default'...
 `
 
-		builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
-		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}`
+		builder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
+		defaultBuilder.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = `{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}`
 
 		when("yaml format", func() {
 			const resourceYAML = `apiVersion: v1
@@ -858,10 +858,11 @@ kind: ClusterBuilder
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"clusterbuilder-name","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}'
   creationTimestamp: null
   name: clusterbuilder-name
 spec:
+  lifecycle: {}
   order:
   - group:
     - id: buildpack-id
@@ -876,6 +877,16 @@ spec:
     name: store-name
   tag: default-registry.io/default-repo:clusterbuilder-clusterbuilder-name
 status:
+  lifecycle:
+    api: {}
+    apis:
+      buildpack:
+        deprecated: null
+        supported: null
+      platform:
+        deprecated: null
+        supported: null
+    image: {}
   stack: {}
 ---
 apiVersion: kpack.io/v1alpha2
@@ -883,10 +894,11 @@ kind: ClusterBuilder
 metadata:
   annotations:
     kpack.io/import-timestamp: "2006-01-02T15:04:05Z"
-    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{}}}'
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterBuilder","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"default","creationTimestamp":null},"spec":{"tag":"default-registry.io/default-repo:clusterbuilder-default","stack":{"kind":"ClusterStack","name":"stack-name"},"lifecycle":{},"store":{"kind":"ClusterStore","name":"store-name"},"order":[{"group":[{"id":"buildpack-id"}]}],"serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"stack":{},"lifecycle":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}}'
   creationTimestamp: null
   name: default
 spec:
+  lifecycle: {}
   order:
   - group:
     - id: buildpack-id
@@ -901,6 +913,16 @@ spec:
     name: store-name
   tag: default-registry.io/default-repo:clusterbuilder-default
 status:
+  lifecycle:
+    api: {}
+    apis:
+      buildpack:
+        deprecated: null
+        supported: null
+      platform:
+        deprecated: null
+        supported: null
+    image: {}
   stack: {}
 `
 
@@ -1098,7 +1120,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
         "creationTimestamp": null,
         "annotations": {
             "kpack.io/import-timestamp": "2006-01-02T15:04:05Z",
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"clusterbuilder-name\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-clusterbuilder-name\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"lifecycle\":{},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{},\"lifecycle\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}}"
         }
     },
     "spec": {
@@ -1107,6 +1129,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
             "kind": "ClusterStack",
             "name": "stack-name"
         },
+        "lifecycle": {},
         "store": {
             "kind": "ClusterStore",
             "name": "store-name"
@@ -1126,7 +1149,21 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
         }
     },
     "status": {
-        "stack": {}
+        "stack": {},
+        "lifecycle": {
+            "image": {},
+            "api": {},
+            "apis": {
+                "buildpack": {
+                    "deprecated": null,
+                    "supported": null
+                },
+                "platform": {
+                    "deprecated": null,
+                    "supported": null
+                }
+            }
+        }
     }
 },{
     "kind": "ClusterBuilder",
@@ -1136,7 +1173,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
         "creationTimestamp": null,
         "annotations": {
             "kpack.io/import-timestamp": "2006-01-02T15:04:05Z",
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{}}}"
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"default-registry.io/default-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"stack-name\"},\"lifecycle\":{},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"store-name\"},\"order\":[{\"group\":[{\"id\":\"buildpack-id\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{},\"lifecycle\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}}"
         }
     },
     "spec": {
@@ -1145,6 +1182,7 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
             "kind": "ClusterStack",
             "name": "stack-name"
         },
+        "lifecycle": {},
         "store": {
             "kind": "ClusterStore",
             "name": "store-name"
@@ -1164,7 +1202,21 @@ Importing ClusterBuilder 'default'... (dry run with image upload)
         }
     },
     "status": {
-        "stack": {}
+        "stack": {},
+        "lifecycle": {
+            "image": {},
+            "api": {},
+            "apis": {
+                "buildpack": {
+                    "deprecated": null,
+                    "supported": null
+                },
+                "platform": {
+                    "deprecated": null,
+                    "supported": null
+                }
+            }
+        }
     }
 }]
 `

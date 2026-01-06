@@ -23,13 +23,13 @@ Learn more about kpack @ https://github.com/pivotal/kpack
 * [kp buildpack](kp_buildpack.md)	 - Buildpack Commands
 * [kp clusterbuilder](kp_clusterbuilder.md)	 - ClusterBuilder Commands
 * [kp clusterbuildpack](kp_clusterbuildpack.md)	 - ClusterBuildpack Commands
+* [kp clusterlifecycle](kp_clusterlifecycle.md)	 - ClusterLifecycle Commands
 * [kp clusterstack](kp_clusterstack.md)	 - ClusterStack Commands
 * [kp clusterstore](kp_clusterstore.md)	 - ClusterStore Commands
 * [kp completion](kp_completion.md)	 - Generate completion script
 * [kp config](kp_config.md)	 - Config commands
 * [kp image](kp_image.md)	 - Image commands
 * [kp import](kp_import.md)	 - Import dependencies for stores, stacks, and cluster builders
-* [kp lifecycle](kp_lifecycle.md)	 - Lifecycle Commands
 * [kp secret](kp_secret.md)	 - Secret Commands
 * [kp version](kp_version.md)	 - Display kp version
 

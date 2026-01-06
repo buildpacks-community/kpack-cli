@@ -13,6 +13,7 @@ import (
 	buildpackcmds "github.com/buildpacks-community/kpack-cli/pkg/commands/buildpack"
 	clusterbuildercmds "github.com/buildpacks-community/kpack-cli/pkg/commands/clusterbuilder"
 	clusterbuildpackcmds "github.com/buildpacks-community/kpack-cli/pkg/commands/clusterbuildpack"
+	clusterlifecyclecmds "github.com/buildpacks-community/kpack-cli/pkg/commands/clusterlifecycle"
 	clusterstackcmds "github.com/buildpacks-community/kpack-cli/pkg/commands/clusterstack"
 	clusterstorecmds "github.com/buildpacks-community/kpack-cli/pkg/commands/clusterstore"
 	configcmds "github.com/buildpacks-community/kpack-cli/pkg/commands/config"
@@ -54,6 +55,7 @@ Learn more about kpack @ https://github.com/pivotal/kpack`,
 		getBuilderCommand(clientSetProvider),
 		getStackCommand(clientSetProvider),
 		getStoreCommand(clientSetProvider),
+		getClusterLifecycleCommand(clientSetProvider),
 		getLifecycleCommand(clientSetProvider),
 		getImportCommand(clientSetProvider),
 		getConfigCommand(clientSetProvider),
@@ -231,6 +233,23 @@ func getStoreCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 	)
 
 	return storeRootCommand
+}
+
+func getClusterLifecycleCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
+	clusterLifecycleRootCommand := &cobra.Command{
+		Use:     "clusterlifecycle",
+		Aliases: []string{"clusterlifecycles", "clstrlcs", "clstrlc", "clcs", "clc"},
+		Short:   "ClusterLifecycle Commands",
+	}
+	clusterLifecycleRootCommand.AddCommand(
+		clusterlifecyclecmds.NewCreateCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterlifecyclecmds.NewPatchCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterlifecyclecmds.NewSaveCommand(clientSetProvider, registry.DefaultUtilProvider{}, commands.NewResourceWaiter),
+		clusterlifecyclecmds.NewListCommand(clientSetProvider),
+		clusterlifecyclecmds.NewStatusCommand(clientSetProvider),
+		clusterlifecyclecmds.NewDeleteCommand(clientSetProvider),
+	)
+	return clusterLifecycleRootCommand
 }
 
 func getLifecycleCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {

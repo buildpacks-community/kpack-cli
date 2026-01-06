@@ -34,6 +34,16 @@ func NewFakeLabeledImage(label, labelValue, digest string) FakeImage {
 	}
 }
 
+func NewFakeMultiLabeledImage(labels map[string]string, digest string) FakeImage {
+	return FakeImage{
+		labels: labels,
+		digest: v1.Hash{
+			Algorithm: "sha256",
+			Hex:       digest,
+		},
+	}
+}
+
 func (f FakeImage) Layers() ([]v1.Layer, error) {
 	return []v1.Layer{}, nil
 }
