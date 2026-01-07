@@ -35,7 +35,7 @@ func NewPatchCommand(clientSetProvider k8s.ClientSetProvider, rup registry.UtilP
 		Short:   "Patch a clusterlifecycle",
 		Long: `Patches the image of a specific cluster-scoped lifecycle.
 
-The image will be uploaded to the the registry configured on your lifecycle.
+The image will be uploaded to the registry configured on your lifecycle.
 Therefore, you must have credentials to access the registry on your machine.
 
 Env vars can be used for registry auth as described in https://github.com/buildpacks-community/kpack-cli/blob/main/docs/auth.md

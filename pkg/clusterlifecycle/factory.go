@@ -102,7 +102,7 @@ func (f *Factory) UpdateLifecycle(keychain authn.Keychain, lifecycle *v1alpha2.C
 	}
 
 	newLifecycle := lifecycle.DeepCopy()
-	newLifecycle.Spec.Image = relocatedImageRef
+	newLifecycle.Spec.ImageSource.Image = relocatedImageRef
 	return newLifecycle, nil
 }
 

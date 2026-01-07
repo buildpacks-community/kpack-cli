@@ -10,6 +10,8 @@ import (
 )
 
 // clusterLifecycles implement ClusterLifecycleInterface
+// ClusterLifecycle is only available in kpack v1alpha2 API, so all operations
+// return ErrV1alpha2Required when using a v1alpha1-only client.
 type clusterLifecycles struct{}
 
 func newClusterLifecycles(c *kpackV1alpha1CompatClient) *clusterLifecycles {
