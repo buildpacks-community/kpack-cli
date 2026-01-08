@@ -15,6 +15,8 @@ const (
 	stackLabel                = "io.buildpacks.stack.id"
 	buildpackageMetadataLabel = "io.buildpacks.buildpackage.metadata"
 	lifecycleMetadataLabel    = "io.buildpacks.lifecycle.metadata"
+	lifecycleVersionLabel     = "io.buildpacks.lifecycle.version"
+	lifecycleApisLabel        = "io.buildpacks.lifecycle.apis"
 )
 
 type Fetcher struct {
@@ -41,6 +43,8 @@ type BuildpackImgInfo struct {
 
 type LifecycleInfo struct {
 	Metadata string
+	Version  string
+	Apis     string
 	ImageInfo
 }
 
@@ -101,7 +105,14 @@ func (f *Fetcher) AddStackImages(infos ...StackInfo) {
 func (f *Fetcher) AddLifecycleImages(infos ...LifecycleInfo) {
 	images := f.getImages()
 	for _, i := range infos {
-		images[i.Ref] = NewFakeLabeledImage(lifecycleMetadataLabel, i.Metadata, i.Digest)
+		labels := map[string]string{
+			lifecycleVersionLabel: i.Version,
+			lifecycleApisLabel:    i.Apis,
+		}
+		if i.Metadata != "" {
+			labels[lifecycleMetadataLabel] = i.Metadata
+		}
+		images[i.Ref] = NewFakeMultiLabeledImage(labels, i.Digest)
 	}
 }
 

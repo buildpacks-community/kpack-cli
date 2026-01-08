@@ -22,6 +22,10 @@ func TestUpdateCommand(t *testing.T) {
 }
 
 func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
+	const deprecationWarning = `Command "patch" is deprecated, This command will be removed in a future release.
+Please use 'kp clusterlifecycle' commands instead.
+
+`
 	fakeRegistryUtilProvider := &registryfakes.UtilProvider{
 		FakeFetcher: registryfakes.NewLifecycleImageFetcher(
 			registryfakes.LifecycleInfo{
@@ -69,7 +73,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--image", "some-registry.io/repo/lifecycle-image",
 			},
 			ExpectErr:           true,
-			ExpectedOutput:      "Patching lifecycle config...\n",
+			ExpectedOutput:      deprecationWarning + "Patching lifecycle config...\n",
 			ExpectedErrorOutput: "Error: configmap \"lifecycle-image\" not found in \"kpack\" namespace\n",
 		}.TestK8s(t, cmdFunc)
 	})
@@ -88,7 +92,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--image", "some-registry.io/repo/image-without-metadata",
 			},
 			ExpectErr:           true,
-			ExpectedOutput:      "Patching lifecycle config...\n",
+			ExpectedOutput:      deprecationWarning + "Patching lifecycle config...\n",
 			ExpectedErrorOutput: "Error: image missing lifecycle metadata\n",
 		}.TestK8s(t, cmdFunc)
 	})
@@ -111,7 +115,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 				"--image", "some-registry.io/repo/lifecycle-image",
 			},
 			ExpectErr:           true,
-			ExpectedOutput:      "Patching lifecycle config...\n",
+			ExpectedOutput:      deprecationWarning + "Patching lifecycle config...\n",
 			ExpectedErrorOutput: "Error: failed to get default repository: use \"kp config default-repository\" to set\n",
 		}.TestK8s(t, cmdFunc)
 	})
@@ -128,7 +132,7 @@ func testUpdateCommand(t *testing.T, when spec.G, it spec.S) {
 			ExpectPatches: []string{
 				`{"data":{"image":"default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"}}`,
 			},
-			ExpectedOutput: `Patching lifecycle config...
+			ExpectedOutput: deprecationWarning + `Patching lifecycle config...
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 Patched lifecycle config
 `,
@@ -159,7 +163,7 @@ metadata:
 				ExpectPatches: []string{
 					`{"data":{"image":"default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"}}`,
 				},
-				ExpectedOutput: resourceYAML,
+				ExpectedOutput: deprecationWarning + resourceYAML,
 				ExpectedErrorOutput: `Patching lifecycle config...
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
@@ -193,7 +197,7 @@ metadata:
 				ExpectPatches: []string{
 					`{"data":{"image":"default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest"}}`,
 				},
-				ExpectedOutput: resourceJSON,
+				ExpectedOutput: deprecationWarning + resourceJSON,
 				ExpectedErrorOutput: `Patching lifecycle config...
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
@@ -212,7 +216,7 @@ metadata:
 					"--image", "some-registry.io/repo/lifecycle-image",
 					"--dry-run",
 				},
-				ExpectedOutput: `Patching lifecycle config... (dry run)
+				ExpectedOutput: deprecationWarning + `Patching lifecycle config... (dry run)
 	Skipping 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 Patched lifecycle config (dry run)
 `,
@@ -241,7 +245,7 @@ metadata:
 						"--dry-run",
 						"--output", "yaml",
 					},
-					ExpectedOutput: resourceYAML,
+					ExpectedOutput: deprecationWarning + resourceYAML,
 					ExpectedErrorOutput: `Patching lifecycle config... (dry run)
 	Skipping 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,
@@ -261,7 +265,7 @@ metadata:
 					"--image", "some-registry.io/repo/lifecycle-image",
 					"--dry-run-with-image-upload",
 				},
-				ExpectedOutput: `Patching lifecycle config... (dry run with image upload)
+				ExpectedOutput: deprecationWarning + `Patching lifecycle config... (dry run with image upload)
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 Patched lifecycle config (dry run with image upload)
 `,
@@ -290,7 +294,7 @@ metadata:
 						"--dry-run-with-image-upload",
 						"--output", "yaml",
 					},
-					ExpectedOutput: resourceYAML,
+					ExpectedOutput: deprecationWarning + resourceYAML,
 					ExpectedErrorOutput: `Patching lifecycle config... (dry run with image upload)
 	Uploading 'default-registry.io/default-repo/lifecycle@sha256:lifecycle-image-digest'
 `,

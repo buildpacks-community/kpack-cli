@@ -5,6 +5,7 @@ package lifecycle
 
 import (
 	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/spf13/cobra"
@@ -26,6 +27,9 @@ func NewUpdateCommand(clientSetProvider k8s.ClientSetProvider, rup registry.Util
 		Use:     "patch --image <image-tag>",
 		Aliases: []string{"update"},
 		Short:   "Patch lifecycle image used by kpack",
+		Deprecated: `This command will be removed in a future release.
+Please use 'kp clusterlifecycle' commands instead.
+`,
 		Long: `Patch lifecycle image used by kpack
 
 The Lifecycle image will be uploaded to the default repository.
