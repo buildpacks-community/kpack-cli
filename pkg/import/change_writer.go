@@ -12,7 +12,6 @@ import (
 
 	"github.com/buildpacks-community/kpack-cli/pkg/config"
 	buildk8s "github.com/buildpacks-community/kpack-cli/pkg/k8s"
-	"github.com/buildpacks-community/kpack-cli/pkg/lifecycle"
 )
 
 type changeWriter interface {
@@ -20,24 +19,49 @@ type changeWriter interface {
 	writeChange(header string)
 }
 
-func writeLifecycleChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, newLifecycle Lifecycle, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
-	if newLifecycle.Image != "" {
-		oldImg, err := lifecycle.GetImage(ctx, cs.K8sClient)
+func writeClusterLifecyclesChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, lifecycles []ClusterLifecycle, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
+	for _, lifecycle := range lifecycles {
+		oldLifecycle, err := cs.KpackClient.KpackV1alpha2().ClusterLifecycles().Get(ctx, lifecycle.Name, metav1.GetOptions{})
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return err
+		}
+		if k8serrors.IsNotFound(err) {
+			oldLifecycle = nil
+		}
+
+		diff, err := differ.DiffClusterLifecycle(keychain, kpConfig, oldLifecycle, lifecycle)
 		if err != nil {
 			return err
 		}
-
-		diff, err := differ.DiffLifecycle(keychain, kpConfig, oldImg, newLifecycle.Image)
-		if err != nil {
-			return err
-		}
-
 		if err = cw.writeDiff(diff); err != nil {
 			return err
 		}
 	}
 
-	cw.writeChange("Lifecycle")
+	cw.writeChange("ClusterLifecycles")
+	return nil
+}
+
+func writeClusterBuildpacksChange(ctx context.Context, keychain authn.Keychain, kpConfig config.KpConfig, buildpacks []ClusterBuildpack, differ *ImportDiffer, cs buildk8s.ClientSet, cw changeWriter) error {
+	for _, buildpack := range buildpacks {
+		oldBuildpack, err := cs.KpackClient.KpackV1alpha2().ClusterBuildpacks().Get(ctx, buildpack.Name, metav1.GetOptions{})
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return err
+		}
+		if k8serrors.IsNotFound(err) {
+			oldBuildpack = nil
+		}
+
+		diff, err := differ.DiffClusterBuildpack(keychain, kpConfig, oldBuildpack, buildpack)
+		if err != nil {
+			return err
+		}
+		if err = cw.writeDiff(diff); err != nil {
+			return err
+		}
+	}
+
+	cw.writeChange("ClusterBuildpacks")
 	return nil
 }
 

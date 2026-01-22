@@ -28,22 +28,27 @@ func SummarizeChange(
 		RelocatedImageProvider: relocatedImageProvider,
 	}
 
-	err = writeLifecycleChange(ctx, keychain, kpConfig, desc.Lifecycle, iDiffer, cs, &summarizer)
+	err = writeClusterLifecyclesChange(ctx, keychain, kpConfig, GetClusterLifecycles(desc), iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}
 
-	err = writeClusterStoresChange(ctx, keychain, kpConfig, desc.ClusterStores, iDiffer, cs, &summarizer)
+	err = writeClusterBuildpacksChange(ctx, keychain, kpConfig, GetClusterBuildpacks(desc), iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}
 
-	err = writeClusterStacksChange(ctx, keychain, kpConfig, desc.GetClusterStacks(), iDiffer, cs, &summarizer)
+	err = writeClusterStoresChange(ctx, keychain, kpConfig, GetClusterStores(desc), iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}
 
-	err = writeClusterBuildersChange(ctx, desc.GetClusterBuilders(), iDiffer, cs, &summarizer)
+	err = writeClusterStacksChange(ctx, keychain, kpConfig, GetClusterStacks(desc), iDiffer, cs, &summarizer)
+	if err != nil {
+		return
+	}
+
+	err = writeClusterBuildersChange(ctx, GetClusterBuilders(desc), iDiffer, cs, &summarizer)
 	if err != nil {
 		return
 	}

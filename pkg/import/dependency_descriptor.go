@@ -7,56 +7,68 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/pkg/errors"
+
+	"github.com/buildpacks-community/kpack-cli/pkg/import/descriptor"
 )
 
-const CurrentAPIVersion = "kp.kpack.io/v1alpha3"
+const CurrentAPIVersion = descriptor.APIVersionV1
 
 type API struct {
 	Version string `yaml:"apiVersion" json:"apiVersion"`
 }
 
-type DependencyDescriptor struct {
-	APIVersion            string           `yaml:"apiVersion" json:"apiVersion"`
-	Kind                  string           `yaml:"kind" json:"kind"`
-	DefaultClusterStack   string           `yaml:"defaultClusterStack" json:"defaultClusterStack"`
-	DefaultClusterBuilder string           `yaml:"defaultClusterBuilder" json:"defaultClusterBuilder"`
-	Lifecycle             Lifecycle        `yaml:"lifecycle" json:"lifecycle"`
-	ClusterStores         []ClusterStore   `yaml:"clusterStores" json:"clusterStores"`
-	ClusterStacks         []ClusterStack   `yaml:"clusterStacks" json:"clusterStacks"`
-	ClusterBuilders       []ClusterBuilder `yaml:"clusterBuilders" json:"clusterBuilders"`
-}
+// Type aliases to use types from the conversion package
+type (
+	DependencyDescriptor         = descriptor.DependencyDescriptor
+	DependencyDescriptorV1Alpha1 = descriptor.DependencyDescriptorV1Alpha1
+	DependencyDescriptorV1Alpha3 = descriptor.DependencyDescriptorV1Alpha3
+	Source                       = descriptor.Source
+	ClusterLifecycle             = descriptor.ClusterLifecycle
+	ClusterBuildpack             = descriptor.ClusterBuildpack
+	ClusterStore                 = descriptor.ClusterStore
+	ClusterStack                 = descriptor.ClusterStack
+	ClusterBuilder               = descriptor.ClusterBuilder
+)
 
-type Source struct {
-	Image string `yaml:"image"`
-}
-
-type Lifecycle Source
-
-type ClusterStore struct {
-	Name    string   `yaml:"name" json:"name"`
-	Sources []Source `yaml:"sources" json:"sources"`
-}
-
-type ClusterStack struct {
-	Name       string `yaml:"name" json:"name"`
-	BuildImage Source `yaml:"buildImage" json:"buildImage"`
-	RunImage   Source `yaml:"runImage" json:"runImage"`
-}
-
-type ClusterBuilder struct {
-	Name         string                       `yaml:"name" json:"name"`
-	ClusterStack string                       `yaml:"clusterStack" json:"clusterStack"`
-	ClusterStore string                       `yaml:"clusterStore" json:"clusterStore"`
-	Order        []v1alpha2.BuilderOrderEntry `yaml:"order" json:"order"`
-}
-
-func (d DependencyDescriptor) Validate() error {
-	storeSet := map[string]interface{}{}
-	for _, store := range d.ClusterStores {
-		if name, ok := storeSet[store.Name]; ok {
-			return errors.Errorf("duplicate store name '%s'", name)
+func ValidateDescriptor(d DependencyDescriptor) error {
+	lifecycleSet := map[string]bool{}
+	for _, lifecycle := range d.ClusterLifecycles {
+		if lifecycle.Name == "" {
+			return errors.New("cluster lifecycle name cannot be empty")
 		}
-		storeSet[store.Name] = nil
+		if lifecycleSet[lifecycle.Name] {
+			return errors.Errorf("duplicate cluster lifecycle name '%s'", lifecycle.Name)
+		}
+		lifecycleSet[lifecycle.Name] = true
+
+		_, err := name.ParseReference(lifecycle.Image, name.WeakValidation)
+		if err != nil {
+			return err
+		}
+	}
+
+	buildpackSet := map[string]bool{}
+	for _, buildpack := range d.ClusterBuildpacks {
+		if buildpack.Name == "" {
+			return errors.New("cluster buildpack name cannot be empty")
+		}
+		if buildpackSet[buildpack.Name] {
+			return errors.Errorf("duplicate cluster buildpack name '%s'", buildpack.Name)
+		}
+		buildpackSet[buildpack.Name] = true
+
+		_, err := name.ParseReference(buildpack.Image, name.WeakValidation)
+		if err != nil {
+			return err
+		}
+	}
+
+	storeSet := map[string]bool{}
+	for _, store := range d.ClusterStores {
+		if storeSet[store.Name] {
+			return errors.Errorf("duplicate store name '%s'", store.Name)
+		}
+		storeSet[store.Name] = true
 
 		for _, src := range store.Sources {
 			_, err := name.ParseReference(src.Image, name.WeakValidation)
@@ -66,12 +78,12 @@ func (d DependencyDescriptor) Validate() error {
 		}
 	}
 
-	stackSet := map[string]interface{}{}
+	stackSet := map[string]bool{}
 	for _, stack := range d.ClusterStacks {
-		if name, ok := stackSet[stack.Name]; ok {
-			return errors.Errorf("duplicate stack name '%s'", name)
+		if stackSet[stack.Name] {
+			return errors.Errorf("duplicate stack name '%s'", stack.Name)
 		}
-		stackSet[stack.Name] = nil
+		stackSet[stack.Name] = true
 
 		_, err := name.ParseReference(stack.BuildImage.Image, name.WeakValidation)
 		if err != nil {
@@ -84,16 +96,24 @@ func (d DependencyDescriptor) Validate() error {
 		}
 	}
 
+	if _, ok := lifecycleSet[d.DefaultClusterLifecycle]; !ok && d.DefaultClusterLifecycle != "" {
+		return errors.Errorf("default cluster lifecycle '%s' not found", d.DefaultClusterLifecycle)
+	}
+
+	if _, ok := buildpackSet[d.DefaultClusterBuildpack]; !ok && d.DefaultClusterBuildpack != "" {
+		return errors.Errorf("default cluster buildpack '%s' not found", d.DefaultClusterBuildpack)
+	}
+
 	if _, ok := stackSet[d.DefaultClusterStack]; !ok && d.DefaultClusterStack != "" {
 		return errors.Errorf("default cluster stack '%s' not found", d.DefaultClusterStack)
 	}
 
-	ccbSet := map[string]interface{}{}
+	ccbSet := map[string]bool{}
 	for _, ccb := range d.ClusterBuilders {
-		if name, ok := ccbSet[ccb.Name]; ok {
-			return errors.Errorf("duplicate cluster builder name '%s'", name)
+		if ccbSet[ccb.Name] {
+			return errors.Errorf("duplicate cluster builder name '%s'", ccb.Name)
 		}
-		ccbSet[ccb.Name] = nil
+		ccbSet[ccb.Name] = true
 	}
 
 	if _, ok := ccbSet[d.DefaultClusterBuilder]; !ok && d.DefaultClusterBuilder != "" {
@@ -103,18 +123,43 @@ func (d DependencyDescriptor) Validate() error {
 	return nil
 }
 
-func (d DependencyDescriptor) GetLifecycleImage() string {
-	return d.Lifecycle.Image
+func GetClusterLifecycles(d DependencyDescriptor) []ClusterLifecycle {
+	lifecycles := d.ClusterLifecycles
+	for _, lc := range d.ClusterLifecycles {
+		if lc.Name == d.DefaultClusterLifecycle {
+			lifecycles = append(lifecycles, ClusterLifecycle{
+				Name:  v1alpha2.DefaultLifecycleName,
+				Image: lc.Image,
+			})
+			break
+		}
+	}
+	return lifecycles
 }
 
-func (d DependencyDescriptor) HasLifecycleImage() bool {
-	return d.Lifecycle.Image != ""
+func GetClusterBuildpacks(d DependencyDescriptor) []ClusterBuildpack {
+	buildpacks := d.ClusterBuildpacks
+	for _, bp := range d.ClusterBuildpacks {
+		if bp.Name == d.DefaultClusterBuildpack {
+			buildpacks = append(buildpacks, ClusterBuildpack{
+				Name:  "default",
+				Image: bp.Image,
+			})
+			break
+		}
+	}
+	return buildpacks
 }
 
-func (d DependencyDescriptor) GetClusterStacks() []ClusterStack {
+func GetClusterStores(d DependencyDescriptor) []ClusterStore {
+	return d.ClusterStores
+}
+
+func GetClusterStacks(d DependencyDescriptor) []ClusterStack {
+	stacks := d.ClusterStacks
 	for _, stack := range d.ClusterStacks {
 		if stack.Name == d.DefaultClusterStack {
-			d.ClusterStacks = append(d.ClusterStacks, ClusterStack{
+			stacks = append(stacks, ClusterStack{
 				Name:       "default",
 				BuildImage: stack.BuildImage,
 				RunImage:   stack.RunImage,
@@ -122,13 +167,14 @@ func (d DependencyDescriptor) GetClusterStacks() []ClusterStack {
 			break
 		}
 	}
-	return d.ClusterStacks
+	return stacks
 }
 
-func (d DependencyDescriptor) GetClusterBuilders() []ClusterBuilder {
+func GetClusterBuilders(d DependencyDescriptor) []ClusterBuilder {
+	builders := d.ClusterBuilders
 	for _, cb := range d.ClusterBuilders {
 		if cb.Name == d.DefaultClusterBuilder {
-			d.ClusterBuilders = append(d.ClusterBuilders, ClusterBuilder{
+			builders = append(builders, ClusterBuilder{
 				Name:         "default",
 				ClusterStack: cb.ClusterStack,
 				ClusterStore: cb.ClusterStore,
@@ -137,5 +183,5 @@ func (d DependencyDescriptor) GetClusterBuilders() []ClusterBuilder {
 			break
 		}
 	}
-	return d.ClusterBuilders
+	return builders
 }

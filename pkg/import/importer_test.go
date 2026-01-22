@@ -53,18 +53,20 @@ func testImporter(t *testing.T, when spec.G, it spec.S) {
 			},
 		)
 
-		existingLifecycle = &corev1.ConfigMap{
+		existingLifecycle = &v1alpha2.ClusterLifecycle{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "lifecycle-image",
-				Namespace: "kpack",
+				Name: v1alpha2.DefaultLifecycleName, // "default-lifecycle"
 			},
-			Data: map[string]string{
-				"image": "old/image",
+			Spec: v1alpha2.ClusterLifecycleSpec{
+				ImageSource: corev1alpha1.ImageSource{
+					Image: "old/image",
+				},
 			},
 		}
 	)
 	when("importing dependencies", func() {
 		var (
+			expectedClusterLifecycle      runtime.Object
 			expectedDefaultClusterStore   runtime.Object
 			expectedClusterStack          runtime.Object
 			expectedDefaultClusterStack   runtime.Object
@@ -73,6 +75,24 @@ func testImporter(t *testing.T, when spec.G, it spec.S) {
 		)
 
 		it.Before(func() {
+			expectedClusterLifecycle = annotate(t, &v1alpha2.ClusterLifecycle{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterLifecycle",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: v1alpha2.DefaultLifecycleName,
+				},
+				Spec: v1alpha2.ClusterLifecycleSpec{
+					ImageSource: corev1alpha1.ImageSource{
+						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", lifecycleDigest),
+					},
+					ServiceAccountRef: &corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, kubectlAnnotation, timestampAnnotation)
 			expectedDefaultClusterStore = annotate(t, &v1alpha2.ClusterStore{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "ClusterStore",
@@ -220,14 +240,12 @@ func testImporter(t *testing.T, when spec.G, it spec.S) {
 		it("can import on a new cluster", func() {
 			TestImport{
 				Images: map[string]v1.Image{
-					"new-image.com/lifecycle":              fakes.NewFakeImage(lifecycleDigest),
+					"new-image.com/lifecycle":              fakes.NewFakeMultiLabeledImage(map[string]string{"io.buildpacks.lifecycle.version": "0.17.0", "io.buildpacks.lifecycle.apis": `{"buildpack": {"deprecated": [], "supported": ["0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10"]}, "platform": {"deprecated": [], "supported": ["0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10", "0.11", "0.12", "0.13"]}}`}, lifecycleDigest),
 					"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), dotnetCoreDigest),
 					"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, runImageDigest),
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
 				},
-				Objects: []runtime.Object{
-					existingLifecycle,
-				},
+				Objects:  []runtime.Object{},
 				KpConfig: kpConfig,
 				DependencyDescriptor: `
 apiVersion: kp.kpack.io/v1alpha3
@@ -255,14 +273,12 @@ clusterBuilders:
     - id: tanzu-buildpacks/dotnet-core
 `,
 				ExpectCreates: []runtime.Object{
+					expectedClusterLifecycle,
 					expectedDefaultClusterStore,
 					expectedClusterStack,
 					expectedDefaultClusterStack,
 					expectedClusterBuilder,
 					expectedDefaultClusterBuilder,
-				},
-				ExpectPatches: []string{
-					`{"data":{"image":"gcr.io/my-cool-repo@sha256:lifecycledigest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"0001-01-01 00:00:00 +0000 UTC"}}}`,
 				},
 			}.TestImporter(t)
 		})
@@ -507,7 +523,7 @@ clusterBuilders:
 
 				TestImport{
 					Images: map[string]v1.Image{
-						"new-image.com/lifecycle":              fakes.NewFakeImage(newLifecycleDigest),
+						"new-image.com/lifecycle":              fakes.NewFakeMultiLabeledImage(map[string]string{"io.buildpacks.lifecycle.version": "0.17.0", "io.buildpacks.lifecycle.apis": `{"buildpack": {"deprecated": [], "supported": ["0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10"]}, "platform": {"deprecated": [], "supported": ["0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10", "0.11", "0.12", "0.13"]}}`}, newLifecycleDigest),
 						"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), newDotnetCoreDigest),
 						"new-image.com/buildpacks/nodejs":      fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", nodejsId), nodejsDigest),
 						"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newRunImageDigest),
@@ -555,7 +571,7 @@ clusterBuilders:
 						`{"spec":{"buildImage":{"image":"gcr.io/my-cool-repo@sha256:newbuildimagedigest"},"runImage":{"image":"gcr.io/my-cool-repo@sha256:newrunimagedigest"}}}`,
 						`{"metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"base\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"gcr.io/my-cool-repo:clusterbuilder-base\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"base\"},\"lifecycle\":{},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"default\"},\"order\":[{\"group\":[{\"id\":\"tanzu-buildpacks/dotnet-core\"}]},{\"group\":[{\"id\":\"tanzu-buildpacks/nodejs\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{},\"lifecycle\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}}"}},"spec":{"order":[{"group":[{"id":"tanzu-buildpacks/dotnet-core"}]},{"group":[{"id":"tanzu-buildpacks/nodejs"}]}],"tag":"gcr.io/my-cool-repo:clusterbuilder-base"}}`,
 						`{"metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterBuilder\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default\",\"creationTimestamp\":null},\"spec\":{\"tag\":\"gcr.io/my-cool-repo:clusterbuilder-default\",\"stack\":{\"kind\":\"ClusterStack\",\"name\":\"base\"},\"lifecycle\":{},\"store\":{\"kind\":\"ClusterStore\",\"name\":\"default\"},\"order\":[{\"group\":[{\"id\":\"tanzu-buildpacks/dotnet-core\"}]},{\"group\":[{\"id\":\"tanzu-buildpacks/nodejs\"}]}],\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"stack\":{},\"lifecycle\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}}"}},"spec":{"order":[{"group":[{"id":"tanzu-buildpacks/dotnet-core"}]},{"group":[{"id":"tanzu-buildpacks/nodejs"}]}],"tag":"gcr.io/my-cool-repo:clusterbuilder-default"}}`,
-						`{"data":{"image":"gcr.io/my-cool-repo@sha256:newlifecycledigest"},"metadata":{"annotations":{"kpack.io/import-timestamp":"0001-01-01 00:00:00 +0000 UTC"}}}`,
+						`{"metadata":{"annotations":{"kpack.io/import-timestamp":"0001-01-01 00:00:00 +0000 UTC","kubectl.kubernetes.io/last-applied-configuration":"{\"kind\":\"ClusterLifecycle\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"default-lifecycle\",\"creationTimestamp\":null},\"spec\":{\"image\":\"gcr.io/my-cool-repo@sha256:newlifecycledigest\",\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}"}},"spec":{"image":"gcr.io/my-cool-repo@sha256:newlifecycledigest","serviceAccountRef":{"name":"some-serviceaccount","namespace":"some-namespace"}}}`,
 					},
 				}.TestImporter(t)
 			})
@@ -570,7 +586,7 @@ clusterBuilders:
 
 				TestImport{
 					Images: map[string]v1.Image{
-						"new-image.com/lifecycle":              fakes.NewFakeImage(newLifecycleDigest),
+						"new-image.com/lifecycle":              fakes.NewFakeMultiLabeledImage(map[string]string{"io.buildpacks.lifecycle.version": "0.17.0", "io.buildpacks.lifecycle.apis": `{"buildpack": {"deprecated": [], "supported": ["0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10"]}, "platform": {"deprecated": [], "supported": ["0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10", "0.11", "0.12", "0.13"]}}`}, newLifecycleDigest),
 						"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), newDotnetCoreDigest),
 						"new-image.com/buildpacks/nodejs":      fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", nodejsId), nodejsDigest),
 						"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, newRunImageDigest),
@@ -624,7 +640,7 @@ clusterBuilders:
 		it("does not create any resources if any relocation fails", func() {
 			TestImport{
 				Images: map[string]v1.Image{
-					"new-image.com/lifecycle":              fakes.NewFakeImage(lifecycleDigest),
+					"new-image.com/lifecycle":              fakes.NewFakeMultiLabeledImage(map[string]string{"io.buildpacks.lifecycle.version": "0.17.0", "io.buildpacks.lifecycle.apis": `{"buildpack": {"deprecated": [], "supported": ["0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10"]}, "platform": {"deprecated": [], "supported": ["0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10", "0.11", "0.12", "0.13"]}}`}, lifecycleDigest),
 					"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), dotnetCoreDigest),
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
 				},
@@ -667,7 +683,7 @@ clusterBuilders:
 		it("uploads does not create or update any resources", func() {
 			TestImport{
 				Images: map[string]v1.Image{
-					"new-image.com/lifecycle":              fakes.NewFakeImage(lifecycleDigest),
+					"new-image.com/lifecycle":              fakes.NewFakeMultiLabeledImage(map[string]string{"io.buildpacks.lifecycle.version": "0.17.0", "io.buildpacks.lifecycle.apis": `{"buildpack": {"deprecated": [], "supported": ["0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10"]}, "platform": {"deprecated": [], "supported": ["0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10", "0.11", "0.12", "0.13"]}}`}, lifecycleDigest),
 					"new-image.com/buildpacks/dotnet-core": fakes.NewFakeLabeledImage("io.buildpacks.buildpackage.metadata", fmt.Sprintf("{\"id\":%q}", dotnetCoreId), dotnetCoreDigest),
 					"new-image.com/stacks/base/run":        fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, runImageDigest),
 					"new-image.com/stacks/base/build":      fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
@@ -703,6 +719,191 @@ clusterBuilders:
 `,
 
 				DryRun: true,
+			}.TestImporter(t)
+		})
+	})
+
+	when("importing with empty ClusterStore in ClusterBuilder", func() {
+		it("creates ClusterBuilder without store reference", func() {
+			expectedClusterLifecycle := annotate(t, &v1alpha2.ClusterLifecycle{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterLifecycle",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: v1alpha2.DefaultLifecycleName,
+				},
+				Spec: v1alpha2.ClusterLifecycleSpec{
+					ImageSource: corev1alpha1.ImageSource{
+						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", lifecycleDigest),
+					},
+					ServiceAccountRef: &corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, kubectlAnnotation, timestampAnnotation)
+
+			expectedClusterStack := annotate(t, &v1alpha2.ClusterStack{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterStack",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "base",
+				},
+				Spec: v1alpha2.ClusterStackSpec{
+					Id: stackId,
+					BuildImage: v1alpha2.ClusterStackSpecImage{
+						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+					},
+					RunImage: v1alpha2.ClusterStackSpecImage{
+						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+					},
+					ServiceAccountRef: &corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, timestampAnnotation)
+
+			expectedDefaultClusterStack := annotate(t, &v1alpha2.ClusterStack{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterStack",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "default",
+				},
+				Spec: v1alpha2.ClusterStackSpec{
+					Id: stackId,
+					BuildImage: v1alpha2.ClusterStackSpecImage{
+						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", buildImageDigest),
+					},
+					RunImage: v1alpha2.ClusterStackSpecImage{
+						Image: fmt.Sprintf("gcr.io/my-cool-repo@sha256:%s", runImageDigest),
+					},
+					ServiceAccountRef: &corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, timestampAnnotation)
+
+			// ClusterBuilder WITHOUT store reference (empty ClusterStore)
+			expectedClusterBuilderNoStore := annotate(t, &v1alpha2.ClusterBuilder{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterBuilder",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "base",
+				},
+				Spec: v1alpha2.ClusterBuilderSpec{
+					BuilderSpec: v1alpha2.BuilderSpec{
+						Tag: "gcr.io/my-cool-repo:clusterbuilder-base",
+						Stack: corev1.ObjectReference{
+							Name: "base",
+							Kind: v1alpha2.ClusterStackKind,
+						},
+						// Note: Store is NOT set (empty ObjectReference)
+						Order: []v1alpha2.BuilderOrderEntry{
+							{
+								Group: []v1alpha2.BuilderBuildpackRef{
+									{
+										BuildpackRef: corev1alpha1.BuildpackRef{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "tanzu-buildpacks/dotnet-core",
+											},
+											Optional: false,
+										},
+									},
+								},
+							},
+						},
+					},
+					ServiceAccountRef: corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, kubectlAnnotation, timestampAnnotation)
+
+			expectedDefaultClusterBuilderNoStore := annotate(t, &v1alpha2.ClusterBuilder{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterBuilder",
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "default",
+				},
+				Spec: v1alpha2.ClusterBuilderSpec{
+					BuilderSpec: v1alpha2.BuilderSpec{
+						Tag: "gcr.io/my-cool-repo:clusterbuilder-default",
+						Stack: corev1.ObjectReference{
+							Name: "base",
+							Kind: v1alpha2.ClusterStackKind,
+						},
+						// Note: Store is NOT set (empty ObjectReference)
+						Order: []v1alpha2.BuilderOrderEntry{
+							{
+								Group: []v1alpha2.BuilderBuildpackRef{
+									{
+										BuildpackRef: corev1alpha1.BuildpackRef{
+											BuildpackInfo: corev1alpha1.BuildpackInfo{
+												Id: "tanzu-buildpacks/dotnet-core",
+											},
+											Optional: false,
+										},
+									},
+								},
+							},
+						},
+					},
+					ServiceAccountRef: corev1.ObjectReference{
+						Namespace: "some-namespace",
+						Name:      "some-serviceaccount",
+					},
+				},
+			}, kubectlAnnotation, timestampAnnotation)
+
+			TestImport{
+				Images: map[string]v1.Image{
+					"new-image.com/lifecycle":         fakes.NewFakeMultiLabeledImage(map[string]string{"io.buildpacks.lifecycle.version": "0.17.0", "io.buildpacks.lifecycle.apis": `{"buildpack": {"deprecated": [], "supported": ["0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10"]}, "platform": {"deprecated": [], "supported": ["0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "0.10", "0.11", "0.12", "0.13"]}}`}, lifecycleDigest),
+					"new-image.com/stacks/base/run":   fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, runImageDigest),
+					"new-image.com/stacks/base/build": fakes.NewFakeLabeledImage("io.buildpacks.stack.id", stackId, buildImageDigest),
+				},
+				Objects:  []runtime.Object{},
+				KpConfig: kpConfig,
+				DependencyDescriptor: `
+apiVersion: kp.kpack.io/v1
+kind: DependencyDescriptor
+defaultClusterBuilder: base
+defaultClusterStack: base
+clusterLifecycles:
+- name: default-lifecycle
+  image: new-image.com/lifecycle
+clusterStacks:
+- name: base
+  buildImage:
+    image: new-image.com/stacks/base/build
+  runImage:
+    image: new-image.com/stacks/base/run
+clusterBuilders:
+- name: base
+  clusterStack: base
+  clusterStore: ""
+  order:
+  - group:
+    - id: tanzu-buildpacks/dotnet-core
+`,
+				ExpectCreates: []runtime.Object{
+					expectedClusterLifecycle,
+					expectedClusterStack,
+					expectedDefaultClusterStack,
+					expectedClusterBuilderNoStore,
+					expectedDefaultClusterBuilderNoStore,
+				},
 			}.TestImporter(t)
 		})
 	})
