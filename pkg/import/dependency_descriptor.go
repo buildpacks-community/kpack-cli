@@ -17,7 +17,7 @@ type API struct {
 	Version string `yaml:"apiVersion" json:"apiVersion"`
 }
 
-// Type aliases to use types from the conversion package
+// Type aliases to use types from the descriptor package
 type (
 	DependencyDescriptor         = descriptor.DependencyDescriptor
 	DependencyDescriptorV1Alpha1 = descriptor.DependencyDescriptorV1Alpha1
