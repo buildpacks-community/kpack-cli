@@ -70,8 +70,10 @@ func testCreateCommand(t *testing.T, when spec.G, it spec.S) {
 			APIVersion: "kpack.io/v1alpha2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "my-lifecycle",
-			Annotations: map[string]string{},
+			Name: "my-lifecycle",
+			Annotations: map[string]string{
+				"kubectl.kubernetes.io/last-applied-configuration": `{"kind":"ClusterLifecycle","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"my-lifecycle","creationTimestamp":null},"spec":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest","serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}`,
+			},
 		},
 		Spec: v1alpha2.ClusterLifecycleSpec{
 			ImageSource: v1alpha1.ImageSource{
@@ -165,6 +167,8 @@ ClusterLifecycle "my-lifecycle" created
 			const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterLifecycle
 metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterLifecycle","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"my-lifecycle","creationTimestamp":null},"spec":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest","serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}'
   creationTimestamp: null
   name: my-lifecycle
 spec:
@@ -210,7 +214,10 @@ Uploading to 'default-registry.io/default-repo'...
     "apiVersion": "kpack.io/v1alpha2",
     "metadata": {
         "name": "my-lifecycle",
-        "creationTimestamp": null
+        "creationTimestamp": null,
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"kind\":\"ClusterLifecycle\",\"apiVersion\":\"kpack.io/v1alpha2\",\"metadata\":{\"name\":\"my-lifecycle\",\"creationTimestamp\":null},\"spec\":{\"image\":\"default-registry.io/default-repo@sha256:lifecycle-image-digest\",\"serviceAccountRef\":{\"namespace\":\"some-namespace\",\"name\":\"some-serviceaccount\"}},\"status\":{\"image\":{},\"api\":{},\"apis\":{\"buildpack\":{\"deprecated\":null,\"supported\":null},\"platform\":{\"deprecated\":null,\"supported\":null}}}}"
+        }
     },
     "spec": {
         "image": "default-registry.io/default-repo@sha256:lifecycle-image-digest",
@@ -282,6 +289,8 @@ ClusterLifecycle "my-lifecycle" created (dry run)
 				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterLifecycle
 metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterLifecycle","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"my-lifecycle","creationTimestamp":null},"spec":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest","serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}'
   creationTimestamp: null
   name: my-lifecycle
 spec:
@@ -345,6 +354,8 @@ ClusterLifecycle "my-lifecycle" created (dry run with image upload)
 				const resourceYAML = `apiVersion: kpack.io/v1alpha2
 kind: ClusterLifecycle
 metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: '{"kind":"ClusterLifecycle","apiVersion":"kpack.io/v1alpha2","metadata":{"name":"my-lifecycle","creationTimestamp":null},"spec":{"image":"default-registry.io/default-repo@sha256:lifecycle-image-digest","serviceAccountRef":{"namespace":"some-namespace","name":"some-serviceaccount"}},"status":{"image":{},"api":{},"apis":{"buildpack":{"deprecated":null,"supported":null},"platform":{"deprecated":null,"supported":null}}}}'
   creationTimestamp: null
   name: my-lifecycle
 spec:

@@ -1,9 +1,13 @@
-apiVersion: kp.kpack.io/v1alpha3
+apiVersion: kp.kpack.io/v1
 kind: DependencyDescriptor
 defaultClusterBuilder: clusterbuilder-name
 defaultClusterStack: stack-name
-lifecycle:
-  image: some-registry.io/repo/lifecycle-image
+clusterLifecycles:
+  - name: default
+    image: some-registry.io/repo/lifecycle-image
+clusterBuildpacks:
+  - name: my-buildpack
+    image: some-registry.io/repo/standalone-buildpack
 clusterStores:
 - name: store-name
   sources:

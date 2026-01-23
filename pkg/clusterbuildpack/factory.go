@@ -1,25 +1,25 @@
 // Copyright 2020-Present VMware, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-package clusterlifecycle
+package clusterbuildpack
 
 import (
 	"fmt"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
-	"github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
+	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/buildpacks-community/kpack-cli/pkg/buildpackage"
 	"github.com/buildpacks-community/kpack-cli/pkg/config"
 	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
-	"github.com/buildpacks-community/kpack-cli/pkg/lifecycleimage"
 	"github.com/buildpacks-community/kpack-cli/pkg/registry"
 )
 
-type Uploader interface {
-	UploadLifecycleImage(keychain authn.Keychain, imageTag, dest string) (string, error)
-	ValidateLifecycleImage(keychain authn.Keychain, imageTag string) error
+type BuildpackageUploader interface {
+	UploadBuildpackage(keychain authn.Keychain, buildPackage, repository string) (string, error)
+	ValidateBuildpackImage(keychain authn.Keychain, imageTag string) error
 }
 
 type Printer interface {
@@ -28,13 +28,13 @@ type Printer interface {
 }
 
 type Factory struct {
-	Uploader Uploader
+	Uploader BuildpackageUploader
 	Printer  Printer
 }
 
 func NewFactory(printer Printer, relocator registry.Relocator, fetcher registry.Fetcher) *Factory {
 	return &Factory{
-		Uploader: &lifecycleimage.Uploader{
+		Uploader: &buildpackage.Uploader{
 			Fetcher:   fetcher,
 			Relocator: relocator,
 		},
@@ -42,10 +42,10 @@ func NewFactory(printer Printer, relocator registry.Relocator, fetcher registry.
 	}
 }
 
-func (f *Factory) MakeLifecycle(keychain authn.Keychain, name, imageTag string, kpConfig config.KpConfig) (*v1alpha2.ClusterLifecycle, error) {
+func (f *Factory) MakeBuildpack(keychain authn.Keychain, name, imageTag string, kpConfig config.KpConfig) (*v1alpha2.ClusterBuildpack, error) {
 	err := f.validate(keychain, imageTag)
 	if err != nil {
-		return nil, fmt.Errorf("invalid lifecycle image: %w", err)
+		return nil, fmt.Errorf("invalid buildpack image: %w", err)
 	}
 
 	defaultRepo, err := kpConfig.DefaultRepository()
@@ -57,37 +57,37 @@ func (f *Factory) MakeLifecycle(keychain authn.Keychain, name, imageTag string, 
 		return nil, err
 	}
 
-	relocatedImageRef, err := f.Uploader.UploadLifecycleImage(keychain, imageTag, defaultRepo)
+	relocatedImageRef, err := f.Uploader.UploadBuildpackage(keychain, imageTag, defaultRepo)
 	if err != nil {
 		return nil, err
 	}
 
 	sa := kpConfig.ServiceAccount()
 
-	lifecycle := &v1alpha2.ClusterLifecycle{
+	buildpack := &v1alpha2.ClusterBuildpack{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       v1alpha2.ClusterLifecycleKind,
+			Kind:       v1alpha2.ClusterBuildpackKind,
 			APIVersion: "kpack.io/v1alpha2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Annotations: map[string]string{},
 		},
-		Spec: v1alpha2.ClusterLifecycleSpec{
-			ImageSource: v1alpha1.ImageSource{
+		Spec: v1alpha2.ClusterBuildpackSpec{
+			ImageSource: corev1alpha1.ImageSource{
 				Image: relocatedImageRef,
 			},
 			ServiceAccountRef: &sa,
 		},
 	}
 
-	return lifecycle, k8s.SetLastAppliedCfg(lifecycle)
+	return buildpack, k8s.SetLastAppliedCfg(buildpack)
 }
 
-func (f *Factory) UpdateLifecycle(keychain authn.Keychain, lifecycle *v1alpha2.ClusterLifecycle, imageTag string, kpConfig config.KpConfig) (*v1alpha2.ClusterLifecycle, error) {
+func (f *Factory) UpdateBuildpack(keychain authn.Keychain, buildpack *v1alpha2.ClusterBuildpack, imageTag string, kpConfig config.KpConfig) (*v1alpha2.ClusterBuildpack, error) {
 	err := f.validate(keychain, imageTag)
 	if err != nil {
-		return nil, fmt.Errorf("invalid lifecycle image: %w", err)
+		return nil, fmt.Errorf("invalid buildpack image: %w", err)
 	}
 
 	defaultRepo, err := kpConfig.DefaultRepository()
@@ -99,16 +99,16 @@ func (f *Factory) UpdateLifecycle(keychain authn.Keychain, lifecycle *v1alpha2.C
 		return nil, err
 	}
 
-	relocatedImageRef, err := f.Uploader.UploadLifecycleImage(keychain, imageTag, defaultRepo)
+	relocatedImageRef, err := f.Uploader.UploadBuildpackage(keychain, imageTag, defaultRepo)
 	if err != nil {
 		return nil, err
 	}
 
-	newLifecycle := lifecycle.DeepCopy()
-	newLifecycle.Spec.ImageSource.Image = relocatedImageRef
-	return newLifecycle, nil
+	newBuildpack := buildpack.DeepCopy()
+	newBuildpack.Spec.ImageSource.Image = relocatedImageRef
+	return newBuildpack, nil
 }
 
 func (f *Factory) validate(keychain authn.Keychain, imageTag string) error {
-	return f.Uploader.ValidateLifecycleImage(keychain, imageTag)
+	return f.Uploader.ValidateBuildpackImage(keychain, imageTag)
 }

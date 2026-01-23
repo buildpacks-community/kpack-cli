@@ -4,15 +4,21 @@
 package buildpackage
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
+	"github.com/pivotal/kpack/pkg/registry/imagehelpers"
 	"github.com/pkg/errors"
 
 	"github.com/buildpacks-community/kpack-cli/pkg/archive"
+)
+
+const (
+	buildpackageMetadataLabel = "io.buildpacks.buildpackage.metadata"
 )
 
 type Relocator interface {
@@ -83,4 +89,22 @@ func readCNB(buildPackage, tempDir string) (v1.Image, error) {
 	}
 
 	return image, nil
+}
+
+// ValidateBuildpackImage checks that the image has the required buildpackage metadata label
+func (u *Uploader) ValidateBuildpackImage(keychain authn.Keychain, imageTag string) error {
+	image, err := u.Fetcher.Fetch(keychain, imageTag)
+	if err != nil {
+		return err
+	}
+
+	hasMetadataLabel, err := imagehelpers.HasLabel(image, buildpackageMetadataLabel)
+	if err != nil {
+		return fmt.Errorf("could not get label %s: %w", buildpackageMetadataLabel, err)
+	}
+	if !hasMetadataLabel {
+		return fmt.Errorf("missing label %s", buildpackageMetadataLabel)
+	}
+
+	return nil
 }
