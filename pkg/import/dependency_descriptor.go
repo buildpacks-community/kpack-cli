@@ -100,9 +100,6 @@ func ValidateDescriptor(d DependencyDescriptor) error {
 		return errors.Errorf("default cluster lifecycle '%s' not found", d.DefaultClusterLifecycle)
 	}
 
-	if _, ok := buildpackSet[d.DefaultClusterBuildpack]; !ok && d.DefaultClusterBuildpack != "" {
-		return errors.Errorf("default cluster buildpack '%s' not found", d.DefaultClusterBuildpack)
-	}
 
 	if _, ok := stackSet[d.DefaultClusterStack]; !ok && d.DefaultClusterStack != "" {
 		return errors.Errorf("default cluster stack '%s' not found", d.DefaultClusterStack)
@@ -138,17 +135,7 @@ func GetClusterLifecycles(d DependencyDescriptor) []ClusterLifecycle {
 }
 
 func GetClusterBuildpacks(d DependencyDescriptor) []ClusterBuildpack {
-	buildpacks := d.ClusterBuildpacks
-	for _, bp := range d.ClusterBuildpacks {
-		if bp.Name == d.DefaultClusterBuildpack {
-			buildpacks = append(buildpacks, ClusterBuildpack{
-				Name:  "default",
-				Image: bp.Image,
-			})
-			break
-		}
-	}
-	return buildpacks
+	return d.ClusterBuildpacks
 }
 
 func GetClusterStores(d DependencyDescriptor) []ClusterStore {
