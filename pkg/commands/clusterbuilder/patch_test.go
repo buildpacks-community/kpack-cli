@@ -177,7 +177,7 @@ func testPatchCommand(clusterBuilderCommand func(clientSetProvider k8s.ClientSet
 					"--buildpack", "org.cloudfoundry.test-bp",
 				},
 				ExpectErr:           true,
-				ExpectedErrorOutput: "Error: cannot use --order and --buildpack together\n",
+				ExpectedErrorOutput: "Error: only one of --order, --buildpack, or --order-from can be specified\n",
 			}.TestKpack(t, cmdFunc)
 		})
 

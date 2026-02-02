@@ -32,20 +32,23 @@ kp clusterbuilder save my-builder --tag my-registry.com/my-builder-tag --buildpa
 ### Options
 
 ```
-  -b, --buildpack strings   buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'
-                              repeat for each buildpack in order, or supply once with comma-separated list
-      --dry-run             perform validation with no side-effects; no objects are sent to the server.
-                              The --dry-run flag can be used in combination with the --output flag to
-                              view the Kubernetes resource(s) without sending anything to the server.
-  -h, --help                help for save
-  -o, --order string        path to buildpack order yaml
-      --output string       print Kubernetes resources in the specified format; supported formats are: yaml, json.
-                              The output can be used with the "kubectl apply -f" command. To allow this, the command
-                              updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
-                              The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
-  -s, --stack string        stack resource to use (default "default" for a create)
-      --store string        buildpack store to use
-  -t, --tag string          registry location where the builder will be created
+  -b, --buildpack strings              buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'
+                                         repeat for each buildpack in order, or supply once with comma-separated list
+      --dry-run                        perform validation with no side-effects; no objects are sent to the server.
+                                         The --dry-run flag can be used in combination with the --output flag to
+                                         view the Kubernetes resource(s) without sending anything to the server.
+  -h, --help                           help for save
+  -o, --order string                   path to buildpack order yaml
+      --order-from string              builder image to extract buildpack order from
+      --output string                  print Kubernetes resources in the specified format; supported formats are: yaml, json.
+                                         The output can be used with the "kubectl apply -f" command. To allow this, the command
+                                         updates are redirected to stderr and only the Kubernetes resource(s) are written to stdout.
+                                         The APIVersion of the outputted resources will always be the latest APIVersion known to kp (currently: v1alpha2).
+      --registry-ca-cert-path string   add CA certificate for registry API (format: /tmp/ca.crt)
+      --registry-verify-certs          set whether to verify server's certificate chain and host name (default true)
+  -s, --stack string                   stack resource to use (default "default" for a create)
+      --store string                   buildpack store to use
+  -t, --tag string                     registry location where the builder will be created
 ```
 
 ### SEE ALSO

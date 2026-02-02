@@ -11,11 +11,13 @@ import (
 
 	"github.com/buildpacks-community/kpack-cli/pkg/commands"
 	"github.com/buildpacks-community/kpack-cli/pkg/k8s"
+	"github.com/buildpacks-community/kpack-cli/pkg/registry"
 )
 
 func NewSaveCommand(clientSetProvider k8s.ClientSetProvider, newWaiter func(dynamic.Interface) commands.ResourceWaiter) *cobra.Command {
 	var (
-		flags CommandFlags
+		flags     CommandFlags
+		tlsConfig registry.TLSConfig
 	)
 
 	cmd := &cobra.Command{
@@ -59,12 +61,14 @@ kp clusterbuilder save my-builder --tag my-registry.com/my-builder-tag --buildpa
 					flags.stack = defaultStack
 				}
 
-				return create(ctx, name, flags, ch, cs, w)
+				fetcher := registry.NewDefaultFetcher(tlsConfig)
+				return create(ctx, name, flags, ch, cs, fetcher, w)
 			} else if err != nil {
 				return err
 			}
 
-			return patch(ctx, cb, flags, ch, cs, w)
+			fetcher := registry.NewDefaultFetcher(tlsConfig)
+			return patch(ctx, cb, flags, ch, cs, fetcher, w)
 		},
 	}
 
@@ -73,6 +77,8 @@ kp clusterbuilder save my-builder --tag my-registry.com/my-builder-tag --buildpa
 	cmd.Flags().StringVar(&flags.store, "store", "", "buildpack store to use")
 	cmd.Flags().StringVarP(&flags.order, "order", "o", "", "path to buildpack order yaml")
 	cmd.Flags().StringSliceVarP(&flags.buildpacks, "buildpack", "b", []string{}, "buildpack id and optional version in the form of either '<buildpack>@<version>' or '<buildpack>'\n  repeat for each buildpack in order, or supply once with comma-separated list")
+	cmd.Flags().StringVar(&flags.orderFrom, "order-from", "", "builder image to extract buildpack order from")
 	commands.SetDryRunOutputFlags(cmd)
+	commands.SetTLSFlags(cmd, &tlsConfig)
 	return cmd
 }
