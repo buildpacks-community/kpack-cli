@@ -22,7 +22,6 @@ type DependencyDescriptor struct {
 	APIVersion              string             `yaml:"apiVersion" json:"apiVersion"`
 	Kind                    string             `yaml:"kind" json:"kind"`
 	DefaultClusterLifecycle string             `yaml:"defaultClusterLifecycle,omitempty" json:"defaultClusterLifecycle,omitempty"`
-	DefaultClusterBuildpack string             `yaml:"defaultClusterBuildpack,omitempty" json:"defaultClusterBuildpack,omitempty"`
 	DefaultClusterStack     string             `yaml:"defaultClusterStack,omitempty" json:"defaultClusterStack,omitempty"`
 	DefaultClusterBuilder   string             `yaml:"defaultClusterBuilder,omitempty" json:"defaultClusterBuilder,omitempty"`
 	ClusterLifecycles       []ClusterLifecycle `yaml:"clusterLifecycles,omitempty" json:"clusterLifecycles,omitempty"`

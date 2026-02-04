@@ -42,7 +42,7 @@ Reason:    this buildpack is not ready for the purpose of a test
 	)
 
 	var (
-		readyDefaultClusterBuildpack = &buildv1alpha2.ClusterBuildpack{
+		readyClusterBuildpack = &buildv1alpha2.ClusterBuildpack{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       buildv1alpha2.ClusterBuildpackKind,
 				APIVersion: "kpack.io/v1alpha2",
@@ -78,7 +78,7 @@ Reason:    this buildpack is not ready for the purpose of a test
 				},
 			},
 		}
-		notReadyDefaultClusterBuildpack = &buildv1alpha2.ClusterBuildpack{
+		notReadyClusterBuildpack = &buildv1alpha2.ClusterBuildpack{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       buildv1alpha2.ClusterBuildpackKind,
 				APIVersion: "kpack.io/v1alpha2",
@@ -107,7 +107,7 @@ Reason:    this buildpack is not ready for the purpose of a test
 				},
 			},
 		}
-		unknownDefaultClusterBuildpack = &buildv1alpha2.ClusterBuildpack{
+		unknownClusterBuildpack = &buildv1alpha2.ClusterBuildpack{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       buildv1alpha2.ClusterBuildpackKind,
 				APIVersion: "kpack.io/v1alpha2",
@@ -138,7 +138,7 @@ Reason:    this buildpack is not ready for the purpose of a test
 			when("the buildpack is ready", func() {
 				it("shows the build status using status.order", func() {
 					testhelpers.CommandTest{
-						Objects:        []runtime.Object{readyDefaultClusterBuildpack},
+						Objects:        []runtime.Object{readyClusterBuildpack},
 						Args:           []string{"test-buildpack-1"},
 						ExpectedOutput: expectedReadyOutput,
 					}.TestKpack(t, cmdFunc)
@@ -148,7 +148,7 @@ Reason:    this buildpack is not ready for the purpose of a test
 			when("the buildpack is not ready", func() {
 				it("shows the build status of not ready buildpack", func() {
 					testhelpers.CommandTest{
-						Objects:        []runtime.Object{notReadyDefaultClusterBuildpack},
+						Objects:        []runtime.Object{notReadyClusterBuildpack},
 						Args:           []string{"test-buildpack-2"},
 						ExpectedOutput: expectedNotReadyOutput,
 					}.TestKpack(t, cmdFunc)
@@ -158,7 +158,7 @@ Reason:    this buildpack is not ready for the purpose of a test
 			when("the buildpack is unknown", func() {
 				it("shows the build status of unknown buildpack", func() {
 					testhelpers.CommandTest{
-						Objects:        []runtime.Object{unknownDefaultClusterBuildpack},
+						Objects:        []runtime.Object{unknownClusterBuildpack},
 						Args:           []string{"test-buildpack-3"},
 						ExpectedOutput: expectedUnkownOutput,
 					}.TestKpack(t, cmdFunc)

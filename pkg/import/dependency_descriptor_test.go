@@ -307,39 +307,21 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("#GetClusterBuildpacks", func() {
-		when("there is a default buildpack", func() {
-			it("returns the cluster buildpacks and the default cluster buildpack", func() {
-				descWithDefault := importpkg.DependencyDescriptor{
-					DefaultClusterBuildpack: "some-buildpack",
-					ClusterBuildpacks: []importpkg.ClusterBuildpack{
-						{Name: "some-buildpack", Image: "buildpack-image"},
-						{Name: "other-buildpack", Image: "other-image"},
-					},
-				}
-				buildpacks := importpkg.GetClusterBuildpacks(descWithDefault)
-				expectedBuildpacks := []importpkg.ClusterBuildpack{
+		it("returns the cluster buildpacks", func() {
+			descWithDefault := importpkg.DependencyDescriptor{
+				ClusterBuildpacks: []importpkg.ClusterBuildpack{
 					{Name: "some-buildpack", Image: "buildpack-image"},
 					{Name: "other-buildpack", Image: "other-image"},
-					{Name: "default", Image: "buildpack-image"},
-				}
-				require.Equal(t, expectedBuildpacks, buildpacks)
-			})
+				},
+			}
+			buildpacks := importpkg.GetClusterBuildpacks(descWithDefault)
+			expectedBuildpacks := []importpkg.ClusterBuildpack{
+				{Name: "some-buildpack", Image: "buildpack-image"},
+				{Name: "other-buildpack", Image: "other-image"},
+			}
+			require.Equal(t, expectedBuildpacks, buildpacks)
 		})
 
-		when("there is no default buildpack", func() {
-			it("returns only the cluster buildpacks", func() {
-				descWithoutDefault := importpkg.DependencyDescriptor{
-					ClusterBuildpacks: []importpkg.ClusterBuildpack{
-						{Name: "some-buildpack", Image: "buildpack-image"},
-					},
-				}
-				buildpacks := importpkg.GetClusterBuildpacks(descWithoutDefault)
-				expectedBuildpacks := []importpkg.ClusterBuildpack{
-					{Name: "some-buildpack", Image: "buildpack-image"},
-				}
-				require.Equal(t, expectedBuildpacks, buildpacks)
-			})
-		})
 	})
 
 	when("validating default lifecycle", func() {
@@ -362,33 +344,6 @@ func testDescriptor(t *testing.T, when spec.G, it spec.S) {
 				descWithoutDefault := importpkg.DependencyDescriptor{
 					ClusterLifecycles: []importpkg.ClusterLifecycle{
 						{Name: "some-lifecycle", Image: "lifecycle-image"},
-					},
-				}
-				require.NoError(t, importpkg.ValidateDescriptor(descWithoutDefault))
-			})
-		})
-	})
-
-	when("validating default buildpack", func() {
-		when("the default buildpack does not exist", func() {
-			it("fails validation", func() {
-				descWithBadDefault := importpkg.DependencyDescriptor{
-					DefaultClusterBuildpack: "does-not-exist",
-					ClusterBuildpacks: []importpkg.ClusterBuildpack{
-						{Name: "some-buildpack", Image: "buildpack-image"},
-					},
-				}
-				err := importpkg.ValidateDescriptor(descWithBadDefault)
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "default cluster buildpack 'does-not-exist' not found")
-			})
-		})
-
-		when("there is no default cluster buildpack", func() {
-			it("validates successfully", func() {
-				descWithoutDefault := importpkg.DependencyDescriptor{
-					ClusterBuildpacks: []importpkg.ClusterBuildpack{
-						{Name: "some-buildpack", Image: "buildpack-image"},
 					},
 				}
 				require.NoError(t, importpkg.ValidateDescriptor(descWithoutDefault))
