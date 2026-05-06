@@ -49,15 +49,25 @@ func NewListCommand(clientSetProvider k8s.ClientSetProvider) *cobra.Command {
 }
 
 func displayClusterBuildpacksTable(cmd *cobra.Command, cbpList *v1alpha2.ClusterBuildpackList) error {
-	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "Name", "Ready", "Image")
+	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "Name", "Ready", "Version", "Image")
 	if err != nil {
 		return err
 	}
 
 	for _, cbp := range cbpList.Items {
+
+		var version string 
+		for _, bp := range cbp.Status.Buildpacks {
+			if bp.Id == bp.Buildpackage.Id {
+				version = bp.Version
+			}
+		}
+
+
 		err := writer.AddRow(
 			cbp.Name,
 			getStatus(cbp),
+			version,
 			cbp.Spec.Image,
 		)
 

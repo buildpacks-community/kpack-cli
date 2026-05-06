@@ -56,15 +56,25 @@ The namespace defaults to the kubernetes current-context namespace.`,
 }
 
 func displayBuildpacksTable(cmd *cobra.Command, bpList *v1alpha2.BuildpackList) error {
-	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "Name", "Ready", "Image")
+	writer, err := commands.NewTableWriter(cmd.OutOrStdout(), "Name", "Ready", "Version", "Image")
 	if err != nil {
 		return err
 	}
 
+
 	for _, bp := range bpList.Items {
+		var version string 
+		for _, bp := range bp.Status.Buildpacks {
+			if bp.Id == bp.Buildpackage.Id {
+				version = bp.Version
+			}
+		}
+	
+
 		err := writer.AddRow(
 			bp.Name,
 			getStatus(bp),
+			version,
 			bp.Spec.Image,
 		)
 

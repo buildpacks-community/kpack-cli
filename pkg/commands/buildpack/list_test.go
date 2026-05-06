@@ -62,6 +62,9 @@ func testBuildpackListCommand(t *testing.T, when spec.G, it spec.S) {
 							Id:      "org.cloudfoundry.nodejs",
 							Version: "0.2.1",
 						},
+						Buildpackage: corev1alpha1.BuildpackageInfo{
+							Id: "org.cloudfoundry.nodejs",
+						},
 					},
 				},
 			},
@@ -124,12 +127,14 @@ func testBuildpackListCommand(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 				},
-
 				Buildpacks: []corev1alpha1.BuildpackStatus{
 					{
 						BuildpackInfo: corev1alpha1.BuildpackInfo{
 							Id:      "org.cloudfoundry.java",
 							Version: "1.2.3",
+						},
+						Buildpackage: corev1alpha1.BuildpackageInfo{
+							Id: "org.cloudfoundry.java",
 						},
 					},
 				},
@@ -142,6 +147,63 @@ func testBuildpackListCommand(t *testing.T, when spec.G, it spec.S) {
 		return buildpack.NewListCommand(clientSetProvider)
 	}
 
+	when("a buildpack has multiple entries in status buildpacks", func() {
+		it("shows only the version of the entry whose id matches its buildpackage id", func() {
+			bpMulti := &buildv1alpha2.Buildpack{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       buildv1alpha2.BuildpackKind,
+					APIVersion: "kpack.io/v1alpha2",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-buildpack-1",
+					Namespace: defaultNamespace,
+				},
+				Spec: buildv1alpha2.BuildpackSpec{
+					ImageSource: corev1alpha1.ImageSource{
+						Image: "some-registry.com/test-buildpack-1",
+					},
+				},
+				Status: buildv1alpha2.BuildpackStatus{
+					Status: corev1alpha1.Status{
+						Conditions: []corev1alpha1.Condition{
+							{
+								Type:   corev1alpha1.ConditionReady,
+								Status: corev1.ConditionTrue,
+							},
+						},
+					},
+					Buildpacks: []corev1alpha1.BuildpackStatus{
+						{
+							BuildpackInfo: corev1alpha1.BuildpackInfo{
+								Id:      "org.cloudfoundry.nodejs/node",
+								Version: "9.9.9",
+							},
+							Buildpackage: corev1alpha1.BuildpackageInfo{
+								Id: "org.cloudfoundry.nodejs",
+							},
+						},
+						{
+							BuildpackInfo: corev1alpha1.BuildpackInfo{
+								Id:      "org.cloudfoundry.nodejs",
+								Version: "0.2.1",
+							},
+							Buildpackage: corev1alpha1.BuildpackageInfo{
+								Id: "org.cloudfoundry.nodejs",
+							},
+						},
+					},
+				},
+			}
+			testhelpers.CommandTest{
+				Objects: []runtime.Object{bpMulti},
+				ExpectedOutput: `NAME                READY    VERSION    IMAGE
+test-buildpack-1    true     0.2.1      some-registry.com/test-buildpack-1
+
+`,
+			}.TestKpack(t, cmdFunc)
+		})
+	})
+
 	when("namespace is not provided", func() {
 		when("there are buildpacks in the default namespace", func() {
 			it("lists the buildpacks", func() {
@@ -151,9 +213,9 @@ func testBuildpackListCommand(t *testing.T, when spec.G, it spec.S) {
 						buildpack2,
 						buildpack3,
 					},
-					ExpectedOutput: `NAME                READY    IMAGE
-test-buildpack-1    true     some-registry.com/test-buildpack-1
-test-buildpack-2    false    some-registry.com/test-buildpack-2
+					ExpectedOutput: `NAME                READY    VERSION    IMAGE
+test-buildpack-1    true     0.2.1      some-registry.com/test-buildpack-1
+test-buildpack-2    false               some-registry.com/test-buildpack-2
 
 `,
 				}.TestKpack(t, cmdFunc)
@@ -180,8 +242,8 @@ test-buildpack-2    false    some-registry.com/test-buildpack-2
 						buildpack3,
 					},
 					Args: []string{"-n", "test-namespace"},
-					ExpectedOutput: `NAME                READY    IMAGE
-test-buildpack-3    true     some-registry.com/test-buildpack-3
+					ExpectedOutput: `NAME                READY    VERSION    IMAGE
+test-buildpack-3    true     1.2.3      some-registry.com/test-buildpack-3
 
 `,
 				}.TestKpack(t, cmdFunc)
