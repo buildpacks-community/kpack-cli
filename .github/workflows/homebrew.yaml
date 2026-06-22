@@ -19,7 +19,7 @@ jobs:
           fi
           echo "VERSION=${version}" >> $GITHUB_ENV
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           repository: buildpacks-community/homebrew-kpack-cli
           path: homebrew-kpack-cli
